@@ -1,0 +1,5 @@
+according to
+
+http://code.google.com/p/google-api-translate-java/issues/detail?id=64
+
+all code stands under LGPL!

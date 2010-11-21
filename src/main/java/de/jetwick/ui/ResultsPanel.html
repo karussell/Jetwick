@@ -1,0 +1,90 @@
+<!--
+
+    Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+      xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
+    <head>
+        <title>[Panel Test]</title>
+    </head>
+    <body>
+        <wicket:panel>            
+            <div id="resultslist">
+                <div id="resultslist-header">
+                    <span wicket:id="qmWarn" class="querymessage warn">[Msg]</span>
+                    <span wicket:id="qm" class="querymessage">[Msg]</span>                        
+                    <div wicket:id="findOriginLink" class="findOriginLink"
+                         title="You will get the oldest, most retweeted content">[FindOriginOfQuery]</div>                    
+                    <div class="sorting">
+                        Sort
+                        <a wicket:id="sortRelevance">relevance</a>
+                        <a wicket:id="sortRetweets">retweets</a>
+                        <a wicket:id="sortLatest">latest</a>
+                        <a wicket:id="sortOldest">oldest</a>
+                    </div>
+                    <!-- we need a none-floating container to force the bottom border to be at the bottom-->
+                    <div style="visibility: hidden;">_</div>
+                </div>                
+                <div wicket:id="onelinead" class="onelinead ol-ad-hidden"/>
+                <ul class="users">
+                    <li wicket:id="users" class="user">
+                        <div class="userheader">
+                            <div class="profile-url">
+                                <a wicket:id="profileUrl" target="_blank" href="#" title="Search User on Jetwick">
+                                    <img alt="profile image" wicket:id="profileImg"/>
+                                </a>
+                            </div>
+                            <div class="user-left">
+                                <div class="user-name" wicket:id="userNameLink" title="Search User on Jetwick"/>
+                                <div class="user-rep">
+                                    <div class="rep-vote-up">
+                                        <a wicket:id="voteUpLink" target="_blank" title="Vote Up User">
+                                            <img src="img/up.png" alt="Vote Up!"/>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="more-tweets">
+                                <a wicket:id="latestTw" target="_blank" title="Twitter Account (External Link)">[Show User@twitter.com]</a>                                
+                            </div>                            
+                        </div>
+                        <ul class="tweets">
+                            <li wicket:id="tweets" class="tweet">
+                                <div wicket:id="oneTweet"></div>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <div id="resultslist-footer">
+                    <div class="hitsPerPage">
+                        Tweets per page
+                        <a wicket:id="hits15" href="#" title="Show 15 tweets per page">15</a>
+                        <a wicket:id="hits30" href="#" title="Show 30 tweets per page">30</a>
+                        <a wicket:id="hits60" href="#" title="Show 60 tweets per page">60</a>
+                    </div>
+                    <div class="export-link">
+                        Export as <a wicket:id="exportCsvLink" href="#">csv</a> |
+                        <a wicket:id="exportHtmlLink" href="#">html</a>
+                    </div>
+                </div>
+            </div>            
+        </wicket:panel>
+    </body>
+</html>
+

@@ -1,0 +1,97 @@
+<!--
+
+    Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+      xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
+    <head>
+        <title>[Panel Test]</title>
+    </head>
+    <body>
+        <wicket:panel>
+            <script type="text/javascript">/*<![CDATA[/*>*/
+                Wicket.Event.add(window, "domready", function(event) {
+                    qb=document.getElementById('querybox');
+                    qbBlur =  function(event) {
+                        if(qb.value==''){
+                            qb.setAttribute('class', 'search-tweet-tf-inact');
+                            qb.value='Search Twitter';
+                        }
+                        return true;
+                    };
+                    qbFocus = function(event) {
+                        if(qb.value=='Search Twitter')qb.value='';
+                        qb.setAttribute('class', 'search-tweet-tf');
+                        return true;
+                    };
+                    Wicket.Event.add(qb, "blur",  qbBlur);
+                    Wicket.Event.add(qb, "focus", qbFocus);
+
+                    ub=document.getElementById('userbox');
+                    ubBlur = function(event) {
+                        if(ub.value==''){
+                            ub.setAttribute('class', 'search-user-tf-inact');
+                            ub.value='User [optional]';
+                        }
+                        return true;
+                    };
+                    ubFocus = function(event) {
+                        if(ub.value=='User [optional]')ub.value='';
+                        ub.setAttribute('class', 'search-user-tf');
+                        return true;
+                    };
+
+                    Wicket.Event.add(ub, "blur",  ubBlur);
+                    Wicket.Event.add(ub, "focus", ubFocus);
+
+                    ubBlur();
+                    qbBlur();
+
+                    fo=document.getElementById('queryform');
+                    Wicket.Event.add(fo, "submit", function(event) {
+                        ubFocus();
+                        qbFocus();
+                    });
+                });
+
+                /*]]>*/</script>
+            <div class="searchform">
+                <form id="queryform" wicket:id="searchform">                    
+                    <div class="subtitle"><a wicket:id="homelink">Search twitter without noise</a></div>
+                    <div>
+                        <div>
+                            <input id="querybox" type="text" wicket:id="textField" class="search-tweet-tf"
+                                   name="q" title="Enter your query"/>
+                            <input id="userbox" type="text" wicket:id="userTextField" class="search-user-tf"
+                                   name="u" title="Enter user name"/>
+                            <input type="submit" value="Search" class="searchform-button"/>
+                        </div>
+                        <div class="searchboxhints">
+                            <a wicket:id="tweetQuery" target="_blank" 
+                               title="Creates a tweet with a link to your current search" href="#">
+                                Tweet Query
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </wicket:panel>
+    </body>
+</html>
+

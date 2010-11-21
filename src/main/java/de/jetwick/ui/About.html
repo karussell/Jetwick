@@ -1,0 +1,94 @@
+<!--
+
+    Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+      xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
+    <head>
+        <title>About Jetwick</title>
+        <link type="image/png" rel="icon" href="favicon.ico"/>
+        <link rel="stylesheet" type="text/css" href="css/style.css"/>
+    </head>
+    <body>
+        <div class="about">
+            <div class="external-links">
+                <wicket:link>
+                    <a href="HomePage.html">Back to Home</a>
+                </wicket:link>
+            </div>
+            <ul>
+                <li>
+                    <div class="about-head">
+                        Jetwick is a twitter search and offers the following features:
+                    </div>
+                    <div>
+                        Find relevant tweets fast! Even the old one.
+                    </div>
+                    <div>
+                        Filter tweets by date, language, keywords, ...
+                    </div>
+                    <div>
+                        <a wicket:id="ownLink" href="HomePage.html">Search your own or others tweets.</a>
+                    </div>
+                    <div>
+                        For more features with a screenshot look at 
+                        <a target="_blank" href="http://www.pannous.info/products/jetwick-twitter-search/">this page from pannous.info</a>
+                    </div>
+                </li>
+                <li>
+                    <div class="about-head">
+                        Why we named it 'Jetwick'?
+                    </div>
+                    <div class="about-desc">
+                        You might think that we combined jetty and wicket, some Java software we use.
+                        But the truth is that the initial name was 'Yatwic' which we derived from '<b>Y</b>et <b>A</b>nother <b>Twi</b>tter <b>C</b>lient'.
+                        The spelling was a bit awkward so we changed it to its faster brother Jetwick.
+                    </div>
+                    <div class="about-desc">
+                        By the way: At the beginning we didn't use wicket.
+                    </div>
+                </li>
+                <li>
+                    <div class="about-head">
+                        What does 'wicked' mean?
+                    </div>
+                    <div class="about-desc">
+                        Look into
+                        <a target="_blank" href="http://www.urbandictionary.com/define.php?term=wicked">
+                            urbandictionary
+                        </a>
+                        for more information.
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <script type="text/javascript">
+            var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.pannous.info/piwik/" : "http://www.pannous.info/piwik/");
+            document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
+        </script>
+        <script type="text/javascript">
+            try {
+                var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 1);
+                piwikTracker.trackPageView();
+                piwikTracker.enableLinkTracking();
+            } catch( err ) {  }
+        </script>
+        <img src="http://www.pannous.info/piwik/piwik.php?idsite=1" style="border:0" alt="" />
+    </body>
+</html>

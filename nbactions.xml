@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+    <action>
+        <actionName>CUSTOM-jetty:run</actionName>
+        <displayName>jetty:run</displayName>
+        <goals>
+            <goal>jetty:run</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+            <Env.MAVEN_OPTS>-Xms512m -Xmx512m -XX:PermSize=512m -XX:MaxPermSize=512m</Env.MAVEN_OPTS>
+            <!--  -agentpath:/home/peterk/Programme/netbeans-6.8/profiler3/lib/deployed/jdk16/linux/libprofilerinterface.so=/home/peterk/Programme/netbeans-6.8/profiler3/lib,5140,10 -->
+        </properties>
+    </action>  
+    <action>
+        <actionName>debug</actionName>
+        <goals>
+            <goal>package</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+
+            <netbeans.deploy>true</netbeans.deploy>
+            <netbeans.deploy.debugmode>true</netbeans.deploy.debugmode>
+        </properties>
+    </action>
+    <action>
+        <actionName>debug.single.main</actionName>
+        <goals>
+            <goal>process-classes</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:1.1.1:exec</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+            <exec.classpathScope>${classPathScope}</exec.classpathScope>
+            <jpda.listen>true</jpda.listen>
+            <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath ${packageClassName}</exec.args>
+            <jpda.stopclass>${packageClassName}</jpda.stopclass>
+            <exec.executable>java</exec.executable>
+        </properties>
+    </action>
+    <action>
+        <actionName>debug.single.deploy</actionName>
+        <goals>
+            <goal>package</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+            <netbeans.deploy>true</netbeans.deploy>
+            <netbeans.deploy.debugmode>true</netbeans.deploy.debugmode>
+            <netbeans.deploy.clientUrlPart>${webpagePath}</netbeans.deploy.clientUrlPart>
+        </properties>
+    </action>
+    <action>
+        <actionName>debug.test.single</actionName>
+        <goals>
+            <goal>test-compile</goal>
+            <goal>surefire:test</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+            <jpda.listen>true</jpda.listen>
+            <maven.surefire.debug>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address}</maven.surefire.debug>
+            <jpda.stopclass>${packageClassName}</jpda.stopclass>
+            <forkMode>once</forkMode>
+            <test>${className}</test>
+        </properties>
+    </action>
+    <action>
+        <actionName>run</actionName>
+        <goals>
+            <goal>package</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+            <netbeans.deploy>true</netbeans.deploy>
+        </properties>
+    </action>
+    <action>
+        <actionName>CUSTOM-package</actionName>
+        <displayName>package</displayName>
+        <goals>
+            <goal>clean</goal>
+            <goal>package</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+        </properties>
+    </action>
+    <action>
+        <actionName>profile</actionName>
+        <goals>
+            <goal>package</goal>
+        </goals>
+        <properties>
+            <maven.test.skip>true</maven.test.skip>
+            <netbeans.deploy>true</netbeans.deploy>
+            <netbeans.deploy.profilemode>true</netbeans.deploy.profilemode>
+        </properties>
+    </action>
+    <action>
+            <actionName>run.single.main</actionName>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.1.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.classpathScope>${classPathScope}</exec.classpathScope>
+                <exec.args>-classpath %classpath ${packageClassName}</exec.args>
+                <Env.MAVEN_OPTS>-Xmx500m</Env.MAVEN_OPTS>
+                
+                <exec.executable>java</exec.executable>
+                
+            </properties>
+        </action>
+    <action>
+            <actionName>CUSTOM-profile-yourkit</actionName>
+            <displayName>profile-yourkit</displayName>
+            <goals>
+                <goal>jetty:run</goal>
+            </goals>
+            <properties>
+                <maven.test.skip>true</maven.test.skip>
+                <Env.MAVEN_OPTS>-Xms512m -Xmx512m -XX:PermSize=512m -XX:MaxPermSize=512m -agentpath:/home/peterk/Programme/yourkit-profiler/bin/linux-x86-32/libyjpagent.so</Env.MAVEN_OPTS>
+            </properties>
+        </action>
+    <action>
+            <actionName>CUSTOM-jetty:run debug</actionName>
+            <displayName>jetty:run debug</displayName>
+            <goals>
+                <goal>jetty:run</goal>
+            </goals>
+            <properties>
+                <maven.test.skip>true</maven.test.skip>
+                <Env.MAVEN_OPTS>-Xms512m -Xmx512m -XX:PermSize=512m -XX:MaxPermSize=512m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=8000</Env.MAVEN_OPTS>
+            </properties>
+        </action>
+</actions>

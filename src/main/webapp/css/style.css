@@ -1,0 +1,671 @@
+/**
+ * Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+  | left   | searchform | right      |
+  | filter | resultlist | info-panel |
+  |----------------------------------|
+  | navigation + footer              |
+*/
+
+img { border-style: none; }
+a:link, .likelink { color: #0063AC; text-decoration: none; }
+a:visited {color: #0043AC; text-decoration: none; }
+a:hover {color: #0063AC; text-decoration: underline;  }
+small {font-size: 8px;}
+gray {color: gray;}
+body, p {    
+    color: #000;
+    font: 1em 'Lucida Grande',sans-serif;
+    line-height:1.25em;
+}
+
+.feedback ul {
+    margin: 15px;
+    padding: 0px;
+}
+
+.feedbackPanelINFO, .feedbackPanelERROR {
+    list-style: none;
+    padding: 5px 75px 5px 75px;
+}
+
+.feedbackPanelERROR { background-color: #ffb6b6; }
+.feedbackPanelINFO { background-color: #ffffd6; }
+
+.left-column {
+    float: left;
+}
+
+.auth {
+    margin-top: 14px;
+    padding: 3px 10px 3px 10px;
+    background-color: #f2f1f1;
+}
+
+.userpanel {
+    font-size: 0.9em;
+    list-style: none;    
+}
+.userpanel ul {
+    margin: 0px;
+    padding: 2px;
+}
+
+.userpanel ul li {
+    padding-right: 10px;
+    margin: 0px;
+    display: inline;
+}
+.external-refs-right { padding: 10px 10px 46px 0px; margin: 0px }
+.external-refs { padding: 10px 20px 40px 0px; margin: 0px }
+.external-refs-right ul, .external-refs ul { margin: 0; padding-left: 10px; }
+.external-refs-right ul li, .external-refs ul li {
+    padding-left: 5px;
+    padding-bottom: 7px;
+    list-style: none;
+}
+
+/*horizontal
+.external-refs-right ul li {
+     display: inline;
+}*/
+
+.external-refs ul li a, .external-refs-right ul li a {
+    color: black; font-size: 0.80em;
+}
+
+.external-refs-right {
+    float: right;
+    padding-top: 0px;
+}
+
+.external-refs {
+    font-size: 0.8em;
+}
+
+.right { float: right; }
+.left { float: left; }
+.warn { color: #fc4046;}
+
+/* .addthis-button a img { padding-left: 10px; padding-top: 10px} */
+
+#twimg {
+    width:12px;
+    padding: 0 4px 0px 4px;
+    margin-bottom: -5px;
+}
+#jetwickaccountimg {
+    width: 20px;
+    margin-bottom: -8px;
+    padding: 0 0px 0px 0px;
+}
+#learnmore {
+    width:11px;
+    padding: 0 6px 0px 4px;
+    margin-bottom: -2px;
+}
+
+.jetwickminilogo a img {
+    padding-left: 25px;
+    margin-bottom: -15px;
+    width: 60px;
+}
+
+.pannouslogo a img {
+    width: 110px;
+    margin-bottom: -3px;
+}
+.pannouslogo {
+    padding-right: 150px;
+}
+
+.searchform {        
+    padding-top: 120px;
+    padding-bottom: 2px;
+    background-image: url("../img/jetwick.png");
+    background-repeat: no-repeat;
+    background-position: -25px 20px;
+}
+
+.searchboxhints {
+    padding: 0px 7px 0 0;
+    float: right;
+}
+
+.searchboxhints a {
+    font-size: 0.7em;
+    padding: 2px;
+    color: #888;
+}
+
+.subtitle a {color: black;}
+.subtitle {
+    font-style: italic;
+    font-size: 0.9em;
+    padding-left: 60px;
+    padding-bottom: 20px;
+    margin-top: -43px;
+}
+
+div.wicket-aa {
+    background-color: white;
+    border-width: 1px;
+    border-color: #cccccc;
+    border-style: solid;
+    border-top: none;
+    padding: 2px;
+}
+
+div.wicket-aa ul {
+    list-style:none;
+    padding: 2px;
+    margin: 0;
+}
+
+div.wicket-aa ul li.selected { 
+    background-color: #6ab4ff; padding: 2px; margin:0;
+}
+
+.date-filter {        
+    padding-bottom: 5px;
+    min-height: 90px;
+}
+
+/*.bar-chart .top-bar-chart {
+    background: #f0efef url("../img/top-line.png") bottom left repeat-x;
+}
+url("../img/bottom-line.png")
+*/
+
+.date-filter .main-bar-chart {
+    background: #f2f2f2 url("../img/bottom-line.png") bottom left repeat-x;
+    padding: 10px;
+    /*width: 610px;*/
+    height: 90px;
+}
+.date-filter-label {
+    padding-bottom: 2px;
+}
+.date-filter .bar-chart, .main-bar-chart .gray  { color: gray; }
+
+.date-filter .bar-chart .item {
+    padding-left: 10px;
+    float: left;
+}
+
+.date-filter .bar-chart .item span  {
+    font-size: 12px;
+}
+
+.date-filter .bar-chart .filter-add .item-span {
+    background-repeat: repeat-y;
+    background-image: url("../img/bar-min.png");
+}
+
+.date-filter .bar-chart .filter-rm .item-span {
+    font-weight: bold;
+    background-repeat: repeat-y;
+    background-image: url("../img/bar-min-dark.png");
+}
+
+.search-tweet-tf, .search-tweet-tf-inact { width: 260px; }
+.search-user-tf, .search-user-tf-inact { width: 160px;  }
+.search-user-tf, .search-tweet-tf,.search-tweet-tf-inact, .search-user-tf-inact {
+    padding-left: 2px;
+    font-size: 16px;
+    height: 23px;
+}
+.search-tweet-tf-inact, .search-user-tf-inact {
+    color: gray;
+    font-style: italic;
+}
+
+.searchform-button {
+    font-size: 16px;
+    border: medium medium;
+    height: 27px;
+    /* on opera we need 83 not 85 */
+    width: 83px;
+}
+
+#main {
+    width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.content {
+    float: left;
+    width: 530px;
+}
+
+.filter {
+    width: 145px;
+    margin-top: 0px;
+    padding: 20px 15px 0px 10px;
+}
+
+.filterNames ul li {
+    font-size: 0.9em;
+}
+.filter-rm { font-weight: bold }
+
+.filter .filterCount {
+    font-size: 0.7em;
+    color: gray
+}
+.filter ul { margin-top: 0px; padding-top: 5px; padding-left: 5px; }
+.filterNames { padding-bottom: 15px;}
+.filterNames ul li span.gray {
+    color: gray;
+}
+
+.querymessage {
+    float: left;
+    padding-left: 0px;
+    padding-right: 10px;
+}
+
+.findOriginLink {
+    float: left;
+    padding-right: 10px;
+}
+.sorting {        
+    float: right;
+    clear: right;
+}
+
+.sorting .selected, .hitsPerPage .selected  {
+    font-weight: bold;
+}
+
+.export-link { float: right; }
+
+.hitsPerPage { float: left; }
+
+.export-link, .hitsPerPage {    
+    font-size: 0.8em;
+    padding-top: 0px;
+}
+
+#resultslist {
+    padding-left: 0px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-bottom: 25px;
+    border-bottom: gray 1px solid;
+}
+
+#resultslist ul { padding-left: 0px; }
+#resultslist .users {
+    margin: 0px;
+}
+
+#resultslist-header {
+    font-size: 0.8em;
+    padding-bottom: 5px;
+    border-bottom: 1px solid gray;
+    float: left;
+    width: 100%;
+}
+
+
+#resultslist-footer {
+    padding: 4px;
+    /* why I need this? */
+    min-height: 15px;
+}
+
+.cleanusers li {
+    list-style: none;
+}
+
+.cleanusers .user {
+    border: none;
+}
+
+.users {   
+    /*float: left; -> do not set otherwise the width is not of equal length*/
+    padding-top: 2px;
+    /*margin-bottom: 5px;*/
+}
+.user {
+    /*float: left; -> do not set otherwise the width is not of equal length*/
+    padding: 15px 15px 0px 15px;
+    border-bottom: 1px solid gray;
+}
+
+.bio {
+    font-style: italic;
+    font-size: 12px;
+    padding: 11px 1px 0px 0px;
+}
+
+.similar-link {    
+    padding: 5px 0px 0px 0px;
+    margin: 3px 10px;
+}
+
+.ads li, .filter li, .user li, #resultslist .users li { list-style: none; }
+
+.userheader .tags li {
+    padding-left: 10px;
+    display: inline;
+}
+
+.userheader .tags li a { color: gray; }
+
+.button-link img {
+    margin-bottom: -7px;
+}
+
+.tweet-text {
+    /* default is larger which is better font-size: 0.9em; */
+
+    /* avoid too lengthy words destroying our layout */
+    word-wrap: break-word;
+    clear: both;
+    /* if we click a link which is on the lowest line the sliders will appear and sometimes trifft man neben den Link!
+       overflow: auto; */
+}
+.tweet-links {    
+    float: right;
+    padding-left: 10px;
+    padding-top: 3px;
+}
+.tweet-links li a {
+    font-size: 10px;
+    color: gray;
+}
+
+.tweet-links li a:hover {
+    color: #0063AC;
+}
+
+.tweet-links li  {    
+    padding-right: 5px;
+    padding-left: 5px;
+    display: inline;
+}
+
+.tweet-important-links li {
+    padding-left: 15px;
+    display: inline;
+}
+.tweet-important-links {
+    padding-top: 3px;
+    float: left;
+}
+
+.tweet-important-links li a {
+    font-size: 12px;
+    /*border: 1px dashed gray;*/
+    /*background: buttonface;*/
+}
+
+.tweet-text .i-tw-link, .tweet-text .ex-tw-link  {
+    color: #003f6e;
+}
+
+/* we shouldn't gave spam tweet such a great attention  
+.spam-indicator {
+    background-color: #ffc9c9;
+}
+*/
+
+.user-name { font-weight: bold; font-size: 0.8em; }
+
+.tweet .user-name {
+    padding: 0 0 0 0;
+}
+
+.tweet .tweet-text {    
+    clear: right;
+}
+
+.tweet .user-name a span {    
+    /*color: red;*/
+    float: left;
+    padding-right: 5px;
+}
+
+.profile-url {
+    min-width: 48px;
+    float: left;
+}
+
+.profile-url a img{
+    width: 40px;
+    height:40px;
+}
+
+.tweet {
+    padding-top: 5px;
+}
+
+.tweets {
+    padding: 0px 0px 10px 0px;
+    clear: both;
+}
+
+.subtweets {
+    clear: both;
+    padding-left: 15px;
+    padding-top: 5px;
+}
+
+.navigation {
+    padding-left: 170px;
+    clear: both
+}
+
+.navigation .pre {
+    width: 150px;
+    float: left;
+}
+
+.user-name, .rep-vote-up, .more-tweets, .similar-link { float: left; }
+
+.rep-vote-up {
+    padding-left: 3px;
+    min-width: 40px;
+}
+
+.rep-link a { color: black; }
+
+.more-tweets {
+    font-size: 0.7em;
+    padding: 0px 5px 0 10px;
+}
+
+.more-tw-label img { height: 14px; }
+/*
+.more-tw-label {
+    padding-left: 17px;
+    background-image: url("../img/pencil.png");
+    background-repeat: no-repeat;
+}*/
+
+.user-left {
+    margin-top: 1px;
+    min-height: 22px;
+    clear: right;
+}
+.user-name {
+    padding-left: 10px;
+}
+.rep-link {
+    padding-left: 15px;
+}
+
+.about, .imprint, .reputation-desc, .error-page {
+    width: 1100px;
+    padding: 50px 50px;
+}
+
+.imprint ul li, .about ul li {
+    list-style: none;
+}
+
+.about-head {
+    margin-left: -10px;
+    padding-top: 20px;
+    padding-bottom: 5px;
+}
+
+.about-head, imprint-head {
+    font-size: 20px;
+}
+
+.onelinead {
+    clear: both;
+}
+
+/* one line ads */
+li.ol-ad {    
+    padding: 10px 5px 10px 10px;
+    display: inline;
+}
+
+.ol-ads {    
+    background-color: #fff0e2;
+    border-bottom: 1px solid gray;
+    padding-top: 8px;
+    padding-bottom: 15px;
+    font-size: 0.91em;
+}
+
+.ol-ads a:hover {
+    text-decoration: none;
+    color: blue;
+}
+
+.ol-ads {
+    margin: 0px 0px 10px 0px;
+    padding-left: 10px;
+    /* if ad has no image then the bar would be too small: */
+    min-height: 30px;
+}
+
+.ol-ads a img {
+    margin-bottom: -10px;
+    width:  35px;
+    height: 35px;
+}
+
+.ol-ad-button {
+    float: right;
+    padding: 0;
+    margin-top: -63px;
+}
+
+#info-panel {
+    float: left;
+    width: 330px;
+    padding: 15px 0px 0px 18px;
+    margin: 0px;
+}
+
+/* great thanks to http://snook.ca/archives/html_and_css/content_overlay_css for overlay stuff*/
+.url-more {
+    display: none;
+
+    /* applies only for cssClass:hover where display:block !! */
+    white-space: normal;
+    position: absolute;
+    background-color: #f2f2f2;
+    padding: 2px;
+}
+.url-less {
+    display: block;
+}
+.urltrends {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    float: left;
+    padding: 20px 0px 0px 0px;
+}
+
+.oneurl {
+    padding-top: 9px;
+    padding-left: 5px;
+    font-size: 0.85em;
+    list-style: none;
+    /* if the short url will be hidden we would loose the height! */
+    min-height: 20px;
+}
+.oneurl a:hover {
+    text-decoration: none;
+}
+
+.tagcloud-header {
+    padding-bottom: 5px;
+}
+
+.tagcloud {
+    float: left;
+    padding-top: 10px;
+}
+
+.tagcloud .var-size-0  { font-size: 12px;}
+.tagcloud .var-size-1  { font-size: 13px;}
+.tagcloud .var-size-2  { font-size: 14px;}
+.tagcloud .var-size-3  { font-size: 15px;}
+.tagcloud .var-size-4  { font-size: 16px;}
+.tagcloud .var-size-5  { font-size: 17px;}
+.tagcloud .var-size-6  { font-size: 18px;}
+.tagcloud .var-size-7  { font-size: 19px;}
+.tagcloud .var-size-8  { font-size: 20px;}
+.tagcloud .var-size-9  { font-size: 21px;}
+.tagcloud .var-size-10 { font-size: 21px;}
+
+.tag {
+    min-height: 27px;
+    float: left;
+    padding: 2px 8px 2px 4px;
+}
+
+.tagcloud .tag-link {
+    padding-right: 0px;
+}
+
+.tagcloud .tag-origin {
+    font-size: 10px;
+    color: gray;
+    padding-left: 0px;
+    margin-left: -4px;
+    vertical-align: super;
+}
+
+.wikipanel {
+    float: left;
+    padding-top: 20px;
+}
+
+.wikipanel .oneurl {
+    padding-bottom: 7px;
+    padding-left: 4px;
+    font-size: 0.9em;
+    list-style: none;
+}
+
+.wikipanel .url-link { padding-right: 10px; }
+
+.wikititle { padding-bottom: 5px; }
+
+.wiki-text { font-size: 0.7em; }

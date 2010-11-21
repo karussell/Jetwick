@@ -1,0 +1,12 @@
+*.log
+search/
+target/
+adindex/data/
+adindex/data.bak/
+uindex/data/
+uindex/data.bak/
+twindex/data/
+twindex/data.bak
+out.txt
+*.log
+tmp.*

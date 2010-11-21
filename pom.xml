@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>de.jetwick</groupId>
+    <artifactId>jetwick</artifactId>
+    <packaging>war</packaging>
+    <version>2.0</version>
+    <name>Jetwick</name>
+    <description>Twitter Search 2.0</description>
+    <properties>
+        <slf4j.version>1.6.0</slf4j.version>
+        <jetty.version>6.1.24</jetty.version>
+
+        <!-- we are using a patched version see utils/patched -->
+        <!--<solr.version>4.0-dev</solr.version>-->
+        <solr.version>1.4.1</solr.version>
+        <wicket.version>1.4.9</wicket.version>
+        <!--<wicket.version>1.5-M2.1</wicket.version>-->
+
+        <dn.version>2.0.4</dn.version>
+        <hibernate.version>3.5.1-Final</hibernate.version>
+        <liquibase.version>1.9.4</liquibase.version>
+        <liquibase.plugin.version>1.9.5.0</liquibase.plugin.version>
+        <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.twitter4j</groupId>
+            <artifactId>twitter4j-core</artifactId>
+            <version>2.1.6</version>
+        </dependency>
+
+        <!-- install patched solr
+             mvn install:install-file -DgroupId=org.apache.solr -DartifactId=solr-core -Dpackaging=jar -Dversion=1.4.1 -Dfile=apache-solr-core-1.4.2-dev.jar
+             mvn install:install-file -DgroupId=org.apache.solr -DartifactId=solr-solrj -Dpackaging=jar -Dversion=1.4.1 -Dfile=apache-solr-solrj-1.4.2-dev.jar
+             do not overwrite the previous generated pom with -DgeneratePom=true !!
+         -->
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-solrj</artifactId>
+            <version>${solr.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-core</artifactId>
+            <version>${solr.version}</version>
+            <!-- https://issues.apache.org/jira/browse/SOLR-1950 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>woodstox</groupId>
+                    <artifactId>wstx-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.geronimo.specs</groupId>
+                    <artifactId>geronimo-stax-api_1.0_spec</artifactId>
+                </exclusion>
+                <!--
+                <exclusion>
+                    <groupId>org.apache.velocity.tools</groupId>
+                    <artifactId>velocity-tools</artifactId>
+                </exclusion>-->
+            </exclusions>
+        </dependency>
+
+        <!-- for solr tests -> JettySolrRunner ! -->
+        <!--
+        <dependency>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>jetty</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
+        </dependency>
+        -->
+
+        <dependency>
+            <groupId>org.apache.wicket</groupId>
+            <artifactId>wicket</artifactId>
+            <version>${wicket.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wicket</groupId>
+            <artifactId>wicket-extensions</artifactId>
+            <version>${wicket.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wicket</groupId>
+            <artifactId>wicket-guice</artifactId>
+            <version>${wicket.version}</version>
+        </dependency>
+        <!--
+         <dependency>
+            <groupId>jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.0.13</version>
+        </dependency>
+        -->
+        <!--
+        <dependency>
+            <groupId>com.caucho</groupId>
+            <artifactId>resin-hessian</artifactId>
+            <version>4.0.7</version>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>com.wideplay.warp</groupId>
+            <artifactId>warp-persist</artifactId>
+            <version>2.0-20090214</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-annotations</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+
+        <!-- we need liquibase on the path to recreate the schema on the fly -->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>${liquibase.version}</version>
+        </dependency>
+
+        <!-- optional jars are also necessary -->
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.8.0.GA</version>
+        </dependency>
+
+        <!-- TODO org.hibernate.connection.C3P0ConnectionProvider
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-c3p0</artifactId>
+            <version>3.3.2.GA</version>
+        </dependency>
+        -->
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.2.137</version>
+        </dependency>
+
+        <!-- we need this, otherwise warp persist cannot be run from cmd line -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+        </dependency>
+
+        <!-- detailed jdbc logging (from hibernate)
+        <dependency>
+            <groupId>p6spy</groupId>
+            <artifactId>p6spy</artifactId>
+            <version>1.3</version>
+        </dependency>
+        -->
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.16</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>jetwick</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**</include>
+                </includes>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**</include>
+                </includes>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/java</directory>
+                <includes>
+                    <include>**</include>
+                </includes>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>**</include>
+                </includes>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+                <inherited>true</inherited>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- mvn -X license:format -Dyear=2010
+                     TODO do not add text into robots.txt or change com/* or org/* folder !!
+                  -->
+                <groupId>com.mycila.maven-license-plugin</groupId>
+                <artifactId>maven-license-plugin</artifactId>
+                <configuration>
+                    <basedir>${basedir}</basedir>
+                    <header>${basedir}/src/etc/header.txt</header>
+                    <!-- <validHeaders>
+                        <validHeader>/otherSupportedHeader.txt</validHeader>
+                    </validHeaders> -->
+                    <quiet>false</quiet>
+                    <failIfMissing>true</failIfMissing>                    
+                    <includes>
+                        <include>src/**</include>
+                        <include>**/test/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>target/**</exclude>
+                    </excludes>
+                    <useDefaultExcludes>true</useDefaultExcludes>
+                    <!-- <mapping>
+                        <jwc>XML_STYLE</jwc>
+                        <application>XML_STYLE</application>
+                        <myFileExtension>JAVADOC_STYLE</myFileExtension>
+                    </mapping> -->
+                    <useDefaultMapping>true</useDefaultMapping>
+                    <properties>
+                        <year>${project.inceptionYear}</year>
+                        <email>jetwick_@_pannous_._info</email>
+                        <user>Peter Karich</user>
+                    </properties>
+                    <encoding>UTF-8</encoding>                   
+                </configuration>                
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <!--
+                            <excludes>
+                                <exclude>**/*TestClass.java</exclude>
+                            </excludes>
+                            -->
+                            <includes>
+                                <include>**/*Testing.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>maven-jetty-plugin</artifactId>
+                <version>${jetty.version}</version>
+                <configuration>
+                    <!-- to be used in combination with netbeans compile on save feature -->
+                    <scanTargets>
+                        <scanTarget>target/classes/</scanTarget>
+                    </scanTargets>
+                    <scanIntervalSeconds>1</scanIntervalSeconds>
+                </configuration>
+            </plugin>
+            <!-- we need a more recent liquibase version!
+            <plugin>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-plugin</artifactId>
+                <version>${liquibase.plugin.version}</version>
+                <configuration>
+                    <propertyFile>src/main/resources/liquibase.properties</propertyFile>
+                    <verbose>true</verbose>
+                    <logLevel>ALL</logLevel>
+                    -
+                    <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                    -
+                </configuration>
+            </plugin>
+            -->
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>wicket-dev</id>
+            <url>http://people.apache.org/~ivaynberg/wicket-1.5-M2.1/m2-repo/</url>
+        </repository>
+        <repository>
+            <id>datanucleus</id>
+            <url>http://www.datanucleus.org/downloads/maven2/</url>
+        </repository>
+        <repository>
+            <id>jboss</id>
+            <url>http://repository.jboss.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>caucho</id>
+            <url>http://caucho.com/m2/</url>
+        </repository>
+        <repository>
+            <id>peter-repository</id>
+            <name>Peter's Repository with warp persist, mydoggy, PgsLookAndFeel, ... </name>
+            <url>http://peat_hal.users.sourceforge.net/m2repository/</url>
+        </repository>
+
+    </repositories>
+</project>
+

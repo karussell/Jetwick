@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /*
+Allow: /imprint
+Allow: /about
+

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+
+    Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9" 
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9 http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+
+    <changeSet author="peterk (generated)" id="1289943426012-1">
+        <createTable schemaName="PUBLIC" tableName="TAGS">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TAG" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-2">
+        <createTable schemaName="PUBLIC" tableName="YTAG">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_2"/>
+            </column>
+            <column name="LASTID" type="BIGINT"/>
+            <column name="LASTMILLIS" type="BIGINT"/>
+            <column name="QUERYINTERVAL" type="BIGINT"/>
+            <column name="SEARCHCOUNTER" type="BIGINT"/>
+            <column name="TERM" type="VARCHAR(255)"/>
+            <column name="TRANSIENTFLAG" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VERSION" type="INT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-3">
+        <createTable schemaName="PUBLIC" tableName="YUSER">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_5"/>
+            </column>
+            <column name="CREATEDAT" type="TIMESTAMP"/>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="LANG" type="VARCHAR(255)"/>
+            <column name="LOCATION" type="VARCHAR(255)"/>
+            <column name="PROFILEIMAGEURL" type="VARCHAR(255)"/>
+            <column name="REALNAME" type="VARCHAR(255)"/>
+            <column name="SCREENNAME" type="VARCHAR(255)"/>
+            <column name="SECRET" type="VARCHAR(255)"/>
+            <column name="TOKENSECRET" type="VARCHAR(255)"/>
+            <column name="TWITTERID" type="INT"/>
+            <column name="UPDATEAT" type="TIMESTAMP"/>
+            <column name="VERSION" type="INT"/>
+            <column name="WEBURL" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-4">
+        <createTable schemaName="PUBLIC" tableName="YUSER_YUSER">
+            <column name="FOLLOWING_ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FOLLOWERS_ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-5">
+        <addPrimaryKey columnNames="FOLLOWING_ID, FOLLOWERS_ID" constraintName="CONSTRAINT_8" schemaName="PUBLIC" tableName="YUSER_YUSER"/>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-6">
+        <createIndex indexName="CONSTRAINT_INDEX_2" schemaName="PUBLIC" tableName="YTAG" unique="true">
+            <column name="TERM"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-7">
+        <createIndex indexName="CONSTRAINT_INDEX_5" schemaName="PUBLIC" tableName="YUSER" unique="true">
+            <column name="SCREENNAME"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-8">
+        <addForeignKeyConstraint baseColumnNames="ID" baseTableName="TAGS" baseTableSchemaName="PUBLIC" constraintName="FK3634195A263023" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="YUSER" referencedTableSchemaName="PUBLIC"/>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-9">
+        <addForeignKeyConstraint baseColumnNames="FOLLOWERS_ID" baseTableName="YUSER_YUSER" baseTableSchemaName="PUBLIC" constraintName="FKD3C08F89EA6FBC8D" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="YUSER" referencedTableSchemaName="PUBLIC"/>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-10">
+        <addForeignKeyConstraint baseColumnNames="FOLLOWING_ID" baseTableName="YUSER_YUSER" baseTableSchemaName="PUBLIC" constraintName="FKD3C08F89F1054C91" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="YUSER" referencedTableSchemaName="PUBLIC"/>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1289943426012-11">
+        <createSequence schemaName="PUBLIC" sequenceName="HIBERNATE_SEQUENCE"/>
+    </changeSet>
+</databaseChangeLog>

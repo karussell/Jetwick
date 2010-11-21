@@ -1,0 +1,78 @@
+<!--
+
+    Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+      xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
+    <head>
+        <title>[Panel Test]</title>
+    </head>
+    <body>
+        <wicket:panel>
+            <div>
+                <div class="user-name" wicket:id="userNameLink" title="Search User on Jetwick"/>
+                <div wicket:id="spamIndicator" class="spam-indicator">
+                    <img src="img/eye.png"/>
+                    This Tweet is probably spam. Links are disabled.
+                </div>
+                <div wicket:id="tweetText" class="tweet-text">[tweetText]</div>
+                <ul class="tweet-important-links">
+                    <li>
+                        <a wicket:id="translateLink" class="button-link">
+                            <img src="img/translate.png" title="Translate Tweet"/>
+                        </a>
+                    </li>
+                    <li>
+                        <a wicket:id="similarLink" class="button-link">
+                            <img src="img/find-similar.png" title="Find Similar Tweets"/>
+                        </a>
+                    </li>
+                    <li>
+                        <a wicket:id="retweeters" title="Show Retweets"><span wicket:id="retweetersLabel">[retweeters]</span></a>
+                    </li>
+                    <li>
+                        <a wicket:id="replies" title="Show Replies"><span wicket:id="repliesLabel">replies</span></a>
+                    </li>
+                    <li>
+                        <a wicket:id="inreplyof" title="Show tweet where this tweet replies to">in reply of</a>
+                    </li>
+                </ul>
+                <ul class="tweet-links">                    
+                    <li>
+                        <a target="_blank" wicket:id="tweetDate" title="Show Status on twitter.com"><span wicket:id="tweetDateLabel"/></a>
+                    </li>
+                    <li>
+                        <a target="_blank" wicket:id="tweetReply" title="Reply on twitter.com">reply</a>
+                    </li>
+                    <li>
+                        <a target="_blank" wicket:id="tweetRetweet" title="Retweet on twitter.com">retweet</a>
+                    </li>
+                </ul>
+                <div class="subtweets">
+                    <ul>
+                        <li wicket:id="subtweets" class="subtweet">
+                            <div wicket:id="suboneTweet"></div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </wicket:panel>
+    </body>
+</html>
+
