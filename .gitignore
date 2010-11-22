@@ -1,3 +1,5 @@
+.gitignore~
+TODO.txt
 *.log
 search/
 target/

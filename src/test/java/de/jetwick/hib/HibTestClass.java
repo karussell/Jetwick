@@ -63,8 +63,6 @@ public class HibTestClass extends JetwickTestClass implements DbTestInterface {
         Configuration config = HibernateUtil.getConfiguration();
 //        return config.setProperty("hibernate.connection.driver_class", "org.hsqldb.jdbcDriver").
 //                setProperty("hibernate.connection.url", "jdbc:hsqldb:mem:jetwickdb").
-//                setProperty("hibernate.connection.username", "sa").
-//                setProperty("hibernate.connection.password", "").
 //                setProperty("hibernate.default_schema", TEST_SCHEMA).
 //                setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect").
 //                setProperty("hibernate.current_session_context_class", "thread").//managed
@@ -73,9 +71,7 @@ public class HibTestClass extends JetwickTestClass implements DbTestInterface {
 
         return config.setProperty("hibernate.connection.driver_class", "org.h2.Driver").
                 //setProperty("hibernate.connection.url", "jdbc:h2:mem:jetwickdb").
-                setProperty("hibernate.connection.url", "jdbc:h2:mem:test").
-                setProperty("hibernate.connection.username", "sa").
-                setProperty("hibernate.connection.password", "").
+                setProperty("hibernate.connection.url", "jdbc:h2:mem:test").                
                 setProperty("hibernate.default_schema", TEST_SCHEMA).
                 setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect").
                 setProperty("hibernate.current_session_context_class", "thread") //managed
