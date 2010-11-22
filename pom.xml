@@ -234,27 +234,31 @@
             </testResource>
         </testResources>
         <plugins>
+            <!-- maven3 -->
             <plugin>
                 <inherited>true</inherited>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.0.2</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
             </plugin>
+                    
+            <!-- no support from maven3 
             <plugin>
-                <!-- mvn -X license:format -Dyear=2010
+                <!- - mvn -X license:format -Dyear=2010
                      TODO do not add text into robots.txt or change com/* or org/* folder !!
-                  -->
+                  - ->
                 <groupId>com.mycila.maven-license-plugin</groupId>
                 <artifactId>maven-license-plugin</artifactId>
                 <configuration>
                     <basedir>${basedir}</basedir>
                     <header>${basedir}/src/etc/header.txt</header>
-                    <!-- <validHeaders>
+                    <!- - <validHeaders>
                         <validHeader>/otherSupportedHeader.txt</validHeader>
-                    </validHeaders> -->
+                    </validHeaders> - ->
                     <quiet>false</quiet>
                     <failIfMissing>true</failIfMissing>                    
                     <includes>
@@ -264,12 +268,7 @@
                     <excludes>
                         <exclude>target/**</exclude>
                     </excludes>
-                    <useDefaultExcludes>true</useDefaultExcludes>
-                    <!-- <mapping>
-                        <jwc>XML_STYLE</jwc>
-                        <application>XML_STYLE</application>
-                        <myFileExtension>JAVADOC_STYLE</myFileExtension>
-                    </mapping> -->
+                    <useDefaultExcludes>true</useDefaultExcludes>                 
                     <useDefaultMapping>true</useDefaultMapping>
                     <properties>
                         <year>${project.inceptionYear}</year>
@@ -278,10 +277,12 @@
                     </properties>
                     <encoding>UTF-8</encoding>                   
                 </configuration>                
-            </plugin>
+            </plugin>   
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.4.3</version>
                 <executions>
                     <execution>
                         <id>integration-tests</id>
@@ -290,19 +291,14 @@
                             <goal>test</goal>
                         </goals>
                         <configuration>
-                            <skip>false</skip>
-                            <!--
-                            <excludes>
-                                <exclude>**/*TestClass.java</exclude>
-                            </excludes>
-                            -->
+                            <skip>false</skip>                            
                             <includes>
                                 <include>**/*Testing.java</include>
                             </includes>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>            
             <plugin>
                 <groupId>org.mortbay.jetty</groupId>
                 <artifactId>maven-jetty-plugin</artifactId>

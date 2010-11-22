@@ -16,6 +16,6 @@ Features
 Get Started
 ===========
 
- * Try jetwick.com
+ * Try http://jetwick.com
  * Installation:  https://github.com/karussell/Jetwick/wiki
  * Report issues: https://github.com/karussell/Jetwick/issues

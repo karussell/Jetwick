@@ -1,5 +1,6 @@
 .gitignore~
 TODO.txt
+deploy*.sh
 *.log
 search/
 target/
