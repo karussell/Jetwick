@@ -42,7 +42,6 @@ public class SearchBox extends Panel {
 
     private String query;
     private String userName;
-//    private Collection<String> suggestions = new ArrayList<String>();
     private AutoCompleteTextField queryTF;
 
     public SearchBox(String id) {
@@ -66,8 +65,6 @@ public class SearchBox extends Panel {
         add(form);
 
         form.add(new BookmarkablePageLink("homelink", HomePage.class));
-
-
         Model hrefModel = new Model() {
 
             @Override

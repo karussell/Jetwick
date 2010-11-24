@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import com.google.inject.Inject;
@@ -35,6 +34,7 @@ public class MySession extends WebSession {
     private TwitterSearch twitterSearch;
     private boolean dev = false;
     private YUser user = null;
+    private boolean twitterApiInitialized = false;
 
     public MySession(Request request, boolean dev) {
         super(request);
@@ -42,17 +42,27 @@ public class MySession extends WebSession {
     }
 
     public TwitterSearch getTwitterSearch() {
-        return twitterSearch.init();
+        init();
+        return twitterSearch;
+    }
+
+    public void init() {
+        if (!twitterApiInitialized) {
+            logger.info("initialized");
+            twitterApiInitialized = true;
+            // twitterSearch.init() is expensive so call it only once per session
+            if (twitterSearch.init() && dev) {
+                try {
+                    setUser(twitterSearch.getUser());
+                } catch (TwitterException ex) {
+                    logger.error("Couldn't init dev account!", ex);
+                }
+            }
+        }
     }
 
     public YUser getUser() {
-        if (dev) {
-            try {
-                user = getTwitterSearch().getUser();
-            } catch (TwitterException ex) {
-                logger.error("Couldn't init dev account!", ex);
-            }
-        }
+        init();
         return user;
     }
 
@@ -62,10 +72,14 @@ public class MySession extends WebSession {
     }
 
     public boolean hasLoggedIn() {
-        return user != null;
+        return getUser() != null;
     }
 
+    /**
+     * Use only if twitterSearch is already initialized
+     */
     public void setTwitterSearch(TwitterSearch ts) {
+        twitterApiInitialized = true;
         twitterSearch = ts;
         try {
             YUser tmpUser = getTwitterSearch().getUser();

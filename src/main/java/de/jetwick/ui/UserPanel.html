@@ -24,7 +24,8 @@
         <title>[Panel Test]</title>
     </head>
     <body>
-        <wicket:panel>            
+        <wicket:panel>
+            <div wicket:id="userModal"></div>
             <div class="userpanel">
                 <ul>
                     <li>
@@ -34,7 +35,7 @@
                         <a wicket:id="logout">Logout</a>
                     </li>
                     <li>
-                        <a wicket:id="grabTweets" title="Makes all of your tweets searchable! (max 3200)">Grab Tweets</a>
+                        <a wicket:id="grabTweets" title="Makes tweets of any user searchable! (max 3200)">Grab Tweets</a>
                     </li>
                     <li>
                         <a wicket:id="showTweets" title="Lists your sent tweets">Show My Tweets</a>

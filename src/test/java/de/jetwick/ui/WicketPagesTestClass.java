@@ -61,8 +61,8 @@ public class WicketPagesTestClass {
                     }
 
                     @Override
-                    public TwitterSearch init() {
-                        return this;
+                    public boolean init() {
+                        return true;
                     }
 
                     @Override

@@ -1,0 +1,13 @@
+# http://help.github.com/git-cheat-sheets/
+
+# add remote repo
+git remote add origin git@github.com:karussell/Jetwick.git
+
+# add new files or remove old
+git add -A
+
+# commit (is -a necessary?)
+git commit -a -m "message"
+
+# push
+git push origin master

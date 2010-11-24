@@ -74,7 +74,7 @@ public class HomePageTest extends WicketPagesTestClass {
         formTester.submit();
         tester.assertNoErrorMessage();
 
-        tester.clickLink("externalRefsRight:backlink");
+        tester.clickLink("searchbox:searchform:homelink");
         tester.assertNoErrorMessage();
 
         tester.startPage(new HomePage(new SolrQuery("timetabling"), 0, false));
@@ -178,8 +178,8 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public TwitterSearch init() {
-                return this;
+            public boolean init() {
+                return true;
             }
 
             @Override

@@ -76,18 +76,20 @@ public class TwitterSearch implements Serializable {
         this.credits = credits;
     }
 
-    public TwitterSearch init() {
+    public boolean init() {
         if (twitter == null) {
             if (credits == null)
                 throw new NullPointerException("Please use 'Credits' constructor!");
+
+            logger.info("create new TwitterSearch");
             twitter = createTwitter(credits.getToken(), credits.getTokenSecret());
+            return true;
         }
 
-        return this;
+        return false;
     }
 
-    public void setup() {
-        System.out.println("create new TwitterSearch");
+    public void setup() {        
         // http://groups.google.com/group/twitter4j/browse_thread/thread/6f6d5b35149e2faa
         System.setProperty("twitter4j.http.useSSL", "false");
 

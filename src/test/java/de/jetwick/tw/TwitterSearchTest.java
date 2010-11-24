@@ -46,8 +46,8 @@ public class TwitterSearchTest {
         return new TwitterSearch(new Credits()) {
 
             @Override
-            public TwitterSearch init() {
-                return null;
+            public boolean init() {
+                return true;
             }
 
             @Override

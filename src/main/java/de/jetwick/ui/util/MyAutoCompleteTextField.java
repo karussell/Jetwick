@@ -38,6 +38,9 @@ public abstract class MyAutoCompleteTextField<T> extends AutoCompleteTextField<T
         super(id, object, settings);
     }
 
+    /*
+     * for instant changes
+     */
     protected abstract void onSelectionChange(AjaxRequestTarget target, String newValue);
 
     @Override

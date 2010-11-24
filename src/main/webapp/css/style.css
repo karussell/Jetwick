@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
 
 /*
   | left   | searchform | right      |
@@ -51,7 +51,7 @@ body, p {
 }
 
 .auth {
-    margin-top: 14px;
+    margin-top: 0px;
     padding: 3px 10px 3px 10px;
     background-color: #f2f1f1;
 }
@@ -71,7 +71,7 @@ body, p {
     display: inline;
 }
 .external-refs {     
-    padding: 10px 20px 40px 0px; 
+    padding: 0px 20px 40px 0px; 
     margin: 0px;
 }
 .external-refs-right { padding: 10px 10px 46px 0px; margin: 0px }
@@ -590,7 +590,7 @@ li.ol-ad {
 #info-panel {
     float: left;
     width: 330px;
-    padding: 15px 0px 0px 18px;
+    padding: 0px 0px 0px 18px;
     margin: 0px;
 }
 
@@ -683,3 +683,30 @@ li.ol-ad {
 .wikititle { padding-bottom: 5px; }
 
 .wiki-text { font-size: 0.7em; }
+
+
+/*
+  will be destroyed by ajax response of progressbar
+
+.grab-form { padding: 10px; }
+
+.grab-form .apiDescription {
+    width: 300px;
+    float: right;
+    font-size: 0.8em;
+}
+*/
+
+td div.wicketstuff-progressbar span.bar {
+    display: block;
+    height: 100%;
+    position: absolute;
+    background-image: url("../img/blue-stripes.png");
+    background-color: #6ab4ff;
+    background-position: top right;
+    border-right: 1px solid #6ab4ff;
+}
+
+td div.wicketstuff-progressbar {
+    width: 100%;
+}

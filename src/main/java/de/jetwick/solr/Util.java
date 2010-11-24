@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import com.google.inject.Guice;
@@ -80,7 +79,8 @@ public class Util {
         Module module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
         Provider<RMIClient> rmiProvider = injector.getProvider(RMIClient.class);
-        TwitterSearch twSearch = injector.getInstance(TwitterSearch.class).init();
+        TwitterSearch twSearch = injector.getInstance(TwitterSearch.class);
+        twSearch.init();
         SolrTweetSearch fromUserSearch = new SolrTweetSearch(injector.getInstance(Configuration.class));
         SolrQuery query = new SolrQuery().addFilterQuery(SolrTweetSearch.UPDATE_DT + ":[* TO *]");
         query.setFacet(true).addFacetField("user").setFacetLimit(2000).setRows(0).setFacetSort("count");
@@ -108,13 +108,14 @@ public class Util {
             for (int trial = 0; trial < 3; trial++) {
                 MyTweetGrabber grabber = new MyTweetGrabber(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
                         setRmiClient(rmiProvider).setTweetSearch(twSearch);
-                grabber.start();
+                Thread t = grabber.createQueueThread();
+                t.start();
                 try {
-                    grabber.join();
+                    t.join();
                     if (grabber.getException() == null)
                         break;
 
-                    logger.warn(trial + "> Try again feeding of user " + tmpUser.getName() + " because of " + grabber.getName());
+                    logger.warn(trial + "> Try again feeding of user " + tmpUser.getName() + " because of " + t.getName());
                 } catch (InterruptedException ex) {
                     throw new IllegalStateException(ex);
                 }

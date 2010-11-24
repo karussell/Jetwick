@@ -1,4 +1,4 @@
-Jetwick is a personalized Twitter Search
+Jetwick - The Personalized Twitter Search
 
 License
 ========
@@ -16,6 +16,6 @@ Features
 Get Started
 ===========
 
- * Try it life:   http://jetwick.com
+ * Try it live:   http://jetwick.com
  * Installation:  https://github.com/karussell/Jetwick/wiki
  * Report issues: https://github.com/karussell/Jetwick/issues

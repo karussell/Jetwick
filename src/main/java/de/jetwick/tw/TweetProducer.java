@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
@@ -119,7 +118,8 @@ public class TweetProducer extends MyThread {
                     }
 
                     if (findNewTagsTime > 0 && System.currentTimeMillis() - findNewTagsTime < 2000) {
-                        int sec = Math.max(2, (int) tags.peek().getWaitingSeconds() + 1);
+                        // wait 2 to 60 seconds. depends on the demand
+                        int sec = Math.min(60, Math.max(2, (int) tags.peek().getWaitingSeconds() + 1));
                         logger.info("nothing to do (too many pausing tags). wait " + sec + " seconds ");
                         myWait(sec);
                     }

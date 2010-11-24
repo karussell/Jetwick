@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.tw.MyTweetGrabber;
@@ -74,13 +73,13 @@ public class HomePage extends WebPage {
     @Inject
     private Provider<SolrAdSearch> adsProvider;
     @Inject
-    private Provider<SolrTweetSearch> twindexProvider;   
+    private Provider<SolrTweetSearch> twindexProvider;
     @Inject
     private Provider<RMIClient> rmiProvider;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
     private transient Thread backgroundThread;
-    private static int TWEETS_IF_HIT = 60;
+    private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
 
     public TwitterSearch getTwitterSearch() {
@@ -91,6 +90,7 @@ public class HomePage extends WebPage {
         return (MySession) getSession();
     }
     // for testing
+
     HomePage() {
     }
 
@@ -277,8 +277,7 @@ public class HomePage extends WebPage {
         if (getMySession().hasLoggedIn()) {
             add(new WebComponent("loginLink").setVisible(false));
             add(new UserPanel("userPanel", getMySession().getUser(),
-                    new MyTweetGrabber(getMySession().getUser().getScreenName()).setTweetsCount(3200).
-                    setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
+                    new MyTweetGrabber(getMySession().getUser().getScreenName()).setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
 
                 @Override
                 public void onLogout() {
@@ -287,7 +286,7 @@ public class HomePage extends WebPage {
                 }
 
                 @Override
-                public void onGrabTweets(AjaxRequestTarget target) {
+                public void onFinish(AjaxRequestTarget target) {
                     updateAfterAjax(target, false);
                 }
 
@@ -295,6 +294,11 @@ public class HomePage extends WebPage {
                 public void onShowTweets(AjaxRequestTarget target, String userName) {
                     doSearch((TweetQuery) new TweetQuery().addUserFilter(userName), 0, false);
                     updateAfterAjax(target, true);
+                }
+
+                @Override
+                protected Collection<String> getUserChoices(String input) {
+                    return getTweetSearch().getUserChoices(lastQuery, input);
                 }
             });
         } else {
@@ -655,7 +659,8 @@ public class HomePage extends WebPage {
     public Thread queueTweets(final Collection<? extends Tweet> tweets,
             final String qs, final String userName) {
 
-        return new MyTweetGrabber(tweets, userName, qs).setTweetsCount(TWEETS_IF_HIT).
+        MyTweetGrabber grabber = new MyTweetGrabber(tweets, userName, qs).setTweetsCount(TWEETS_IF_HIT).
                 setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch());
+        return grabber.createQueueThread();
     }
 }
