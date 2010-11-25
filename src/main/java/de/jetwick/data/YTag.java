@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.data;
 
 import java.io.Serializable;
@@ -26,8 +25,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.persistence.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -195,5 +192,9 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
             return 1;
         else
             return 0;
+    }
+
+    public boolean isHomeTimeline() {
+        return term.startsWith("##");
     }
 }

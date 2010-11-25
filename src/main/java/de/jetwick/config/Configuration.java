@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.config;
 
 import de.jetwick.tw.Credits;
@@ -21,6 +20,7 @@ import de.jetwick.util.Helper;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 /**
@@ -205,7 +205,7 @@ public class Configuration {
     }
 
     public String getHibernateUser() {
-        String user = get("jetwick.hibernate.login");
+        String user = get("jetwick.hibernate.user");
         if (user == null)
             return "sa";
         return user;
@@ -243,6 +243,16 @@ public class Configuration {
 
     @Override
     public String toString() {
-        return prop.toString();
+        String str = "";
+        for (Entry<Object, Object> entry : prop.entrySet()) {
+            String key = entry.getKey().toString();
+            String val = entry.getValue().toString();
+            if (key.toLowerCase().contains("secure") || key.toLowerCase().contains("password")
+                    || key.toLowerCase().contains("secret"))
+                continue;
+
+            str += key + "=" + val + ";  ";
+        }
+        return str;
     }
 }

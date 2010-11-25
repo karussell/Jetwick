@@ -124,7 +124,7 @@ public class HomePage extends WebPage {
     @Override
     protected void configureResponse() {
         super.configureResponse();
-        // 1. search for wikileak
+        // 1. searchAndGetUsers for wikileak
         // 2. apply de filter
         // 3. Show latest tweets (of user sebringl)
         // back button + de filter => WicketRuntimeException: component filterPanel:filterNames:1:filterValues:2:filterValueLink not found on page de.jetwick.ui.HomePage
@@ -540,14 +540,14 @@ public class HomePage extends WebPage {
         wikiPanel.setParams(queryString, language);
         boolean startBGThread = true;
 
-        // do not trigger background search if this query is the identical 
-        // to the last search or if it is an instant search
+        // do not trigger background searchAndGetUsers if this query is the identical
+        // to the last searchAndGetUsers or if it is an instant searchAndGetUsers
         if (instantSearch || lastQuery != null
                 && queryString.equals(JetwickQuery.extractQueryString(lastQuery))
                 && userName.equals(JetwickQuery.extractUserName(lastQuery)))
             startBGThread = false;
 
-        // do not trigger twitter search if a search through a users' tweets is triggered
+        // do not trigger twitter searchAndGetUsers if a searchAndGetUsers through a users' tweets is triggered
         if (!userName.isEmpty() && !queryString.isEmpty())
             twitterFallback = false;
 
@@ -598,7 +598,7 @@ public class HomePage extends WebPage {
                         if (!userName.isEmpty()) {
                             tweets = getTwitterSearch().getTweets(userName, users, TWEETS_IF_NO_HIT);
                         } else
-                            tweets = getTwitterSearch().search(queryString, users, TWEETS_IF_NO_HIT, 1);
+                            tweets = getTwitterSearch().searchAndGetUsers(queryString, users, TWEETS_IF_NO_HIT, 1);
                     }
                 } catch (TwitterException ex) {
                     logger.warn("Warning while querying twitter:" + ex.toString());

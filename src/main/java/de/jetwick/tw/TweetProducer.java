@@ -22,12 +22,9 @@ import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
 import de.jetwick.util.Helper;
 import de.jetwick.util.StopWatch;
-import de.jetwick.data.UrlEntry;
-import java.util.Collection;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -38,7 +35,7 @@ import twitter4j.Tweet;
 import twitter4j.TwitterException;
 
 /**
- * fills the tweets queue via twitter search (does not cost API calls)
+ * fills the tweets queue via twitter searchAndGetUsers (does not cost API calls)
  * 
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
@@ -46,8 +43,7 @@ public class TweetProducer extends MyThread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Lock lock = new ReentrantLock();
-    private StopWatch swSearch = new StopWatch("search");
-    private StopWatch swUrl = new StopWatch("url   ");
+    private StopWatch swSearch = new StopWatch("search");   
     private final Condition condition = lock.newCondition();
     @Inject
     private TagDao tagDao;
@@ -57,13 +53,7 @@ public class TweetProducer extends MyThread {
     private int maxTime = -1;
     @Inject
     private WorkManager manager;
-    private int maxFill = 2000;
-    private int resolveThreads = 50;
-    private boolean resolveUrls = false;
-    private boolean addTrends = true;
-    private int resolveTimeout = 500;
-    private AtomicLong time;
-    private UrlTitleCleaner skipUrlTitleList = new UrlTitleCleaner();
+    private int maxFill = 2000;            
 
     public TweetProducer() {
         super("tweet-producer");
@@ -73,30 +63,10 @@ public class TweetProducer extends MyThread {
         return tweets;
     }
 
-    public void setResolveUrls(boolean resolveUrls) {
-        this.resolveUrls = resolveUrls;
-    }
-
-    public void setResolveThreads(int resolveThreads) {
-        this.resolveThreads = resolveThreads;
-    }
-
-    public void setResolveTimeout(int resolveTimeout) {
-        this.resolveTimeout = resolveTimeout;
-    }
-
-    public void setUrlTitleCleaner(UrlTitleCleaner skipUrlTitleList) {
-        this.skipUrlTitleList = skipUrlTitleList;
-    }
-
-    public UrlExtractor createExtractor() {
-        return new UrlExtractor().setResolveTimeout(resolveTimeout);
-    }
-
     @Override
     public void run() {
         long start = System.currentTimeMillis();
-        logger.info("max tweets to search:" + maxFill + ". skip " + skipUrlTitleList.size() + " url titles");
+        logger.info("max tweets to search:" + maxFill);
 
         // to resolve even urls which requires cookies
         Helper.enableCookieMgmt();
@@ -119,8 +89,8 @@ public class TweetProducer extends MyThread {
 
                     if (findNewTagsTime > 0 && System.currentTimeMillis() - findNewTagsTime < 2000) {
                         // wait 2 to 60 seconds. depends on the demand
-                        int sec = Math.min(60, Math.max(2, (int) tags.peek().getWaitingSeconds() + 1));
-                        logger.info("nothing to do (too many pausing tags). wait " + sec + " seconds ");
+                        int sec = Math.max(2, (int) tags.peek().getWaitingSeconds() + 1);
+                        logger.info("all tags are pausing. wait " + sec + " seconds ");
                         myWait(sec);
                     }
 
@@ -145,23 +115,25 @@ public class TweetProducer extends MyThread {
                             break MAIN;
                     }
 
-                    LinkedBlockingDeque<Tweet> tmp = new LinkedBlockingDeque<Tweet>();
+
                     int waitInSeconds = 1;
                     try {
-                        int hits = 0;
                         swSearch.start();
-                        hits = twSearch.search(tag, tmp, tag.getPages());
+                        long maxId = 0;
+                        LinkedBlockingDeque<Tweet> tmp = new LinkedBlockingDeque<Tweet>();
+                        if (tag.isHomeTimeline()) {
+                            logger.info("use hometimeline:" + tag);
+                            maxId = twSearch.getHomeTimeline(tmp, tag.getPages() * 100, tag.getLastId());
+                        } else
+                            maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
+
+                        int hits = tmp.size();
+                        tag.setLastId(maxId);
                         swSearch.stop();
                         logger.info(swSearch + " \tqueue= " + tweets.size() + " \t + "
-                                + tmp.size() + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
+                                + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
 
-                        if (resolveUrls) {
-                            swUrl.start();
-                            resolveUrls(tmp, tweets, resolveThreads);
-                            swUrl.stop();
-//                            logger.info(swUrl + " all:" + allUrls + "\t accepted:" + acceptedUrls + " expanded:" + expandedUrls);
-                        } else
-                            tweets.addAll(tmp);
+                        tweets.addAll(tmp);
 
                         if (!tag.isTransient()) {
                             // TODO save only if storing to solr was successful
@@ -211,61 +183,6 @@ public class TweetProducer extends MyThread {
     public void updateTagInTA(YTag tag, int hits) {
         tag.optimizeQueryFrequency(hits);
         tagDao.save(tag);
-    }
-
-    /**
-     * Resolve the detected urls for the specified tweets.
-     * @param tweets where the tweets come from
-     * @param outTweets where the new tweets (with the new text) will be saved
-     * @param threadCount how many threads to use
-     */
-    public void resolveUrls(final Queue<? extends Tweet> tweets, final Collection<Tweet> outTweets, int threadCount) {
-//        time = new AtomicLong(0);
-//        StopWatch sw = new StopWatch("realtime");
-//        sw.start();
-        int maxThreads = Math.min(threadCount, tweets.size() / 5 + 1);
-        Thread[] threads = new Thread[maxThreads];
-        for (int i = 0; i < maxThreads; i++) {
-            threads[i] = new Thread("url-res-" + i) {
-
-                @Override
-                public void run() {
-                    while (true) {
-                        Tweet tmpTw = tweets.poll();
-                        if (tmpTw == null)
-                            break;
-
-                        Twitter4JTweet tw = new Twitter4JTweet(tmpTw);
-                        UrlExtractor extractor = createExtractor();
-                        for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
-                            if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
-                                continue;
-
-                            if (!skipUrlTitleList.contains(ue.getResolvedTitle()))
-                                tw.addUrlEntry(ue);
-                        }
-//                        time.addAndGet(extractor.getTime());
-                        outTweets.add(tw);
-                    }
-                }
-            };
-            threads[i].start();
-        }
-
-        boolean interruptAll = false;
-        for (int i = 0; i < threads.length; i++) {
-            if (interruptAll) {
-                threads[i].interrupt();
-                continue;
-            }
-            try {
-                threads[i].join();
-            } catch (InterruptedException ex) {
-                interruptAll = true;
-            }
-        }
-//        sw.stop();
-//        System.out.println("get title time:" + time.get() / 1000f / outTweets.size() + " real time:" + sw.getTime() / 1000f / outTweets.size());
     }
 
     private void initTags() {

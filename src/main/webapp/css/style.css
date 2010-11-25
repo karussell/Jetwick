@@ -71,7 +71,7 @@ body, p {
     display: inline;
 }
 .external-refs {     
-    padding: 0px 20px 40px 0px; 
+    padding: 0px 20px 0px 0px;
     margin: 0px;
 }
 .external-refs-right { padding: 10px 10px 46px 0px; margin: 0px }
@@ -115,20 +115,25 @@ body, p {
 #jetwickaccountimg {
     width: 20px;
     margin-bottom: -8px;
-    padding: 0 0px 0px 0px;
+    padding: 0 2px 0px 0px;
 }
-#learnmore {
+#learnmoreimg {
     width:13px;
     padding: 0 6px 0px 4px;
     margin-bottom: -2px;
 }
 
-#about {
+#aboutimg {
     width:15px;
     padding: 0 6px 0px 4px;
     margin-bottom: -2px;
 }
-#imprint {
+
+#fbimg {
+    padding: 0 6px 0px 4px;
+    margin-bottom: -2px;
+}
+#imprintimg {
     width:14px;
     padding: 0 6px 0px 5px;
     margin-bottom: -2px;
@@ -148,11 +153,11 @@ body, p {
 }
 
 .searchform {        
-    padding-top: 120px;
+    padding-top: 128px;
     padding-bottom: 2px;
     background-image: url("../img/jetwick.png");
     background-repeat: no-repeat;
-    background-position: -25px 20px;
+    background-position: -20px 28px;
 }
 
 .searchboxhints {
@@ -270,7 +275,7 @@ url("../img/bottom-line.png")
 .filter {
     width: 145px;
     margin-top: 0px;
-    padding: 20px 15px 0px 10px;
+    padding: 10px 15px 0px 10px;
 }
 
 .filterNames ul li {
@@ -590,7 +595,7 @@ li.ol-ad {
 #info-panel {
     float: left;
     width: 330px;
-    padding: 0px 0px 0px 18px;
+    padding: 10px 0px 0px 18px;
     margin: 0px;
 }
 
@@ -709,4 +714,8 @@ td div.wicketstuff-progressbar span.bar {
 
 td div.wicketstuff-progressbar {
     width: 100%;
+}
+
+ul.show-dots li {
+    list-style: circle;
 }

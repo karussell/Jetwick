@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import org.junit.AfterClass;
@@ -27,24 +26,25 @@ public abstract class AbstractMCTestCase {
 
     protected static String solrWebapp = "/solr";
     protected static int port = 8983;
-    private static SolrTestInstance testInstance = new SolrTestInstance();
+    private static SolrTestInstance testInstance;
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        System.setProperty(SolrTestInstance.SOLR_PROP, "/home/peterk/tmp");
-        testInstance.start();
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        testInstance.stop();
-    }
+//    @BeforeClass
+//    public static void beforeClass() throws Exception {
+//        System.setProperty(SolrTestInstance.SOLR_PROP, "/home/peterk/tmp");
+//        testInstance = new SolrTestInstance();
+//        testInstance.start();
+//    }
+//
+//    @AfterClass
+//    public static void afterClass() {
+//        testInstance.stop();
+//    }
 
     public void setUp() throws Exception {
         // remove newly created cores or close and clear cores or use cores.setPersistent(false);
         // at the moment we set persistent=false within solr.cml
     }
 
-    public void tearDown() throws Exception {        
+    public void tearDown() throws Exception {
     }
 }

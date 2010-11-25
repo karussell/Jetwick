@@ -108,7 +108,7 @@ public class MyTweetGrabber implements Serializable {
                     } else if (queryStr != null && !queryStr.isEmpty()) {
                         try {
                             logger.info("add tweets via twitter search: " + queryStr);
-                            tmpTweets = tweetSearch.searchTweets(queryStr, tweetCount, 1);
+                            tmpTweets = tweetSearch.searchTweets(queryStr, tweetCount);
                         } catch (TwitterException ex) {
                             exception = ex;
                             logger.warn("Couldn't update user: " + queryStr + " " + ex.getLocalizedMessage());

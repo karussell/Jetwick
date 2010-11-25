@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
@@ -91,7 +90,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         TwitterSearch tws = new TwitterSearch(new Configuration().getTwitterSearchCredits()) {
 
             @Override
-            public int search(YTag term, Collection<Tweet> result, int maxPages) {
+            public long search( String q, Collection<Tweet> result, int tweets, long sinceId) {
                 Twitter4JTweet tw1 = new Twitter4JTweet(1L, "test", "timetabling");
                 result.add(tw1);
 
@@ -120,7 +119,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         tweetProducer.setMaxTime(1);
         tweetProducer.setTwitterSearch(tws);
         tweetProducer.start();
-        
+
         TweetConsumer tweetConsumer = getInstance(TweetConsumer.class);
         tweetConsumer.setUncaughtExceptionHandler(handler);
         tweetConsumer.setTweets(tweetProducer.getTweets());

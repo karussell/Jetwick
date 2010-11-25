@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import de.jetwick.util.AnyExecutor;
-import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
@@ -89,7 +87,7 @@ public class TwitterSearch implements Serializable {
         return false;
     }
 
-    public void setup() {        
+    public void setup() {
         // http://groups.google.com/group/twitter4j/browse_thread/thread/6f6d5b35149e2faa
         System.setProperty("twitter4j.http.useSSL", "false");
 
@@ -293,15 +291,18 @@ public class TwitterSearch implements Serializable {
     // The specific number of requests a client is able to make to the Search API for a given hour is not released.
     // The number is quite a bit higher and we feel it is both liberal and sufficient for most applications.
     // The since_id parameter will be removed from the next_page element as it is not supported for pagination.
-    public int search(YTag term, Collection<Tweet> result, int maxPages) throws TwitterException {
-        int hits = 0;
-        long maxId = term.getLastId();
-        long sinceId = term.getLastId();
+    public long search(String term, Collection<Tweet> result, int tweets, long lastId) throws TwitterException {
+        long maxId = lastId;
+        long sinceId = lastId;
 
         int hitsPerPage = 100;
+        int maxPages = tweets / hitsPerPage;
+        if (tweets % hitsPerPage > 0)
+            maxPages++;
+
         END_PAGINATION:
         for (int page = 0; page < maxPages; page++) {
-            Query query = createQuery(term.getTerm());
+            Query query = createQuery(term);
             // avoid that more recent results disturb our paging!
             if (page > 0)
                 query.setMaxId(maxId);
@@ -318,7 +319,6 @@ public class TwitterSearch implements Serializable {
                 if (twe.getId() < sinceId)
                     break END_PAGINATION;
 
-                hits++;
                 result.add(twe);
             }
 
@@ -327,45 +327,40 @@ public class TwitterSearch implements Serializable {
                 break;
         }
 
-        term.setLastId(maxId);
-
-        // result.size() could change while running this method so:
-        return hits;
+        return maxId;
     }
 
-    public Collection<? extends Tweet> searchTweets(String queryStr, int rows, int maxPage) throws TwitterException {
-        Set<Tweet> tweets = new LinkedHashSet<Tweet>();
-
-        for (int page = 0; page < maxPage; page++) {
-            Query query = createQuery(queryStr);
-            query.setPage(page + 1);
-            query.setRpp(rows);
-            QueryResult res = twitter.search(query);
-            tweets.addAll(res.getTweets());
-        }
-
-        return tweets;
+    /**
+     * @deprecated use the searchAndGetUsers method
+     */
+    public Collection<? extends Tweet> searchTweets(String queryStr, int tweets) throws TwitterException {
+        Set<Tweet> ret = new LinkedHashSet<Tweet>();
+        search(queryStr, ret, 0, tweets);
+        return ret;
     }
 
-    public Collection<? extends Tweet> search(String term, Collection<SolrUser> result,
-            int rows, int maxPage) throws TwitterException {
+    /**
+     * @deprecated use the searchAndGetUsers method
+     */
+    public Collection<? extends Tweet> searchAndGetUsers(String term, Collection<SolrUser> result,
+            int tweets, int maxPage) throws TwitterException {
         Map<String, SolrUser> map = new LinkedHashMap<String, SolrUser>();
-        Set<Tweet> tweets = new LinkedHashSet<Tweet>();
+        Set<Tweet> ret = new LinkedHashSet<Tweet>();
 
         for (int page = 0; page < maxPage; page++) {
             Query query = createQuery(term);
             query.setPage(page + 1);
-            query.setRpp(rows);
+            query.setRpp(tweets);
             QueryResult res = twitter.search(query);
             if (res.getTweets().size() == 0)
                 break;
 
             toUsers(res.getTweets(), map);
-            tweets.addAll(res.getTweets());
+            ret.addAll(res.getTweets());
         }
 
         result.addAll(map.values());
-        return tweets;
+        return ret;
     }
 
     private void toUsers(Collection<? extends Tweet> tweets, Map<String, SolrUser> map) {
@@ -516,12 +511,58 @@ public class TwitterSearch implements Serializable {
         int p = 0;
         int pages = 1;
 
-        END:
         for (; p < pages; p++) {
             res.addAll(getTweets(userScreenName, p * tweets, tweets));
         }
 
         return res;
+    }
+
+    /**     
+     * The last 200 tweets will be retrieved
+     */
+    public Collection<Tweet> getHomeTimeline(int tweets) throws TwitterException {
+        ArrayList list = new ArrayList<Tweet>();
+        getHomeTimeline(list, tweets, 0);
+        return list;
+    }
+
+    /**
+     * This method is can only return up to 800 statuses, including retweets.
+     */
+    public long getHomeTimeline(Collection<Tweet> result, int tweets, long lastId) throws TwitterException {
+        if (lastId <= 0)
+            lastId = 1;
+
+        int hitsPerPage = 100;
+        long maxId = lastId;
+        long sinceId = lastId;
+        int maxPages = tweets / hitsPerPage + 1;
+        END_PAGINATION:
+        for (int page = 0; page < maxPages; page++) {
+            Paging paging = new Paging(page + 1, tweets, sinceId);
+            // avoid that more recent results disturb our paging!
+            if (page > 0)
+                paging.setMaxId(maxId);
+
+            Collection<Status> tmp = twitter.getHomeTimeline(paging);
+            for (Status st : tmp) {
+                // determine maxId in the first page
+                if (page == 0 && maxId < st.getId())
+                    maxId = st.getId();
+
+                if (st.getId() < sinceId)
+                    break END_PAGINATION;
+
+                result.add(toTweet(st));
+            }
+
+            // sinceId could force us to leave earlier than defined by maxPages
+            if (tmp.size() < hitsPerPage)
+                break;
+        }
+
+        return maxId;
     }
 
     public void streamingTwitter() throws TwitterException {

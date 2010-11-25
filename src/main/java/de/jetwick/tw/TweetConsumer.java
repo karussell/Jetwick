@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
@@ -43,12 +42,9 @@ public class TweetConsumer extends AbstractTweetConsumer {
     // do not optimize per default
     private int optimizeToSegmentsAfterUpdate = -1;
     private long optimizeInterval = -1;
-
     // optimize should not happen directly after start of tweet consumer / collector!
     private long lastOptimizeTime = System.currentTimeMillis();
     private StopWatch sw1;
-    private StopWatch sw2;
-    private StopWatch sw3;
 
     @Inject
     public TweetConsumer(Configuration cfg) {
@@ -76,10 +72,11 @@ public class TweetConsumer extends AbstractTweetConsumer {
             // because solr doesn't want too frequent commits
             if (tweets.size() < tweetBatchSize && producer.isAlive() && System.currentTimeMillis() - lastFeed < tweetBatchTime)
                 continue;
-            
-            if(tweets.size() == 0)
+
+            if (tweets.size() == 0)
                 continue;
             lastFeed = System.currentTimeMillis();
+
 
             sw1 = new StopWatch(" ");
             sw1.start();
@@ -87,7 +84,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
             sw1.stop();
             String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();
             long time = System.currentTimeMillis();
-         
+
             if (optimizeInterval > 0)
                 str += "; next optimize in: " + (optimizeInterval - (time - lastOptimizeTime)) / 3600f / 1000f + "h ";
 
@@ -119,7 +116,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
     public void setOptimizeInterval(String optimizeStr) {
         optimizeInterval = -1;
 
-        if(optimizeStr == null)
+        if (optimizeStr == null)
             return;
 
         optimizeStr = optimizeStr.trim();

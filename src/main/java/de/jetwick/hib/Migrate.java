@@ -30,21 +30,17 @@ public class Migrate {
     }
 
     public static void start() {
-        Injector injector = Guice.createInjector(new DefaultModule());
-        de.jetwick.config.Configuration jetwickCfg = injector.getInstance(de.jetwick.config.Configuration.class);
-
-        HibernateUtil.setConfiguration(createConfig(jetwickCfg.getHibernateUser(), jetwickCfg.getHibernatePassword()));
+        new DefaultModule().installDbPasswords();
+        HibernateUtil.setConfiguration(createConfig());
         HibernateUtil.recreateSchemaFromMapping();
         System.out.println("\n##################################################################\n"
                 + "DO NOT forget to fill in some more keywords other than the default!");
     }
 
-    public static Configuration createConfig(String user, String pw) {
+    public static Configuration createConfig() {
         Configuration config = HibernateUtil.getConfiguration();
         return config.setProperty("hibernate.connection.driver_class", "org.h2.Driver").
-                setProperty("hibernate.connection.url", "jdbc:h2:~/.jetwick/migrate").
-                setProperty("hibernate.connection.username", user).
-                setProperty("hibernate.connection.password", pw).
+                setProperty("hibernate.connection.url", "jdbc:h2:~/.jetwick/migrate").                
                 setProperty("hibernate.default_schema", "PUBLIC").
                 setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect").
                 setProperty("hibernate.current_session_context_class", "thread").//vs. managed

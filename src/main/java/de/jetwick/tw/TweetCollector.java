@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import com.google.inject.Guice;
@@ -39,8 +38,8 @@ public class TweetCollector {
 
     // twClient.getTrend() ...  20 tweets per min
     // RT                  ... 100 tweets per sec (as of 9.5.2010)
-    public static List<String> DEFAULT_ST = Arrays.asList("timetabling", "RT");//, "java");
-//    , "algorithm", "solr",
+    public static List<String> DEFAULT_ST = Arrays.asList("##timetabling", "RT");
+//    "java", "algorithm", "solr",
 //            "lucene", "netbeans", "db4o", "java", "javascript", "javafx", "dzone",
 //            "oracle", "open source", "google", "obama", "RT",
 //            "wicket", "wikileaks", "world cup", "news");
@@ -103,12 +102,6 @@ public class TweetCollector {
         twProducer.setMaxFill((int) (2 * tweetsPerBatch));
         twProducer.setTwitterSearch(tws);
         twProducer.setUncaughtExceptionHandler(excHandler);
-        if (cfg.isTweetResolveUrl()) {
-            twProducer.setResolveUrls(true);
-            twProducer.setResolveThreads(cfg.getTweetResolveUrlThreads());
-            twProducer.setResolveTimeout(cfg.getTweetResolveUrlTimeout());
-            twProducer.setUrlTitleCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
-        }
         twProducer.start();
 
         TweetConsumer twConsumer = injector.getInstance(TweetConsumer.class);
@@ -119,6 +112,12 @@ public class TweetCollector {
         twConsumer.setOptimizeInterval(cfg.getTweetSearchOptimizeInterval());
         twConsumer.setOptimizeToSegmentsAfterUpdate(cfg.getTweetSearchCommitOptimizeSegments());
         twConsumer.setRemoveDays(cfg.getSolrRemoveDays());
+        if (cfg.isTweetResolveUrl()) {
+            twConsumer.setResolveUrls(true);
+            twConsumer.setResolveThreads(cfg.getTweetResolveUrlThreads());
+            twConsumer.setResolveTimeout(cfg.getTweetResolveUrlTimeout());
+            twConsumer.setUrlTitleCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
+        }
         twConsumer.start();
 
 //        TweetUpdater twUpdater = injector.getInstance(TweetUpdater.class);

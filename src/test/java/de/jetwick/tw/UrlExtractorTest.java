@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
+import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Before;
 import org.junit.Test;
 import twitter4j.Tweet;
@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
  */
 public class UrlExtractorTest {
 
-    private List<Tweet> ret = new ArrayList<Tweet>();
+    private BlockingQueue<Tweet> ret = new LinkedBlockingQueue<Tweet>();
 
     public UrlExtractorTest() {
     }
@@ -49,12 +49,21 @@ public class UrlExtractorTest {
     }
 
     public Collection<UrlEntry> get(int index) {
-        return ((Twitter4JTweet) ret.get(index)).getUrlEntries();
+        Iterator<Tweet> iter = ret.iterator();
+        Tweet tw;
+        int counter = 0;
+        while (iter.hasNext()) {
+            tw = iter.next();
+            if (counter == index)
+                return ((Twitter4JTweet) tw).getUrlEntries();
+            counter++;
+        }
+        return null;
     }
 
     @Test
     public void testResolve() {
-        TweetProducer twp = createProducer();
+        TweetConsumer twp = createProducer();
         twp.resolveUrls(new LinkedBlockingDeque<Tweet>(Arrays.asList(
                 new Twitter4JTweet(1L, "test http://hiho test2", "peter"),
                 new Twitter4JTweet(2L, "test http://www.is.de/AShortenerDomainWouldBeWithoutWWW test2", "peter"),
@@ -91,7 +100,7 @@ public class UrlExtractorTest {
 
     @Test
     public void testResolveTitle() {
-        TweetProducer twp = createProducer();
+        TweetConsumer twp = createProducer();
 
         twp.resolveUrls(new LinkedBlockingDeque<Tweet>(Arrays.asList(
                 new Twitter4JTweet(1L, "test http://hiho.de test2", "peter"))), ret, 1);
@@ -103,7 +112,7 @@ public class UrlExtractorTest {
 
     @Test
     public void testResolveFailing() {
-        TweetProducer twp = new TweetProducer() {
+        TweetConsumer twp = new TweetConsumer(new Configuration()) {
 
             @Override
             public UrlExtractor createExtractor() {
@@ -133,7 +142,7 @@ public class UrlExtractorTest {
 
     @Test
     public void testResolveRealTweets() {
-        TweetProducer twp = createProducer();
+        TweetConsumer twp = createProducer();
 
         twp.resolveUrls(new LinkedBlockingDeque<Tweet>(Arrays.asList(
                 new Twitter4JTweet(1L, "correction ! RT @timetabling: @ptrthomas not really jetty + wicket, but nearly ;-) see http://is.gd/eoXjX and http://wp.me/p8zlh-z6", "peter"),
@@ -152,8 +161,8 @@ public class UrlExtractorTest {
         assertEquals("http://ib2.in/bB_x", iter.next().getResolvedUrl());
     }
 
-    TweetProducer createProducer() {
-        return new TweetProducer() {
+    TweetConsumer createProducer() {
+        return new TweetConsumer(new Configuration()) {
 
             @Override
             public UrlExtractor createExtractor() {

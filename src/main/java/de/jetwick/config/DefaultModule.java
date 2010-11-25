@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.config;
 
 import com.google.inject.AbstractModule;
@@ -37,11 +36,15 @@ public class DefaultModule extends AbstractModule {
         logger.info(config.toString());
         installTwitterModule();
         installSolrModule();
-
-        System.setProperty("hibernate.connection.username", config.getHibernateUser());
-        System.setProperty("hibernate.connection.password", config.getHibernatePassword());
+        installDbPasswords();
         installDbModule();
         installRMIModule();
+    }
+
+    public void installDbPasswords() {
+        logger.info("db user:" + config.getHibernateUser());
+        System.setProperty("hibernate.connection.username", config.getHibernateUser());
+        System.setProperty("hibernate.connection.password", config.getHibernatePassword());
     }
 
     public void installDbModule() {

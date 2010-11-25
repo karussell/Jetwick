@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
@@ -68,17 +67,13 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
 
     @Test
     public void testGetTweetWithGeolocation() throws TwitterException {
-//        Status st = new TwitterSearch().getTweet(18845491030L);
+//        Status st = twitterSearch.getTweet(18845491030L);
 //        System.out.println("geo:" + st.getGeoLocation());
     }
 
     @Test
-    public void getTweet() throws TwitterException {
-        TwitterSearch tw = twitterSearch;
-//        System.out.println(Long.MAX_VALUE);
-//        System.out.println(tw.getTweet(22222222222L));
-
-//        tw.getTest();
+    public void getHomeTimeline() throws TwitterException {
+        assertEquals(30, twitterSearch.getHomeTimeline(30).size());
     }
 
     @Test
@@ -104,9 +99,8 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         TwitterSearch st = twitterSearch;
         Set<Tweet> resList = new LinkedHashSet<Tweet>();
         YTag tag = new YTag("java");
-        int hits = st.search(tag, resList, 2);
-
-        assertEquals(200, hits);
+        st.search(tag.getTerm(), resList, 200, tag.getLastId());
+        assertEquals(200, resList.size());
 
         Set<Long> ids = new LinkedHashSet<Long>();
         for (Tweet tw : resList) {
@@ -126,9 +120,9 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         assertTrue(other.size() < 10);
 
         resList.clear();
-        // search with the saved sinceId
-        hits = st.search(tag, resList, 2);
-        assertTrue(hits > 0);
+        // searchAndGetUsers with the saved sinceId
+        st.search(tag.getTerm(), resList, 200, tag.getLastId());
+        assertTrue(resList.size() > 0);
     }
 
     @Test

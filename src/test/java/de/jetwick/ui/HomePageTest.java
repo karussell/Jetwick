@@ -91,7 +91,7 @@ public class HomePageTest extends WicketPagesTestClass {
         t.start();
         t.join();
 
-        // perform normal search
+        // perform normal searchAndGetUsers
         assertNotNull(tweets);
         assertEquals("#java", qString);
         assertEquals("", uString);
@@ -135,20 +135,20 @@ public class HomePageTest extends WicketPagesTestClass {
         page.setRMIClient(createAssertRMIClient());
         page.setTwitterSearch(createAssertTwitter());
 
-        // normal search fails but set twitterfallback = false
+        // normal searchAndGetUsers fails but set twitterfallback = false
         page.init(new SolrQuery("java"), 0, true);
         page.getBackgroundThread().join();
         assertNotNull(tweets);
         assertEquals("", uString);
         assertEquals("#java", qString);
 
-        // do not trigger background search for the same query
+        // do not trigger background searchAndGetUsers for the same query
         reset();
         page.doSearch(new SolrQuery("java"), 0, true);
         assertFalse(page.getBackgroundThread().isAlive());
         assertNull(tweets);
 
-        // if only user search then set twitterFallback = true
+        // if only user searchAndGetUsers then set twitterFallback = true
         reset();
         page.doSearch(new SolrQuery().addFilterQuery("user:test"), 0, true);
         assertEquals("#test", uString);
@@ -158,7 +158,7 @@ public class HomePageTest extends WicketPagesTestClass {
         page.getBackgroundThread().join();
         assertNotNull(tweets);
 
-        // if search AND user search then set twitterFallback = false but trigger backgr. thread
+        // if searchAndGetUsers AND user searchAndGetUsers then set twitterFallback = false but trigger backgr. thread
         reset();
         page.doSearch(new SolrQuery("java").addFilterQuery("user:test"), 0, true);
         assertEquals("", uString);
@@ -188,13 +188,13 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public Collection<? extends Tweet> searchTweets(String queryStr, int rows, int maxPage) throws TwitterException {
+            public Collection<? extends Tweet> searchTweets(String queryStr, int tweets) throws TwitterException {
                 qString = "#" + queryStr;
                 return returnSearchTweets;
             }
 
             @Override
-            public Collection<? extends Tweet> search(String queryStr, Collection<SolrUser> result, int rows, int maxPage) throws TwitterException {
+            public Collection<? extends Tweet> searchAndGetUsers(String queryStr, Collection<SolrUser> result, int rows, int maxPage) throws TwitterException {
                 qString = "#" + queryStr;
                 return returnSearchTweets;
             }

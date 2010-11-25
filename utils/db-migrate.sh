@@ -13,6 +13,8 @@ if [ "$1" == "production" ]; then
  dbenv=$1 
 fi
 
+echo dbuser: $USER
+
 liquibase --logLevel=FINE \
           --driver=org.h2.Driver \
           --changeLogFile=src/main/resources/dbchangelog.xml \
