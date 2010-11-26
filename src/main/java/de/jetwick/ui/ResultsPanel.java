@@ -128,9 +128,9 @@ public class ResultsPanel extends Panel {
                     }
                 };
                 item.add(new ExternalLink("latestTw", twitterUrl, "twitter.com/" + name));
-                item.add(new ExternalLink("voteUpLink",
-                        Helper.toReplyStatusHref("@" + user.getScreenName()
-                        + " +1 Tweet On! #jetwick", null, null, true)));
+//                item.add(new ExternalLink("voteUpLink",
+//                        Helper.toReplyStatusHref("@" + user.getScreenName()
+//                        + " +1 Tweet On! #jetwick", null, null, true)));
 
                 item.add(showLatestTweets.add(new ContextImage("profileImg", user.getProfileImageUrl())));
 
