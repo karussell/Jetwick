@@ -100,7 +100,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         Set<Tweet> resList = new LinkedHashSet<Tweet>();
         YTag tag = new YTag("java");
         st.search(tag.getTerm(), resList, 200, tag.getLastId());
-        assertEquals(200, resList.size());
+        assertTrue(resList.size() > 190);
 
         Set<Long> ids = new LinkedHashSet<Long>();
         for (Tweet tw : resList) {

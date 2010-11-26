@@ -183,11 +183,11 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
 
         Iterator<SolrTweet> iter = list.iterator().next().getOwnTweets().iterator();
         SolrTweet tw = iter.next();
-        assertEquals(2, (long) tw.getTwitterId());
-        assertEquals("TDD is bli", tw.getText());
-        tw = iter.next();
         assertEquals(1, (long) tw.getTwitterId());
         assertEquals("TDD is shit", tw.getText());
+        tw = iter.next();
+        assertEquals(2, (long) tw.getTwitterId());
+        assertEquals("TDD is bli", tw.getText());
     }
 
     @Test

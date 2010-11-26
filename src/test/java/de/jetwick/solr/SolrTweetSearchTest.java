@@ -557,18 +557,20 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(3, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(4, res.size());
 
-        Twitter4JTweet tw100 = new Twitter4JTweet(100L, "newtext", "usera");
+        // we do not sort the tweets anylonger so that 104 could be also a retweet of:
+//        Twitter4JTweet tw100 = new Twitter4JTweet(100L, "newtext", "usera");
         Twitter4JTweet tw101 = new Twitter4JTweet(101L, "newtext two", "usera");
         Twitter4JTweet tw102 = new Twitter4JTweet(102L, "newbla one", "userd");
         Twitter4JTweet tw103 = new Twitter4JTweet(103L, "newbla two", "userd");
         Twitter4JTweet tw104 = new Twitter4JTweet(104L, "rt @usera: newtext two", "userc");
         tw104.setCreatedAt(new MyDate(tw101.getCreatedAt()).plusMinutes(1).toDate());
 
-        res = twSearch.update(Arrays.asList(tw100, tw101, tw102, tw103, tw104), new MyDate().minusDays(1).toDate());
-        assertEquals(5, twSearch.countAll());
+        res = twSearch.update(Arrays.asList(tw101, tw102, tw103, tw104), new MyDate().minusDays(1).toDate());
+        assertEquals(4, twSearch.countAll());
+        assertEquals(1, twSearch.findByTwitterId(101L).getRetweetCount());
         assertEquals(1, twSearch.findByTwitterId(101L).getReplyCount());
-        assertEquals(5, res.size());
-        assertEquals(5, twSearch.countAll());
+        assertEquals(4, res.size());
+        assertEquals(4, twSearch.countAll());
 
         // no tweet exists with that string
         assertEquals(0, twSearch.search("bla bli blu").size());

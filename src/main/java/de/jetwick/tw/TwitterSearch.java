@@ -112,7 +112,7 @@ public class TwitterSearch implements Serializable {
 
             t.verifyCredentials();
         } catch (TwitterException ex) {
-            // rate limit exceeded
+            // rate limit only exceeded
             if (ex.getStatusCode() == 400)
                 return t;
 

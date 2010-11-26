@@ -17,10 +17,9 @@
 package de.jetwick.solr;
 
 import de.jetwick.data.YUser;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.LinkedHashSet;
 import twitter4j.Tweet;
 
 /**
@@ -30,8 +29,9 @@ import twitter4j.Tweet;
 public class SolrUser extends YUser {
 
     private float rep;
-    private boolean dirtyOwnTweets = true;
-    private List<SolrTweet> ownTweets = new ArrayList<SolrTweet>();
+//    private boolean dirtyOwnTweets = true;
+//    private List<SolrTweet> ownTweets = new ArrayList<SolrTweet>();
+    private Collection<SolrTweet> ownTweets = new LinkedHashSet<SolrTweet>();
 
     public SolrUser(String name) {
         super(name);
@@ -47,7 +47,7 @@ public class SolrUser extends YUser {
 
     public void addOwnTweet(SolrTweet tw, boolean reverse) {
         ownTweets.add(tw);
-        dirtyOwnTweets = true;
+//        dirtyOwnTweets = true;
 
         if (reverse)
             tw.setFromUser(this, false);
@@ -58,10 +58,10 @@ public class SolrUser extends YUser {
     }
 
     public Collection<SolrTweet> getOwnTweets() {
-        if (dirtyOwnTweets) {
-            SolrTweet.sortAndDeduplicate(ownTweets);
-            dirtyOwnTweets = false;
-        }
+//        if (dirtyOwnTweets) {
+//            SolrTweet.deduplicate(ownTweets);
+//            dirtyOwnTweets = false;
+//        }
         return Collections.unmodifiableCollection(ownTweets);
     }
 

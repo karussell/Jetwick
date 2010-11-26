@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.rmi;
 
 import java.rmi.Remote;
@@ -26,6 +25,8 @@ import twitter4j.Tweet;
  */
 public interface CommunicationService extends Remote {
 
-    /* sends tweets to RMI server and reports back how many of them could handled */
+    /**
+     * sends tweets to RMI server and reports back how many of them could handled
+     */
     int send(Collection<? extends Tweet> tweets) throws RemoteException;
 }

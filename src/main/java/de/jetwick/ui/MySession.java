@@ -62,7 +62,11 @@ public class MySession extends WebSession {
     }
 
     public YUser getUser() {
-        init();
+        try {
+            init();
+        } catch (Exception ex) {
+            logger.error("init of twitter failed", ex);
+        }
         return user;
     }
 

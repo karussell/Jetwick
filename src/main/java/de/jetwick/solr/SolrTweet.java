@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import de.jetwick.data.TwitterIdComparator;
@@ -374,9 +373,7 @@ public class SolrTweet implements Serializable {
      * greater ids will win and identical text is only skipped if there is no
      * tweet in-between. see the test case
      */
-    public static void sortAndDeduplicate(List<SolrTweet> list) {
-        Collections.sort(list, tweetIdComparator);
-
+    public static void deduplicate(List<SolrTweet> list) {
         // now remove tweets if they have the identical twitterId or text.
         // the standard hashCode/equals are based on the twitterId only
         Iterator<SolrTweet> iter = list.iterator();
@@ -389,6 +386,11 @@ public class SolrTweet implements Serializable {
             }
             prevTweet = tw;
         }
+    }
+
+    public static void sortAndDeduplicate(List<SolrTweet> list) {
+        Collections.sort(list, tweetIdComparator);
+        deduplicate(list);
     }
 
     @Override
