@@ -180,14 +180,14 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 doc.addField("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
                 doc.addField("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
                 doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
-                doc.addField("dest_snippet_" + counter + "_t", urlEntry.getResolvedSnippet());
+//                doc.addField("dest_snippet_" + counter + "_t", urlEntry.getResolvedSnippet());
             }
         }
 
         doc.addField("url_i", counter);
         doc.addField("lang", tw.getLanguage());
         doc.addField("quality_i", tw.getQuality());
-        doc.addField("qual_debug_s", tw.getQualDebug());
+//        doc.addField("qual_debug_s", tw.getQualDebug());
         doc.addField("repl_i", tw.getReplyCount());
         doc.addField(RT_COUNT, tw.getRetweetCount());
 
