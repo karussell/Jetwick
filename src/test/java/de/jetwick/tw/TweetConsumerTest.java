@@ -25,7 +25,7 @@ import de.jetwick.util.MyDate;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.After;
 import org.junit.Before;
@@ -62,11 +62,11 @@ public class TweetConsumerTest extends JetwickTestClass {
         tweetConsumer.setRemoveDays(1);
 //        dbHelper.setRemoveDays(1);
 //        tweetConsumer.setDbHelper(dbHelper);
-        Queue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
+        LinkedBlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         SolrTweet tw = createTweet(1L, "@daniel fancy!", "timetabling");
         tw.setCreatedAt(new Date());
         queue.add(getInstance(TweetPackageList.class).init(0, Arrays.asList(tw)));
-        Collection<SolrTweet> res = tweetConsumer.updateDbTweets(queue, 100);
+        Collection<SolrTweet> res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(1, res.size());
         // 0 removeDays < tw.createdAt
 //        assertEquals(0, res.getDeletedTweets().size());
@@ -78,7 +78,7 @@ public class TweetConsumerTest extends JetwickTestClass {
 //        tweetConsumer.setDbHelper(dbHelper);
         tweetConsumer.setRemoveDays(1);
 
-        Queue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
+        BlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         SolrTweet tw = createTweet(4L, "OldTweet", "userB");
         tw.setCreatedAt(new MyDate().minusDays(2).toDate());
         SolrTweet tw2 = createTweet(5L, "RT @userB: text", "timetabling");
@@ -86,18 +86,18 @@ public class TweetConsumerTest extends JetwickTestClass {
         SolrTweet tw3 = createTweet(6L, "Bla bli", "userB");
         tw3.setCreatedAt(new Date());
         queue.add(getInstance(TweetPackageList.class).init(0, Arrays.asList(tw, tw2, tw3)));
-        Collection<SolrTweet> res = tweetConsumer.updateDbTweets(queue, 100);
+        Collection<SolrTweet> res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(2, res.size());
 //        assertEquals(0, res.getDeletedTweets().size());
     }
 
     @Test
     public void testSolrData() {
-        Queue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
+        BlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         SolrTweet tw = createTweet(5L, "text", "timetabling");
         tw.setCreatedAt(new Date());
         queue.add(getInstance(TweetPackageList.class).init(0, Arrays.asList(tw)));
-        Collection<SolrTweet> res = tweetConsumer.updateDbTweets(queue, 100);
+        Collection<SolrTweet> res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(1, res.size());
 //        assertEquals(0, res.getDeletedTweets().size());
 
@@ -105,7 +105,7 @@ public class TweetConsumerTest extends JetwickTestClass {
         tw = createTweet(6L, "RT @timetabling: text", "userB");
         tw.setCreatedAt(new Date());
         queue.add(getInstance(TweetPackageList.class).init(0, Arrays.asList(tw)));
-        res = tweetConsumer.updateDbTweets(queue, 100);
+        res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(2, res.size());
 //        assertEquals(0, res.getDeletedTweets().size());
     }

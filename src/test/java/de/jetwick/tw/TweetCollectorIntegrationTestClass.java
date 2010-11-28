@@ -121,7 +121,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
         TweetConsumer tweetConsumer = getInstance(TweetConsumer.class);
         tweetConsumer.setUncaughtExceptionHandler(handler);
-        tweetConsumer.setTweets(tweetProducer.getTweets());
+        tweetConsumer.setTweetPackages(tweetProducer.getTweetPackages());
         tweetConsumer.setTweetProducer(tweetProducer);
         tweetConsumer.setTweetBatchSize(1);
         tweetConsumer.setTweetSearch(tweetSearch);

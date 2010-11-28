@@ -77,7 +77,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     public static final String TAG = "tag";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     protected Logger logger = LoggerFactory.getLogger(getClass());
-    private static final int MAX_TWEETS_PER_REQ = 150;
+    private static final int MAX_TWEETS_PER_REQ = 100;
 
     public SolrTweetSearch(String url) {
         createServer(url, null, null, false);

@@ -110,8 +110,8 @@ public class Util {
                 MyTweetGrabber grabber = new MyTweetGrabber().init(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
                         setRmiClient(rmiProvider).setTweetSearch(twSearch);
                 TweetPackage pkg = grabber.queueTweetPackage();
-                if (pkg.getException() == null)
-                    break;
+//                if (pkg.getException() == null)
+//                    break;
 
                 logger.warn(trial + "> Try again feeding of user " + tmpUser.getName() + " for tweet package " + pkg);
             }

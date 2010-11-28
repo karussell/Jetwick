@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import java.io.Serializable;
@@ -30,8 +29,8 @@ public class Credits implements Serializable {
     private String consumerSecret;
 
     public Credits() {
-
     }
+
     public Credits(String token, String tokenSecret, String consumerKey, String consumerSecret) {
         this.token = token;
         this.tokenSecret = tokenSecret;

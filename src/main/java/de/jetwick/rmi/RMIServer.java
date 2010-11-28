@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.rmi;
 
 import de.jetwick.config.Configuration;
@@ -22,7 +21,7 @@ import java.net.InetAddress;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,7 @@ public class RMIServer implements CommunicationService {
         new RMIServer(new Configuration()).createThread().run();
     }
     private static Logger logger = LoggerFactory.getLogger(RMIServer.class);
-    private Queue<TweetPackage> tweetQueue;
+    private BlockingQueue<TweetPackage> tweetQueue;
     private Configuration config;
 
     public RMIServer(Configuration config) {
@@ -64,22 +63,20 @@ public class RMIServer implements CommunicationService {
 
     @Override
     public void send(TweetPackage tws) {
-        if (tweetQueue == null) {
+        if (tweetQueue == null)
             tws.doAbort(new RuntimeException("Queue not online"));
-        }
-            
 
         // prevent us from OOMs
-        if (tweetQueue.size() > 50000) {
+        if (tweetQueue.size() > 500) {
             logger.error("didn't prozessed " + tws.getMaxTweets() + " tweets. queue is full: " + tweetQueue.size());
             return;
         }
 
-        tweetQueue.add(tws);        
-        logger.info("queued: " + tws.getMaxTweets() + " from package:" + tws);
+        tweetQueue.add(tws);
+        logger.info("queued " + tws);
     }
 
-    public void setTweets(Queue<TweetPackage> tweets) {
+    public void setTweetPackages(BlockingQueue<TweetPackage> tweets) {
         this.tweetQueue = tweets;
     }
 }

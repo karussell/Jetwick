@@ -16,8 +16,6 @@
 package de.jetwick.ui;
 
 import de.jetwick.tw.MyTweetGrabber;
-import de.jetwick.tw.TwitterSearch;
-import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageArchiving;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
 import de.jetwick.ui.util.SelectOption;
@@ -35,9 +33,6 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.util.ListModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wicketstuff.progressbar.ProgressBar;
-import org.wicketstuff.progressbar.Progression;
-import org.wicketstuff.progressbar.ProgressionModel;
 
 /**
  *
@@ -57,40 +52,43 @@ public class GrabTweetsDialog extends Panel {
 
         this.userName = user;
         final Form form = new Form("grabForm");
-        final ProgressBar bar = new ProgressBar("bar", new ProgressionModel() {
-
-            @Override
-            protected Progression getProgression() {
-                return new Progression(pkg.getProgress());
-            }
-        }) {
-
-            @Override
-            protected void onFinished(AjaxRequestTarget target) {
-                logger.info("finished: " + pkg.getProgress() + " canceled:" + pkg.isCanceled());
-                if (pkg.getException() != null) {
-                    logger.error("Error while storing archive", pkg.getException());
-                    String msg = TwitterSearch.getMessage(pkg.getException());
-                    if (msg.length() > 0)
-                        error(msg);
-                    else
-                        error("Couldn't process your request. Please contact admin "
-                                + "or twitter.com/jetwick if problem remains!");
-                } else
-                    info(pkg.getProcessedTweets() + " tweets were stored for " + pkg.getUserName()
-                            + ". In approx. 5min they will be searchable.");
-
-                GrabTweetsDialog.this.onFinish(target);
-            }
-        };
-        form.add(bar);
+//        final ProgressBar bar = new ProgressBar("bar", new ProgressionModel() {
+//
+//            @Override
+//            protected Progression getProgression() {
+//                if (pkg == null)
+//                    return new Progression(0);
+//
+//                return new Progression(pkg.getProgress());
+//            }
+//        }) {
+//
+//            @Override
+//            protected void onFinished(AjaxRequestTarget target) {
+//                logger.info("finished: " + pkg.getProgress() + " canceled:" + pkg.isCanceled());
+//                if (pkg.getException() != null) {
+//                    logger.error("Error while storing archive", pkg.getException());
+//                    String msg = TwitterSearch.getMessage(pkg.getException());
+//                    if (msg.length() > 0)
+//                        error(msg);
+//                    else
+//                        error("Couldn't process your request. Please contact admin "
+//                                + "or twitter.com/jetwick if problem remains!");
+//                } else
+//                    info(pkg.getProcessedTweets() + " tweets were stored for " + pkg.getUserName()
+//                            + ". In approx. 5min they will be searchable.");
+//
+//                GrabTweetsDialog.this.onFinish(target);
+//            }
+//        };
+//        form.add(bar);
         form.add(new AjaxSubmitLink("ajaxSubmit") {
 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
                 if (!started) {
                     started = true;
-                    bar.start(target);
+                    //bar.start(target);
                     String userName = getUsername();
                     if (getMaxTweets() > 0) {
                         grabber.setUserName(userName);
@@ -101,6 +99,10 @@ public class GrabTweetsDialog extends Panel {
                     started = false;
                 } else
                     info("You've already queued a job.");
+
+                info("Tweets were stored for user " + pkg.getUserName()
+                        + ". In approx. 5 minutes they will be searchable.");
+                GrabTweetsDialog.this.onFinish(target);
             }
         });
         add(form);
@@ -150,7 +152,7 @@ public class GrabTweetsDialog extends Panel {
     }
 
     public void interruptGrabber() {
-        if (pkg != null)
-            pkg.doCancel();
+//        if (pkg != null)
+//            pkg.doCancel();
     }
 }

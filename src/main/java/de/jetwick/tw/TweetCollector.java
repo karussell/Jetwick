@@ -99,13 +99,13 @@ public class TweetCollector {
         TweetProducer twProducer = injector.getInstance(TweetProducer.class);
         twProducer.setMaxTime(maxTime);
         int tweetsPerBatch = cfg.getTweetsPerBatch();
-        twProducer.setMaxFill((int) (2 * tweetsPerBatch));
+        twProducer.setMaxFill(2 * tweetsPerBatch);
         twProducer.setTwitterSearch(tws);
         twProducer.setUncaughtExceptionHandler(excHandler);
         twProducer.start();
 
         TweetConsumer twConsumer = injector.getInstance(TweetConsumer.class);
-        twConsumer.setTweets(twProducer.getTweets());
+        twConsumer.setTweetPackages(twProducer.getTweetPackages());
         twConsumer.setTweetProducer(twProducer);
         twConsumer.setUncaughtExceptionHandler(excHandler);
         twConsumer.setTweetBatchSize(tweetsPerBatch);
@@ -128,7 +128,7 @@ public class TweetCollector {
 //        twUpdater.start();
 
         RMIServer rmiServer = injector.getInstance(RMIServer.class);
-        rmiServer.setTweets(twProducer.getTweets());
+        rmiServer.setTweetPackages(twProducer.getTweetPackages());
         Thread rmiServerThread = rmiServer.createThread();
         rmiServerThread.start();
 

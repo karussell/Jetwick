@@ -47,14 +47,19 @@ public class TweetPackageUserQuery extends AbstractTweetPackage {
 
     @Override
     public TweetPackage retrieveTweets(BlockingQueue<SolrTweet> res) {
-        try {
-            logger.info("add tweets via user search: " + userName);
+        try {            
             TwitterSearch tweetSearch = getTwitterSearch(credits);
             res.addAll(tweetSearch.getTweets(new SolrUser(userName), new ArrayList<SolrUser>(), getMaxTweets()));
+            logger.info("add tweets from user search: " + userName);
         } catch (TwitterException ex) {
             doAbort(ex);
             logger.warn("Couldn't update user: " + userName + " " + ex.getLocalizedMessage());
         }
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " user:" + userName;
     }
 }

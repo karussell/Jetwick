@@ -18,6 +18,7 @@ package de.jetwick.tw.queue;
 import com.google.inject.Inject;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
+import java.util.Collection;
 
 /**
  *
@@ -44,8 +45,9 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return this;
     }
 
-    @Override
-    public int getProgress() {
+//    @Override
+//    public
+    int getProgress() {
         return progress;
     }
 
@@ -54,18 +56,21 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return this;
     }
 
-    @Override
-    public TweetPackageStatus getStatus() {
+//    @Override
+//    public
+    TweetPackageStatus getStatus() {
         return status;
     }
 
-    @Override
-    public boolean isAlive() {
+//    @Override
+//    public
+    boolean isAlive() {
         return !isCanceled() && !isFinished() && !isAborted();
     }
 
-    @Override
-    public TweetPackage doCancel() {
+//    @Override
+//    public
+    TweetPackage doCancel() {
         status = TweetPackageStatus.CANCELED;
         progress = 100;
 //        endHook.execute(null);
@@ -80,21 +85,24 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return this;
     }
 
-    @Override
-    public TweetPackage doFinish() {
+//    @Override
+//    public
+    TweetPackage doFinish() {
         status = TweetPackageStatus.FINISHED;
         progress = 100;
 //        endHook.execute(null);
         return this;
     }
 
-    @Override
-    public boolean isCanceled() {
+//    @Override
+//    public
+    boolean isCanceled() {
         return status == TweetPackageStatus.CANCELED;
     }
 
-    @Override
-    public boolean isFinished() {
+//    @Override
+//    public
+    boolean isFinished() {
         return status == TweetPackageStatus.FINISHED;
     }
 
@@ -103,8 +111,9 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return status == TweetPackageStatus.ABORTED;
     }
 
-    @Override
-    public Exception getException() {
+//    @Override
+//    public
+    Exception getException() {
         return exception;
     }
 
@@ -118,8 +127,9 @@ public abstract class AbstractTweetPackage implements TweetPackage {
 //        endHook = exector;
 //        return this;
 //    }
-    @Override
-    public int getProcessedTweets() {
+//    @Override
+//    public
+    int getProcessedTweets() {
         return processedTweets;
     }
 
@@ -131,6 +141,14 @@ public abstract class AbstractTweetPackage implements TweetPackage {
 
     @Override
     public String toString() {
-        return "id:" + id + " maxTweets:" + maxTweets + " class:" + getClass().getSimpleName();
+        return getClass().getSimpleName() + " id:" + id + " maxTweets:" + maxTweets;
+    }
+
+    public static int estimateNumber(Collection<TweetPackage> coll) {
+        int count = 0;
+        for (TweetPackage pkg : coll) {
+            count += pkg.getMaxTweets();
+        }
+        return count;
     }
 }

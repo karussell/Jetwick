@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RMIClient implements CommunicationService {
 
-    private static Logger logger = LoggerFactory.getLogger(RMIServer.class);
+    private static Logger logger = LoggerFactory.getLogger(RMIClient.class);
     private CommunicationService service;
     private Configuration config;
 

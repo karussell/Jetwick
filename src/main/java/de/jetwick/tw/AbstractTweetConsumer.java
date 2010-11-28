@@ -23,10 +23,10 @@ import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.Helper;
 import de.jetwick.util.MyDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -56,8 +56,9 @@ public class AbstractTweetConsumer extends MyThread {
         logger.info("skip " + skipUrlTitleList.size() + " url titles");
     }
 
-    public Collection<SolrTweet> updateDbTweets(Queue<TweetPackage> tws, int batch) {
+    public Collection<SolrTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
         Set<SolrTweet> tweetSet = new LinkedHashSet<SolrTweet>();
+        Collection<TweetPackage> donePackages = new ArrayList<TweetPackage>();
         while (true) {
             TweetPackage tw = tws.poll();
             if (tw == null)
@@ -65,23 +66,29 @@ public class AbstractTweetConsumer extends MyThread {
 
             BlockingQueue<SolrTweet> tmpTweets = new LinkedBlockingQueue<SolrTweet>();
             tw.retrieveTweets(tmpTweets);
+            donePackages.add(tw);
             tweetSet.addAll(tmpTweets);
             if (tweetSet.size() > batch)
                 break;
         }
 
-        // BlockingQueue_s are thread safe
-        BlockingQueue<SolrTweet> outTweets = new LinkedBlockingQueue<SolrTweet>();
-        if (resolveUrls) {
-            BlockingQueue<SolrTweet> blockQueue2 = new LinkedBlockingQueue<SolrTweet>();
-            blockQueue2.addAll(tweetSet);
-            resolveUrls(blockQueue2, outTweets, resolveThreads);
-        } else
-            outTweets.addAll(tweetSet);
-
-//        return updateDbTweetsInTA(tmpTweets);
         try {
-            return tweetSearch.update(outTweets, new MyDate().minusDays(removeDays).toDate());
+            // BlockingQueue_s are thread safe
+            BlockingQueue<SolrTweet> outTweets = new LinkedBlockingQueue<SolrTweet>();
+            if (resolveUrls) {
+                BlockingQueue<SolrTweet> blockQueue2 = new LinkedBlockingQueue<SolrTweet>();
+                blockQueue2.addAll(tweetSet);
+                resolveUrls(blockQueue2, outTweets, resolveThreads);
+            } else
+                outTweets.addAll(tweetSet);
+
+//            return updateDbTweetsInTA(tmpTweets);
+            Collection<SolrTweet> res = tweetSearch.update(outTweets, new MyDate().minusDays(removeDays).toDate());
+            for (TweetPackage pkg : donePackages) {
+                logger.info("indexed: " + pkg);
+//                pkg.finish();
+            }
+            return res;
         } catch (Exception ex) {
             logger.error("Couldn't update " + tweetSet.size() + " tweets.", ex);
 //            for (Tweet tw : tmpTweets) {
@@ -187,5 +194,5 @@ public class AbstractTweetConsumer extends MyThread {
 
     public void setResolveThreads(int resolveThreads) {
         this.resolveThreads = resolveThreads;
-    }
+    }   
 }

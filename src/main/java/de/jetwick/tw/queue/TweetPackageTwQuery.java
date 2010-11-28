@@ -45,13 +45,18 @@ public class TweetPackageTwQuery extends AbstractTweetPackage {
 
     @Override
     public TweetPackageTwQuery retrieveTweets(BlockingQueue<SolrTweet> res) {
-        try {
-            logger.info("add tweets via twitter search: " + query);
+        try {            
             getTwitterSearch(credits).search(query, res, getMaxTweets(), 0);
+            logger.info("added tweets via twitter search: " + query);
         } catch (TwitterException ex) {
             doAbort(ex);
             logger.warn("Couldn't query twitter: " + query + " " + ex.getLocalizedMessage());
         }
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " query:" + query;
     }
 }

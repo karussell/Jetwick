@@ -21,12 +21,13 @@ import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.Helper;
 import de.jetwick.util.StopWatch;
 import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -49,7 +50,7 @@ public class TweetProducer extends MyThread {
     private final Condition condition = lock.newCondition();
     @Inject
     private TagDao tagDao;
-    private Queue<TweetPackage> tweets = new LinkedBlockingDeque<TweetPackage>();
+    private BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
     private TwitterSearch twSearch;
     private int maxTime = -1;
@@ -61,14 +62,14 @@ public class TweetProducer extends MyThread {
         super("tweet-producer");
     }
 
-    public Queue<TweetPackage> getTweets() {
-        return tweets;
+    public BlockingQueue<TweetPackage> getTweetPackages() {
+        return tweetPackages;
     }
 
     @Override
     public void run() {
         long start = System.currentTimeMillis();
-        logger.info("max tweets to search:" + maxFill);
+        logger.info("tweet number batch:" + maxFill);
 
         // to resolve even urls which requires cookies
         Helper.enableCookieMgmt();
@@ -110,13 +111,17 @@ public class TweetProducer extends MyThread {
 
                 YTag tag = tags.poll();
                 if (tag != null && tag.nextQuery()) {
-                    // do not add more tweets to the pipe if consumer cannot process it                    
-                    while (tweets.size() > maxFill) {
-                        logger.info("... WAITING! " + tweets.size() + " are too many tweets in the pipe!");
+                    // do not add more tweets to the pipe if consumer cannot process it
+                    int count = 0;
+                    while (true) {
+                        count = AbstractTweetPackage.estimateNumber(tweetPackages);
+                        if (count < maxFill)
+                            break;
+
+                        logger.info("... WAITING! " + count + " are too many tweets in the pipe!");
                         if (!myWait(20))
                             break MAIN;
                     }
-
 
                     int waitInSeconds = 1;
                     try {
@@ -132,13 +137,13 @@ public class TweetProducer extends MyThread {
                         int hits = tmp.size();
                         tag.setLastId(maxId);
                         swSearch.stop();
-                        logger.info(swSearch + " \tqueue= " + tweets.size() + " \t + "
+                        logger.info(swSearch + " \tqueue= " + count + " \t + "
                                 + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
 
-                        tweets.add(new TweetPackageList().init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
+                        tweetPackages.add(new TweetPackageList().init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
 
                         if (!tag.isTransient()) {
-                            // TODO save only if storing to solr was successful
+                            // TODO save only if indexing to solr was successful -> pkg.isIndexed()
                             updateTagInTA(tag, hits);
                         }
                     } catch (TwitterException ex) {

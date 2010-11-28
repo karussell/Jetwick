@@ -18,10 +18,11 @@ package de.jetwick.tw;
 import com.google.inject.Inject;
 import de.jetwick.config.Configuration;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.StopWatch;
 import java.util.Collection;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class TweetConsumer extends AbstractTweetConsumer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private Queue<TweetPackage> tweetPackages;
+    private BlockingQueue<TweetPackage> tweetPackages;
     // collect at least those tweets before feeding
     private int tweetBatchSize = 1;
     private long tweetBatchTime = 60 * 1000;
@@ -70,10 +71,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
 
             // make sure we really use the commit batch size
             // because solr doesn't want too frequent commits
-            int count = 0;
-            for(TweetPackage pkg : tweetPackages) {
-                count += pkg.getMaxTweets();
-            }
+            int count = AbstractTweetPackage.estimateNumber(tweetPackages);
             if (count < tweetBatchSize && producer.isAlive() && System.currentTimeMillis() - lastFeed < tweetBatchTime)
                 continue;
 
@@ -83,7 +81,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
             lastFeed = System.currentTimeMillis();
             sw1 = new StopWatch(" ");
             sw1.start();
-            Collection<SolrTweet> res = updateDbTweets(tweetPackages, tweetBatchSize);
+            Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
             sw1.stop();
             String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();
             long time = System.currentTimeMillis();
@@ -104,7 +102,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
         logger.info(getName() + " finished");
     }
 
-    public void setTweets(Queue<TweetPackage> tweets) {
+    public void setTweetPackages(BlockingQueue<TweetPackage> tweets) {
         this.tweetPackages = tweets;
     }
 

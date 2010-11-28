@@ -34,7 +34,7 @@ public class TweetPackageArchiving extends AbstractTweetPackage {
 
     private static final Logger logger = LoggerFactory.getLogger(TweetPackageArchiving.class);
     private String userName;
-    private Credits credits;
+    private Credits credits;    
 
     public TweetPackageArchiving init(int id, String user, int maxTweets, Credits credits) {
         super.init(id, maxTweets);
@@ -44,9 +44,8 @@ public class TweetPackageArchiving extends AbstractTweetPackage {
     }
 
     @Override
-    public TweetPackage retrieveTweets(BlockingQueue<SolrTweet> result) {
-        try {
-            logger.info("archivize tweets for: " + userName);
+    public TweetPackage retrieveTweets(final BlockingQueue<SolrTweet> result) {
+        try {            
             SolrUser user = new SolrUser(userName);
             int tweetCount = 0;
             int rows = 100;
@@ -62,14 +61,16 @@ public class TweetPackageArchiving extends AbstractTweetPackage {
                         tw.setUpdatedAt(new Date());
                         result.add(tw);
                     }
-                    logger.info("queue tweets " + tweetCount + " to index queue");
+//                    logger.info("queue tweets " + tweetCount + " to index queue");
                     setProgress((int) (tweetCount * 100.0 / getMaxTweets()));
                 } catch (Exception ex) {
                     logger.warn("Error for tweets [" + start + "," + (start + 100)
                             + "] sending to index queue:" + ex.toString());
                 }
             }
-            doFinish();
+            logger.info("grabbed tweets for: " + userName);
+            // doRetrieved();
+            // doFinish();
         } catch (TwitterException ex) {
             doAbort(ex);
             logger.warn("Couldn't get all tweets for user: " + userName + " " + ex.getLocalizedMessage());
@@ -77,10 +78,16 @@ public class TweetPackageArchiving extends AbstractTweetPackage {
             doAbort(ex);
             logger.error("Couldn't init rmi server? " + ex.getLocalizedMessage());
         }
+
         return this;
     }
 
     public String getUserName() {
         return userName;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " user:" + getUserName();
     }
 }
