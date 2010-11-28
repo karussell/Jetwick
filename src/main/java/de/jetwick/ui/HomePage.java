@@ -75,10 +75,10 @@ public class HomePage extends WebPage {
     @Inject
     private Provider<SolrTweetSearch> twindexProvider;
     @Inject
-    private Provider<RMIClient> rmiProvider;    
+    private Provider<RMIClient> rmiProvider;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
-    private transient QueueThread tweetPackage;
+    private transient Thread tweetThread;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
 
@@ -148,8 +148,8 @@ public class HomePage extends WebPage {
         this.rmiProvider = rmiProvider;
     }
 
-    public QueueThread getQueueThread() {
-        return tweetPackage;
+    public Thread getQueueThread() {
+        return tweetThread;
     }
 
     public SolrQuery createQuery(PageParameters parameters) {
@@ -621,12 +621,13 @@ public class HomePage extends WebPage {
 
         if (startBGThread) {
             try {
-                tweetPackage = queueTweets(tweets, queryString, userName);
+                tweetThread = new Thread(queueTweets(tweets, queryString, userName));
+                tweetThread.start();
             } catch (Exception ex) {
                 logger.error("Couldn't queue tweets. query" + queryString + " user=" + userName);
             }
         } else
-            tweetPackage = null;
+            tweetThread = null;
 
         facetPanel.update(rsp, query);
         tagCloud.update(rsp, query);

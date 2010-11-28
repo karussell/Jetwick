@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import de.jetwick.util.Helper;
@@ -183,10 +182,14 @@ public class Extractor {
             if (index == 0 || index > 0 && (text.charAt(index - 1) == ' ' || text.charAt(index - 1) == '\n')) {
                 int lastIndex = text.indexOf(" ", index);
                 int lastIndex2 = text.indexOf("\n", index);
-                if (lastIndex >= 0 && lastIndex2 >= 0)
-                    lastIndex = Math.min(lastIndex, lastIndex2);
 
-                if (lastIndex < 0)
+                if (lastIndex < 0 && lastIndex2 >= 0)
+                    lastIndex = lastIndex2;
+                else if (lastIndex2 < 0 && lastIndex >= 0) {
+                    // already lastIndex
+                } else if (lastIndex >= 0 && lastIndex2 >= 0)
+                    lastIndex = Math.min(lastIndex, lastIndex2);
+                else
                     lastIndex = text.length();
 
                 String url = text.substring(index, lastIndex);
@@ -198,7 +201,7 @@ public class Extractor {
                         if (lastIndex == entry.getLastIndex()) {
                             if (!entry.getResolvedTitle().isEmpty())
                                 title = Strings.escapeMarkup(entry.getResolvedTitle()).toString();
-                            
+
                             url = entry.getResolvedUrl();
                         }
                     }
