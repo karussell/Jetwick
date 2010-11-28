@@ -33,7 +33,8 @@ public interface TweetPackage extends Serializable {
 
     public TweetPackage retrieveTweets(BlockingQueue<SolrTweet> result);
 
-    int getMaxTweets();
+    int getTweets();
+
 //    int getProgress();
 //
 //    TweetPackageStatus getStatus();
@@ -43,10 +44,10 @@ public interface TweetPackage extends Serializable {
 //    TweetPackage doCancel();
 //
 //    boolean isCanceled();
-
-    TweetPackage doAbort(Exception ex);
-
-    boolean isAborted();
+//
+//    TweetPackage doAbort(Exception ex);
+//
+//    boolean isAborted();
 //    Exception getException();
 //
 //    TweetPackage doFinish();

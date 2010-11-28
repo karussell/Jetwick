@@ -54,7 +54,7 @@ public class SolrTweet implements Serializable {
     public static final int QUAL_BAD = 50;
     public static final int QUAL_SPAM = 26;
     private Integer version;
-    private Long twitterId;
+    private final long twitterId;
     private String text;
     private Set<SolrTweet> replies = new LinkedHashSet<SolrTweet>();
     private int retweetCount;
@@ -81,16 +81,16 @@ public class SolrTweet implements Serializable {
      * You'll need to call init after that constructor
      */
     public SolrTweet(Tweet tw, SolrUser fromUser) {
-        init(tw);
+        this(tw);
         setFromUser(fromUser);
     }
 
     public SolrTweet(long id, String text, SolrUser fromUser) {
-        init(id, text, new Date());
+        this(id, text, new Date());
         setFromUser(fromUser);
     }
 
-    void init(long id, String text, Date createdAt) {
+    SolrTweet(long id, String text, Date createdAt) {
         quality = QUAL_MAX;
         this.twitterId = id;
         setText_(text);
@@ -100,7 +100,9 @@ public class SolrTweet implements Serializable {
             urlEntries = new ArrayList<UrlEntry>();
     }
 
-    void init(Tweet tw) {
+    SolrTweet(Tweet tw) {
+        this(tw.getId(), tw.getText(), tw.getCreatedAt());
+
         // if tweet was retrieved via Status object
         if (tw instanceof Twitter4JTweet) {
             Twitter4JTweet myTw = (Twitter4JTweet) tw;
@@ -108,9 +110,8 @@ public class SolrTweet implements Serializable {
             urlEntries = myTw.getUrlEntries();
         }
 
-        init(tw.getId(), tw.getText(), tw.getCreatedAt());
         // most tweets have location == null. See user.location
-        location = tw.getLocation();        
+        location = tw.getLocation();
     }
 
     public void addUrlEntry(UrlEntry ue) {
@@ -397,10 +398,7 @@ public class SolrTweet implements Serializable {
         if (obj == null || getClass() != obj.getClass())
             return false;
 
-        final SolrTweet other = (SolrTweet) obj;
-        if (this.twitterId != other.twitterId && (this.twitterId == null || !this.twitterId.equals(other.twitterId)))
-            return false;
-        return true;
+        return this.twitterId == ((SolrTweet) obj).twitterId;
     }
 
     @Override

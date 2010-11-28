@@ -26,7 +26,7 @@ import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
-import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
@@ -75,12 +75,10 @@ public class HomePage extends WebPage {
     @Inject
     private Provider<SolrTweetSearch> twindexProvider;
     @Inject
-    private Provider<RMIClient> rmiProvider;
-    @Inject
-    private Provider<MyTweetGrabber> grabberProvider;
+    private Provider<RMIClient> rmiProvider;    
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
-    private transient TweetPackage tweetPackage;
+    private transient QueueThread tweetPackage;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
 
@@ -150,7 +148,7 @@ public class HomePage extends WebPage {
         this.rmiProvider = rmiProvider;
     }
 
-    public TweetPackage getTweetPackage() {
+    public QueueThread getQueueThread() {
         return tweetPackage;
     }
 
@@ -279,7 +277,7 @@ public class HomePage extends WebPage {
         if (getMySession().hasLoggedIn()) {
             add(new WebComponent("loginLink").setVisible(false));
             add(new UserPanel("userPanel", getMySession().getUser(),
-                    grabberProvider.get().init(getMySession().getUser().getScreenName()).setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
+                    new MyTweetGrabber().init(getMySession().getUser().getScreenName()).setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
 
                 @Override
                 public void onLogout() {
@@ -658,11 +656,10 @@ public class HomePage extends WebPage {
         logger.info("Finished Constructing UI");
     }
 
-    public TweetPackage queueTweets(Collection<SolrTweet> tweets,
+    public QueueThread queueTweets(Collection<SolrTweet> tweets,
             String qs, String userName) {
 
-//        return new TweetPackageList(0, tweets);
-        MyTweetGrabber grabber = grabberProvider.get();
+        MyTweetGrabber grabber = new MyTweetGrabber();
         grabber.init(tweets, userName, qs).setTweetsCount(TWEETS_IF_HIT).
                 setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch());
         return grabber.queueTweetPackage();

@@ -71,7 +71,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
 
             // make sure we really use the commit batch size
             // because solr doesn't want too frequent commits
-            int count = AbstractTweetPackage.estimateNumber(tweetPackages);
+            int count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
             if (count < tweetBatchSize && producer.isAlive() && System.currentTimeMillis() - lastFeed < tweetBatchTime)
                 continue;
 

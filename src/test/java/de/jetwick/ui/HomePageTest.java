@@ -15,16 +15,18 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.config.Configuration;
+import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.tw.queue.TweetPackage;
+import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.util.tester.FormTester;
 import org.junit.Before;
@@ -39,11 +41,11 @@ import twitter4j.TwitterException;
  */
 public class HomePageTest extends WicketPagesTestClass {
 
-    String uString;
-    String qString;
-    BlockingQueue<SolrTweet> tweets;
-    List<SolrTweet> returnUserTweets;
-    List<SolrTweet> returnSearchTweets;
+    private String uString;
+    private String qString;
+    private List<SolrTweet> returnUserTweets;
+    private List<SolrTweet> returnSearchTweets;
+    private TweetPackage sentTweets;
 
     @Before
     @Override
@@ -55,7 +57,6 @@ public class HomePageTest extends WicketPagesTestClass {
     public void reset() {
         uString = "";
         qString = "";
-        tweets = new LinkedBlockingQueue<SolrTweet>();
         SolrUser u = new SolrUser("peter");
         SolrUser u2 = new SolrUser("peter2");
         returnUserTweets = Arrays.asList(new SolrTweet(3L, "java test2", u2), new SolrTweet(4L, "java pest2", u2));
@@ -83,8 +84,11 @@ public class HomePageTest extends WicketPagesTestClass {
     public void testQueueWhenNoResults() throws InterruptedException {
         HomePage page = getInstance(HomePage.class);
 
-        TweetPackage pkg = page.queueTweets(null, "java", null);
-        pkg.retrieveTweets(tweets);
+        QueueThread pkg = page.queueTweets(null, "java", null);
+        Thread t = new Thread(pkg);
+        t.start();
+        t.join();
+        assertNotNull(sentTweets);
 
         // perform normal searchAndGetUsers        
         assertEquals("#java", qString);
@@ -95,8 +99,9 @@ public class HomePageTest extends WicketPagesTestClass {
     public void testQueueWhenUserSearch() throws InterruptedException {
         HomePage page = getInstance(HomePage.class);
 
-        TweetPackage p = page.queueTweets(null, null, "java");
-        p.retrieveTweets(tweets);
+        QueueThread p = page.queueTweets(null, null, "java");
+        p.run();
+        assertNotNull(sentTweets);
 
         assertEquals("", qString);
         assertEquals("#java", uString);
@@ -108,10 +113,10 @@ public class HomePageTest extends WicketPagesTestClass {
 
         // query and user are null and hits == 0 => no background thread is created
         page.init(new SolrQuery(), 0, false);
-        assertNull(page.getTweetPackage());
+        assertNull(page.getQueueThread());
 
         page.doSearch(new SolrQuery(), 0, false, true);
-        assertNull(page.getTweetPackage());
+        assertNull(page.getQueueThread());
         assertEquals("", uString);
         assertEquals("", qString);
     }
@@ -122,28 +127,28 @@ public class HomePageTest extends WicketPagesTestClass {
 
         // normal searchAndGetUsers fails but set twitterfallback = false
         page.init(new SolrQuery("java"), 0, true);
-        tweets = new LinkedBlockingQueue<SolrTweet>();
-        page.getTweetPackage().retrieveTweets(tweets);
+        page.getQueueThread().run();
+        assertNotNull(sentTweets);
         assertEquals("", uString);
         assertEquals("#java", qString);
 
         // do not trigger background searchAndGetUsers for the same query
         page.doSearch(new SolrQuery("java"), 0, true);
-        assertNull(page.getTweetPackage());
+        assertNull(page.getQueueThread());
 
         // if only user searchAndGetUsers then set twitterFallback = true
         reset();
         page.doSearch(new SolrQuery().addFilterQuery("user:test"), 0, true);
         assertEquals("#test", uString);
         assertEquals("", qString);
-        page.getTweetPackage().retrieveTweets(tweets);
+        page.getQueueThread().run();
 
         // if searchAndGetUsers AND user searchAndGetUsers then set twitterFallback = false but trigger backgr. thread
         reset();
         page.doSearch(new SolrQuery("java").addFilterQuery("user:test"), 0, true);
         assertEquals("", uString);
         assertEquals("", qString);
-        page.getTweetPackage().retrieveTweets(tweets);
+        page.getQueueThread().run();
         assertEquals("#test", uString);
         assertEquals("", qString);
     }
@@ -186,5 +191,21 @@ public class HomePageTest extends WicketPagesTestClass {
                 return returnUserTweets;
             }
         }.setCredits(new Credits());
+    }
+
+    @Override
+    protected RMIClient createRMIClient() {
+        return new RMIClient(new Configuration()) {
+
+            @Override
+            public RMIClient init() {
+                return this;
+            }
+
+            @Override
+            public void send(TweetPackage tweets) throws RemoteException {
+                sentTweets = tweets;
+            }
+        };
     }
 }

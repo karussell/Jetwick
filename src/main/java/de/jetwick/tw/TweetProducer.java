@@ -114,7 +114,7 @@ public class TweetProducer extends MyThread {
                     // do not add more tweets to the pipe if consumer cannot process it
                     int count = 0;
                     while (true) {
-                        count = AbstractTweetPackage.estimateNumber(tweetPackages);
+                        count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
                         if (count < maxFill)
                             break;
 

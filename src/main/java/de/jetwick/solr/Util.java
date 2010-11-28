@@ -24,11 +24,13 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.Helper;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.FacetField;
@@ -109,11 +111,19 @@ public class Util {
             for (int trial = 0; trial < 3; trial++) {
                 MyTweetGrabber grabber = new MyTweetGrabber().init(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
                         setRmiClient(rmiProvider).setTweetSearch(twSearch);
-                TweetPackage pkg = grabber.queueTweetPackage();
-//                if (pkg.getException() == null)
-//                    break;
+                QueueThread pkg = grabber.queueTweetPackage();
+                Thread t = new Thread(pkg);
+                t.start();
+                try {
+                    t.join();
+                    if (pkg.getException() == null)
+                        break;
 
-                logger.warn(trial + "> Try again feeding of user " + tmpUser.getName() + " for tweet package " + pkg);
+                    logger.warn(trial + "> Try again feeding of user " + tmpUser.getName() + " for tweet package " + pkg);
+                } catch (InterruptedException ex) {
+                    logger.warn("interrupted", ex);
+                    break;
+                }
             }
         }
 

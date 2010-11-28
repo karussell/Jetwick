@@ -73,7 +73,7 @@ public class RMIClient implements CommunicationService {
     @Override
     public void send(TweetPackage tweets) throws RemoteException {
         if (service == null) {
-            tweets.doAbort(new RuntimeException("Failed to connect to message queue"));
+            logger.error("Queue service not connected");
             return;
         }
 

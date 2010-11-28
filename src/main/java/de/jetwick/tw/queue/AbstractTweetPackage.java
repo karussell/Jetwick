@@ -31,7 +31,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
     protected int processedTweets;
     private TweetPackageStatus status = TweetPackageStatus.STARTED;
     private Exception exception;
-    private int maxTweets;
+    private int tweets;
     @Inject
     private TwitterSearch twitterSearch;
 //    private AnyExecutor<?> endHook;
@@ -41,7 +41,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
 
     protected AbstractTweetPackage init(int id, int maxTweets) {
         this.id = id;
-        this.maxTweets = maxTweets;
+        this.tweets = maxTweets;
         return this;
     }
 
@@ -77,7 +77,6 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return this;
     }
 
-    @Override
     public TweetPackage doAbort(Exception ex) {
         status = TweetPackageStatus.ABORTED;
         progress = 100;
@@ -106,7 +105,6 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return status == TweetPackageStatus.FINISHED;
     }
 
-    @Override
     public boolean isAborted() {
         return status == TweetPackageStatus.ABORTED;
     }
@@ -118,8 +116,8 @@ public abstract class AbstractTweetPackage implements TweetPackage {
     }
 
     @Override
-    public int getMaxTweets() {
-        return maxTweets;
+    public int getTweets() {
+        return tweets;
     }
 
 //    @Override
@@ -141,13 +139,13 @@ public abstract class AbstractTweetPackage implements TweetPackage {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " id:" + id + " maxTweets:" + maxTweets;
+        return getClass().getSimpleName() + " id:" + id + " maxTweets:" + tweets;
     }
 
-    public static int estimateNumber(Collection<TweetPackage> coll) {
+    public static int calcNumberOfTweets(Collection<TweetPackage> coll) {
         int count = 0;
         for (TweetPackage pkg : coll) {
-            count += pkg.getMaxTweets();
+            count += pkg.getTweets();
         }
         return count;
     }

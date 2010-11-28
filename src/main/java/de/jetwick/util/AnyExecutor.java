@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 /**
@@ -21,6 +20,14 @@ package de.jetwick.util;
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public interface AnyExecutor<T> {
+
+    public static AnyExecutor<Object> EMPTY_EXECUTOR = new AnyExecutor<Object>() {
+
+        @Override
+        public Object execute(Object o) {
+            return o;
+        }
+    };
 
     public T execute(T o);
 }

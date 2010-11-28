@@ -63,12 +63,14 @@ public class RMIServer implements CommunicationService {
 
     @Override
     public void send(TweetPackage tws) {
-        if (tweetQueue == null)
-            tws.doAbort(new RuntimeException("Queue not online"));
+        if (tweetQueue == null) {
+            logger.error("Queue not online");
+            return;
+        }
 
         // prevent us from OOMs
         if (tweetQueue.size() > 500) {
-            logger.error("didn't prozessed " + tws.getMaxTweets() + " tweets. queue is full: " + tweetQueue.size());
+            logger.error("didn't prozessed " + tws.getTweets() + " tweets. queue is full: " + tweetQueue.size());
             return;
         }
 
