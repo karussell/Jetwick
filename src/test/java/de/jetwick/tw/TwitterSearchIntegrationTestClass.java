@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Before;
 
 import org.junit.Test;
@@ -74,6 +76,12 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void getHomeTimeline() throws TwitterException {
         assertEquals(30, twitterSearch.getHomeTimeline(30).size());
+
+        BlockingQueue<SolrTweet> coll = new LinkedBlockingQueue<SolrTweet>();
+        twitterSearch.getHomeTimeline(coll, 10, 0);
+        for (SolrTweet tw : coll) {
+            assertNotNull(tw.getFromUser().getProfileImageUrl());
+        }
     }
 
     @Test

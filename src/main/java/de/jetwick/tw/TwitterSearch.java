@@ -503,11 +503,12 @@ public class TwitterSearch implements Serializable {
         if (lastId <= 0)
             lastId = 1;
 
+        Map<String, SolrUser> userMap = new LinkedHashMap<String, SolrUser>();
         int hitsPerPage = 100;
         long maxId = lastId;
         long sinceId = lastId;
         int maxPages = tweets / hitsPerPage + 1;
-        SolrUser user = getUser();
+
         END_PAGINATION:
         for (int page = 0; page < maxPages; page++) {
             Paging paging = new Paging(page + 1, tweets, sinceId);
@@ -524,7 +525,16 @@ public class TwitterSearch implements Serializable {
                 if (st.getId() < sinceId)
                     break END_PAGINATION;
 
-                result.add(new SolrTweet(toTweet(st), user));
+
+                Tweet tw = toTweet(st);
+                String userName = tw.getFromUser().toLowerCase();
+                SolrUser user = userMap.get(userName);
+                if (user == null) {
+                    user = new SolrUser(userName).init(tw);
+                    userMap.put(userName, user);
+                }
+
+                result.add(new SolrTweet(tw, user));
             }
 
             // sinceId could force us to leave earlier than defined by maxPages

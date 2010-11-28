@@ -139,7 +139,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " id:" + id + " maxTweets:" + tweets;
+        return getClass().getSimpleName() + " id:" + id + " tweets:" + tweets;
     }
 
     public static int calcNumberOfTweets(Collection<TweetPackage> coll) {
