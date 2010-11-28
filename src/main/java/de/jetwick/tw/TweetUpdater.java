@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
@@ -22,6 +21,7 @@ import de.jetwick.config.Configuration;
 import de.jetwick.data.UserDao;
 import de.jetwick.data.YUser;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -31,7 +31,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.Tweet;
-import twitter4j.TwitterException;
 
 /**
  * updates tweets and description from users (costs API calls)
@@ -115,10 +114,10 @@ public class TweetUpdater extends AbstractTweetConsumer {
             String msg = "Couldn't update tweets of " + user.getScreenName()
                     + ". User " + counter + " of " + selectedVIPUsers.size() + " VIP users";
             try {
-                for (Tweet externTw : twSearch.getTweets(user.getScreenName())) {
+//                for (SolrTweet externTw : twSearch.getTweets(user.getScreenName())) {
 //                    UpdateResult res = addTweet(externTw);
 //                    newTweets.addAll(res.getUpdatedTweets());
-                }
+//                }
                 user.setUpdateAt(new Date());
                 try {
                     uDao.save(user);
@@ -128,16 +127,16 @@ public class TweetUpdater extends AbstractTweetConsumer {
                     logger.error("Couldn't set updateAt " + user.getScreenName() + " [" + counter + "] because of "
                             + ex.getClass().getSimpleName() + " " + ex.getLocalizedMessage());
                 }
-            } catch (TwitterException ex) {
-                logger.warn(msg, ex);
-                exceptions++;
-                if (ex.exceededRateLimitation()) {
-                    logger.warn("Skipping the rest of the users. Current user:" + counter
-                            + " rate limit exceeded?:" + ex.exceededRateLimitation()
-                            + " exceptions:" + exceptions);
-                    // TODO return ex.getRetryAfter();
-                    return Collections.EMPTY_LIST;
-                }
+//            } catch (TwitterException ex) {
+//                logger.warn(msg, ex);
+//                exceptions++;
+//                if (ex.exceededRateLimitation()) {
+//                    logger.warn("Skipping the rest of the users. Current user:" + counter
+//                            + " rate limit exceeded?:" + ex.exceededRateLimitation()
+//                            + " exceptions:" + exceptions);
+//                    // TODO return ex.getRetryAfter();
+//                    return Collections.EMPTY_LIST;
+//                }
             } catch (Exception ex) {
                 logger.error(msg, ex);
             }

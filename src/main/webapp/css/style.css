@@ -719,3 +719,13 @@ td div.wicketstuff-progressbar {
 ul.show-dots li {
     list-style: circle;
 }
+
+#offline {
+    width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#offline ul li {
+    list-style: none;
+    padding-top: 30px;
+}

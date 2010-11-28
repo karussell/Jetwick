@@ -62,7 +62,6 @@ public class TwitterSearch implements Serializable {
      * Do not use less than 20 api points for queueing searches of unloggedin users
      */
     public final static int LIMIT = 50;
-    public final static String SOURCE = "jetwick";
     private Twitter twitter;
     protected Logger logger = LoggerFactory.getLogger(TwitterSearch.class);
     private Credits credits;
@@ -70,8 +69,13 @@ public class TwitterSearch implements Serializable {
     public TwitterSearch() {
     }
 
-    public TwitterSearch(Credits credits) {
+    public TwitterSearch setCredits(Credits credits) {
         this.credits = credits;
+        return this;
+    }
+
+    public Credits getCredits() {
+        return credits;
     }
 
     public boolean init() {
@@ -155,8 +159,8 @@ public class TwitterSearch implements Serializable {
         }
     }
 
-    public YUser getUser() throws TwitterException {
-        YUser user = new YUser(twitter.getScreenName());
+    public SolrUser getUser() throws TwitterException {
+        SolrUser user = new SolrUser(twitter.getScreenName());
         updateUserInfo(Arrays.asList(user));
         return user;
     }
@@ -291,7 +295,13 @@ public class TwitterSearch implements Serializable {
     // The specific number of requests a client is able to make to the Search API for a given hour is not released.
     // The number is quite a bit higher and we feel it is both liberal and sufficient for most applications.
     // The since_id parameter will be removed from the next_page element as it is not supported for pagination.
-    public long search(String term, Collection<Tweet> result, int tweets, long lastId) throws TwitterException {
+    public long search(String term, Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
+        Map<String, SolrUser> userMap = new LinkedHashMap<String, SolrUser>();
+        return search(term, result, userMap, tweets, lastId);
+    }
+
+    long search(String term, Collection<SolrTweet> result,
+            Map<String, SolrUser> userMap, int tweets, long lastId) throws TwitterException {
         long maxId = lastId;
         long sinceId = lastId;
 
@@ -319,7 +329,14 @@ public class TwitterSearch implements Serializable {
                 if (twe.getId() < sinceId)
                     break END_PAGINATION;
 
-                result.add(twe);
+                String userName = twe.getFromUser().toLowerCase();
+                SolrUser user = userMap.get(userName);
+                if (user == null) {
+                    user = new SolrUser(userName).init(twe);
+                    userMap.put(userName, user);
+                }
+
+                result.add(new SolrTweet(twe, user));
             }
 
             // sinceId could force us to leave earlier than defined by maxPages
@@ -331,58 +348,14 @@ public class TwitterSearch implements Serializable {
     }
 
     /**
-     * @deprecated use the searchAndGetUsers method
+     * @deprecated use the search method
      */
-    public Collection<? extends Tweet> searchTweets(String queryStr, int tweets) throws TwitterException {
-        Set<Tweet> ret = new LinkedHashSet<Tweet>();
-        search(queryStr, ret, 0, tweets);
-        return ret;
-    }
-
-    /**
-     * @deprecated use the searchAndGetUsers method
-     */
-    public Collection<? extends Tweet> searchAndGetUsers(String term, Collection<SolrUser> result,
+    public Collection<SolrTweet> searchAndGetUsers(String term, Collection<SolrUser> result,
             int tweets, int maxPage) throws TwitterException {
-        Map<String, SolrUser> map = new LinkedHashMap<String, SolrUser>();
-        Set<Tweet> ret = new LinkedHashSet<Tweet>();
-
-        for (int page = 0; page < maxPage; page++) {
-            Query query = createQuery(term);
-            query.setPage(page + 1);
-            query.setRpp(tweets);
-            QueryResult res = twitter.search(query);
-            if (res.getTweets().size() == 0)
-                break;
-
-            toUsers(res.getTweets(), map);
-            ret.addAll(res.getTweets());
-        }
-
-        result.addAll(map.values());
-        return ret;
-    }
-
-    private void toUsers(Collection<? extends Tweet> tweets, Map<String, SolrUser> map) {
-        for (Tweet tw : tweets) {
-            String name = tw.getFromUser().toLowerCase();
-            SolrUser u = map.get(name);
-            if (u == null)
-                u = toUser(tw);
-            else
-                u.addOwnTweet(new SolrTweet(tw));
-
-            map.put(name, u);
-        }
-    }
-
-    public static SolrUser toUser(Tweet tw) {
-        SolrUser user = new SolrUser(tw.getFromUser().toLowerCase());
-        user.setProfileImageUrl(tw.getProfileImageUrl());
-        // do not set:
-        //yUser.setTwitterId()
-        user.addOwnTweet(new SolrTweet(tw));
-        return user;
+        Set<SolrTweet> solrTweets = new LinkedHashSet<SolrTweet>();
+        Map<String, SolrUser> userMap = new LinkedHashMap<String, SolrUser>();
+        result.addAll(userMap.values());
+        return solrTweets;
     }
 
     public AsyncTwitter getAsyncTwitter(TwitterListener listener) {
@@ -400,7 +373,7 @@ public class TwitterSearch implements Serializable {
      * @param users should be maximal 100 users
      * @return the latest tweets of the users
      */
-    public Collection<? extends Tweet> updateUserInfo(List<YUser> users) {
+    public Collection<? extends Tweet> updateUserInfo(List<? extends YUser> users) {
         if (getRateLimit() == 0) {
             logger.error("No API calls available");
             return Collections.EMPTY_LIST;
@@ -448,7 +421,7 @@ public class TwitterSearch implements Serializable {
         return Collections.EMPTY_LIST;
     }
 
-    public List<? extends Tweet> getTweets(String userScreenName,
+    public List<SolrTweet> getTweets(SolrUser user,
             Collection<SolrUser> users, int twPerPage) throws TwitterException {
 
         if (getRateLimit() == 0) {
@@ -456,24 +429,37 @@ public class TwitterSearch implements Serializable {
             return Collections.EMPTY_LIST;
         }
         Map<String, SolrUser> map = new LinkedHashMap<String, SolrUser>();
-        List<? extends Tweet> userTweets = getTweets(userScreenName, twPerPage);
-        toUsers(userTweets, map);
+        List<SolrTweet> userTweets = getTweets(user, twPerPage);
         users.addAll(map.values());
         return userTweets;
     }
 
     // http://apiwiki.twitter.com/Twitter-REST-API-Method:-statuses-user_timeline
     // -> without RETWEETS!? => count can be smaller than the requested!
-    public List<? extends Tweet> getTweets(String userScreenName) throws TwitterException {
-        if (getRateLimit() == 0) {
-            logger.error("No API calls available");
-            return Collections.EMPTY_LIST;
+//    public List<SolrTweet> getTweets(String userScreenName) throws TwitterException {
+//        if (getRateLimit() == 0) {
+//            logger.error("No API calls available");
+//            return Collections.EMPTY_LIST;
+//        }
+//        return getTweets(userScreenName, 100);
+//    }
+    /**
+     * You will only be able to access the latest 3200 statuses from a user's timeline
+     */
+    List<SolrTweet> getTweets(SolrUser user, int tweets) throws TwitterException {
+        List<SolrTweet> res = new ArrayList<SolrTweet>();
+        int p = 0;
+        int pages = 1;
+
+        for (; p < pages; p++) {
+            res.addAll(getTweets(user, p * tweets, tweets));
         }
-        return getTweets(userScreenName, 100);
+
+        return res;
     }
 
-    public List<? extends Tweet> getTweets(String userScreenName, int start, int tweets) throws TwitterException {
-        List<Tweet> res = new ArrayList<Tweet>();
+    public List<SolrTweet> getTweets(SolrUser user, int start, int tweets) throws TwitterException {
+        List<SolrTweet> res = new ArrayList<SolrTweet>();
         int currentPage = start / tweets;
 
         if (tweets > 100)
@@ -484,11 +470,9 @@ public class TwitterSearch implements Serializable {
 
         for (int trial = 0; trial < 2; trial++) {
             try {
-                for (Status st : twitter.getUserTimeline(userScreenName, new Paging(currentPage + 1, tweets, 1))) {
-                    Twitter4JTweet tw = toTweet(st);
-                    // hack: solve this via introducing YCommand and PriorityQueue for TweetProducer!
-                    tw.setSource(SOURCE);
-                    res.add(tw);
+                for (Status st : twitter.getUserTimeline(user.getScreenName(), new Paging(currentPage + 1, tweets, 1))) {
+                    Tweet tw = toTweet(st);
+                    res.add(new SolrTweet(tw, user.init(tw)));
                 }
                 break;
             } catch (TwitterException ex) {
@@ -504,21 +488,6 @@ public class TwitterSearch implements Serializable {
     }
 
     /**
-     * You will only be able to access the latest 3200 statuses from a user's timeline
-     */
-    public List<? extends Tweet> getTweets(String userScreenName, int tweets) throws TwitterException {
-        List<Tweet> res = new ArrayList<Tweet>();
-        int p = 0;
-        int pages = 1;
-
-        for (; p < pages; p++) {
-            res.addAll(getTweets(userScreenName, p * tweets, tweets));
-        }
-
-        return res;
-    }
-
-    /**     
      * The last 200 tweets will be retrieved
      */
     public Collection<Tweet> getHomeTimeline(int tweets) throws TwitterException {
@@ -530,7 +499,7 @@ public class TwitterSearch implements Serializable {
     /**
      * This method is can only return up to 800 statuses, including retweets.
      */
-    public long getHomeTimeline(Collection<Tweet> result, int tweets, long lastId) throws TwitterException {
+    public long getHomeTimeline(Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
         if (lastId <= 0)
             lastId = 1;
 
@@ -538,6 +507,7 @@ public class TwitterSearch implements Serializable {
         long maxId = lastId;
         long sinceId = lastId;
         int maxPages = tweets / hitsPerPage + 1;
+        SolrUser user = getUser();
         END_PAGINATION:
         for (int page = 0; page < maxPages; page++) {
             Paging paging = new Paging(page + 1, tweets, sinceId);
@@ -554,7 +524,7 @@ public class TwitterSearch implements Serializable {
                 if (st.getId() < sinceId)
                     break END_PAGINATION;
 
-                result.add(toTweet(st));
+                result.add(new SolrTweet(toTweet(st), user));
             }
 
             // sinceId could force us to leave earlier than defined by maxPages

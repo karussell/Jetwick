@@ -20,6 +20,9 @@ import com.wideplay.warp.persist.Transactional;
 import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.Helper;
 import de.jetwick.util.StopWatch;
 import java.util.PriorityQueue;
@@ -31,7 +34,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Tweet;
 import twitter4j.TwitterException;
 
 /**
@@ -43,23 +45,23 @@ public class TweetProducer extends MyThread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Lock lock = new ReentrantLock();
-    private StopWatch swSearch = new StopWatch("search");   
+    private StopWatch swSearch = new StopWatch("search");
     private final Condition condition = lock.newCondition();
     @Inject
     private TagDao tagDao;
-    private Queue<Tweet> tweets = new LinkedBlockingDeque<Tweet>();
+    private Queue<TweetPackage> tweets = new LinkedBlockingDeque<TweetPackage>();
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
     private TwitterSearch twSearch;
     private int maxTime = -1;
     @Inject
     private WorkManager manager;
-    private int maxFill = 2000;            
+    private int maxFill = 2000;
 
     public TweetProducer() {
         super("tweet-producer");
     }
 
-    public Queue<Tweet> getTweets() {
+    public Queue<TweetPackage> getTweets() {
         return tweets;
     }
 
@@ -120,7 +122,7 @@ public class TweetProducer extends MyThread {
                     try {
                         swSearch.start();
                         long maxId = 0;
-                        LinkedBlockingDeque<Tweet> tmp = new LinkedBlockingDeque<Tweet>();
+                        LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
                         if (tag.isHomeTimeline()) {
                             logger.info("use hometimeline:" + tag);
                             maxId = twSearch.getHomeTimeline(tmp, tag.getPages() * 100, tag.getLastId());
@@ -133,7 +135,7 @@ public class TweetProducer extends MyThread {
                         logger.info(swSearch + " \tqueue= " + tweets.size() + " \t + "
                                 + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
 
-                        tweets.addAll(tmp);
+                        tweets.add(new TweetPackageList().init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
 
                         if (!tag.isTransient()) {
                             // TODO save only if storing to solr was successful

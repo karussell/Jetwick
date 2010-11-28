@@ -32,13 +32,13 @@ public class MySession extends WebSession {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     @Inject
     private TwitterSearch twitterSearch;
-    private boolean dev = false;
+    private boolean useDefaultUser = false;
     private YUser user = null;
     private boolean twitterApiInitialized = false;
 
-    public MySession(Request request, boolean dev) {
+    public MySession(Request request, boolean useDefaultUser) {
         super(request);
-        this.dev = dev;
+        this.useDefaultUser = useDefaultUser;
     }
 
     public TwitterSearch getTwitterSearch() {
@@ -51,7 +51,7 @@ public class MySession extends WebSession {
             logger.info("initialized");
             twitterApiInitialized = true;
             // twitterSearch.init() is expensive so call it only once per session
-            if (twitterSearch.init() && dev) {
+            if (twitterSearch.init() && useDefaultUser) {
                 try {
                     setUser(twitterSearch.getUser());
                 } catch (TwitterException ex) {

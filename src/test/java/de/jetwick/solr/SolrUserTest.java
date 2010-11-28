@@ -15,8 +15,6 @@
  */
 package de.jetwick.solr;
 
-import java.util.Collection;
-import java.util.Iterator;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -32,8 +30,8 @@ public class SolrUserTest {
     @Test
     public void testOwnTweets() {
         SolrUser user = new SolrUser("Peter");
-        user.addOwnTweet(new SolrTweet(1, "1"));
-        user.addOwnTweet(new SolrTweet(1, "1"));
+        new SolrTweet(1, "1", user);
+        new SolrTweet(1, "1", user);
         assertEquals(1, user.getOwnTweets().size());
         assertEquals(user, user.getOwnTweets().iterator().next().getFromUser());
     }

@@ -18,7 +18,6 @@ package de.jetwick.tw;
 import com.google.inject.Inject;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.TagDao;
-import de.jetwick.data.YTag;
 import de.jetwick.hib.HibTestClass;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
@@ -35,7 +34,6 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import twitter4j.Tweet;
 import static org.junit.Assert.*;
 
 /**
@@ -87,21 +85,22 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));
         tweetSearch.commit();
 
-        TwitterSearch tws = new TwitterSearch(new Configuration().getTwitterSearchCredits()) {
+        TwitterSearch tws = new TwitterSearch() {
 
             @Override
-            public long search( String q, Collection<Tweet> result, int tweets, long sinceId) {
-                Twitter4JTweet tw1 = new Twitter4JTweet(1L, "test", "timetabling");
+            public long search(String q, Collection<SolrTweet> result, int tweets, long sinceId) {
+                SolrUser u = new SolrUser("timetabling");
+                SolrTweet tw1 = new SolrTweet(1L, "test", u);
                 result.add(tw1);
 
-                tw1 = new Twitter4JTweet(2L, "java test", "timetabling");
+                tw1 = new SolrTweet(2L, "java test", u);
                 result.add(tw1);
 
                 // this tweet will be ignored and so it won't be indexed!
-                tw1 = new Twitter4JTweet(3L, "duplicate tweet", "anotheruser");
+                tw1 = new SolrTweet(3L, "duplicate tweet", new SolrUser("anotheruser"));
                 result.add(tw1);
 
-                tw1 = new Twitter4JTweet(4L, "reference a user: @timetabling", "user3");
+                tw1 = new SolrTweet(4L, "reference a user: @timetabling", new SolrUser("user3"));
                 result.add(tw1);
 
                 assertEquals(4, result.size());
@@ -109,10 +108,10 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
             }
 
             @Override
-            public List<Tweet> getTweets(String userScreenName) {
+            public List<SolrTweet> getTweets(SolrUser user, Collection<SolrUser> users, int twPerPage) {
                 return Collections.EMPTY_LIST;
             }
-        };
+        }.setCredits(new Configuration().getTwitterSearchCredits());
 
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
         tweetProducer.setUncaughtExceptionHandler(handler);

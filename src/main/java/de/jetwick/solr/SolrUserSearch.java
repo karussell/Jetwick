@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import de.jetwick.config.Configuration;
@@ -203,7 +202,7 @@ public class SolrUserSearch extends SolrAbstractSearch {
             // sometimes nothing was highlighted
             if (tweets != null)
                 for (String text : tweets) {
-                    user.addOwnTweet(readTweet(text));
+                    readTweet(text, user);
                 }
         } else {
             Collection<Object> tweetContent = doc.getFieldValues(TWEET);
@@ -212,18 +211,18 @@ public class SolrUserSearch extends SolrAbstractSearch {
                 return user;
 
             for (Object text : tweetContent) {
-                user.addOwnTweet(readTweet((String) text));
+                readTweet((String) text, user);
             }
         }
 
         return user;
     }
 
-    public SolrTweet readTweet(String text) {
+    public SolrTweet readTweet(String text, SolrUser user) {
         String attr[] = text.split("\t", 3);
         long twId = Long.parseLong(attr[0]);
         Date date = new Date(Long.parseLong(attr[1]));
-        SolrTweet tw = new SolrTweet(twId, (String) attr[2]);
+        SolrTweet tw = new SolrTweet(twId, (String) attr[2], user);
         tw.setCreatedAt(date);
         return tw;
     }
@@ -266,8 +265,6 @@ public class SolrUserSearch extends SolrAbstractSearch {
                 set("hl.alternateField", TWEET);
         return query;
     }
-
-    
 
     @Override
     public QueryResponse search(SolrQuery query) throws SolrServerException {

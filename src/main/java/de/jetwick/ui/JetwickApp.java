@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import org.apache.wicket.Page;
@@ -59,7 +58,7 @@ public class JetwickApp extends WebApplication {
         getMarkupSettings().setDefaultBeforeDisabledLink(null);
         getMarkupSettings().setDefaultAfterDisabledLink(null);
 
-        if (isDev()) {
+        if ("development".equals(cfg.getStage())) {
             getDebugSettings().setDevelopmentUtilitiesEnabled(true);
 //            getRequestCycleSettings().addResponseFilter(new ServerAndClientTimeFilter());
         }
@@ -97,25 +96,28 @@ public class JetwickApp extends WebApplication {
 
     @Override
     public Class<? extends Page> getHomePage() {
-        return HomePage.class;
+        if ("offline".equals(cfg.getStage()))
+            return OfflinePage.class;
+        else
+            return HomePage.class;
     }
 
     // enable production mode
     @Override
     public String getConfigurationType() {
-        if (isDev())
-            return Application.DEVELOPMENT;
-        else
+        if ("production".equals(cfg.getStage()))
             return Application.DEPLOYMENT;
-    }
-
-    public boolean isDev() {
-        return "development".equals(cfg.getStage());
+        else
+            return Application.DEVELOPMENT;
     }
 
     @Override
-    public Session newSession(Request request, Response response) {        
-        Session session = new MySession(request, isDev());
+    public Session newSession(Request request, Response response) {
+        boolean useDefaultUser = false;
+        if ("development".equals(cfg.getStage()))
+            useDefaultUser = true;
+
+        Session session = new MySession(request, useDefaultUser);
         getGuiceInjector().inject(session);
         return session;
 

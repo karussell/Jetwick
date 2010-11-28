@@ -77,38 +77,20 @@ public class SolrTweet implements Serializable {
     private int qualReductions = 0;
     private byte[] textSignature;
 
-    public SolrTweet() {
-        // we need this for hibernate :-( (at least package protected)
-    }
-
-    public SolrTweet(long id, String text) {
-        init(id, text, new Date());
-    }
-
-    public SolrTweet(long id, String text, Date createdAt) {
-        init(id, text, createdAt);
-    }
-
-    public SolrTweet(Tweet tw) {
+    /**
+     * You'll need to call init after that constructor
+     */
+    public SolrTweet(Tweet tw, SolrUser fromUser) {
         init(tw);
-    }
-
-    public SolrTweet(boolean daemon, String text) {
-        // -1 is already the default for 'no replies' on twitter
-        if (daemon == false)
-            throw new IllegalArgumentException("please use the other constructors!");
-
-        // init daemon tweets with new Date() => we can remove daemon tweets
-        init(-2, text, new Date());
-        setDaemon(true);
-    }
-
-    public SolrTweet(long id, String text, SolrUser fromUser) {
-        this(id, text);
         setFromUser(fromUser);
     }
 
-    public void init(long id, String text, Date createdAt) {
+    public SolrTweet(long id, String text, SolrUser fromUser) {
+        init(id, text, new Date());
+        setFromUser(fromUser);
+    }
+
+    void init(long id, String text, Date createdAt) {
         quality = QUAL_MAX;
         this.twitterId = id;
         setText_(text);
@@ -118,7 +100,7 @@ public class SolrTweet implements Serializable {
             urlEntries = new ArrayList<UrlEntry>();
     }
 
-    public void init(Tweet tw) {
+    void init(Tweet tw) {
         // if tweet was retrieved via Status object
         if (tw instanceof Twitter4JTweet) {
             Twitter4JTweet myTw = (Twitter4JTweet) tw;
@@ -128,7 +110,11 @@ public class SolrTweet implements Serializable {
 
         init(tw.getId(), tw.getText(), tw.getCreatedAt());
         // most tweets have location == null. See user.location
-        location = tw.getLocation();
+        location = tw.getLocation();        
+    }
+
+    public void addUrlEntry(UrlEntry ue) {
+        urlEntries.add(ue);
     }
 
     public Collection<UrlEntry> getUrlEntries() {
@@ -195,8 +181,9 @@ public class SolrTweet implements Serializable {
         return inReplyTwitterId;
     }
 
-    public void setInReplyTwitterId(long inReplyTwitterId) {
+    public SolrTweet setInReplyTwitterId(long inReplyTwitterId) {
         this.inReplyTwitterId = inReplyTwitterId;
+        return this;
     }
 
     public Long getTwitterId() {
@@ -218,6 +205,13 @@ public class SolrTweet implements Serializable {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    /**
+     * @return false if this tweet should be deleted after some days
+     */
+    public boolean isPersistent() {
+        return updatedAt != null;
     }
 
     public void setFromUser(SolrUser fromUser, boolean reverse) {

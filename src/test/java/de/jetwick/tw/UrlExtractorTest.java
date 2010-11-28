@@ -17,15 +17,17 @@ package de.jetwick.tw;
 
 import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Before;
 import org.junit.Test;
-import twitter4j.Tweet;
 import static org.junit.Assert.*;
 
 /**
@@ -34,7 +36,7 @@ import static org.junit.Assert.*;
  */
 public class UrlExtractorTest {
 
-    private BlockingQueue<Tweet> ret = new LinkedBlockingQueue<Tweet>();
+    private BlockingQueue<SolrTweet> ret = new LinkedBlockingQueue<SolrTweet>();
 
     public UrlExtractorTest() {
     }
@@ -49,13 +51,13 @@ public class UrlExtractorTest {
     }
 
     public Collection<UrlEntry> get(int index) {
-        Iterator<Tweet> iter = ret.iterator();
-        Tweet tw;
+        Iterator<SolrTweet> iter = ret.iterator();
+        SolrTweet tw;
         int counter = 0;
         while (iter.hasNext()) {
             tw = iter.next();
             if (counter == index)
-                return ((Twitter4JTweet) tw).getUrlEntries();
+                return tw.getUrlEntries();
             counter++;
         }
         return null;
@@ -64,16 +66,16 @@ public class UrlExtractorTest {
     @Test
     public void testResolve() {
         TweetConsumer twp = createProducer();
-        twp.resolveUrls(new LinkedBlockingDeque<Tweet>(Arrays.asList(
-                new Twitter4JTweet(1L, "test http://hiho test2", "peter"),
-                new Twitter4JTweet(2L, "test http://www.is.de/AShortenerDomainWouldBeWithoutWWW test2", "peter"),
-                new Twitter4JTweet(3L, "test http://tooolong.de/test test2", "peter"),
-                new Twitter4JTweet(4L, "http://ok-long.de/test test2", "peter"),
-                new Twitter4JTweet(5L, "http://training-central.com ", "peter"),
-                new Twitter4JTweet(6L, "http://notval.l/", "peter"),
-                new Twitter4JTweet(7L, "http://vali.d.le/", "peter"),
-                new Twitter4JTweet(8L, "baöoruhasdfiuhas df aisudfh asildufhas dfasduifh http://vali.d.le/", "peter"),
-                new Twitter4JTweet(9L, " http://url.de/1 http://url.de/2\n http://url.de/3  ", "peter"))), ret, 1);
+        twp.resolveUrls(new LinkedBlockingDeque<SolrTweet>(Arrays.asList(
+                createTweet(1L, "test http://hiho test2"),
+                createTweet(2L, "test http://www.is.de/AShortenerDomainWouldBeWithoutWWW test2"),
+                createTweet(3L, "test http://tooolong.de/test test2"),
+                createTweet(4L, "http://ok-long.de/test test2"),
+                createTweet(5L, "http://training-central.com "),
+                createTweet(6L, "http://notval.l/"),
+                createTweet(7L, "http://vali.d.le/"),
+                createTweet(8L, "baöoruhasdfiuhas df aisudfh asildufhas dfasduifh http://vali.d.le/"),
+                createTweet(9L, " http://url.de/1 http://url.de/2\n http://url.de/3  "))), ret, 1);
 
         assertEquals(1, get(0).size());
         assertEquals("http://hiho", get(0).iterator().next().getResolvedUrl());
@@ -102,8 +104,8 @@ public class UrlExtractorTest {
     public void testResolveTitle() {
         TweetConsumer twp = createProducer();
 
-        twp.resolveUrls(new LinkedBlockingDeque<Tweet>(Arrays.asList(
-                new Twitter4JTweet(1L, "test http://hiho.de test2", "peter"))), ret, 1);
+        twp.resolveUrls(new LinkedBlockingDeque<SolrTweet>(Arrays.asList(
+                createTweet(1L, "test http://hiho.de test2"))), ret, 1);
 
         assertEquals("http://hiho.de_x", getFirst(0).getResolvedUrl());
         assertEquals("hiho.de_x", getFirst(0).getResolvedDomain());
@@ -132,8 +134,8 @@ public class UrlExtractorTest {
             }
         };
 
-        twp.resolveUrls(new LinkedBlockingDeque<Tweet>(Arrays.asList(
-                new Twitter4JTweet(1L, "test http://hiho.de test2", "peter"))), ret, 1);
+        twp.resolveUrls(new LinkedBlockingDeque<SolrTweet>(Arrays.asList(
+                createTweet(1L, "test http://hiho.de test2"))), ret, 1);
 
         assertEquals("http://hiho.de", getFirst(0).getResolvedUrl());
         assertEquals("hiho.de", getFirst(0).getResolvedDomain());
@@ -144,9 +146,9 @@ public class UrlExtractorTest {
     public void testResolveRealTweets() {
         TweetConsumer twp = createProducer();
 
-        twp.resolveUrls(new LinkedBlockingDeque<Tweet>(Arrays.asList(
-                new Twitter4JTweet(1L, "correction ! RT @timetabling: @ptrthomas not really jetty + wicket, but nearly ;-) see http://is.gd/eoXjX and http://wp.me/p8zlh-z6", "peter"),
-                new Twitter4JTweet(2L, "Samsung Vibrant Android Smartphone Drops To One Penny With Amazon [Shopping ...: TFTS (blog)And on... http://bit.ly/ahlIIw http://ib2.in/bB", "peter"))), ret, 1);
+        twp.resolveUrls(new LinkedBlockingDeque<SolrTweet>(Arrays.asList(
+                createTweet(1L, "correction ! RT @timetabling: @ptrthomas not really jetty + wicket, but nearly ;-) see http://is.gd/eoXjX and http://wp.me/p8zlh-z6"),
+                createTweet(2L, "Samsung Vibrant Android Smartphone Drops To One Penny With Amazon [Shopping ...: TFTS (blog)And on... http://bit.ly/ahlIIw http://ib2.in/bB"))), ret, 1);
 
         assertEquals(2, get(0).size());
         Iterator<UrlEntry> iter = get(0).iterator();
@@ -180,5 +182,9 @@ public class UrlExtractorTest {
                 };
             }
         };
+    }
+
+    SolrTweet createTweet(long id, String twText) {
+        return new SolrTweet(id, twText, new SolrUser("tmp")).setCreatedAt(new Date(id));
     }
 }

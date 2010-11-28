@@ -47,11 +47,12 @@ public class Jetwot {
         // the bot can be feeded through @jetwot java => q=java
         // answer of jetwot: @xy thanks! I will try to find trends for 'java'
         // restriction: one user per day = one query
-        return new TwitterSearch(credits);
+        return new TwitterSearch().setCredits(credits);
     }
 
     public void start() {
         TwitterSearch tw = createJetwot();
+        tw.init();
         while (true) {
             // every 15 minutes check for new trending url. put title + url into cache
             // or even better facet over dt (every 20 minutes) and pick up the docs!

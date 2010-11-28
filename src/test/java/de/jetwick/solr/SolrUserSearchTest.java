@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import java.util.Set;
@@ -120,7 +119,7 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
 
         // update
         user = new SolrUser("karsten");
-        user.addOwnTweet(new SolrTweet(4, "users without own tweets won't get indexed!"));
+        new SolrTweet(4, "users without own tweets won't get indexed!", user);
         userSearch.update(user, true, true);
 
         assertEquals(0, userSearch.search("test").size());
@@ -318,13 +317,13 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
         userSearch.setTermMinFrequency(0);
 
         SolrUser karsten = new SolrUser("karsten");
-        karsten.addOwnTweet(new SolrTweet(1L, "test test"));
-        karsten.addOwnTweet(new SolrTweet(2L, "help help java"));
+        new SolrTweet(1L, "test test", karsten);
+        new SolrTweet(2L, "help help java", karsten);
         userSearch.save(karsten);
 
         SolrUser peter = new SolrUser("peter");
-        peter.addOwnTweet(new SolrTweet(3L, "test test"));
-        peter.addOwnTweet(new SolrTweet(4L, "bla bli java"));
+        new SolrTweet(3L, "test test", peter);
+        new SolrTweet(4L, "bla bli java", peter);
         userSearch.save(peter);
 
         // now createTags: test, java, ...
@@ -368,25 +367,25 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     @Test
     public void testHighlighting() throws SolrServerException {
         SolrUser karsten = new SolrUser("karsten");
-        karsten.addOwnTweet(new SolrTweet(2, "test test"));
-        karsten.addOwnTweet(new SolrTweet(1, "help help java"));
+        new SolrTweet(2, "test test", karsten);
+        new SolrTweet(1, "help help java", karsten);
         userSearch.save(karsten);
 
         SolrUser peter = new SolrUser("peter");
-        peter.addOwnTweet(new SolrTweet(4, "test pest Java"));
-        peter.addOwnTweet(new SolrTweet(3, "bla bli java"));
-        peter.addOwnTweet(new SolrTweet(2, "ignore this old (smallest id) snippet Java"));
+        new SolrTweet(4, "test pest Java", peter);
+        new SolrTweet(3, "bla bli java", peter);
+        new SolrTweet(2, "ignore this old (smallest id) snippet Java", peter);
         userSearch.save(peter);
         SolrUser javaUser = new SolrUser("java");
-        javaUser.addOwnTweet(new SolrTweet(12, "nothing said"));
-        javaUser.addOwnTweet(new SolrTweet(11, "help help you if you can"));
+        new SolrTweet(12, "nothing said", javaUser);
+        new SolrTweet(11, "help help you if you can", javaUser);
         userSearch.save(javaUser);
 
         SolrUser emptyMatch = new SolrUser("emptyMatch");
-        emptyMatch.addOwnTweet(new SolrTweet(10, "help help me me me me me me help help me me me me me me "
-                + "help help me me me me me me help help me me me me me me java"));
+        new SolrTweet(10, "help help me me me me me me help help me me me me me me "
+                + "help help me me me me me me help help me me me me me me java", emptyMatch);
 
-        emptyMatch.addOwnTweet(new SolrTweet(7, "help help2 java"));
+        new SolrTweet(7, "help help2 java", emptyMatch);
         userSearch.save(emptyMatch);
 
         userSearch.commit();

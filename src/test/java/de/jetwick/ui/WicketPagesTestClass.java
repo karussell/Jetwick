@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
-import de.jetwick.data.YUser;
+import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrAdSearchTest;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrTweetSearchTest;
+import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.solr.SolrUserSearchTest;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.queue.TweetPackage;
+import java.rmi.RemoteException;
 import org.apache.wicket.Application;
 import org.apache.wicket.guice.GuiceComponentInjector;
 import org.apache.wicket.util.tester.WicketTester;
@@ -53,23 +56,7 @@ public class WicketPagesTestClass {
 
             @Override
             public void installTwitterModule() {
-                bind(TwitterSearch.class).toInstance(new TwitterSearch(new Credits()) {
-
-                    @Override
-                    public int getRateLimit() {
-                        return 100;
-                    }
-
-                    @Override
-                    public boolean init() {
-                        return true;
-                    }
-
-                    @Override
-                    public YUser getUser() throws TwitterException {
-                        return new YUser("testUser");
-                    }
-                });
+                bind(TwitterSearch.class).toInstance(createTwitterSearch());
             }
 
             @Override
@@ -104,6 +91,11 @@ public class WicketPagesTestClass {
                 }
                 bind(SolrAdSearch.class).toInstance(sAd.getTweetSearch());
             }
+
+            @Override
+            public void installRMIModule() {
+                bind(RMIClient.class).toInstance(createRMIClient());
+            }
         });
         return new JetwickApp() {
 
@@ -115,6 +107,41 @@ public class WicketPagesTestClass {
             @Override
             protected GuiceComponentInjector getGuiceInjector() {
                 return new GuiceComponentInjector(this, injector);
+            }
+        };
+    }
+
+    protected TwitterSearch createTwitterSearch() {
+        return new TwitterSearch() {
+
+            @Override
+            public int getRateLimit() {
+                return 100;
+            }
+
+            @Override
+            public boolean init() {
+                return true;
+            }
+
+            @Override
+            public SolrUser getUser() throws TwitterException {
+                return new SolrUser("testUser");
+            }
+        }.setCredits(new Credits());
+    }
+
+    protected RMIClient createRMIClient() {
+        return new RMIClient(new Configuration()) {
+
+            @Override
+            public RMIClient init() {
+                return this;
+            }
+
+            @Override
+            public void send(TweetPackage tweets) throws RemoteException {
+                // disable rmi stuff
             }
         };
     }

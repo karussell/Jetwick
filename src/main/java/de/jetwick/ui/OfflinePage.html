@@ -1,0 +1,75 @@
+<!--
+
+    Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+      xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
+    <head>
+        <title>Jetwick Offline</title>
+        <link type="image/png" rel="icon" href="favicon.ico"/>
+        <link rel="stylesheet" type="text/css" href="css/style.css"/>
+    </head>
+    <body>
+        <div id="offline">
+            <div class="feedback" wicket:id="feedback">
+            </div>
+            <a href="http://github.com/karussell/Jetwick">
+                <img style="position: absolute; top: 0; right: 0; border: 0;"
+                     src="img/github-fork.png" alt="Fork me on GitHub"/>
+            </a>
+            <ul>                
+                <li class="about-desc">
+                    We are working hard to make jetwick faster for you. Please stay tuned via
+                    <a href="http://twitter.com/jetwick">
+                        jetwick@twitter.com
+                    </a>
+                </li>
+                <li>
+                    Feel free to host your clone of jetwick. Jetwick is
+                    <a href="http://github.com/karussell/Jetwick">
+                        Open Source.
+                    </a>
+                    There are various possibilities to use jetwick. It could
+                    useful for personal or business usage. Stay tuned.
+                    <a href="http://twitter.com/jetwick">
+                        We'll write about it
+                    </a>
+                </li>
+                <li>
+                    <a href="http://www.youtube.com/watch?v=9U2uxeaVIXk">
+                        <img src="img/jw-video.png" alt="View Video Intro"/>
+                    </a>
+                </li>
+
+            </ul>
+            <script type="text/javascript">
+                var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.pannous.info/piwik/" : "http://www.pannous.info/piwik/");
+                document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
+            </script>
+            <script type="text/javascript">
+                try {
+                    var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 1);
+                    piwikTracker.trackPageView();
+                    piwikTracker.enableLinkTracking();
+                } catch( err ) {  }
+            </script>
+            <img src="http://www.pannous.info/piwik/piwik.php?idsite=1" style="border:0" alt="" />
+        </div>
+    </body>
+</html>

@@ -26,6 +26,7 @@ import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.ui.jschart.JSDateFilter;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
@@ -47,7 +48,6 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Tweet;
 import twitter4j.TwitterException;
 
 /**
@@ -76,9 +76,11 @@ public class HomePage extends WebPage {
     private Provider<SolrTweetSearch> twindexProvider;
     @Inject
     private Provider<RMIClient> rmiProvider;
+    @Inject
+    private Provider<MyTweetGrabber> grabberProvider;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
-    private transient Thread backgroundThread;
+    private transient TweetPackage tweetPackage;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
 
@@ -148,8 +150,8 @@ public class HomePage extends WebPage {
         this.rmiProvider = rmiProvider;
     }
 
-    public Thread getBackgroundThread() {
-        return backgroundThread;
+    public TweetPackage getTweetPackage() {
+        return tweetPackage;
     }
 
     public SolrQuery createQuery(PageParameters parameters) {
@@ -277,7 +279,7 @@ public class HomePage extends WebPage {
         if (getMySession().hasLoggedIn()) {
             add(new WebComponent("loginLink").setVisible(false));
             add(new UserPanel("userPanel", getMySession().getUser(),
-                    new MyTweetGrabber(getMySession().getUser().getScreenName()).setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
+                    grabberProvider.get().init(getMySession().getUser().getScreenName()).setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
 
                 @Override
                 public void onLogout() {
@@ -573,7 +575,7 @@ public class HomePage extends WebPage {
         }
 
         resultsPanel.clear();
-        Collection<? extends Tweet> tweets = null;
+        Collection<SolrTweet> tweets = null;
         String msg = "";
         if (totalHits > 0) {
             time = (System.currentTimeMillis() - start) / 100.0f;
@@ -596,7 +598,7 @@ public class HomePage extends WebPage {
                 try {
                     if (getTwitterSearch().getRateLimit() > TwitterSearch.LIMIT) {
                         if (!userName.isEmpty()) {
-                            tweets = getTwitterSearch().getTweets(userName, users, TWEETS_IF_NO_HIT);
+                            tweets = getTwitterSearch().getTweets(new SolrUser(userName), users, TWEETS_IF_NO_HIT);
                         } else
                             tweets = getTwitterSearch().searchAndGetUsers(queryString, users, TWEETS_IF_NO_HIT, 1);
                     }
@@ -621,12 +623,12 @@ public class HomePage extends WebPage {
 
         if (startBGThread) {
             try {
-                backgroundThread = queueTweets(tweets, queryString, userName);
-                backgroundThread.start();
+                tweetPackage = queueTweets(tweets, queryString, userName);
             } catch (Exception ex) {
                 logger.error("Couldn't queue tweets. query" + queryString + " user=" + userName);
             }
-        }
+        } else
+            tweetPackage = null;
 
         facetPanel.update(rsp, query);
         tagCloud.update(rsp, query);
@@ -656,11 +658,13 @@ public class HomePage extends WebPage {
         logger.info("Finished Constructing UI");
     }
 
-    public Thread queueTweets(final Collection<? extends Tweet> tweets,
-            final String qs, final String userName) {
+    public TweetPackage queueTweets(Collection<SolrTweet> tweets,
+            String qs, String userName) {
 
-        MyTweetGrabber grabber = new MyTweetGrabber(tweets, userName, qs).setTweetsCount(TWEETS_IF_HIT).
+//        return new TweetPackageList(0, tweets);
+        MyTweetGrabber grabber = grabberProvider.get();
+        grabber.init(tweets, userName, qs).setTweetsCount(TWEETS_IF_HIT).
                 setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch());
-        return grabber.createQueueThread();
+        return grabber.queueTweetPackage();
     }
 }

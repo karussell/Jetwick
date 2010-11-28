@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.data;
 
 import de.jetwick.tw.TwitterSearch;
@@ -38,7 +37,6 @@ import javax.persistence.UniqueConstraint;
 import javax.persistence.Version;
 import org.hibernate.annotations.BatchSize;
 import twitter4j.Status;
-import twitter4j.Tweet;
 import twitter4j.User;
 
 /**
@@ -95,11 +93,6 @@ public class YUser implements DbObject, Serializable {
         this.screenName = name.toLowerCase();
         if (screenName.trim().length() == 0)
             throw new IllegalArgumentException("Screenname must not be empty!");
-    }
-
-    public YUser(Tweet tw) {
-        this(tw.getFromUser());
-        profileImageUrl = tw.getProfileImageUrl();
     }
 
     @Override

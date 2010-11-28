@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
-import de.jetwick.tw.Twitter4JTweet;
-import de.jetwick.tw.TwitterSearch;
 import de.jetwick.util.MyDate;
 import de.jetwick.data.UrlEntry;
 import java.io.IOException;
@@ -41,7 +38,6 @@ import org.apache.solr.common.SolrInputField;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import twitter4j.Tweet;
 import static org.junit.Assert.*;
 
 /**
@@ -188,9 +184,9 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         SolrUser user = new SolrUser("peter");
         user.setLocation("TEST");
         SolrTweet tw;
-        user.addOwnTweet(tw = new SolrTweet(1L, "test tweet text"));
+        tw = new SolrTweet(1L, "test tweet text", user);
         twSearch.update(tw, false);
-        user.addOwnTweet(tw = new SolrTweet(2L, "test tweet text2"));
+        tw = new SolrTweet(2L, "test tweet text2", user);
         twSearch.update(tw, true);
         List<SolrUser> res = new ArrayList<SolrUser>();
         twSearch.search(res, new SolrQuery().setFilterQueries("loc:TEST"));
@@ -198,14 +194,12 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(2, res.get(0).getOwnTweets().size());
 
         user = new SolrUser("peter");
-        tw = new SolrTweet(3L, "test tweet text");
+        tw = new SolrTweet(3L, "test tweet text", user);
         tw.setLocation("TEST3");
-        user.addOwnTweet(tw);
         twSearch.update(tw, false);
 
-        tw = new SolrTweet(4L, "test tweet text");
+        tw = new SolrTweet(4L, "test tweet text", user);
         tw.setLocation("TEST4");
-        user.addOwnTweet(tw);
         twSearch.update(tw, true);
         res = new ArrayList<SolrUser>();
         twSearch.search(res, new SolrQuery().setFilterQueries("loc:TEST3"));
@@ -287,23 +281,23 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testSimilarQuery() {
-        SolrQuery q = new TweetQuery().createSimilarQuery(new SolrTweet(1L, "Test test jAva http://blabli"));
+        SolrQuery q = new TweetQuery().createSimilarQuery(new SolrTweet(1L, "Test test jAva http://blabli", new SolrUser("tmp")));
         assertTrue(q.getQuery().contains("test"));
         assertTrue(q.getQuery().contains("java"));
         assertFalse(q.getQuery().contains("http"));
-        q = new TweetQuery().createSimilarQuery(new SolrTweet(1L, "RT @user: test"));
+        q = new TweetQuery().createSimilarQuery(new SolrTweet(1L, "RT @user: test", new SolrUser("tmp")));
         assertFalse(q.getQuery().contains("user"));
     }
 
     @Test
     public void testNewUpdate() {
-        List<Tweet> list = new ArrayList<Tweet>();
+        List<SolrTweet> list = new ArrayList<SolrTweet>();
 
         list.add(createTweet(1L, "text", "usera"));
         list.add(createTweet(2L, "RT @usera: text", "userb"));
 
         list.add(createTweet(3L, "text2", "usera"));
-        list.add(createTweet(4L, "hey I read your text", "userb").setInReplyToStatusId(3L));
+        list.add(createTweet(4L, "hey I read your text", "userb").setInReplyTwitterId(3L));
 
         Collection<SolrTweet> res = twSearch.update(list, new Date(0));
         assertEquals(4, res.size());
@@ -328,9 +322,9 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
         // store A and D
         twSearch.privateUpdate(Arrays.asList(createTweet(1L, "A", "u1"),
-                createTweet(4L, "D", "u4").setInReplyToStatusId(3L)));
+                createTweet(4L, "D", "u4").setInReplyTwitterId(3L)));
 
-        twSearch.update(createTweet(3L, "C", "u3").setInReplyToStatusId(1L));
+        twSearch.update(createTweet(3L, "C", "u3").setInReplyTwitterId(1L));
 
         // now check if C was properly connected with A and D
         SolrTweet twC = twSearch.findByTwitterId(3L);
@@ -340,7 +334,7 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(1, twA.getReplyCount());
 
         // now check if B was properly connected with A
-        twSearch.update(createTweet(2L, "B", "u2").setInReplyToStatusId(1L));
+        twSearch.update(createTweet(2L, "B", "u2").setInReplyTwitterId(1L));
 
         twA = twSearch.findByTwitterId(1L);
         assertEquals(2, twA.getReplyCount());
@@ -348,94 +342,94 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testAttach() throws Exception {
-        Twitter4JTweet tw = new Twitter4JTweet(1, "test", "peter");
-        twSearch.update(tw);
+        twSearch.update(createTweet(1, "test", "peter"));
+        twSearch.update(createTweet(2, "test2", "peter"));
 
-        tw = new Twitter4JTweet(2, "test2", "peter");
-        twSearch.update(tw);
-
-        assertEquals(2, twSearch.findBSolrUserName("peter").getOwnTweets().size());
+        assertEquals(2, twSearch.findByUserName("peter").getOwnTweets().size());
     }
 
     @Test
     public void testDoNotSaveSecondUser() {
-        Twitter4JTweet fTweet = new Twitter4JTweet(5, "@peter @karsten bla bli", "peter");
+        SolrTweet fTweet = createTweet(5, "@peter @karsten bla bli", "peter");
         twSearch.update(fTweet);
 
-        assertNull(twSearch.findBSolrUserName("karsten"));
-        assertNotNull(twSearch.findBSolrUserName("peter"));
+        assertNull(twSearch.findByUserName("karsten"));
+        assertNotNull(twSearch.findByUserName("peter"));
     }
 
     @Test
     public void testDoSaveDuplicate() {
-        twSearch.update(new Twitter4JTweet(4, "@peter bla bli", "peter"));
-        twSearch.update(new Twitter4JTweet(5, "@peter bla bli", "karsten"));
+        twSearch.update(createTweet(4, "@peter bla bli", "peter"));
+        twSearch.update(createTweet(5, "@peter bla bli", "karsten"));
 
-        assertNotNull(twSearch.findBSolrUserName("karsten"));
-        assertNotNull(twSearch.findBSolrUserName("peter"));
+        assertNotNull(twSearch.findByUserName("karsten"));
+        assertNotNull(twSearch.findByUserName("peter"));
     }
 
     @Test
     public void testIdVsName() {
-        Twitter4JTweet fTweet = new Twitter4JTweet(5, "@karsten bla bli", "peter");
+        SolrTweet fTweet = createTweet(5, "@karsten bla bli", "peter");
         twSearch.update(fTweet);
 
-        fTweet = new Twitter4JTweet(6, "@peter bla bli", "karsten");
+        fTweet = createTweet(6, "@peter bla bli", "karsten");
         twSearch.update(fTweet);
-        assertNotNull(twSearch.findBSolrUserName("karsten"));
+        assertNotNull(twSearch.findByUserName("karsten"));
     }
 
     @Test
     public void testNoDuplicateUser2() {
-        Twitter4JTweet fTweet = new Twitter4JTweet(1, "@karsten bla bli", "peter");
+        SolrTweet fTweet = createTweet(1, "@karsten bla bli", "peter");
         twSearch.update(fTweet);
 
-        fTweet = new Twitter4JTweet(2, "@Karsten bla bli", "Peter");
+        fTweet = createTweet(2, "@Karsten bla bli", "Peter");
         twSearch.update(fTweet);
     }
 
     @Test
     public void testNoDuplicateTweet() {
-        Twitter4JTweet fTweet = new Twitter4JTweet(123, "@karsten bla bli", "peter");
+        SolrTweet fTweet = createTweet(123, "@karsten bla bli", "peter");
         twSearch.update(fTweet);
         twSearch.update(fTweet);
 
         assertEquals(1, twSearch.countAll());
-        assertEquals(1, twSearch.findBSolrUserName("peter").getOwnTweets().size());
+        assertEquals(1, twSearch.findByUserName("peter").getOwnTweets().size());
     }
 
     @Test
     public void testUpdateTweetsWhichIsInfluencedFromActivationDepth() throws Exception {
-        Twitter4JTweet tw1 = new Twitter4JTweet(1L, "tweet1", "peter");
-        Twitter4JTweet tw2 = new Twitter4JTweet(2L, "tweet2", "peter");
+        SolrTweet tw1 = createTweet(1L, "tweet1", "peter");
+        SolrTweet tw2 = createTweet(2L, "tweet2", "peter");
 
         twSearch.update(tw1);
         twSearch.update(tw2);
 
-        assertEquals(2, twSearch.findBSolrUserName("peter").getOwnTweets().size());
+        assertEquals(2, twSearch.findByUserName("peter").getOwnTweets().size());
 
-        tw1 = new Twitter4JTweet(1L, "tweet1", "peter");
+        tw1 = createTweet(1L, "tweet1", "peter");
         twSearch.update(tw1);
 
-        assertEquals(2, twSearch.findBSolrUserName("peter").getOwnTweets().size());
+        assertEquals(2, twSearch.findByUserName("peter").getOwnTweets().size());
     }
 
     @Test
     public void testUpdateAndRemove() throws Exception {
-        Twitter4JTweet tw1 = new Twitter4JTweet(1L, "@karsten hajo", "peter");
+        SolrTweet tw1 = createTweet(1L, "@karsten hajo", "peter");
         tw1.setCreatedAt(new MyDate().minusDays(2).toDate());
 
         twSearch.update(tw1);
         assertEquals(1, twSearch.countAll());
         assertEquals("@karsten hajo", twSearch.search("hajo").iterator().next().getOwnTweets().iterator().next().getText());
-        assertEquals(1, twSearch.findBSolrUserName("peter").getOwnTweets().size());
+        assertEquals(1, twSearch.findByUserName("peter").getOwnTweets().size());
 
-        Collection<SolrTweet> res = twSearch.update(Arrays.asList(new Twitter4JTweet(2L, "test", "peter")),
+        SolrTweet tw = createTweet(2L, "test", "peter");
+        tw.setCreatedAt(new Date());
+        Collection<SolrTweet> res = twSearch.update(Arrays.asList(tw),
                 new MyDate().minusDays(1).toDate());
         assertEquals(1, res.size());
         assertEquals(1, twSearch.countAll());
+        assertEquals(1, twSearch.search("test").size());
         assertEquals(0, twSearch.search("hajo").size());
-        assertEquals(1, twSearch.findBSolrUserName("peter").getOwnTweets().size());
+        assertEquals(1, twSearch.findByUserName("peter").getOwnTweets().size());
     }
 
     @Test
@@ -447,8 +441,8 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
 
         twSearch.privateUpdate(Arrays.asList(
-                new Twitter4JTweet(3L, "RT @userA: bla bli blu", "userC"),
-                new Twitter4JTweet(4L, "RT @userA: bla bli blu", "userD")));
+                createTweet(3L, "RT @userA: bla bli blu", "userC"),
+                createTweet(4L, "RT @userA: bla bli blu", "userD")));
 
         assertEquals(2, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(2, twSearch.findByTwitterId(1L).getRetweetCount());
@@ -458,7 +452,7 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(0, twSearch.findByTwitterId(4L).getReplyCount());
 
         twSearch.privateUpdate(Arrays.asList(
-                new Twitter4JTweet(5L, "RT @userA: bla bli blu", "userE")));
+                createTweet(5L, "RT @userA: bla bli blu", "userE")));
 
         assertEquals(3, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(3, twSearch.findByTwitterId(1L).getRetweetCount());
@@ -478,8 +472,8 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testProcessToUser() throws Exception {
-        twSearch.update(new Twitter4JTweet(1L, "@userA bla bli blu", "userB"));
-        twSearch.update(new Twitter4JTweet(2L, "RT @userB: @userA bla bli blu", "userA"));
+        twSearch.update(createTweet(1L, "@userA bla bli blu", "userB"));
+        twSearch.update(createTweet(2L, "RT @userB: @userA bla bli blu", "userA"));
         assertEquals(2, twSearch.countAll());
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
@@ -489,27 +483,27 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testDoNotAllowSelfRetweets() throws Exception {
-        twSearch.update(new Twitter4JTweet(1L, "bla bli blu", "userA"));
-        twSearch.update(new Twitter4JTweet(2L, "RT @userA: bla bli blu", "userA"));
+        twSearch.update(createTweet(1L, "bla bli blu", "userA"));
+        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userA"));
 
         assertEquals(0, twSearch.findByTwitterId(1L).getReplyCount());
     }
 
     @Test
     public void testDoNotAddDuplicateRetweets() throws Exception {
-        twSearch.update(new Twitter4JTweet(1L, "bla bli blu", "userA"));
+        twSearch.update(createTweet(1L, "bla bli blu", "userA"));
         assertEquals(0, twSearch.findByTwitterId(1L).getReplyCount());
 
-        twSearch.update(new Twitter4JTweet(2L, "RT @userA: bla bli blu", "userB"));
+        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userB"));
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
 
-        twSearch.update(new Twitter4JTweet(3L, "RT @userA: bla bli blu", "userB"));
+        twSearch.update(createTweet(3L, "RT @userA: bla bli blu", "userB"));
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
     }
 
     @Test
     public void testDoNotAddOldTweets() {
-        Twitter4JTweet tw = new Twitter4JTweet(2L, "RT @userA: bla bli blu", "userB");
+        SolrTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
         tw.setCreatedAt(new MyDate().minusDays(2).toDate());
         assertEquals(0, twSearch.update(Arrays.asList(tw),
                 new MyDate().minusDays(1).toDate()).size());
@@ -517,52 +511,56 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testAddOldTweetsForJetwickSource() {
-        Twitter4JTweet tw = new Twitter4JTweet(2L, "RT @userA: bla bli blu", "userB");
-        tw.setSource(TwitterSearch.SOURCE);
-        tw.setCreatedAt(new MyDate().minusDays(2).toDate());
+        SolrTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
+        Date dt = new MyDate().minusDays(2).toDate();
+        tw.setUpdatedAt(dt);
+        tw.setCreatedAt(dt);
         assertEquals(1, twSearch.update(tw).size());
     }
 
     @Test
     public void testDontRemoveOldIfJetwicked() throws Exception {
-        Twitter4JTweet tw2 = new Twitter4JTweet(2L, "RT @userA: bla bli blu", "userB");
-        tw2.setSource(TwitterSearch.SOURCE);
-        tw2.setCreatedAt(new MyDate().minusDays(2).toDate());
+        SolrTweet tw2 = createTweet(2L, "RT @userA: bla bli blu", "userB");
+        Date dt = new MyDate().minusDays(2).toDate();
+        tw2.setUpdatedAt(dt);
+        tw2.setCreatedAt(dt);
         assertEquals(1, twSearch.update(tw2).size());
         assertNotNull(twSearch.findByTwitterId(2L).getUpdatedAt());
 
-        Twitter4JTweet tw3 = new Twitter4JTweet(3L, "another tweet grabbed from search", "userB");
+        SolrTweet tw3 = createTweet(3L, "another tweet grabbed from search", "userB");
+        tw3.setCreatedAt(new Date());
         Collection<SolrTweet> res = twSearch.update(Arrays.asList(tw3), new MyDate().minusDays(1).toDate());
         assertEquals(1, res.size());
-        // TODO
-//        assertEquals(0, res.getDeletedTweets().size());
     }
 
     @Test
     public void testComplexUpdate() throws Exception {
-        Twitter4JTweet tw1 = createTweet(1L, "bla bli blu", "userA");
+        SolrTweet tw1 = createTweet(1L, "bla bli blu", "userA");
         tw1.setCreatedAt(new MyDate().minusDays(2).toDate());
 
-        Twitter4JTweet tw2 = createTweet(2L, "rt @usera: bla bli blu", "userB");
+        SolrTweet tw2 = createTweet(2L, "rt @usera: bla bli blu", "userB");
         tw2.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
 
-        Twitter4JTweet tw3 = createTweet(3L, "rt @usera: bla bli blu", "userC");
+        SolrTweet tw3 = createTweet(3L, "rt @usera: bla bli blu", "userC");
         tw3.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
 
-        Twitter4JTweet tw4 = createTweet(4L, "rt @usera: bla bli blu", "userD");
+        SolrTweet tw4 = createTweet(4L, "rt @usera: bla bli blu", "userD");
         tw4.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
 
         Collection<SolrTweet> res = twSearch.privateUpdate(Arrays.asList(tw1, tw2, tw3, tw4));
-        assertEquals(1, twSearch.findBSolrUserName("usera").getOwnTweets().size());
+        assertEquals(1, twSearch.findByUserName("usera").getOwnTweets().size());
         assertEquals(3, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(4, res.size());
 
         // we do not sort the tweets anylonger so that 104 could be also a retweet of:
-//        Twitter4JTweet tw100 = new Twitter4JTweet(100L, "newtext", "usera");
-        Twitter4JTweet tw101 = new Twitter4JTweet(101L, "newtext two", "usera");
-        Twitter4JTweet tw102 = new Twitter4JTweet(102L, "newbla one", "userd");
-        Twitter4JTweet tw103 = new Twitter4JTweet(103L, "newbla two", "userd");
-        Twitter4JTweet tw104 = new Twitter4JTweet(104L, "rt @usera: newtext two", "userc");
+//        SolrTweet tw100 = createTweet(100L, "newtext", "usera");
+        SolrTweet tw101 = createTweet(101L, "newtext two", "usera");
+        tw101.setCreatedAt(new Date());
+        SolrTweet tw102 = createTweet(102L, "newbla one", "userd");
+        tw102.setCreatedAt(new Date());
+        SolrTweet tw103 = createTweet(103L, "newbla two", "userd");
+        tw103.setCreatedAt(new Date());
+        SolrTweet tw104 = createTweet(104L, "rt @usera: newtext two", "userc");
         tw104.setCreatedAt(new MyDate(tw101.getCreatedAt()).plusMinutes(1).toDate());
 
         res = twSearch.update(Arrays.asList(tw101, tw102, tw103, tw104), new MyDate().minusDays(1).toDate());
@@ -578,15 +576,15 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testDoNotThrowQueryParserException() {
-        Twitter4JTweet tw = createTweet(1L, "rt @jenny2s: -- Earth, Wind & Fire - September  (From \"Live In Japan\")"
+        SolrTweet tw = createTweet(1L, "rt @jenny2s: -- Earth, Wind & Fire - September  (From \"Live In Japan\")"
                 + " http://www.youtube.com/watch?v=hy-huQAMPQA via @youtube --- HAPPY SEPTEMBER !!", "usera");
         twSearch.update(tw);
     }
 
     @Test
     public void testUpdateList() {
-        assertEquals(1, twSearch.privateUpdate(Arrays.asList(new Twitter4JTweet(1L, "test", "peter"),
-                new Twitter4JTweet(1L, "test", "peter"))).size());
+        assertEquals(1, twSearch.privateUpdate(Arrays.asList(createTweet(1L, "test", "peter"),
+                createTweet(1L, "test", "peter"))).size());
         assertNotNull(twSearch.findByTwitterId(1L));
     }
 
@@ -704,8 +702,8 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         // fill index with 2 tweets and 1 user
         SolrTweet tw2;
         twSearch.update(Arrays.asList(
-                createSolrTweet(1L, "test", "peter"),
-                tw2 = createSolrTweet(2L, "text", "peter")));
+                createTweet(1L, "test", "peter"),
+                tw2 = createTweet(2L, "text", "peter")));
         twSearch.commit();
 
         Map<Long, SolrTweet> alreadyExistingTw = new LinkedHashMap<Long, SolrTweet>();
@@ -724,15 +722,15 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         return new SolrTweet(dt.getTime(), twText, new SolrUser(user)).setCreatedAt(dt.toDate());
     }
 
-    SolrTweet createSolrTweet(long id, String twText, String user) {
+    SolrTweet createTweet(long id, String twText, String user) {
         return new SolrTweet(id, twText, new SolrUser(user)).setCreatedAt(new Date(id));
     }
 
-    Twitter4JTweet createTweet(long id, String twText, String user) {
-        return new Twitter4JTweet(id, twText, user).setCreatedAt(new Date(id));
+    SolrTweet createOldTweet(long id, String twText, String user) {
+        return createTweet(id, twText, user).setCreatedAt(new Date(id));
     }
 
-    Twitter4JTweet createTweet(MyDate dt, String twText, String user) {
-        return new Twitter4JTweet(dt.getTime(), twText, user).setCreatedAt(dt.toDate());
+    SolrTweet createTweet(MyDate dt, String twText, String user) {
+        return createTweet(dt.getTime(), twText, user).setCreatedAt(dt.toDate());
     }
 }

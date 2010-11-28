@@ -20,6 +20,7 @@ import de.jetwick.JetwickTestClass;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.Set;
 import org.junit.Before;
 
 import org.junit.Test;
-import twitter4j.Tweet;
 import static org.junit.Assert.*;
 import twitter4j.TwitterException;
 
@@ -79,11 +79,12 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void statsOfAUser() throws TwitterException {
         TwitterSearch st = twitterSearch;
-        List<? extends Tweet> tweets = st.getTweets("timetabling", 20);
+        List<SolrTweet> tweets = st.getTweets(new SolrUser("timetabling"), 20);
         List<SolrTweet> newTweets = new ArrayList();
-        for (Tweet tw : tweets) {
-            SolrTweet tw2 = new SolrTweet(tw);
-            newTweets.add(tw2);
+        for (SolrTweet tw : tweets) {
+            assertNotNull(tw.getFromUser());
+            assertNotNull(tw.getFromUser().getProfileImageUrl());
+            newTweets.add(tw);
 //            System.out.println(tw.getText() + " " + tw2.getInReplyTwitterId());
         }
 //        TweetExtractor e = new TweetExtractor(newTweets).setTermMaxCount(100);
@@ -97,22 +98,25 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void testSearch() throws TwitterException {
         TwitterSearch st = twitterSearch;
-        Set<Tweet> resList = new LinkedHashSet<Tweet>();
+        Set<SolrTweet> resList = new LinkedHashSet<SolrTweet>();
         YTag tag = new YTag("java");
         st.search(tag.getTerm(), resList, 200, tag.getLastId());
+        for (SolrTweet tw : resList) {
+            assertNotNull(tw.getFromUser().getProfileImageUrl());
+        }
         assertTrue(resList.size() > 190);
 
         Set<Long> ids = new LinkedHashSet<Long>();
-        for (Tweet tw : resList) {
-            ids.add(tw.getId());
+        for (SolrTweet tw : resList) {
+            ids.add(tw.getTwitterId());
         }
 
         System.out.println("size:" + ids.size());
         assertTrue(ids.size() > 190);
 
-        List<Tweet> other = new ArrayList<Tweet>();
-        for (Tweet tw : resList) {
-            if (!ids.remove(tw.getId()))
+        List<SolrTweet> other = new ArrayList<SolrTweet>();
+        for (SolrTweet tw : resList) {
+            if (!ids.remove(tw.getTwitterId()))
                 other.add(tw);
         }
 

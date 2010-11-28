@@ -24,6 +24,7 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.Helper;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -106,21 +107,17 @@ public class Util {
 
             // try updating can fail so try max 3 times
             for (int trial = 0; trial < 3; trial++) {
-                MyTweetGrabber grabber = new MyTweetGrabber(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
+                MyTweetGrabber grabber = new MyTweetGrabber().init(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
                         setRmiClient(rmiProvider).setTweetSearch(twSearch);
-                Thread t = grabber.createQueueThread();
-                t.start();
-                try {
-                    t.join();
-                    if (grabber.getException() == null)
-                        break;
+                TweetPackage pkg = grabber.queueTweetPackage();
+                if (pkg.getException() == null)
+                    break;
 
-                    logger.warn(trial + "> Try again feeding of user " + tmpUser.getName() + " because of " + t.getName());
-                } catch (InterruptedException ex) {
-                    throw new IllegalStateException(ex);
-                }
+                logger.warn(trial + "> Try again feeding of user " + tmpUser.getName() + " for tweet package " + pkg);
             }
         }
+
+        // TODO send via RMI
     }
 
     public void fillFrom(final String fromUrl) {

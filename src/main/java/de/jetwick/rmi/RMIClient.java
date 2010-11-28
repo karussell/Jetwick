@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.rmi;
 
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import de.jetwick.config.Configuration;
-import de.jetwick.tw.Twitter4JTweet;
+import de.jetwick.config.DefaultModule;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
+import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.tw.queue.TweetPackageList;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
-import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Tweet;
 
 /**
  *
@@ -60,14 +63,20 @@ public class RMIClient implements CommunicationService {
     }
 
     public static void main(String args[]) throws Exception {
-        new RMIClient(new Configuration()).send(Arrays.asList(new Twitter4JTweet(1L, "test", "peter")));
+        DefaultModule module = new DefaultModule();
+        Injector injector = Guice.createInjector(module);
+        RMIClient rmiProvider = injector.getInstance(RMIClient.class);
+        rmiProvider.send(injector.getInstance(TweetPackageList.class).init(0,
+                Arrays.asList(new SolrTweet(1L, "test", new SolrUser("peter")))));
     }
 
     @Override
-    public int send(Collection<? extends Tweet> tweets) throws RemoteException {
-        if (service == null)
-            return 0;
+    public void send(TweetPackage tweets) throws RemoteException {
+        if (service == null) {
+            tweets.doAbort(new RuntimeException("Failed to connect to message queue"));
+            return;
+        }
 
-        return service.send(tweets);
+        service.send(tweets);
     }
 }

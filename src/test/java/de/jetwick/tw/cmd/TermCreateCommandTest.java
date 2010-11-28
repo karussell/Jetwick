@@ -242,49 +242,47 @@ public class TermCreateCommandTest {
         assertEquals(TweetDetector.UNKNOWN_LANG, tw1.getLanguage());
 
         // now the language is detected because a lot noise NOISE_WORDS were found
-        SolrTweet tw = new SolrTweet(2, "viele ist dort deutscher Tweet!");
-        user.addOwnTweet(tw);
+        SolrTweet tw = new SolrTweet(2, "viele ist dort deutscher Tweet!", user);
         execute(tw);
         assertEquals(TweetDetector.DE, tw.getLanguage());
 
-        user = new SolrUser("peter");
-        user.addOwnTweet(tw1);
-        user.addOwnTweet(tw = new SolrTweet(3L, "Togos with @munckytown on lunch break. "
-                + "Hall and Oates \"kiss on my list\" is playing... groovy"));
+        user = new SolrUser("peter");        
+        tw = new SolrTweet(3L, "Togos with @munckytown on lunch break. "
+                + "Hall and Oates \"kiss on my list\" is playing... groovy", user);
         execute(tw);
         assertEquals(TweetDetector.EN, tw.getLanguage());
 
         user = new SolrUser("peter");
-        user.addOwnTweet(tw = new SolrTweet(4L, "@ibood Bedankt voor de code! :-)"));
+        tw = new SolrTweet(4L, "@ibood Bedankt voor de code! :-)", user);
         execute(tw);
         // only de and en are known so detect as unknown!
         assertEquals(TweetDetector.UNKNOWN_LANG, tw.getLanguage());
 
         // now detect the nl language 
-        user.addOwnTweet(tw = new SolrTweet(5L, "@MrDeek Klinkt goed toch, een bestek set is altijd leuk om te krijgen of te geven!"));
+        tw = new SolrTweet(5L, "@MrDeek Klinkt goed toch, een bestek set is altijd leuk om te krijgen of te geven!", user);
         execute(tw);
         assertEquals(TweetDetector.NL, tw.getLanguage());
     }
 
     @Test
     public void testLanguageDetection3() {
-        SolrTweet tw = new SolrTweet();
+        SolrTweet tw = new SolrTweet(1L, "tmptext", new SolrUser("tmp"));
         tw.getLanguages().inc("de", 1);
         StringFreqMap otherLanguages = new StringFreqMap();
         assertEquals(TweetDetector.UNKNOWN_LANG, new TermCreateCommand().detectLanguage(tw, otherLanguages));
 
-        tw = new SolrTweet();
+        tw = new SolrTweet(1L, "tmptext", new SolrUser("tmp"));
         tw.getLanguages().inc("de", 2);
         otherLanguages = new StringFreqMap().set("de", 1);
         assertEquals("de", new TermCreateCommand().detectLanguage(tw, otherLanguages));
 
-        tw = new SolrTweet();
+        tw = new SolrTweet(1L, "tmptext", new SolrUser("tmp"));
         tw.getLanguages().inc(TweetDetector.UNKNOWN_LANG, 2);
         tw.getLanguages().inc("de", 2);
         otherLanguages = new StringFreqMap().set("de", 1);
         assertEquals("de", new TermCreateCommand().detectLanguage(tw, otherLanguages));
 
-        tw = new SolrTweet();
+        tw = new SolrTweet(1L, "tmptext", new SolrUser("tmp"));
         tw.getLanguages().inc(TweetDetector.UNKNOWN_LANG, 2);
         tw.getLanguages().inc("de", 2);
         tw.getLanguages().inc("en", 2);

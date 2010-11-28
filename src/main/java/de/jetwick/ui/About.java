@@ -43,7 +43,7 @@ public class About extends WebPage {
                 PageParameters pp = new PageParameters();
                 pp.add("q", "java");
                 pp.add("u", "timetabling");
-                setResponsePage(HomePage.class, pp);
+                setResponsePage(About.this.getApplication().getHomePage(), pp);
             }
         });
     }

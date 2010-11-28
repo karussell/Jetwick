@@ -20,16 +20,18 @@ import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
+import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.Helper;
 import de.jetwick.util.MyDate;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Tweet;
 
 /**
  *
@@ -41,7 +43,7 @@ public class AbstractTweetConsumer extends MyThread {
     protected TweetProducer producer;
     @Inject
     protected SolrTweetSearch tweetSearch;
-    protected StringCleaner tweetCleaner;
+    //protected StringCleaner tweetCleaner;
     private int removeDays = 8;
     private int resolveThreads = 50;
     private boolean resolveUrls = false;
@@ -50,34 +52,38 @@ public class AbstractTweetConsumer extends MyThread {
 
     public AbstractTweetConsumer(String name, Configuration cfg) {
         super(name);
-        tweetCleaner = new StringCleaner(cfg.getUserBlacklist());
+        //tweetCleaner = new StringCleaner(cfg.getUserBlacklist());
         logger.info("skip " + skipUrlTitleList.size() + " url titles");
     }
 
-    public Collection<SolrTweet> updateDbTweets(Queue<Tweet> tws, int batch) {
-        BlockingQueue<Tweet> tmpTweets = new LinkedBlockingQueue<Tweet>(batch);
-        for (int i = 0; i < batch; i++) {
-            Tweet tw = tws.poll();
+    public Collection<SolrTweet> updateDbTweets(Queue<TweetPackage> tws, int batch) {
+        Set<SolrTweet> tweetSet = new LinkedHashSet<SolrTweet>();
+        while (true) {
+            TweetPackage tw = tws.poll();
             if (tw == null)
                 break;
 
-            if (tweetCleaner.contains(tw.getFromUser()))
-                continue;
-
-            tmpTweets.add(tw);
+            BlockingQueue<SolrTweet> tmpTweets = new LinkedBlockingQueue<SolrTweet>();
+            tw.retrieveTweets(tmpTweets);
+            tweetSet.addAll(tmpTweets);
+            if (tweetSet.size() > batch)
+                break;
         }
 
-        BlockingQueue<Tweet> outTweets = new LinkedBlockingQueue<Tweet>(batch);
+        // BlockingQueue_s are thread safe
+        BlockingQueue<SolrTweet> outTweets = new LinkedBlockingQueue<SolrTweet>();
         if (resolveUrls) {
-            resolveUrls(tmpTweets, outTweets, resolveThreads);
+            BlockingQueue<SolrTweet> blockQueue2 = new LinkedBlockingQueue<SolrTweet>();
+            blockQueue2.addAll(tweetSet);
+            resolveUrls(blockQueue2, outTweets, resolveThreads);
         } else
-            outTweets.addAll(tmpTweets);
+            outTweets.addAll(tweetSet);
 
 //        return updateDbTweetsInTA(tmpTweets);
         try {
             return tweetSearch.update(outTweets, new MyDate().minusDays(removeDays).toDate());
         } catch (Exception ex) {
-            logger.error("Cannot update " + tmpTweets.size() + " tweets.", ex);
+            logger.error("Couldn't update " + tweetSet.size() + " tweets.", ex);
 //            for (Tweet tw : tmpTweets) {
 //                String str = "";
 //                if (tw instanceof Twitter4JTweet)
@@ -119,8 +125,8 @@ public class AbstractTweetConsumer extends MyThread {
      * @param outTweets where the new tweets (with the new text) will be saved
      * @param threadCount how many threads to use
      */
-    public void resolveUrls(final BlockingQueue<? extends Tweet> tweets,
-            final BlockingQueue<Tweet> outTweets, int threadCount) {
+    public void resolveUrls(final BlockingQueue<SolrTweet> tweets,
+            final BlockingQueue<SolrTweet> outTweets, int threadCount) {
         int maxThreads = Math.min(threadCount, tweets.size() / 5 + 1);
         Thread[] threads = new Thread[maxThreads];
         for (int i = 0; i < maxThreads; i++) {
@@ -129,20 +135,20 @@ public class AbstractTweetConsumer extends MyThread {
                 @Override
                 public void run() {
                     while (true) {
-                        Tweet tmpTw = tweets.poll();
+                        SolrTweet tmpTw = tweets.poll();
                         if (tmpTw == null)
                             break;
 
-                        Twitter4JTweet tw = new Twitter4JTweet(tmpTw);
+                        //Twitter4JTweet tw = new Twitter4JTweet(tmpTw);
                         UrlExtractor extractor = createExtractor();
-                        for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
+                        for (UrlEntry ue : extractor.setText(tmpTw.getText()).run().getUrlEntries()) {
                             if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
                                 continue;
 
                             if (!skipUrlTitleList.contains(ue.getResolvedTitle()))
-                                tw.addUrlEntry(ue);
+                                tmpTw.addUrlEntry(ue);
                         }
-                        outTweets.add(tw);
+                        outTweets.add(tmpTw);
                     }
                 }
             };

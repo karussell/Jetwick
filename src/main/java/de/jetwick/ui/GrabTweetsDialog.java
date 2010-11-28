@@ -17,14 +17,14 @@ package de.jetwick.ui;
 
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.tw.queue.TweetPackageArchiving;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
 import de.jetwick.ui.util.SelectOption;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.logging.Level;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -49,7 +49,7 @@ public class GrabTweetsDialog extends Panel {
     private TextField field;
     private DropDownChoice<SelectOption<Integer, String>> choices;
     private String userName;
-    private transient Thread grabberThread;
+    private transient TweetPackageArchiving pkg;
     private boolean started = false;
 
     public GrabTweetsDialog(String id, String user, final MyTweetGrabber grabber) {
@@ -57,30 +57,29 @@ public class GrabTweetsDialog extends Panel {
 
         this.userName = user;
         final Form form = new Form("grabForm");
-        grabber.setProgress(0);
         final ProgressBar bar = new ProgressBar("bar", new ProgressionModel() {
 
             @Override
             protected Progression getProgression() {
-                return new Progression(grabber.getProgress());
+                return new Progression(pkg.getProgress());
             }
         }) {
 
             @Override
             protected void onFinished(AjaxRequestTarget target) {
-                logger.info("finished: " + grabber.getProgress() + " interrupted:" + grabberThread.isInterrupted());
-                if (grabber.getException() != null) {
-                    logger.error("Error while storing archive", grabber.getException());
-                    String msg = TwitterSearch.getMessage(grabber.getException());
+                logger.info("finished: " + pkg.getProgress() + " canceled:" + pkg.isCanceled());
+                if (pkg.getException() != null) {
+                    logger.error("Error while storing archive", pkg.getException());
+                    String msg = TwitterSearch.getMessage(pkg.getException());
                     if (msg.length() > 0)
                         error(msg);
                     else
                         error("Couldn't process your request. Please contact admin "
                                 + "or twitter.com/jetwick if problem remains!");
                 } else
-                    info(grabber.getTweetCount() + " tweets were stored for " + grabber.getUserName()
+                    info(pkg.getProcessedTweets() + " tweets were stored for " + pkg.getUserName()
                             + ". In approx. 5min they will be searchable.");
-                
+
                 GrabTweetsDialog.this.onFinish(target);
             }
         };
@@ -89,8 +88,6 @@ public class GrabTweetsDialog extends Panel {
 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
-//            @Override
-//            public void onClick(AjaxRequestTarget target) {
                 if (!started) {
                     started = true;
                     bar.start(target);
@@ -98,8 +95,7 @@ public class GrabTweetsDialog extends Panel {
                     if (getMaxTweets() > 0) {
                         grabber.setUserName(userName);
                         grabber.setTweetsCount(getMaxTweets());
-                        grabberThread = grabber.createArchivingThread();
-                        grabberThread.start();
+                        pkg = grabber.queueArchiving();
                     }
 
                     started = false;
@@ -154,7 +150,7 @@ public class GrabTweetsDialog extends Panel {
     }
 
     public void interruptGrabber() {
-        if (grabberThread != null)
-            grabberThread.interrupt();
+        if (pkg != null)
+            pkg.doCancel();
     }
 }

@@ -13,17 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import de.jetwick.data.YUser;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
 import de.jetwick.util.Helper;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import org.junit.Test;
+import twitter4j.Paging;
+import twitter4j.RateLimitStatus;
+import twitter4j.ResponseList;
+import twitter4j.Status;
 import twitter4j.Tweet;
+import twitter4j.Twitter;
 import static org.junit.Assert.*;
+import twitter4j.TwitterException;
 
 /**
  *
@@ -42,32 +51,32 @@ public class TwitterSearchTest {
         assertTrue(str.length() > str2.length());
     }
 
-    public TwitterSearch emptyTwitter() {
-        return new TwitterSearch(new Credits()) {
-
-            @Override
-            public boolean init() {
-                return true;
-            }
-
-            @Override
-            public int getRateLimit() {
-                return 150;
-            }
-
-            @Override
-            public Collection<Tweet> updateUserInfo(List<YUser> users) {
-                return Collections.EMPTY_LIST;
-            }
-        };
-    }
-
-    @Test
-    public void testToUser() throws Exception {
-        Twitter4JTweet tw = new Twitter4JTweet(1L, "test", "peter");
-        assertNotNull(TwitterSearch.toUser(tw));
-        assertNull(TwitterSearch.toUser(tw).getTwitterId());
-    }
+//    public TwitterSearch createTwitter() {
+//        return new TwitterSearch() {
+//
+//            @Override
+//            public Twitter createTwitter() {
+//                return new Twitter() {
+//
+//                    @Override
+//                    public ResponseList<Status> getUserTimeline(String screenName, Paging paging)
+//                            throws TwitterException {
+//
+//                    }
+//                };
+//            }
+//
+//            @Override
+//            public int getRateLimit() {
+//                return 150;
+//            }
+//
+//            @Override
+//            public Collection<Tweet> updateUserInfo(List<? extends YUser> users) {
+//                return Collections.EMPTY_LIST;
+//            }
+//        }.setCredits(new Credits());
+//    }
 
     @Test
     public void testLocation() {

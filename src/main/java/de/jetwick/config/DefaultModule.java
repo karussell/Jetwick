@@ -65,6 +65,6 @@ public class DefaultModule extends AbstractModule {
     }
 
     public void installTwitterModule() {
-        bind(TwitterSearch.class).toInstance(new TwitterSearch(config.getTwitterSearchCredits()));
+        bind(TwitterSearch.class).toInstance(new TwitterSearch().setCredits(config.getTwitterSearchCredits()));
     }
 }

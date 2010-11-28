@@ -224,16 +224,16 @@ public class Twitter4JTweet implements Tweet {
     public String getTextToRetweet() {
         return "@" + getFromUser() + ": " + getText().trim();
     }
-
-    public void addUrlEntry(UrlEntry ue) {
-        urlEntries.add(ue);
-    }
-
-    public void addAllUrlEntries(Collection<UrlEntry> es) {
-        for (UrlEntry e : es) {
-            urlEntries.add(e);
-        }
-    }
+//
+//    public void addUrlEntry(UrlEntry ue) {
+//        urlEntries.add(ue);
+//    }
+//
+//    public void addAllUrlEntries(Collection<UrlEntry> es) {
+//        for (UrlEntry e : es) {
+//            urlEntries.add(e);
+//        }
+//    }
 
     public List<UrlEntry> getUrlEntries() {
         return urlEntries;

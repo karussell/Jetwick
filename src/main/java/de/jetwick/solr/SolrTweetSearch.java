@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import de.jetwick.config.Configuration;
 import de.jetwick.tw.Extractor;
-import de.jetwick.tw.TwitterSearch;
 import de.jetwick.util.Helper;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.tw.cmd.SerialCommandExecutor;
@@ -49,7 +47,6 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Tweet;
 
 /**
  * Querying + Indexing using the SolrJ interface which uses HTTP queries under the hood:
@@ -195,9 +192,14 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     }
 
     public SolrTweet readDoc(final SolrDocument doc, Map<String, Map<String, List<String>>> hlt) {
+        String name = (String) doc.getFieldValue("user");
+        SolrUser user = new SolrUser(name);
+        user.setLocation((String) doc.getFieldValue("loc"));
+        user.setProfileImageUrl((String) doc.getFieldValue("iconUrl"));
+
         long id = (Long) doc.getFieldValue("id");
         String text = (String) doc.getFieldValue(TWEET_TEXT);
-        SolrTweet tw = new SolrTweet(id, text);
+        SolrTweet tw = new SolrTweet(id, text, user);
 
         tw.setCreatedAt((Date) doc.getFieldValue(DATE));
         tw.setUpdatedAt((Date) doc.getFieldValue(UPDATE_DT));
@@ -212,12 +214,6 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         Long replyId = (Long) doc.getFieldValue(INREPLY_ID);
         if (replyId != null)
             tw.setInReplyTwitterId(replyId);
-
-        String name = (String) doc.getFieldValue("user");
-        SolrUser user = new SolrUser(name);
-        user.setLocation((String) doc.getFieldValue("loc"));
-        user.setProfileImageUrl((String) doc.getFieldValue("iconUrl"));
-        user.addOwnTweet(tw);
 
         tw.setUrlEntries(Arrays.asList(parseUrlEntries(doc)));
         return tw;
@@ -399,11 +395,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         }
     }
 
-    Collection<SolrTweet> update(Tweet tmpTweets) {
+    Collection<SolrTweet> update(SolrTweet tmpTweets) {
         return privateUpdate(Arrays.asList(tmpTweets));
     }
 
-    Collection<SolrTweet> privateUpdate(Collection<? extends Tweet> tmpTweets) {
+    Collection<SolrTweet> privateUpdate(Collection<SolrTweet> tmpTweets) {
         return update(tmpTweets, new Date(0));
     }
 
@@ -412,22 +408,21 @@ public class SolrTweetSearch extends SolrAbstractSearch {
      *
      * @return a collection of tweets which were updated in solr
      */
-    public Collection<SolrTweet> update(Collection<? extends Tweet> tmpTweets, Date removeUntil) {
+    public Collection<SolrTweet> update(Collection<SolrTweet> tmpTweets, Date removeUntil) {
         try {
-            LinkedHashSet<SolrTweet> updateTweets = new LinkedHashSet<SolrTweet>();
             Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
             Map<Long, SolrTweet> existingTweets = new LinkedHashMap<Long, SolrTweet>();
 
-            Iterator<? extends Tweet> iter = tmpTweets.iterator();
+            Iterator<SolrTweet> iter = tmpTweets.iterator();
             while (iter.hasNext()) {
                 StringBuilder idStr = new StringBuilder();
                 int counts = 0;
                 // we can add max ~150 tweets per request (otherwise the webcontainer won't handle the long request)
                 for (int i = 0; i < MAX_TWEETS_PER_REQ && iter.hasNext(); i++) {
-                    Tweet tw = iter.next();
+                    SolrTweet tw = iter.next();
                     counts++;
                     idStr.append("id:");
-                    idStr.append(tw.getId());
+                    idStr.append(tw.getTwitterId());
                     idStr.append(" ");
                 }
 
@@ -449,30 +444,26 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             }
 
             Map<Long, SolrTweet> twMap = new LinkedHashMap<Long, SolrTweet>();
-            for (Tweet twitterTw : tmpTweets) {
-                boolean userSearch = TwitterSearch.SOURCE.equals(twitterTw.getSource());
-                if (!userSearch && twitterTw.getCreatedAt().getTime() < removeUntil.getTime())
+            for (SolrTweet solrTweet : tmpTweets) {
+                if (!solrTweet.isPersistent() && solrTweet.getCreatedAt().getTime() < removeUntil.getTime())
                     continue;
 
-                SolrTweet spectw = existingTweets.get(twitterTw.getId());
+                SolrTweet spectw = existingTweets.get(solrTweet.getTwitterId());
                 if (spectw == null) {
-                    String name = twitterTw.getFromUser().toLowerCase();
+                    String name = solrTweet.getFromUser().getScreenName();
                     SolrUser u = usersMap.get(name);
                     if (u == null) {
-                        u = new SolrUser(twitterTw);
+                        u = solrTweet.getFromUser();
                         usersMap.put(name, u);
                     }
 
-                    spectw = new SolrTweet(twitterTw);
-                    u.addOwnTweet(spectw);
+                    u.addOwnTweet(solrTweet);
                     // tweet does not exist. so store it into the todo map
-                    twMap.put(spectw.getTwitterId(), spectw);
+                    twMap.put(solrTweet.getTwitterId(), solrTweet);
                 }
-
-                if (userSearch)
-                    spectw.setUpdatedAt(new Date());
             }
 
+            LinkedHashSet<SolrTweet> updateTweets = new LinkedHashSet<SolrTweet>();
             updateTweets.addAll(twMap.values());
             updateTweets.addAll(findReplies(twMap));
             updateTweets.addAll(findRetweets(twMap, usersMap));
@@ -874,7 +865,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         }
     }
 
-    SolrUser findBSolrUserName(String uName) {
+    SolrUser findByUserName(String uName) {
         try {
             List<SolrUser> list = new ArrayList<SolrUser>();
             // get all tweets of the user so set rows large ...

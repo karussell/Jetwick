@@ -18,13 +18,13 @@ package de.jetwick.tw;
 import com.google.inject.Inject;
 import de.jetwick.config.Configuration;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.StopWatch;
 import java.util.Collection;
 import java.util.Queue;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Tweet;
 
 /**
  * stores the tweets from the queue into the dbHelper and solr
@@ -34,7 +34,7 @@ import twitter4j.Tweet;
 public class TweetConsumer extends AbstractTweetConsumer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private Queue<Tweet> tweets;
+    private Queue<TweetPackage> tweetPackages;
     // collect at least those tweets before feeding
     private int tweetBatchSize = 1;
     private long tweetBatchTime = 60 * 1000;
@@ -55,7 +55,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
     public void run() {
         logger.info("tweets per session:" + tweetBatchSize);
         while (!isInterrupted()) {
-            if (tweets.isEmpty()) {
+            if (tweetPackages.isEmpty()) {
                 // do only break if tweets are empty AND producer is death
                 if (!producer.isAlive())
                     break;
@@ -70,17 +70,20 @@ public class TweetConsumer extends AbstractTweetConsumer {
 
             // make sure we really use the commit batch size
             // because solr doesn't want too frequent commits
-            if (tweets.size() < tweetBatchSize && producer.isAlive() && System.currentTimeMillis() - lastFeed < tweetBatchTime)
+            int count = 0;
+            for(TweetPackage pkg : tweetPackages) {
+                count += pkg.getMaxTweets();
+            }
+            if (count < tweetBatchSize && producer.isAlive() && System.currentTimeMillis() - lastFeed < tweetBatchTime)
                 continue;
 
-            if (tweets.size() == 0)
+            if (count == 0)
                 continue;
+
             lastFeed = System.currentTimeMillis();
-
-
             sw1 = new StopWatch(" ");
             sw1.start();
-            Collection<SolrTweet> res = updateDbTweets(tweets, tweetBatchSize);
+            Collection<SolrTweet> res = updateDbTweets(tweetPackages, tweetBatchSize);
             sw1.stop();
             String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();
             long time = System.currentTimeMillis();
@@ -101,8 +104,8 @@ public class TweetConsumer extends AbstractTweetConsumer {
         logger.info(getName() + " finished");
     }
 
-    public void setTweets(Queue<Tweet> tweets) {
-        this.tweets = tweets;
+    public void setTweets(Queue<TweetPackage> tweets) {
+        this.tweetPackages = tweets;
     }
 
     public void setTweetBatchSize(int tweetBatchSize) {

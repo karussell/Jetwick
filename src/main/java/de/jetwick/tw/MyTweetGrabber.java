@@ -15,23 +15,26 @@
  */
 package de.jetwick.tw;
 
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 import de.jetwick.rmi.RMIClient;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.tw.queue.TweetPackageTwQuery;
+import de.jetwick.tw.queue.TweetPackageUserQuery;
+import de.jetwick.tw.queue.TweetPackageArchiving;
+import de.jetwick.tw.queue.TweetPackageList;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Tweet;
-import twitter4j.TwitterException;
 
 public class MyTweetGrabber implements Serializable {
 
+    public static AtomicInteger idCounter = new AtomicInteger(0);
     private static final Logger logger = LoggerFactory.getLogger(MyTweetGrabber.class);
-    private Collection<? extends Tweet> tmpTweets;
+    private TweetPackage twPackage;
     private String userName;
     private String queryStr;
     private TwitterSearch tweetSearch;
@@ -39,29 +42,35 @@ public class MyTweetGrabber implements Serializable {
     private int tweetCount;
     private Exception exception;
     private int progress;
+    @Inject
+    private TweetPackageList tweetPackageList;
+    @Inject
+    private TweetPackageUserQuery tweetPackageUser;
+    @Inject
+    private TweetPackageTwQuery tweetPackageQuery;
+    @Inject
+    private TweetPackageArchiving tweetPackageArchiving;
 
-    public MyTweetGrabber(String userName) {
-        this(null, userName, null);
+    public MyTweetGrabber() {
     }
 
-    public MyTweetGrabber(Collection<? extends Tweet> tweets, String userName, String query) {
-        this.tmpTweets = tweets;
+    public MyTweetGrabber init(String userName) {
+        init(null, userName, null);
+        return this;
+    }
+
+    public MyTweetGrabber init(Collection<SolrTweet> tweets, String userName, String query) {
+        if (tweets != null) {
+            this.twPackage = tweetPackageList.init(idCounter.addAndGet(1), tweets);
+        }
         this.userName = userName;
         this.queryStr = query;
+        return this;
     }
 
-    public int getTweetCount() {
-        return tweetCount;
-    }
-
-    public int getProgress() {
-        return progress;
-    }
-
-    public Exception getException() {
-        return exception;
-    }
-
+//    public int getTweetCount() {
+//        return tweetCount;
+//    }
     public void setUserName(String userName) {
         this.userName = userName;
     }
@@ -85,85 +94,43 @@ public class MyTweetGrabber implements Serializable {
         return this;
     }
 
-    public Thread createQueueThread() {
-        return new Thread("grabber-queue") {
-
-            @Override
-            public void run() {
-                int rl = tweetSearch.getRateLimit();
-                if (rl <= TwitterSearch.LIMIT) {
-                    logger.warn("Couldn't process query (TwitterSearch+Index). Rate limit is smaller than " + TwitterSearch.LIMIT + ":" + rl);
-                    return;
-                }
-                if (tmpTweets == null) {
-                    tmpTweets = new LinkedHashSet<Tweet>();
-                    if (userName != null && !userName.isEmpty()) {
-                        try {
-                            logger.info("add tweets via user search: " + userName);
-                            tmpTweets = tweetSearch.getTweets(userName, new ArrayList<SolrUser>(), tweetCount);
-                        } catch (TwitterException ex) {
-                            exception = ex;
-                            logger.warn("Couldn't update user: " + userName + " " + ex.getLocalizedMessage());
-                        }
-                    } else if (queryStr != null && !queryStr.isEmpty()) {
-                        try {
-                            logger.info("add tweets via twitter search: " + queryStr);
-                            tmpTweets = tweetSearch.searchTweets(queryStr, tweetCount);
-                        } catch (TwitterException ex) {
-                            exception = ex;
-                            logger.warn("Couldn't update user: " + queryStr + " " + ex.getLocalizedMessage());
-                        }
-                    }
-                }
-                try {
-                    if (tmpTweets.size() > 0)
-                        rmiClient.get().init().send(tmpTweets);
-                } catch (Exception ex) {
-                    logger.warn("Error while sending " + tmpTweets.size() + " tweets to queue server:" + ex.toString());
-                }
+    public TweetPackage queueTweetPackage() {
+        int rl = tweetSearch.getRateLimit();
+        if (rl <= TwitterSearch.LIMIT) {
+            logger.warn("Couldn't process query (TwitterSearch+Index). Rate limit is smaller than " + TwitterSearch.LIMIT + ":" + rl);
+            return twPackage;
+        }
+        if (twPackage == null) {
+            if (userName != null && !userName.isEmpty()) {
+                twPackage = tweetPackageUser.init(idCounter.addAndGet(1),
+                        userName, tweetSearch.getCredits(), tweetCount);
+            } else if (queryStr != null && !queryStr.isEmpty()) {
+                twPackage = tweetPackageQuery.init(idCounter.addAndGet(1),
+                        queryStr, tweetSearch.getCredits(), tweetCount);
             }
-        };
+        }
+        try {
+            if (twPackage != null)
+                rmiClient.get().init().send(twPackage);
+        } catch (Exception ex) {
+            logger.warn("Error while sending " + twPackage.getMaxTweets()
+                    + " tweets to queue server:" + ex.toString());
+        }
+        return twPackage;
     }
 
-    public Thread createArchivingThread() {
-        return new Thread("grabber-archiver") {
-
-            @Override
-            public void run() {
-                try {
-                    logger.info("archivize tweets for: " + userName);
-                    RMIClient client = rmiClient.get().init();
-                    int maxTweets = tweetCount;
-                    tweetCount = 0;
-                    int rows = 100;
-                    progress = 0;
-                    for (int start = 0; start < maxTweets && !isInterrupted(); start += rows) {
-                        Collection<? extends Tweet> tmp = tweetSearch.getTweets(userName, start, rows);
-                        if (tmp.size() == 0)
-                            continue;
-                        try {
-                            tweetCount += tmp.size();
-                            client.send(tmp);
-                            logger.info("sent tweets " + tweetCount + " to index queue");
-                            progress = (int) (tweetCount * 100.0 / maxTweets);
-                        } catch (Exception ex) {
-                            logger.warn("Error for tweets [" + start + "," + (start + 100)
-                                    + "] sending to index queue:" + ex.toString());
-                        }
-                    }
-                } catch (TwitterException ex) {
-                    exception = ex;
-                    logger.warn("Couldn't get all tweets for user: " + userName + " " + ex.getLocalizedMessage());                    
-                } catch (Exception ex) {
-                    exception = ex;
-                    logger.error("Couldn't init rmi server? " + ex.getLocalizedMessage());                    
-                }
-                progress = 100;
-            }
-        };
+    public TweetPackageArchiving queueArchiving() {
+        TweetPackageArchiving tmp = tweetPackageArchiving.init(idCounter.addAndGet(1), userName, tweetCount,
+                tweetSearch.getCredits());
+        try {
+            rmiClient.get().init().send(tmp);
+        } catch (Exception ex) {
+            logger.warn("Error while sending " + tmp.getMaxTweets()
+                    + " tweets to queue server:" + ex.toString());
+        }
+        return tmp;
     }
-
-    public void setProgress(int i) {
-        progress = i;
-    }
+//    public void setProgress(int i) {
+//        progress = i;
+//    }
 }

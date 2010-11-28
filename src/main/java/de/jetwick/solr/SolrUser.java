@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import de.jetwick.data.YUser;
+import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -33,12 +33,17 @@ public class SolrUser extends YUser {
 //    private List<SolrTweet> ownTweets = new ArrayList<SolrTweet>();
     private Collection<SolrTweet> ownTweets = new LinkedHashSet<SolrTweet>();
 
+    /**
+     * You'll need to call init after this
+     */
     public SolrUser(String name) {
         super(name);
     }
 
-    public SolrUser(Tweet tw) {
-        super(tw);
+    public SolrUser init(Tweet tw) {
+        setProfileImageUrl(tw.getProfileImageUrl());
+        setLocation(TwitterSearch.toStandardLocation(tw.getLocation()));
+        return this;
     }
 
     public void addOwnTweet(SolrTweet tw) {
