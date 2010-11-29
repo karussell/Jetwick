@@ -91,10 +91,12 @@ public class MyTweetGrabber implements Serializable {
 
             @Override
             public void run() {
+                String name = "";
                 if (tweets == null) {
                     tweets = new LinkedBlockingQueue<SolrTweet>();
                     if (userName != null && !userName.isEmpty()) {
                         try {
+                            name = "grab user:" + userName;
                             tweets.addAll(tweetSearch.getTweets(new SolrUser(userName), new ArrayList<SolrUser>(), tweetCount));
                             logger.info("add tweets from user search: " + userName);
                         } catch (TwitterException ex) {
@@ -103,6 +105,7 @@ public class MyTweetGrabber implements Serializable {
                         }
                     } else if (queryStr != null && !queryStr.isEmpty()) {
                         try {
+                            name = "grab query:" + queryStr;
                             tweetSearch.search(queryStr, tweets, tweetCount, 0);
                             logger.info("added tweets via twitter search: " + queryStr);
                         } catch (TwitterException ex) {
@@ -114,7 +117,7 @@ public class MyTweetGrabber implements Serializable {
 
                 try {
                     if (tweets != null && tweets.size() > 0)
-                        rmiClient.get().init().send(new TweetPackageList().init(idCounter.addAndGet(1), tweets));
+                        rmiClient.get().init().send(new TweetPackageList(name).init(idCounter.addAndGet(1), tweets));
                 } catch (Exception ex) {
                     logger.warn("Error while sending " + tweets.size()
                             + " tweets to queue server", ex);
@@ -145,7 +148,7 @@ public class MyTweetGrabber implements Serializable {
                                 tw.setUpdatedAt(new Date());
                             }
 
-                            TweetPackageList pkg = new TweetPackageList().init(idCounter.addAndGet(1), tmp);
+                            TweetPackageList pkg = new TweetPackageList("archiving user:" + userName).init(idCounter.addAndGet(1), tmp);
                             rmiClient.get().init().send(pkg);
                             logger.info("queue tweets " + tweetCount + " to index queue");
                             setProgress((int) (tweetCount * 100.0 / maxTweets));
@@ -155,7 +158,7 @@ public class MyTweetGrabber implements Serializable {
                         }
                     }
                     logger.info("grabbed tweets for: " + userName);
-//                     doRetrieved();
+                    doFinish();
                 } catch (TwitterException ex) {
                     doAbort(ex);
                     logger.warn("Couldn't get all tweets for user: " + userName + " " + ex.getLocalizedMessage());

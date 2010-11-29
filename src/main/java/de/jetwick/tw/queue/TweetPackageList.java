@@ -28,7 +28,8 @@ public class TweetPackageList extends AbstractTweetPackage {
 
     private Collection<SolrTweet> tweets;
 
-    public TweetPackageList() {
+    public TweetPackageList(String name) {
+        setName(name);
     }
 
     public TweetPackageList init(int id, Collection<SolrTweet> tweets) {

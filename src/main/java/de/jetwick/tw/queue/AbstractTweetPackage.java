@@ -32,11 +32,18 @@ public abstract class AbstractTweetPackage implements TweetPackage {
     private TweetPackageStatus status = TweetPackageStatus.STARTED;
     private Exception exception;
     private int tweets;
-    @Inject
-    private TwitterSearch twitterSearch;
+    private String name;
 //    private AnyExecutor<?> endHook;
 
     public AbstractTweetPackage() {
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     protected AbstractTweetPackage init(int id, int maxTweets) {
@@ -131,15 +138,9 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return processedTweets;
     }
 
-    public TwitterSearch getTwitterSearch(Credits credits) {
-        twitterSearch.setCredits(credits);
-        twitterSearch.init();
-        return twitterSearch;
-    }
-
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " id:" + id + " tweets:" + tweets;
+        return getClass().getSimpleName() + " id:" + id + " tweets:" + tweets + " name:" + name;
     }
 
     public static int calcNumberOfTweets(Collection<TweetPackage> coll) {

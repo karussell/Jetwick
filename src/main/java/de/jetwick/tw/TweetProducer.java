@@ -140,7 +140,7 @@ public class TweetProducer extends MyThread {
                         logger.info(swSearch + " \tqueue= " + count + " \t + "
                                 + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
 
-                        tweetPackages.add(new TweetPackageList().init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
+                        tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
 
                         if (!tag.isTransient()) {
                             // TODO save only if indexing to solr was successful -> pkg.isIndexed()
