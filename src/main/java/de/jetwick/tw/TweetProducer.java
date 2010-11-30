@@ -138,7 +138,7 @@ public class TweetProducer extends MyThread {
                         tag.setLastId(maxId);
                         swSearch.stop();
                         logger.info(swSearch + " \tqueue= " + count + " \t + "
-                                + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
+                                + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages() + " lastId:" + tag.getLastId());
 
                         tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
 

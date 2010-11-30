@@ -15,9 +15,6 @@
  */
 package de.jetwick.tw.queue;
 
-import com.google.inject.Inject;
-import de.jetwick.tw.Credits;
-import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 
 /**

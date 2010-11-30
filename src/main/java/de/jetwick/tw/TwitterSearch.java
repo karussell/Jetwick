@@ -305,12 +305,19 @@ public class TwitterSearch implements Serializable {
         long maxId = lastId;
         long sinceId = lastId;
 
-        int hitsPerPage = 100;
-        int maxPages = tweets / hitsPerPage;
-        if (tweets % hitsPerPage > 0)
-            maxPages++;
+        int hitsPerPage;
+        int maxPages;
+        if (tweets < 100) {
+            hitsPerPage = tweets;
+            maxPages = 1;
+        } else {
+            hitsPerPage = 100;
+            maxPages = tweets / hitsPerPage;
+            if (tweets % hitsPerPage > 0)
+                maxPages++;
+        }
 
-        END_PAGINATION:
+        boolean breakPaging = false;
         for (int page = 0; page < maxPages; page++) {
             Query query = createQuery(term);
             // avoid that more recent results disturb our paging!
@@ -321,26 +328,28 @@ public class TwitterSearch implements Serializable {
             query.setRpp(hitsPerPage);
             QueryResult res = twitter.search(query);
 
+            // is res.getTweets() sorted?
             for (Tweet twe : res.getTweets()) {
                 // determine maxId in the first page
                 if (page == 0 && maxId < twe.getId())
                     maxId = twe.getId();
 
                 if (twe.getId() < sinceId)
-                    break END_PAGINATION;
+                    breakPaging = true;
+                else {
+                    String userName = twe.getFromUser().toLowerCase();
+                    SolrUser user = userMap.get(userName);
+                    if (user == null) {
+                        user = new SolrUser(userName).init(twe);
+                        userMap.put(userName, user);
+                    }
 
-                String userName = twe.getFromUser().toLowerCase();
-                SolrUser user = userMap.get(userName);
-                if (user == null) {
-                    user = new SolrUser(userName).init(twe);
-                    userMap.put(userName, user);
+                    result.add(new SolrTweet(twe, user));
                 }
-
-                result.add(new SolrTweet(twe, user));
             }
 
             // sinceId could force us to leave earlier than defined by maxPages
-            if (res.getTweets().size() < hitsPerPage)
+            if (breakPaging || res.getTweets().size() < hitsPerPage)
                 break;
         }
 
