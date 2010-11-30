@@ -256,7 +256,7 @@
          of documents requested.
          avoid autowarming to speedup indexing because hits == 0 !!??
          -->
-        <queryResultCache class="solr.LRUCache" size="100" initialSize="100" autowarmCount="50"/>
+        <queryResultCache class="solr.LRUCache" size="100" initialSize="100" autowarmCount="0"/>
 
         <!-- documentCache caches Lucene Document objects (the stored fields for each document).
        Since Lucene internal document ids are transient, this cache will not be autowarmed.  -->
