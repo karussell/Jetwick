@@ -20,7 +20,6 @@ import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
 import de.jetwick.ui.util.SelectOption;
-import de.jetwick.util.AnyExecutor;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -71,6 +70,7 @@ public class GrabTweetsDialog extends Panel {
             @Override
             protected void onFinished(AjaxRequestTarget target) {
                 logger.info("finished: " + pkg.getProgress() + " canceled:" + pkg.isCanceled());
+
                 if (pkg.getException() != null) {
                     logger.error("Error while storing archive", pkg.getException());
                     String msg = TwitterSearch.getMessage(pkg.getException());
@@ -83,7 +83,9 @@ public class GrabTweetsDialog extends Panel {
                     info(grabber.getTweetCount() + " tweets were stored for " + grabber.getUserName()
                             + ". In approx. 5min they will be searchable.");
 
-                GrabTweetsDialog.this.onFinish(target);
+                GrabTweetsDialog.this.updateAfterAjax(target);
+                GrabTweetsDialog.this.onClose(target);
+                started = false;
             }
         };
         form.add(bar);
@@ -101,10 +103,10 @@ public class GrabTweetsDialog extends Panel {
                         pkg = grabber.queueArchiving();
                         new Thread(pkg).start();
                     }
-
-                    started = false;
-                } else
+                } else {
                     info("You've already queued a job.");
+                    GrabTweetsDialog.this.updateAfterAjax(target);
+                }
             }
         });
         add(form);
@@ -136,7 +138,16 @@ public class GrabTweetsDialog extends Panel {
         throw new RuntimeException();
     }
 
-    public void onFinish(AjaxRequestTarget target) {
+    /**
+     * Called to updated super components
+     */
+    public void updateAfterAjax(AjaxRequestTarget target) {
+    }
+
+    /**
+     * Called before closing this dialog
+     */
+    public void onClose(AjaxRequestTarget target) {
     }
 
     public String getUsername() {
@@ -154,7 +165,8 @@ public class GrabTweetsDialog extends Panel {
     }
 
     public void interruptGrabber() {
-//        if (pkg != null)
-//            pkg.doCancel();
+        started = false;
+        if (pkg != null)
+            pkg.doCancel();
     }
 }

@@ -286,14 +286,14 @@ public class HomePage extends WebPage {
                 }
 
                 @Override
-                public void onFinish(AjaxRequestTarget target) {
-                    updateAfterAjax(target, false);
+                public void updateAfterAjax(AjaxRequestTarget target) {
+                    HomePage.this.updateAfterAjax(target, false);
                 }
 
                 @Override
                 public void onShowTweets(AjaxRequestTarget target, String userName) {
                     doSearch((TweetQuery) new TweetQuery().addUserFilter(userName), 0, false);
-                    updateAfterAjax(target, true);
+                    HomePage.this.updateAfterAjax(target, true);
                 }
 
                 @Override

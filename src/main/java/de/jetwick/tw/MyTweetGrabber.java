@@ -157,7 +157,7 @@ public class MyTweetGrabber implements Serializable {
                                     + "] sending to index queue:", ex);
                         }
                     }
-                    logger.info("grabbed tweets for: " + userName);
+                    logger.info("grabbed tweets for: " + userName + " canceled:" + isCanceled());
                     doFinish();
                 } catch (TwitterException ex) {
                     doAbort(ex);

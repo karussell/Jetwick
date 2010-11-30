@@ -16,6 +16,7 @@
 package de.jetwick.tw.queue;
 
 import java.util.Collection;
+import java.util.Date;
 
 /**
  *
@@ -30,9 +31,11 @@ public abstract class AbstractTweetPackage implements TweetPackage {
     private Exception exception;
     private int tweets;
     private String name;
+    private Date created;
 //    private AnyExecutor<?> endHook;
 
     public AbstractTweetPackage() {
+        created = new Date();
     }
 
     public void setName(String name) {
@@ -135,9 +138,13 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return processedTweets;
     }
 
+    int getAgeInSeconds() {
+        return Math.round((System.currentTimeMillis() - created.getTime()) / 1000f);
+    }
+
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " id:" + id + " tweets:" + tweets + " name:" + name;
+        return getClass().getSimpleName() + " id:" + id + " tweets:" + tweets + "\t name:" + name + " age/sec:" + getAgeInSeconds();
     }
 
     public static int calcNumberOfTweets(Collection<TweetPackage> coll) {

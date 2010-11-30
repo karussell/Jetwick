@@ -71,8 +71,12 @@ public class UserPanel extends Panel {
         final GrabTweetsDialog dialog = new GrabTweetsDialog(modalW.getContentId(), user.getScreenName(), grabber) {
 
             @Override
-            public void onFinish(AjaxRequestTarget target) {
-                UserPanel.this.onFinish(target);
+            public void updateAfterAjax(AjaxRequestTarget target) {
+                UserPanel.this.updateAfterAjax(target);
+            }
+
+            @Override
+            public void onClose(AjaxRequestTarget target) {
                 modalW.close(target);
             }
 
@@ -117,7 +121,7 @@ public class UserPanel extends Panel {
         throw new RuntimeException();
     }
 
-    public void onFinish(AjaxRequestTarget target) {
+    public void updateAfterAjax(AjaxRequestTarget target) {
     }
 
     public void onShowTweets(AjaxRequestTarget target, String user) {
