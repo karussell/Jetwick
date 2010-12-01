@@ -107,14 +107,14 @@ public class UserPanel extends Panel {
         modalW.setCookieName("user-modal");
 
         // disable js confirmation
-        HeaderContributor c = new HeaderContributor(new IHeaderContributor() {
-
-            @Override
-            public void renderHead(IHeaderResponse response) {
-                response.renderJavascriptReference("Wicket.Window.unloadConfirmation = true;");
-            }
-        });
-        add(c);
+//        HeaderContributor c = new HeaderContributor(new IHeaderContributor() {
+//
+//            @Override
+//            public void renderHead(IHeaderResponse response) {
+//                response.renderJavascriptReference("Wicket.Window.unloadConfirmation = true;");
+//            }
+//        });
+//        add(c);
     }
 
     protected Collection<String> getUserChoices(String input) {

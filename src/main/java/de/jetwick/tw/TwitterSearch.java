@@ -150,6 +150,12 @@ public class TwitterSearch implements Serializable {
         return aToken.getScreenName();
     }
 
+    public SolrUser getUser() throws TwitterException {
+        SolrUser user = new SolrUser(twitter.getScreenName());
+        updateUserInfo(Arrays.asList(user));
+        return user;
+    }
+
     public int getSecondsUntilReset() {
         try {
             return twitter.getRateLimitStatus().getSecondsUntilReset();
@@ -159,22 +165,29 @@ public class TwitterSearch implements Serializable {
         }
     }
 
-    public SolrUser getUser() throws TwitterException {
-        SolrUser user = new SolrUser(twitter.getScreenName());
-        updateUserInfo(Arrays.asList(user));
-        return user;
-    }
-
     /**
      * Check with this method otherwise you'll get TwitterException
      */
     public int getRateLimit() {
         try {
-            return twitter.getRateLimitStatus().getRemainingHits();
+            rl = twitter.getRateLimitStatus().getRemainingHits();
+            return rl;
         } catch (TwitterException ex) {
             logger.error("Cannot determine rate limit", ex);
             return 0;
         }
+    }
+    private int rl = -1;
+
+    public int getRateLimitFromCache() {
+        try {
+            if (rl < 0)
+                rl = twitter.getRateLimitStatus().getRemainingHits();
+        } catch (TwitterException ex) {
+            rl = -1;
+        }
+
+        return rl;
     }
 
     public Status getTweet(long id) throws TwitterException {
@@ -383,11 +396,6 @@ public class TwitterSearch implements Serializable {
      * @return the latest tweets of the users
      */
     public Collection<? extends Tweet> updateUserInfo(List<? extends YUser> users) {
-        if (getRateLimit() == 0) {
-            logger.error("No API calls available");
-            return Collections.EMPTY_LIST;
-        }
-
         int counter = 0;
         String arr[] = new String[users.size()];
 
@@ -430,13 +438,8 @@ public class TwitterSearch implements Serializable {
         return Collections.EMPTY_LIST;
     }
 
-    public List<SolrTweet> getTweets(SolrUser user,
-            Collection<SolrUser> users, int twPerPage) throws TwitterException {
-
-        if (getRateLimit() == 0) {
-            logger.error("No API calls available");
-            return Collections.EMPTY_LIST;
-        }
+    public List<SolrTweet> getTweets(SolrUser user, Collection<SolrUser> users,
+            int twPerPage) throws TwitterException {
         Map<String, SolrUser> map = new LinkedHashMap<String, SolrUser>();
         List<SolrTweet> userTweets = getTweets(user, twPerPage);
         users.addAll(map.values());

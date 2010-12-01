@@ -81,16 +81,17 @@ public class MyTweetGrabber implements Serializable {
     }
 
     public QueueThread queueTweetPackage() {
-        int rl = tweetSearch.getRateLimit();
-        if (rl <= TwitterSearch.LIMIT)
-            return new QueueThread().doAbort(
-                    new RuntimeException("Couldn't process query (TwitterSearch+Index)."
-                    + " Rate limit is smaller than " + TwitterSearch.LIMIT + ":" + rl));
-
         return new QueueThread() {
 
             @Override
             public void run() {
+                int rl = tweetSearch.getRateLimit();
+                if (rl <= TwitterSearch.LIMIT) {
+                    doAbort(new RuntimeException("Couldn't process query (TwitterSearch+Index)."
+                            + " Rate limit is smaller than " + TwitterSearch.LIMIT + ":" + rl));
+                    return;
+                }
+
                 String name = "";
                 if (tweets == null) {
                     tweets = new LinkedBlockingQueue<SolrTweet>();

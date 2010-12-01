@@ -94,8 +94,7 @@ public class HomePage extends WebPage {
     HomePage() {
     }
 
-    public HomePage(final PageParameters parameters) {
-        //logger.info("RATE_LIMIT:" + getMySession().getTwitterSearch().getRateLimit());
+    public HomePage(final PageParameters parameters) {        
         String callback = parameters.getString("callback");
         if ("true".equals(callback)) {
             try {
@@ -594,7 +593,7 @@ public class HomePage extends WebPage {
                 // try TWITTER SEARCH
                 users.clear();
                 try {
-                    if (getTwitterSearch().getRateLimit() > TwitterSearch.LIMIT) {
+                    if (getTwitterSearch().getRateLimitFromCache() > TwitterSearch.LIMIT) {
                         if (!userName.isEmpty()) {
                             tweets = getTwitterSearch().getTweets(new SolrUser(userName), users, TWEETS_IF_NO_HIT);
                         } else
