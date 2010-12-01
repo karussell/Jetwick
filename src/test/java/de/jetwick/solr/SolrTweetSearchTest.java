@@ -510,16 +510,25 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
     }
 
     @Test
-    public void testAddOldTweetsForJetwickSource() {
+    public void testAddOldTweetsIfPersistent() throws SolrServerException {
         SolrTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
         Date dt = new MyDate().minusDays(2).toDate();
         tw.setUpdatedAt(dt);
         tw.setCreatedAt(dt);
         assertEquals(1, twSearch.update(tw).size());
+
+        // testOverwriteTweetsIfPersistent
+        tw = createTweet(2L, "totally new", "userB");
+        dt = new MyDate().minusDays(2).toDate();
+        tw.setUpdatedAt(dt);
+        tw.setCreatedAt(dt);
+        assertEquals(1, twSearch.update(tw).size());
+        assertEquals(0, twSearch.search("bla").size());
+        assertEquals(1, twSearch.search("new").size());
     }
 
     @Test
-    public void testDontRemoveOldIfJetwicked() throws Exception {
+    public void testDontRemoveOldIfPersistent() throws Exception {
         SolrTweet tw2 = createTweet(2L, "RT @userA: bla bli blu", "userB");
         Date dt = new MyDate().minusDays(2).toDate();
         tw2.setUpdatedAt(dt);

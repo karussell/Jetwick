@@ -445,11 +445,13 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
             Map<Long, SolrTweet> twMap = new LinkedHashMap<Long, SolrTweet>();
             for (SolrTweet solrTweet : tmpTweets) {
+                // do not store if too old
                 if (!solrTweet.isPersistent() && solrTweet.getCreatedAt().getTime() < removeUntil.getTime())
                     continue;
 
                 SolrTweet spectw = existingTweets.get(solrTweet.getTwitterId());
-                if (spectw == null) {
+                // feed if new or if it should be persistent
+                if (spectw == null || solrTweet.isPersistent()) {
                     String name = solrTweet.getFromUser().getScreenName();
                     SolrUser u = usersMap.get(name);
                     if (u == null) {
