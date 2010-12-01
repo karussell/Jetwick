@@ -54,7 +54,7 @@ public class TweetCollector {
     };
 
     public static void main(String[] args) throws InterruptedException {
-        int maxTime = 6000;
+        int maxTime = -1;
 
         if (args.length == 0) {
             logger.info("You can specify the maximal time in seconds to collect "

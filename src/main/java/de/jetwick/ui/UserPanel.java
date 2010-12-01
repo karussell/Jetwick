@@ -21,10 +21,7 @@ import java.util.Collection;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
-import org.apache.wicket.markup.html.IHeaderContributor;
-import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -105,16 +102,6 @@ public class UserPanel extends Panel {
             }
         });
         modalW.setCookieName("user-modal");
-
-        // disable js confirmation
-//        HeaderContributor c = new HeaderContributor(new IHeaderContributor() {
-//
-//            @Override
-//            public void renderHead(IHeaderResponse response) {
-//                response.renderJavascriptReference("Wicket.Window.unloadConfirmation = true;");
-//            }
-//        });
-//        add(c);
     }
 
     protected Collection<String> getUserChoices(String input) {
