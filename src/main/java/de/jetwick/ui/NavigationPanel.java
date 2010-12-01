@@ -36,13 +36,18 @@ public class NavigationPanel extends Panel {
     private int page = 0;
     private long totalHits = 0;
 
-    public NavigationPanel(String id, int hitsPerPage) {
-        super(id);
-        this.hitsPerPage = hitsPerPage;
-        init();
+    /** for test only */
+    public NavigationPanel(String id) {
+        this(id, 15);
     }
 
-    public void init() {
+    public NavigationPanel(String id, int hits) {
+        super(id);
+        init(hits);
+    }
+
+    private NavigationPanel init(int hits) {
+        this.hitsPerPage = hits;
         next = new Link("next") {
 
             @Override
@@ -70,6 +75,7 @@ public class NavigationPanel extends Panel {
             }
         };
         add(prev);
+        return this;
     }
 
     public void onPageChange(AjaxRequestTarget target, int page) {

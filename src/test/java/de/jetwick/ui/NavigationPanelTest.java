@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import org.junit.Before;
@@ -34,22 +33,21 @@ public class NavigationPanelTest extends WicketPagesTestClass {
 
     @Test
     public void testOnPageChange() {
-        NavigationPanel panel = (NavigationPanel) tester.startPanel(NavigationPanel.class);
-        panel.setHitsPerPage(15);
+        NavigationPanel panel = ((NavigationPanel) tester.startPanel(NavigationPanel.class));
 
-        panel.setHits(10);                
+        panel.setHits(10);
         panel.setPage(0);
         assertFalse(panel.isNextPossible());
         assertFalse(panel.isPreviousPossible());
 
         //
-        panel.setHits(15);        
+        panel.setHits(15);
         panel.setPage(0);
         assertFalse(panel.isNextPossible());
         assertFalse(panel.isPreviousPossible());
 
         //
-        panel.setHits(20);        
+        panel.setHits(20);
         panel.setPage(0);
         assertTrue(panel.isNextPossible());
         assertFalse(panel.isPreviousPossible());

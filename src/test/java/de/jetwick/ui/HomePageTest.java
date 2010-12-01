@@ -163,6 +163,11 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
+            public int getRateLimitFromCache() {
+                return 100;
+            }
+
+            @Override
             public boolean init() {
                 return true;
             }
