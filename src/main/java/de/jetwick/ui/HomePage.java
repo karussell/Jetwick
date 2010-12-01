@@ -578,7 +578,7 @@ public class HomePage extends WebPage {
         if (totalHits > 0) {
             time = (System.currentTimeMillis() - start) / 100.0f;
             time = Math.round(time) / 10f;
-            msg = "Page " + (page + 1) + " of " + (((int) (totalHits - 1) / hitsPerPage) + 1) + " (" + time + " seconds).";
+            msg = "Found " + totalHits + " tweets in " + time + " s";
         } else {
             if (queryString.isEmpty()) {
                 if (userName.isEmpty()) {
@@ -639,10 +639,6 @@ public class HomePage extends WebPage {
         resultsPanel.setHitsPerPage(hitsPerPage);
 
         dateFilter.update(rsp);
-
-//        String sortString = "";
-//        if (query.getSortField() != null && query.getSortField().contains(" "))
-//            sortString = query.getSortField().split(" ")[1];
 
         resultsPanel.setSort(query.getSortField());
         resultsPanel.setTweetsPerUser(-1);

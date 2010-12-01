@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +34,15 @@ public class NavigationPanel extends Panel {
     private Link next;
     private int hitsPerPage;
     private int page = 0;
-    private long hits = 0;
+    private long totalHits = 0;
 
-    /**
-     *  for test only
-     */
-    public NavigationPanel(String id) {
+    public NavigationPanel(String id, int hitsPerPage) {
         super(id);
+        this.hitsPerPage = hitsPerPage;
+        init();
+    }
+
+    public void init() {
         next = new Link("next") {
 
             @Override
@@ -49,6 +52,14 @@ public class NavigationPanel extends Panel {
             }
         };
         add(next);
+
+        add(new Label("msg", new Model<String>() {
+
+            @Override
+            public String getObject() {
+                return "Page " + (page + 1) + " of " + (((int) (totalHits - 1) / hitsPerPage) + 1);
+            }
+        }));
 
         prev = new Link("pre") {
 
@@ -61,11 +72,6 @@ public class NavigationPanel extends Panel {
         add(prev);
     }
 
-    public NavigationPanel(String id, int hitsPerPage) {
-        this(id);
-        this.hitsPerPage = hitsPerPage;
-    }
-
     public void onPageChange(AjaxRequestTarget target, int page) {
     }
 
@@ -75,7 +81,7 @@ public class NavigationPanel extends Panel {
     }
 
     boolean isNextPossible() {
-        return page + 1 < (float) hits / hitsPerPage;
+        return page + 1 < (float) totalHits / hitsPerPage;
     }
 
     boolean isPreviousPossible() {
@@ -83,7 +89,7 @@ public class NavigationPanel extends Panel {
     }
 
     public void setHits(long hits) {
-        this.hits = hits;
+        this.totalHits = hits;
     }
 
     public void setPage(int page) {
