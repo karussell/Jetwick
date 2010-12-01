@@ -81,11 +81,7 @@ public class OneTweet extends Panel {
         spamIndicator.setVisible(tweet.isSpam());
         add(spamIndicator);
 
-        final String origText;
-        if (tweet.isSpam())
-            origText = tweet.getText();
-        else
-            origText = new Extractor().setTweet(tweet).run().toString();
+        final String origText = new Extractor().setTweet(tweet).run().toString();
         final Label label = new Label("tweetText", origText);
         label.setEscapeModelStrings(false);
         label.setOutputMarkupId(true);

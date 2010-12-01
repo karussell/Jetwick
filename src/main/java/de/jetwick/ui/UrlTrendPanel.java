@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.solr.SolrTweetSearch;
@@ -93,7 +92,6 @@ public class UrlTrendPanel extends Panel {
                 addUrl(cl);
                 item.add(moreUrlInfo);
 
-
                 Link moreUrlLink = new AjaxFallbackLink("moreUrlLink") {
 
                     @Override
@@ -113,6 +111,14 @@ public class UrlTrendPanel extends Panel {
                 };
                 link.add(new Label("urlLabel", title));
                 moreUrlInfo.add(link);
+
+                moreUrlInfo.add(new AjaxFallbackLink("directLink") {
+
+                    @Override
+                    public void onClick(AjaxRequestTarget target) {
+                        onDirectUrlClick(target, url.getKey());
+                    }
+                });
             }
         };
         add(urlListView);
@@ -133,6 +139,9 @@ public class UrlTrendPanel extends Panel {
     }
 
     protected void onUrlClick(AjaxRequestTarget target, String name) {
+    }
+
+    protected void onDirectUrlClick(AjaxRequestTarget target, String name) {
     }
 
     public void update(QueryResponse rsp, SolrQuery query) {

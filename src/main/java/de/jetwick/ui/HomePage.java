@@ -18,6 +18,7 @@ package de.jetwick.ui;
 import de.jetwick.tw.MyTweetGrabber;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import de.jetwick.data.UrlEntry;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SolrAdSearch;
@@ -46,6 +47,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebResponse;
+import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
@@ -94,7 +96,7 @@ public class HomePage extends WebPage {
     HomePage() {
     }
 
-    public HomePage(final PageParameters parameters) {        
+    public HomePage(final PageParameters parameters) {
         String callback = parameters.getString("callback");
         if ("true".equals(callback)) {
             try {
@@ -267,8 +269,28 @@ public class HomePage extends WebPage {
                     getTweetSearch().applyFacetChange(q, SolrTweetSearch.FIRST_URL_TITLE, false);
                 } else
                     q.addFilterQuery(SolrTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
+
                 doSearch(q, 0, true);
                 updateAfterAjax(target, false);
+            }
+
+            @Override
+            protected void onDirectUrlClick(AjaxRequestTarget target, String name) {
+                if (lastQuery == null || name == null || name.isEmpty())
+                    return;
+
+                SolrQuery q = new TweetQuery();
+                q.addFilterQuery(SolrTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
+                try {
+                    List<SolrTweet> tweets = getTweetSearch().collectTweets(getTweetSearch().search(q.setRows(1)));
+                    if (tweets.size() > 0 && tweets.get(0).getUrlEntries().size() > 0) {
+                        // TODO there could be more than 1 url!
+                        UrlEntry entry = tweets.get(0).getUrlEntries().iterator().next();
+                        getRequestCycle().setRequestTarget(new RedirectRequestTarget(entry.getResolvedUrl()));
+                    }
+                } catch (Exception ex) {
+                    logger.error("Error while executing onDirectUrlClick", ex);
+                }
             }
         };
         add(urlTrends.setOutputMarkupId(true));

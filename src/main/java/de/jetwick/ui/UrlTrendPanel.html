@@ -31,8 +31,12 @@
             <div class="urlbox">                
                 <div wicket:id="urls" class="oneurl">                    
                     <div wicket:id="moreUrlInfo">
-                        <a wicket:id="urlLink" class="url-link url-less"><span wicket:id="urlLabel"/></a>                        
-                        <a wicket:id="moreUrlLink" class="url-link url-more"><span wicket:id="urlLabel"/></a>
+                        <a wicket:id="urlLink" class="url-link url-less"><span wicket:id="urlLabel"/></a>
+                        <div class="url-link url-more">                            
+                            <a wicket:id="moreUrlLink"><span class="link-header">In Context:</span> <span wicket:id="urlLabel"/></a>
+                            <br/>
+                            <a class="link-header" wicket:id="directLink" target="_blank">Direct Link</a>
+                        </div>
                     </div>
                 </div>                
             </div>
