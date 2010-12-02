@@ -221,12 +221,12 @@ url("../img/bottom-line.png")
 }
 .date-filter .bar-chart, .main-bar-chart .gray  { color: gray; }
 
-.date-filter .bar-chart .item {
-    padding-left: 10px;
+.date-filter .bar-chart  div {    
+    width: 50px;
     float: left;
 }
 
-.date-filter .bar-chart div {
+.date-filter .bar-chart .item span {
     font-size: 12px;
 }
 
