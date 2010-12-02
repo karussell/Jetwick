@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class UrlExtractorTest {
-
+    
     private BlockingQueue<SolrTweet> ret = new LinkedBlockingQueue<SolrTweet>();
 
     public UrlExtractorTest() {
@@ -168,18 +168,7 @@ public class UrlExtractorTest {
 
             @Override
             public UrlExtractor createExtractor() {
-                return new UrlExtractor() {
-
-                    @Override
-                    public String resolveOneUrl(String url, int timeout) {
-                        return url + "_x";
-                    }
-
-                    @Override
-                    public String[] getInfo(String url, int timeout) {
-                        return new String[]{url + "_t", url + "_s"};
-                    }
-                };
+                return new FakeUrlExtractor();
             }
         };
     }

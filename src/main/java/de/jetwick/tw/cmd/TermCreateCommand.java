@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw.cmd;
 
 import de.jetwick.data.UrlEntry;
@@ -35,6 +34,11 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         //http://en.wikipedia.org/wiki/Phonetic_algorithm
         //http://en.wikipedia.org/wiki/Approximate_string_matching
         //http://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+        //BUT we are using a technic from TextProfileSignature:
+        // create a list of tokens and their frequency, separated by spaces, in the order of decreasing frequency.
+        // This list is then submitted to an MD5 hash calculation.
+        // Only suited for short strings: JaroWinklerDistance, LevensteinDistance,new NGramDistance.
+        // Use relative termMinFrequency!!
     }
 
     public TermCreateCommand(boolean termRemoving) {
@@ -43,22 +47,11 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
 
     @Override
     public SolrTweet execute(SolrTweet tw) {
-        // TODO do we need this?
-        // if quality was already processed
-        if (tw.getTextTerms().size() > 0 && tw.getQuality() < SolrTweet.QUAL_MAX)
-            return tw;
-
         // HINT: do only modify the current tweets' quality!
         double qual = tw.getQuality();
-        calcTermsRemoveNoise(tw);
+        calcTermsWithoutNoise(tw);
 
-        //use technic from TextProfileSignature:
-        // create a list of tokens and their frequency, separated by spaces, in the order of decreasing frequency.
-        // This list is then submitted to an MD5 hash calculation.
-        // Only suited for short strings: JaroWinklerDistance, LevensteinDistance,new NGramDistance.
-        // Use relative termMinFrequency!!
         int maxTerms = 0;
-
         for (Entry<String, Integer> entry : tw.getTextTerms().getSortedFreqLimit(0.05f)) {
             if (entry.getValue() > maxTerms)
                 maxTerms = entry.getValue();
@@ -72,11 +65,11 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
             qual = Math.max(0, 100 - maxTerms * 8);
             tw.addQualAction("MT,");
         }
-        tw.setQuality((int) qual);
 
         // now calculate quality via comparing to existing tweets
         StringFreqMap otherTerms = new StringFreqMap();
         StringFreqMap otherLangs = new StringFreqMap();
+        tw.setQuality((int) qual);
         qual = checkSpamInExistingTweets(tw, otherTerms, otherLangs);
         tw.setQuality((int) qual);
 
@@ -107,7 +100,7 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
                 lEntry = list.get(index);
             }
 
-            if (tweet.getLanguages().size() > index + 1 && !TweetDetector.UNKNOWN_LANG.equals(lEntry.getKey())) {                
+            if (tweet.getLanguages().size() > index + 1 && !TweetDetector.UNKNOWN_LANG.equals(lEntry.getKey())) {
                 if (lEntry.getValue() - 1 < list.get(index + 1).getValue())
                     // the second language seems also important
                     return TweetDetector.UNKNOWN_LANG;
@@ -119,30 +112,35 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         return TweetDetector.UNKNOWN_LANG;
     }
 
-    public double checkSpamInExistingTweets(SolrTweet tw, StringFreqMap mergedTerms, StringFreqMap mergedLangs) {
-        double qual = tw.getQuality();
+    public double checkSpamInExistingTweets(SolrTweet currentTweet,
+            StringFreqMap mergedTerms, StringFreqMap mergedLangs) {
+        double qual = currentTweet.getQuality();
 
         // TODO use jaccard index for url titles too!?
         StringFreqMap urlTitleMap = new StringFreqMap();
         StringFreqMap urlMap = new StringFreqMap();
-        for (SolrTweet older : tw.getFromUser().getOwnTweets()) {
+        for (SolrTweet older : currentTweet.getFromUser().getOwnTweets()) {
             for (UrlEntry entry : older.getUrlEntries()) {
                 urlTitleMap.inc(entry.getResolvedTitle(), 1);
                 urlMap.inc(entry.getResolvedUrl(), 1);
             }
         }
 
-        for (SolrTweet older : tw.getFromUser().getOwnTweets()) {
-            if (older.getTextTerms().size() == 0)
-                calcTermsRemoveNoise(older);
-
-            if (older == tw)
+        boolean sameUrl = false;
+        for (SolrTweet older : currentTweet.getFromUser().getOwnTweets()) {
+            if (older == currentTweet)
                 continue;
-
+            
+            // create tags to decide if tags of currentTweet are important
+            calcTermsWithoutNoise(older);
             // count only one term per tweet
             mergedTerms.addOne2All(older.getTextTerms());
             // count languages as they appear
             mergedLangs.addValue2All(older.getLanguages());
+
+            // compare only to older tweets            
+            if (currentTweet.getCreatedAt().getTime() <= older.getCreatedAt().getTime())
+                continue;
 
             // we don't need the signature because we have the jaccard index
             // performance improvement of comparison: use int[] instead of byte[]
@@ -150,42 +148,52 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
 //                qual = qual * 0.7;
 
             // use Jaccard index
-            int a = tw.getTextTerms().andSize(older.getTextTerms());
-            double b = tw.getTextTerms().orSize(older.getTextTerms());
+            int a = currentTweet.getTextTerms().andSize(older.getTextTerms());
+            double b = currentTweet.getTextTerms().orSize(older.getTextTerms());
             double ji = a / b;
 
             if (ji >= 0.8) {
                 // nearly equal terms
                 qual *= SolrTweet.QUAL_BAD / 100.0;
-                tw.addQualAction("JB," + older.getTwitterId() + ",");
-            } else if (ji >= 0.6 && tw.getQualReductions() < 3) {
+                currentTweet.addQualAction("JB," + older.getTwitterId() + ",");
+            } else if (ji >= 0.6 && currentTweet.getQualReductions() < 3) {
                 // e.g. if 3 of 4 terms occur in both tweets
                 qual *= SolrTweet.QUAL_LOW / 100.0;
-                tw.addQualAction("JL," + older.getTwitterId() + ",");
+                currentTweet.addQualAction("JL," + older.getTwitterId() + ",");
             }
 
-            for (UrlEntry entry : older.getUrlEntries()) {
-                Integer titleCounts = urlTitleMap.get(entry.getResolvedTitle());
-                if (titleCounts != null) {
-                    if ((titleCounts == 2 || titleCounts == 3) && tw.getQualReductions() < 3) {
-                        qual *= SolrTweet.QUAL_LOW / 100.0;
-                        tw.addQualAction("TL," + older.getTwitterId() + ",");
-                    } else if (titleCounts > 3) {
-                        // tweeted about the identical url title!
-                        qual *= SolrTweet.QUAL_BAD / 100.0;
-                        tw.addQualAction("TB," + older.getTwitterId() + ",");
-                    }
-                }
+            if (!sameUrl) {
+                for (UrlEntry entry : older.getUrlEntries()) {
+                    Integer titleCounts = urlTitleMap.get(entry.getResolvedTitle());
+                    if (titleCounts != null) {
+                        if ((titleCounts == 2 || titleCounts == 3) && currentTweet.getQualReductions() < 3) {
+                            sameUrl = true;
+                            qual *= SolrTweet.QUAL_LOW / 100.0;
+                            currentTweet.addQualAction("TL," + older.getTwitterId() + ",");
+                        } else if (titleCounts > 3) {
+                            sameUrl = true;
+                            // tweeted about the identical url title!
+                            qual *= SolrTweet.QUAL_BAD / 100.0;
+                            currentTweet.addQualAction("TB," + older.getTwitterId() + ",");
+                        }
+                    } else
+                        titleCounts = 0;
 
-                Integer urlCounts = urlMap.get(entry.getResolvedUrl());
-                if (urlCounts != null) {
-                    if ((urlCounts == 2 || urlCounts == 3) && tw.getQualReductions() < 3) {
-                        qual *= SolrTweet.QUAL_LOW / 100.0;
-                        tw.addQualAction("UL," + older.getTwitterId() + ",");
-                    } else if (urlCounts > 3) {
-                        // tweeted about the identical url title!
-                        qual *= SolrTweet.QUAL_BAD / 100.0;
-                        tw.addQualAction("UB," + older.getTwitterId() + ",");
+                    // if title is identical then url isn't necessary to compare
+                    if (titleCounts < 2) {
+                        Integer urlCounts = urlMap.get(entry.getResolvedUrl());
+                        if (urlCounts != null) {
+                            if ((urlCounts == 2 || urlCounts == 3) && currentTweet.getQualReductions() < 3) {
+                                sameUrl = true;
+                                qual *= SolrTweet.QUAL_LOW / 100.0;
+                                currentTweet.addQualAction("UL," + older.getTwitterId() + ",");
+                            } else if (urlCounts > 3) {
+                                sameUrl = true;
+                                // tweeted about the identical url title!
+                                qual *= SolrTweet.QUAL_BAD / 100.0;
+                                currentTweet.addQualAction("UB," + older.getTwitterId() + ",");
+                            }
+                        }
                     }
                 }
             }
@@ -193,13 +201,14 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         return qual;
     }
 
-    public void calcTermsRemoveNoise(SolrTweet tw) {
+    public void calcTermsWithoutNoise(SolrTweet tw) {
+        if (tw.getTextTerms().size() > 0)
+            return;
+
         TweetDetector extractor = new TweetDetector().runOne(tw.getText());
         tw.setTextTerms(extractor.getTerms());
         tw.setLanguages(extractor.getLanguages());
 
-        if (tw.getTextTerms().size() == 0)
-            return;
 
         // we don't need the signature because we have the jaccard index
 //        String strForSig = "";

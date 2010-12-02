@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw.cmd;
 
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.tw.FakeUrlExtractor;
 import de.jetwick.tw.TweetDetector;
 import de.jetwick.util.MyDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -40,13 +41,22 @@ public class TermCreateCommandTest {
     public TermCreateCommandTest() {
     }
 
-    void execute(Collection<SolrTweet> tweets) {
-        // remove executor since we only have one remaining command?
-        new SerialCommandExecutor(tweets).add(new TermCreateCommand()).execute();
+    static void execute(Collection<SolrTweet> tweets) {
+        execute(tweets, true);
     }
 
-    public static void execute(SolrTweet tw) {
-        new TermCreateCommand(false).execute(tw);
+    static void execute(Collection<SolrTweet> tweets, boolean termRemoving) {
+        // remove executor since we only have one remaining command?
+        for (SolrTweet tw : tweets) {
+            for (UrlEntry entry : new FakeUrlExtractor().setText(tw.getText()).run().getUrlEntries()) {
+                tw.addUrlEntry(entry);
+            }
+        }
+        new SerialCommandExecutor(tweets).add(new TermCreateCommand(termRemoving)).execute();
+    }
+
+    static void execute(SolrTweet tw) {
+        execute(Arrays.asList(tw), false);
     }
 
     @Test
@@ -86,35 +96,63 @@ public class TermCreateCommandTest {
         SolrUser user = new SolrUser("sakilamahipallb");
         for (String tw : tweetsAsStr) {
             counter++;
-            list.add(new SolrTweet(counter, tw, user));
+            list.add(new SolrTweet(counter, tw, user).setCreatedAt(new Date(counter)));
         }
         execute(list);
 
         counter = 0;
+        int spamCounter = 0;
         for (SolrTweet tw : list) {
-            assertTrue("tweet:" + tw, tw.getQuality() < SolrTweet.QUAL_LOW);
-            if (tw.getQuality() < SolrTweet.QUAL_SPAM)
-                counter++;
+            if (counter++ > 0) {
+                assertTrue("tweet:" + tw, tw.getQuality() < SolrTweet.QUAL_LOW);
+
+                if (tw.getQuality() < SolrTweet.QUAL_SPAM)
+                    spamCounter++;
+            }
         }
         // a lot of those tweets are spam - not only bad!
-        assertTrue(counter > 7);
+        assertTrue(spamCounter > 5);
 
         user = new SolrUser("user2");
-        SolrTweet tw1 = new SolrTweet(1L, "E Grant Rd / N Swan Rd Accident no injury (Tue 3:24 PM)  http://tinyurl.com/5hwubc", user);
-        SolrTweet tw2 = new SolrTweet(2L, "N Columbus Bl / E Grant Rd Accident no injury (Tue 3:26 PM)  http://tinyurl.com/658t96", user);
+        SolrTweet tw1 = new SolrTweet(1L, "E Grant Rd / N Swan Rd Accident no injury (Tue 3:24 PM)  http://tinyurl.com/5hwubc", user).setCreatedAt(new Date(1));
+        SolrTweet tw2 = new SolrTweet(2L, "N Columbus Bl / E Grant Rd Accident no injury (Tue 3:26 PM)  http://tinyurl.com/658t96", user).setCreatedAt(new Date(2));
         execute(Arrays.asList(tw1, tw2));
-        assertTrue("tweet:" + tw1, tw1.getQuality() < SolrTweet.QUAL_MAX);
+//        assertTrue("tweet:" + tw1, tw1.getQuality() < SolrTweet.QUAL_MAX);
         assertTrue("tweet:" + tw1, tw1.getQuality() > SolrTweet.QUAL_SPAM);
         assertTrue("tweet:" + tw2, tw2.getQuality() < SolrTweet.QUAL_MAX);
         assertTrue("tweet:" + tw2, tw2.getQuality() > SolrTweet.QUAL_SPAM);
 
         user = new SolrUser("user2");
-        tw1 = new SolrTweet(1L, "Werder verliert sein Heimspiel gegen Twente http://goo.gl/fb/fKFEi #werder #svw", user);
-        tw2 = new SolrTweet(2L, "Werder Bremen verliert gegen Twente Enschede http://goo.gl/fb/O8maL #werder #svw", user);
+        tw1 = new SolrTweet(1L, "Werder Bremen verliert sein Heimspiel gegen Twente http://goo.gl/fb/fKFEi #werder #svw", user).setCreatedAt(new Date(1));
+        tw2 = new SolrTweet(2L, "Werder Bremen verliert gegen Twente Enschede http://goo.gl/fb/O8maL #werder #svw", user).setCreatedAt(new Date(2));
         execute(Arrays.asList(tw1, tw2));
         assertTrue("tweet:" + tw1, tw1.getQuality() == SolrTweet.QUAL_MAX);
         assertTrue("tweet:" + tw2, tw2.getQuality() < SolrTweet.QUAL_MAX);
         assertTrue("tweet:" + tw2, tw2.getQuality() > SolrTweet.QUAL_SPAM);
+    }
+
+    @Test
+    public void testDecreaseQualityOnlyOnce() {
+        String url1, url2, url3;
+        url1 = url2 = url3 = "http://watchlivefree.blogspot.com";
+        String[] tweetsAsStr = new String[]{
+            "blap notspamword " + url1,
+            "blup secondnotspamword " + url2,
+            "bli secondsomething" + url3};
+
+        SolrUser user = new SolrUser("user1");
+        SolrTweet tw1 = new SolrTweet(1L, tweetsAsStr[0], user).setCreatedAt(new Date(1L));
+        tw1.getUrlEntries().add(new UrlEntry(5, 123, url1).setResolvedTitle("title1"));
+        SolrTweet tw2 = new SolrTweet(2L, tweetsAsStr[1], user).setCreatedAt(new Date(2L));
+        tw2.getUrlEntries().add(new UrlEntry(5, 123, url2).setResolvedTitle("title2"));
+        SolrTweet tw3 = new SolrTweet(3L, tweetsAsStr[2], user).setCreatedAt(new Date(3L));
+        tw3.getUrlEntries().add(new UrlEntry(5, 123, url3).setResolvedTitle("title3"));
+
+        execute(Arrays.asList(tw1, tw2, tw3));
+
+        assertEquals(SolrTweet.QUAL_MAX, tw1.getQuality());
+        assertTrue(tw2.getQuality() > SolrTweet.QUAL_SPAM);
+        assertTrue(tw3.getQuality() > SolrTweet.QUAL_SPAM);
     }
 
     @Test
@@ -126,26 +164,26 @@ public class TermCreateCommandTest {
             "blup secondnotspamword " + url2};
 
         SolrUser user = new SolrUser("user1");
-        SolrTweet tw1 = new SolrTweet(1L, tweetsAsStr[0], user);
+        SolrTweet tw1 = new SolrTweet(1L, tweetsAsStr[0], user).setCreatedAt(new Date(1L));
         tw1.getUrlEntries().add(new UrlEntry(5, 123, url1).setResolvedTitle("identical title"));
-        SolrTweet tw2 = new SolrTweet(2L, tweetsAsStr[1], user);
+        SolrTweet tw2 = new SolrTweet(2L, tweetsAsStr[1], user).setCreatedAt(new Date(2L));
         tw2.getUrlEntries().add(new UrlEntry(5, 123, url2).setResolvedTitle("identical title"));
 
         execute(Arrays.asList(tw1, tw2));
 
-        assertTrue("tweet:" + tw1, tw1.getQuality() < 90);
+        assertTrue("tweet:" + tw1, tw1.getQuality() > 90);
         assertTrue("tweet:" + tw2, tw2.getQuality() < 90);
     }
 
     @Test
     public void testExecute() {
-        SolrTweet tw = new SolrTweet(1L, "java lava", new SolrUser("tmp"));
+        SolrTweet tw = new SolrTweet(1L, "java lava", new SolrUser("tmp")).setCreatedAt(new Date(1L));
         execute(tw);
         assertEquals(2, tw.getTextTerms().size());
 
         SolrUser u = new SolrUser("peter");
         tw = new SolrTweet(1L, "java lava", u);
-        SolrTweet tw2 = new SolrTweet(2L, "peter java", u);
+        SolrTweet tw2 = new SolrTweet(2L, "peter java", u).setCreatedAt(new Date(2L));
         execute(tw);
         assertEquals(2, tw.getTextTerms().size());
         assertEquals(2, tw2.getTextTerms().size());
@@ -205,9 +243,10 @@ public class TermCreateCommandTest {
     @Test
     public void testOtherTweets() {
         SolrUser u = new SolrUser("peter");
-        SolrTweet tw1 = new SolrTweet(1L, "A Year Without Rain Will Give Us desert xyz", u);
-        SolrTweet tw2 = new SolrTweet(2L, "A Year Without Rain Will Give Us really fat desert", u);
-        SolrTweet tw3 = new SolrTweet(3L, "great hui desert", u);
+        SolrTweet tw1 = new SolrTweet(1L, "A Year Without Rain Will Give Us desert xyz", u).setCreatedAt(new Date(2L));
+        // tw2 is older than tw1
+        SolrTweet tw2 = new SolrTweet(2L, "A Year Without Rain Will Give Us really fat desert", u).setCreatedAt(new Date(1L));
+        SolrTweet tw3 = new SolrTweet(3L, "great hui desert", u).setCreatedAt(new Date(0L));
         tw1.setQuality(100);
         tw2.setQuality(89);
         execute(tw1);
@@ -246,7 +285,7 @@ public class TermCreateCommandTest {
         execute(tw);
         assertEquals(TweetDetector.DE, tw.getLanguage());
 
-        user = new SolrUser("peter");        
+        user = new SolrUser("peter");
         tw = new SolrTweet(3L, "Togos with @munckytown on lunch break. "
                 + "Hall and Oates \"kiss on my list\" is playing... groovy", user);
         execute(tw);

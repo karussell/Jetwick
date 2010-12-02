@@ -509,7 +509,7 @@ public class TwitterSearch implements Serializable {
     }
 
     /**
-     * This method is can only return up to 800 statuses, including retweets.
+     * This method only returns up to 800 statuses, including retweets.
      */
     public long getHomeTimeline(Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
         if (lastId <= 0)

@@ -29,15 +29,11 @@
                 <div wicket:id="filterName" title="Most tweeted links. Click to filter!">[title]</div>
             </div>            
             <div class="urlbox">                
-                <div wicket:id="urls" class="oneurl">                    
-                    <div wicket:id="moreUrlInfo">
-                        <a wicket:id="urlLink" class="url-link url-less"><span wicket:id="urlLabel"/></a>
-                        <div class="url-link url-more">                            
-                            <a wicket:id="moreUrlLink"><span class="link-header">In Context:</span> <span wicket:id="urlLabel"/></a>
-                            <br/>
-                            <a class="link-header" wicket:id="directLink" target="_blank">Direct Link</a>
-                        </div>
+                <div wicket:id="urls" class="oneurl">
+                    <div class="direct-link">
+                        <a wicket:id="directLink"><span wicket:id="urlLabel"/></a>
                     </div>
+                    <a wicket:id="urlLink" class="url-link"><img src="img/light-information.png"/></a>
                 </div>                
             </div>
         </wicket:panel>

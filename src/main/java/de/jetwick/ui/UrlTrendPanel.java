@@ -85,40 +85,46 @@ public class UrlTrendPanel extends Panel {
                 String title = Helper.trimAll(url.getKey());
                 title = Helper.htmlEntityDecode(title);
 
-                MarkupContainer moreUrlInfo = new MarkupContainer("moreUrlInfo") {
-                };
-                String cl = "moreUrl" + ++counter;
-                moreUrlInfo.add(new AttributeAppender("class", new Model(cl), " "));
-                addUrl(cl);
-                item.add(moreUrlInfo);
+//                MarkupContainer moreUrlInfo = new MarkupContainer("moreUrlInfo") {
+//                };
+//                String cl = "moreUrl" + ++counter;
+//                moreUrlInfo.add(new AttributeAppender("class", new Model(cl), " "));
+//                addUrl(cl);
+//                item.add(moreUrlInfo);
+//
+//                Link moreUrlLink = new AjaxFallbackLink("moreUrlLink") {
+//
+//                    @Override
+//                    public void onClick(AjaxRequestTarget target) {
+//                        onUrlClick(target, url.getKey());
+//                    }
+//                };
+//
+//                moreUrlLink.add(new Label("urlLabel", title));
+//                moreUrlInfo.add(moreUrlLink);
 
-                Link moreUrlLink = new AjaxFallbackLink("moreUrlLink") {
+                Link contextLink = new AjaxFallbackLink("urlLink") {
 
                     @Override
                     public void onClick(AjaxRequestTarget target) {
                         onUrlClick(target, url.getKey());
                     }
                 };
-                moreUrlLink.add(new Label("urlLabel", title));
-                moreUrlInfo.add(moreUrlLink);
+                contextLink.add(new AttributeAppender("title",
+                        new Model("View Url in Context of " + url.getValue() + " tweets"), " "));
+                item.add(contextLink);
 
-                Link link = new AjaxFallbackLink("urlLink") {
 
-                    @Override
-                    public void onClick(AjaxRequestTarget target) {
-                        onUrlClick(target, url.getKey());
-                    }
-                };
-                link.add(new Label("urlLabel", title));
-                moreUrlInfo.add(link);
-
-                moreUrlInfo.add(new AjaxFallbackLink("directLink") {
+                Link directLink = new AjaxFallbackLink("directLink") {
 
                     @Override
                     public void onClick(AjaxRequestTarget target) {
                         onDirectUrlClick(target, url.getKey());
                     }
-                });
+                };
+                item.add(directLink);
+                directLink.add(new Label("urlLabel", title));
+                directLink.add(new AttributeAppender("title", new Model(title), " "));
             }
         };
         add(urlListView);

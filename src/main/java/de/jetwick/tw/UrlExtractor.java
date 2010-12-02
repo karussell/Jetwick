@@ -46,7 +46,7 @@ public class UrlExtractor extends Extractor {
 
     @Override
     public UrlExtractor setText(String text) {
-        super.setText(text);
+        super.setText(text);        
         return this;
     }
 
