@@ -82,11 +82,11 @@ public class FacetPanel extends Panel {
         tr.put(FILTER_NO_SPAM, "No Spam");
         tr.put(FILTER_SPAM, "Only Spam");
 
-        tr.put(langKey + ":" + UNKNOWN_LANG, "other");
+        tr.put(langKey + ":" + UNKNOWN_LANG, "Other");
         tr.put(langKey + ":" + DE, "Deutsch");
         tr.put(langKey + ":" + EN, "English");
-        tr.put(langKey + ":" + NL, "Nederlands");
-        tr.put(langKey + ":" + RU, "русский язык");
+        tr.put(langKey + ":" + NL, "Nederlandse");
+        tr.put(langKey + ":" + RU, "Pусский");
         tr.put(langKey + ":" + SP, "Español");
 
         tagView = new ListView("filterNames", normalFacetFields) {

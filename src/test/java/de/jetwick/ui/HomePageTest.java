@@ -125,30 +125,28 @@ public class HomePageTest extends WicketPagesTestClass {
     public void testWhithNoSolrSearch() throws InterruptedException {
         HomePage page = getInstance(HomePage.class);
 
-        // normal searchAndGetUsers fails but set twitterfallback = false
+        // normal query fails but set twitterfallback = false
         page.init(new SolrQuery("java"), 0, true);
         page.getQueueThread().run();
         assertNotNull(sentTweets);
         assertEquals("", uString);
         assertEquals("#java", qString);
 
-        // do not trigger background searchAndGetUsers for the same query
+        // do not trigger background search for the same query
         page.doSearch(new SolrQuery("java"), 0, true);
         assertNull(page.getQueueThread());
 
-        // if only user searchAndGetUsers then set twitterFallback = true
+        // if only user search then set twitterFallback = true
         reset();
         page.doSearch(new SolrQuery().addFilterQuery("user:test"), 0, true);
         assertEquals("#test", uString);
         assertEquals("", qString);
         page.getQueueThread().run();
 
-        // if searchAndGetUsers AND user searchAndGetUsers then set twitterFallback = false but trigger backgr. thread
+        // if 'normal query' AND 'user search' then set twitterFallback = false but trigger backgr. thread
         reset();
-        page.doSearch(new SolrQuery("java").addFilterQuery("user:test"), 0, true);
-        assertEquals("", uString);
-        assertEquals("", qString);
-        page.getQueueThread().run();
+        page.doSearch(new SolrQuery("java").addFilterQuery("user:test"), 0, true);        
+        page.getQueueThread().join();
         assertEquals("#test", uString);
         assertEquals("", qString);
     }
