@@ -65,7 +65,11 @@ public class YUser implements DbObject, Serializable {
     private String profileImageUrl;
     private String webUrl;
     private String location;
-    private String lang;
+    @ElementCollection
+    @CollectionTable(name = "langs", joinColumns =
+    @JoinColumn(name = "id"))
+    @Column(name = "lang")
+    private Set<String> langs = new LinkedHashSet<String>();
     private String description;
     @Temporal(javax.persistence.TemporalType.TIMESTAMP)
     private Date createdAt;
@@ -151,7 +155,7 @@ public class YUser implements DbObject, Serializable {
         twitterId = user.getId();
         setCreatedAt(user.getCreatedAt());
         setDescription(user.getDescription());
-        setLang(user.getLang());
+        addLanguage(user.getLang());
         setLocation(TwitterSearch.toStandardLocation(user.getLocation()));
         setRealName(user.getName());
 
@@ -166,6 +170,14 @@ public class YUser implements DbObject, Serializable {
             setWebUrl(user.getURL().toString());
 
         return user.getStatus();
+    }
+
+    public void addLanguage(String lang) {
+        langs.add(lang);
+    }
+
+    public Collection<String> getLanguages() {
+        return langs;
     }
 
     public void addFollower(YUser u) {
@@ -235,14 +247,6 @@ public class YUser implements DbObject, Serializable {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getLang() {
-        return lang;
-    }
-
-    public void setLang(String lang) {
-        this.lang = lang;
     }
 
     public String getLocation() {

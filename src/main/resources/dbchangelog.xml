@@ -21,7 +21,15 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9 http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
 
-    <changeSet author="peterk (generated)" id="1289943426012-1">
+    <changeSet author="peterk (generated)" id="1291408425028-1">
+        <createTable schemaName="PUBLIC" tableName="LANGS">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LANG" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1291408425028-2">
         <createTable schemaName="PUBLIC" tableName="TAGS">
             <column name="ID" type="BIGINT">
                 <constraints nullable="false"/>
@@ -29,7 +37,7 @@
             <column name="TAG" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-2">
+    <changeSet author="peterk (generated)" id="1291408425028-3">
         <createTable schemaName="PUBLIC" tableName="YTAG">
             <column name="ID" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_2"/>
@@ -45,14 +53,13 @@
             <column name="VERSION" type="INT"/>
         </createTable>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-3">
+    <changeSet author="peterk (generated)" id="1291408425028-4">
         <createTable schemaName="PUBLIC" tableName="YUSER">
             <column name="ID" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_5"/>
             </column>
             <column name="CREATEDAT" type="TIMESTAMP"/>
             <column name="DESCRIPTION" type="VARCHAR(255)"/>
-            <column name="LANG" type="VARCHAR(255)"/>
             <column name="LOCATION" type="VARCHAR(255)"/>
             <column name="PROFILEIMAGEURL" type="VARCHAR(255)"/>
             <column name="REALNAME" type="VARCHAR(255)"/>
@@ -65,7 +72,7 @@
             <column name="WEBURL" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-4">
+    <changeSet author="peterk (generated)" id="1291408425028-5">
         <createTable schemaName="PUBLIC" tableName="YUSER_YUSER">
             <column name="FOLLOWING_ID" type="BIGINT">
                 <constraints nullable="false"/>
@@ -75,29 +82,32 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-5">
+    <changeSet author="peterk (generated)" id="1291408425028-6">
         <addPrimaryKey columnNames="FOLLOWING_ID, FOLLOWERS_ID" constraintName="CONSTRAINT_8" schemaName="PUBLIC" tableName="YUSER_YUSER"/>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-6">
+    <changeSet author="peterk (generated)" id="1291408425028-7">
         <createIndex indexName="CONSTRAINT_INDEX_2" schemaName="PUBLIC" tableName="YTAG" unique="true">
             <column name="TERM"/>
         </createIndex>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-7">
+    <changeSet author="peterk (generated)" id="1291408425028-8">
         <createIndex indexName="CONSTRAINT_INDEX_5" schemaName="PUBLIC" tableName="YUSER" unique="true">
             <column name="SCREENNAME"/>
         </createIndex>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-8">
+    <changeSet author="peterk (generated)" id="1291408425028-9">
+        <addForeignKeyConstraint baseColumnNames="ID" baseTableName="LANGS" baseTableSchemaName="PUBLIC" constraintName="FK61FAC455A263023" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="YUSER" referencedTableSchemaName="PUBLIC"/>
+    </changeSet>
+    <changeSet author="peterk (generated)" id="1291408425028-10">
         <addForeignKeyConstraint baseColumnNames="ID" baseTableName="TAGS" baseTableSchemaName="PUBLIC" constraintName="FK3634195A263023" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="YUSER" referencedTableSchemaName="PUBLIC"/>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-9">
+    <changeSet author="peterk (generated)" id="1291408425028-11">
         <addForeignKeyConstraint baseColumnNames="FOLLOWERS_ID" baseTableName="YUSER_YUSER" baseTableSchemaName="PUBLIC" constraintName="FKD3C08F89EA6FBC8D" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="YUSER" referencedTableSchemaName="PUBLIC"/>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-10">
+    <changeSet author="peterk (generated)" id="1291408425028-12">
         <addForeignKeyConstraint baseColumnNames="FOLLOWING_ID" baseTableName="YUSER_YUSER" baseTableSchemaName="PUBLIC" constraintName="FKD3C08F89F1054C91" deferrable="false" initiallyDeferred="false" onDelete="RESTRICT" onUpdate="RESTRICT" referencedColumnNames="ID" referencedTableName="YUSER" referencedTableSchemaName="PUBLIC"/>
     </changeSet>
-    <changeSet author="peterk (generated)" id="1289943426012-11">
+    <changeSet author="peterk (generated)" id="1291408425028-13">
         <createSequence schemaName="PUBLIC" sequenceName="HIBERNATE_SEQUENCE"/>
     </changeSet>
 </databaseChangeLog>

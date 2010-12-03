@@ -131,6 +131,9 @@ public class StringFreqMap extends LinkedHashMap<String, Integer> {
         return true;
     }
 
+    /**
+     * @return a list of sorted entries (highest integer values comes first)
+     */
     public List<Entry<String, Integer>> getSorted() {
         return Helper.sort(entrySet());
     }

@@ -63,130 +63,58 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     }
 
     @Test
-    public void testAddDoc() throws Exception {
-        SolrUser user = new SolrUser("karsten");
-        user.addOwnTweet(new SolrTweet(1, "bla bli lbu", user));
-        user.addOwnTweet(new SolrTweet(2, "dies ist ein test", user));
-
-        SolrUser user2 = new SolrUser("peter");
-        user2.addOwnTweet(new SolrTweet(3, "TDD rocks!", user2));
-        userSearch.save(user);
-        userSearch.save(user2);
-
-        assertEquals(1, userSearch.search("test").size());
-        assertEquals(1, userSearch.search("tdd").size());
-        assertEquals("peter", userSearch.search("tdd").iterator().next().getScreenName());
-        assertEquals("karsten", userSearch.search("bli").iterator().next().getScreenName());
-
-        assertEquals(1, userSearch.search("rocks\\!").size());
-        assertEquals(1, userSearch.search("rocks").size());
-        //        assertEquals(1, luc.search("rock").size());
-    }
-
-    @Test
     public void testDelete() throws Exception {
         SolrUser user = new SolrUser("karsten");
-        user.addOwnTweet(new SolrTweet(1, "bla bli lbu", user));
-        user.addOwnTweet(new SolrTweet(2, "dies ist ein test", user));
 
-        userSearch.save(user);
-        assertEquals(1, userSearch.search("test").size());
+        userSearch.save(user, true);
+        assertEquals(1, userSearch.search("karsten").size());
 
         userSearch.delete(user, true);
-        assertEquals(0, userSearch.search("test").size());
+        assertEquals(0, userSearch.search("karsten").size());
     }
 
     @Test
     public void testUpdate() throws Exception {
-        assertEquals(0, userSearch.search("test").size());
+        assertEquals(0, userSearch.search("karsten").size());
         SolrUser user = new SolrUser("karsten");
-        user.addOwnTweet(new SolrTweet(1, "bla bli lbu", user));
-        user.addOwnTweet(new SolrTweet(2, "dies ist ein test", user));
 
+        userSearch.save(user, true);
+        assertEquals(1, userSearch.search("karsten").size());
+
+        user = new SolrUser("karsten");
+        user.setDescription("test");
         userSearch.save(user, true);
 
         assertEquals(1, userSearch.search("test").size());
 
-        user = new SolrUser("karsten");
-        user.addOwnTweet(new SolrTweet(1, "bla bli lbu", user));
-        user.addOwnTweet(new SolrTweet(2, "dies ist ein test", user));
-        user.addOwnTweet(new SolrTweet(3, "neuer tweet", user));
-
+        user = new SolrUser("peter");
+        new SolrTweet(4, "users without a tweet get indexed!", user);
         userSearch.update(user, true, true);
 
-        assertEquals(1, userSearch.search("test").size());
-        assertEquals(3, userSearch.search("test").iterator().next().getOwnTweets().size());
-
-        // update
-        user = new SolrUser("karsten");
-        new SolrTweet(4, "users without own tweets won't get indexed!", user);
-        userSearch.update(user, true, true);
-
-        assertEquals(0, userSearch.search("test").size());
-        assertEquals(1, userSearch.search("karsten").size());
-        assertEquals(1, userSearch.search("karsten").iterator().next().getOwnTweets().size());
+        assertEquals(1, userSearch.search("peter").size());
     }
 
     @Test
     public void testUpdateBatch() throws Exception {
         Set<SolrUser> list = new LinkedHashSet<SolrUser>();
-        SolrUser user = new SolrUser("karsten");
-        user.addOwnTweet(new SolrTweet(1, "bla bli lbu", user));
+        SolrUser user = new SolrUser("karsten");        
         list.add(user);
-        SolrUser user2 = new SolrUser("karsten2");
-        user2.addOwnTweet(new SolrTweet(1, "this is a test", user2));
+        SolrUser user2 = new SolrUser("peter");
         list.add(user2);
         userSearch.update(list, 2);
         userSearch.commit();
-        assertEquals(1, userSearch.search("test").size());
-        assertEquals(1, userSearch.search("lbu").size());
+        assertEquals(1, userSearch.search("karsten").size());
+        assertEquals(1, userSearch.search("peter").size());
 
         userSearch.delete(user, false);
         userSearch.delete(user2, true);
-        assertEquals(0, userSearch.search("test").size());
-        assertEquals(0, userSearch.search("lbu").size());
+        assertEquals(0, userSearch.search("karsten").size());
+        assertEquals(0, userSearch.search("peter").size());
 
         userSearch.update(list, 1);
         userSearch.commit();
-        assertEquals(1, userSearch.search("test").size());
-        assertEquals(1, userSearch.search("lbu").size());
-
-        userSearch.delete(user, false);
-        userSearch.delete(user2, true);
-
-        userSearch.update(list, 3);
-        userSearch.commit();
-        assertEquals(1, userSearch.search("test").size());
-        assertEquals(1, userSearch.search("lbu").size());
-
-        userSearch.delete(user, false);
-        userSearch.delete(user2, true);
-
-        SolrUser user3 = new SolrUser("karsten3");
-        list.add(user3);
-        userSearch.update(list, 1);
-        userSearch.commit();
-        assertEquals(1, userSearch.search("test").size());
-    }
-
-    @Test
-    public void testCorrectTweetIdToContentConnection() throws Exception {
-        SolrUser user = new SolrUser("karsten");
-        user.addOwnTweet(new SolrTweet(1, "TDD is shit", user));
-        user.addOwnTweet(new SolrTweet(2, "TDD is bli", user));
-
-        userSearch.save(user);
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
-        userSearch.search(list, new UserQuery("tdd"));
-        assertEquals(1, list.size());
-
-        Iterator<SolrTweet> iter = list.iterator().next().getOwnTweets().iterator();
-        SolrTweet tw = iter.next();
-        assertEquals(1, (long) tw.getTwitterId());
-        assertEquals("TDD is shit", tw.getText());
-        tw = iter.next();
-        assertEquals(2, (long) tw.getTwitterId());
-        assertEquals("TDD is bli", tw.getText());
+        assertEquals(1, userSearch.search("karsten").size());
+        assertEquals(1, userSearch.search("peter").size());
     }
 
     @Test
@@ -200,19 +128,16 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     @Test
     public void testMoreLikeThis() throws Exception {
         SolrUser karsten = new SolrUser("karsten");
-        karsten.addOwnTweet(new SolrTweet(2, "hooping hooping", karsten));
-        karsten.addOwnTweet(new SolrTweet(3, "nice solr", karsten));
-        userSearch.save(karsten);
+        karsten.setDescription("hooping hooping nice solr");
+        userSearch.save(karsten, false);
 
         SolrUser pet = new SolrUser("peter");
-        pet.addOwnTweet(new SolrTweet(4, "hooping hooping", pet));
-        pet.addOwnTweet(new SolrTweet(5, "solr nice", pet));
-        userSearch.save(pet);
+        pet.setDescription("hooping hooping nice solr");
+        userSearch.save(pet, false);
 
         SolrUser joh = new SolrUser("johannes");
-        joh.addOwnTweet(new SolrTweet(6, "windows rocks!", joh));
-        userSearch.save(joh);
-        userSearch.commit();
+        karsten.setDescription("windows rocks!");
+        userSearch.save(joh, true);
 
         Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
         userSearch.searchMoreLikeThis(list, "peter", 10, 0, true);
@@ -223,22 +148,16 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     @Test
     public void testMltPaging() throws Exception {
         SolrUser karsten = new SolrUser("karsten");
-        karsten.addOwnTweet(new SolrTweet(2, "hooping hooping", karsten));
-        karsten.addOwnTweet(new SolrTweet(3, "nice is solr", karsten));
-        userSearch.save(karsten);
+        karsten.setDescription("hooping hooping; nice is solr");
+        userSearch.save(karsten, false);
 
         SolrUser pet = new SolrUser("peter");
-        pet.addOwnTweet(new SolrTweet(4, "hooping hooping", pet));
-        pet.addOwnTweet(new SolrTweet(5, "solr is nice rocks", pet));
-        pet.addOwnTweet(new SolrTweet(5, "what do you need?", pet));
-        userSearch.save(pet);
+        pet.setDescription("hooping hooping; solr is nice rocks; what do you need?");
+        userSearch.save(pet, false);
 
         SolrUser joh = new SolrUser("johannes");
-        joh.addOwnTweet(new SolrTweet(6, "hooping hooping", joh));
-        joh.addOwnTweet(new SolrTweet(7, "solr is nice rocks", joh));
-        joh.addOwnTweet(new SolrTweet(5, "what do you need?", joh));
-        userSearch.save(joh);
-        userSearch.commit();
+        joh.setDescription("hooping hooping; solr is nice rocks; what do you need?");
+        userSearch.save(joh, true);
 
         Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
         long ret = userSearch.searchMoreLikeThis(list, "peter", 2, 0, true);
@@ -258,15 +177,12 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     @Test
     public void testUnderscoreInName() throws Exception {
         SolrUser karsten = new SolrUser("karsten");
-        karsten.addOwnTweet(new SolrTweet(2, "hooping hooping", karsten));
-        karsten.addOwnTweet(new SolrTweet(3, "nice solr", karsten));
-        userSearch.save(karsten);
+        karsten.setDescription("hooping hooping nice solr");
+        userSearch.save(karsten, false);
 
         SolrUser korland = new SolrUser("g_korland");
-        korland.addOwnTweet(new SolrTweet(4, "hooping hooping", korland));
-        korland.addOwnTweet(new SolrTweet(5, "solr nice", korland));
-        userSearch.save(korland);
-        userSearch.commit();
+        korland.setDescription("hooping hooping solr nice");
+        userSearch.save(korland, true);
 
         Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
         userSearch.search(list, "hooping", 10, 0);
@@ -281,9 +197,8 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     public void testPaging() throws SolrServerException {
         for (int i = 0; i < 5; i++) {
             SolrUser karsten = new SolrUser("karsten" + i);
-            karsten.addOwnTweet(new SolrTweet(i * 2, "hooping hooping", karsten));
-            karsten.addOwnTweet(new SolrTweet(i * 2 + 1, "nice solr", karsten));
-            userSearch.save(karsten);
+            karsten.setDescription("hooping hooping nice solr");
+            userSearch.save(karsten, false);
         }
         userSearch.commit();
 
@@ -300,8 +215,7 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
         SolrUser karsten = new SolrUser("karsten");
         karsten.addOwnTweet(new SolrTweet(1, "hooping hooping", karsten));
         karsten.addOwnTweet(new SolrTweet(2, "nice solr", karsten));
-        userSearch.save(karsten);
-        userSearch.commit();
+        userSearch.save(karsten, true);
 
         Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
         assertEquals(1, userSearch.search(list, "karsten", 3, 0));
@@ -319,15 +233,14 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
         SolrUser karsten = new SolrUser("karsten");
         new SolrTweet(1L, "test test", karsten);
         new SolrTweet(2L, "help help java", karsten);
-        userSearch.save(karsten);
+        userSearch.save(karsten, false);
 
         SolrUser peter = new SolrUser("peter");
         new SolrTweet(3L, "test test", peter);
         new SolrTweet(4L, "bla bli java", peter);
-        userSearch.save(peter);
+        userSearch.save(peter, true);
 
-        // now createTags: test, java, ...
-        userSearch.commit();
+        // now createTags: test, java, ...        
 
         // one can even use solrQuery.set("f.myField.facet.limit",10)
         SolrQuery query = new UserQuery("java");
@@ -360,70 +273,6 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     public void testIsMlt() {
         SolrQuery query = userSearch.createMltQuery("peter");
         assertTrue(userSearch.isMlt(query));
-    }
-
-    // fixed only if https://issues.apache.org/jira/browse/SOLR-1624
-    // applied
-    @Test
-    public void testHighlighting() throws SolrServerException {
-        SolrUser karsten = new SolrUser("karsten");
-        new SolrTweet(2, "test test", karsten);
-        new SolrTweet(1, "help help java", karsten);
-        userSearch.save(karsten);
-
-        SolrUser peter = new SolrUser("peter");
-        new SolrTweet(4, "test pest Java", peter);
-        new SolrTweet(3, "bla bli java", peter);
-        new SolrTweet(2, "ignore this old (smallest id) snippet Java", peter);
-        userSearch.save(peter);
-        SolrUser javaUser = new SolrUser("java");
-        new SolrTweet(12, "nothing said", javaUser);
-        new SolrTweet(11, "help help you if you can", javaUser);
-        userSearch.save(javaUser);
-
-        SolrUser emptyMatch = new SolrUser("emptyMatch");
-        new SolrTweet(10, "help help me me me me me me help help me me me me me me "
-                + "help help me me me me me me help help me me me me me me java", emptyMatch);
-
-        new SolrTweet(7, "help help2 java", emptyMatch);
-        userSearch.save(emptyMatch);
-
-        userSearch.commit();
-
-        SolrQuery query = new UserQuery("java");
-        userSearch.attachHighlighting(query, 2);
-        // make that emptyMatch has no highlighted matches
-        query.set("hl.maxAnalyzedChars", 100);
-
-        Set<SolrUser> set = new LinkedHashSet<SolrUser>();
-        userSearch.search(set, query);
-        Iterator<SolrUser> iter = set.iterator();
-
-        // the user matches => highest relevance + no highlightings!
-        javaUser = iter.next();
-        Iterator<SolrTweet> twIter = javaUser.getOwnTweets().iterator();
-        // ... but alternativly use the normal tweets field:
-        assertEquals("nothing said", twIter.next().getText());
-        assertEquals("help help you if you can", twIter.next().getText());
-        assertFalse(twIter.hasNext());
-
-        peter = iter.next();
-        twIter = peter.getOwnTweets().iterator();
-        // latest == greatest comes first
-        assertEquals("test pest <b>Java</b>", twIter.next().getText());
-        assertEquals("bla bli <b>java</b>", twIter.next().getText());
-        // ignore the third snippet (hl.snippets=2)
-        assertFalse(twIter.hasNext());
-
-        karsten = iter.next();
-        twIter = karsten.getOwnTweets().iterator();
-        assertEquals("help help <b>java</b>", twIter.next().getText());
-
-        emptyMatch = iter.next();
-        twIter = emptyMatch.getOwnTweets().iterator();
-        // TODO only the first tweet is skipped because the maxAnalyzedChars
-        // applies for EACH tweet field separate
-        assertEquals("help help2 <b>java</b>", twIter.next().getText());
     }
 
     @Test

@@ -259,14 +259,6 @@
         <field name="tag" type="string" indexed="true" stored="true" multiValued="true"/>
         <field name="lang" type="string" indexed="true" stored="true" multiValued="true"/>
 
-        <!-- Store the tweet text (+ the date + id => put those directly into the text => id \t date \t tw).
-             We could store the tweet in dynamic fields. then morelikethis needs to be queried against text!
-             We need all term* attributes to prepare faster highlighting.
-             We need termVectors to prepare MoreLikeThis.
-         -->
-        <field name="tw" type="text" indexed="true" stored="true" multiValued="true"
-               termVectors="true" termPositions="true" termOffsets="true"/>
-
         <!-- catchall field, containing all other searchable text fields (implemented
         via copyField further on in this schema  -->
         <field name="text" type="text" indexed="true" stored="false" multiValued="true"/>
@@ -302,7 +294,7 @@
         or to add multiple fields to the same field for easier/faster searching.  -->
 
     <copyField source="name" dest="text"/>
-    <copyField source="tw" dest="text"/>
+    <copyField source="tag" dest="text"/>
     <copyField source="bio" dest="text"/>
     
     <!-- make the fields with less texts not that important compared to longer fields -->

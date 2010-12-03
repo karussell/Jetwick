@@ -17,6 +17,7 @@ package de.jetwick.solr;
 
 import de.jetwick.config.Configuration;
 import de.jetwick.tw.TweetDetector;
+import de.jetwick.tw.cmd.StringFreqMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +47,7 @@ import org.slf4j.LoggerFactory;
 public class SolrUserSearch extends SolrAbstractSearch {
 
     protected Logger logger = LoggerFactory.getLogger(getClass());
-    private static final String TWEET = "tw";
+    private static final String TEXT = "text";
     private static final String SCREEN_NAME = "name";
 
     public SolrUserSearch(String url) {
@@ -122,10 +123,6 @@ public class SolrUserSearch extends SolrAbstractSearch {
         save(user, commit);
     }
 
-    void save(SolrUser user) {
-        save(user, true);
-    }
-
     public void save(SolrUser user, boolean commit) {
         try {
             SolrInputDocument doc = createDoc(user);
@@ -139,10 +136,7 @@ public class SolrUserSearch extends SolrAbstractSearch {
     }
 
     public SolrInputDocument createDoc(SolrUser u) throws IOException {
-        // some users were only mentioned by others ...
-        Collection<SolrTweet> tweets = u.getOwnTweets();
-        if (tweets.size() == 0)
-            return null;
+
 
         SolrInputDocument doc1 = new SolrInputDocument();
         // make sure that if we look for a specific user this user will show up first:
@@ -152,33 +146,29 @@ public class SolrUserSearch extends SolrAbstractSearch {
         doc1.addField("webUrl", u.getWebUrl());
         doc1.addField("bio", u.getDescription());
 
-        TweetDetector extractor = new TweetDetector(tweets);
-        for (Entry<String, Integer> entry : extractor.run().getSortedTerms()) {
-            if (entry.getValue() > termMinFrequency)
-                doc1.addField("tag", entry.getKey());
+        // some users were only mentioned by others ...
+        Collection<SolrTweet> tweets = u.getOwnTweets();
+        if (tweets.size() > 0) {
+            TweetDetector extractor = new TweetDetector(tweets);
+            for (Entry<String, Integer> entry : extractor.run().getSortedTerms()) {
+                if (entry.getValue() > termMinFrequency)
+                    doc1.addField("tag", entry.getKey());
+            }
+
+            StringFreqMap langs = new StringFreqMap();
+            for (SolrTweet tw : tweets) {
+                langs.inc(tw.getLanguage(), 1);
+            }
+
+            for (Entry<String, Integer> lang : langs.getSorted()) {
+                doc1.addField("lang", lang.getKey());
+            }
         }
 
-//        List<String> betterLang = extractor.filterLanguages(langMinFrequency);
-//        for (String lang : betterLang) {
-//            doc1.addField("lang", lang);
-//        }
-
-//        addReputation(doc1, u);
-
-        // for date facetting
-        if (tweets.size() > 0)
-            doc1.addField("latestTw_dt", tweets.iterator().next().getCreatedAt());
-
-        doc1.addField("tw_i", tweets.size());
-
-        // main content: the tweets
-        for (SolrTweet tw : tweets) {
-            doc1.addField("tw", tw.getTwitterId() + "\t" + tw.getCreatedAt().getTime() + "\t" + tw.getText());
-        }
         return doc1;
     }
 
-    public SolrUser readDoc(final SolrDocument doc, Map<String, Map<String, List<String>>> hlt) {
+    public SolrUser readDoc(final SolrDocument doc) {
         String name = (String) doc.getFieldValue(SCREEN_NAME);
         SolrUser user = new SolrUser(name);
         user.setRealName((String) doc.getFieldValue("realName"));
@@ -194,37 +184,13 @@ public class SolrUserSearch extends SolrAbstractSearch {
                 user.addTag((String) tag);
             }
 
-
-        // if highlighting
-        if (hlt != null) {
-            Map<String, List<String>> ret = hlt.get(user.getScreenName());
-            List<String> tweets = ret.get(TWEET);
-            // sometimes nothing was highlighted
-            if (tweets != null)
-                for (String text : tweets) {
-                    readTweet(text, user);
-                }
-        } else {
-            Collection<Object> tweetContent = doc.getFieldValues(TWEET);
-            // users can have no tweets
-            if (tweetContent == null)
-                return user;
-
-            for (Object text : tweetContent) {
-                readTweet((String) text, user);
+        Collection<Object> langs = doc.getFieldValues("lang");
+        if (langs != null)
+            for (Object lang : langs) {
+                user.addLanguage((String) lang);
             }
-        }
 
         return user;
-    }
-
-    public SolrTweet readTweet(String text, SolrUser user) {
-        String attr[] = text.split("\t", 3);
-        long twId = Long.parseLong(attr[0]);
-        Date date = new Date(Long.parseLong(attr[1]));
-        SolrTweet tw = new SolrTweet(twId, (String) attr[2], user);
-        tw.setCreatedAt(date);
-        return tw;
     }
 
     public SolrQuery createMltQuery(String queryStr) {
@@ -239,30 +205,14 @@ public class SolrUserSearch extends SolrAbstractSearch {
         // TODO this won't use the dismax boosts!?
         query.setQuery(SCREEN_NAME + ":" + queryStr).
                 setQueryType("/" + MoreLikeThisParams.MLT).
-                set(MoreLikeThisParams.SIMILARITY_FIELDS, TWEET).
+                set(MoreLikeThisParams.SIMILARITY_FIELDS, "bio", "tag").
                 set(MoreLikeThisParams.MIN_WORD_LEN, 2).
                 set(MoreLikeThisParams.MIN_DOC_FREQ, 1).
                 // don't return the user itself
                 set(MoreLikeThisParams.MATCH_INCLUDE, false);
 
         // the following param could be a nice addition: show the user which terms are similar:
-        // MoreLikeThisParams.INTERESTING_TERMS
-        return query;
-    }
-
-    public SolrQuery attachHighlighting(SolrQuery query, int tweets) {
-        query.setHighlight(true).
-                addHighlightField(TWEET).
-                // get the whole tweet == fragment
-                setHighlightFragsize(0).
-                // get the first two tweets
-                setHighlightSnippets(tweets).
-                setHighlightSimplePre("<b>").
-                setHighlightSimplePost("</b>");
-
-        // use the TWEET field as fallback if a snippet cannot created
-        query. // set("hl.maxAnalyzedChars", 51200).
-                set("hl.alternateField", TWEET);
+//         MoreLikeThisParams.INTERESTING_TERMS
         return query;
     }
 
@@ -277,7 +227,7 @@ public class SolrUserSearch extends SolrAbstractSearch {
         Map<String, Map<String, List<String>>> hlt = rsp.getHighlighting();
 
         for (SolrDocument sd : docs) {
-            SolrUser u = readDoc(sd, hlt);
+            SolrUser u = readDoc(sd);
             users.add(u);
         }
 
