@@ -201,7 +201,7 @@ public class HomePage extends WebPage {
             }
         }
 
-        q.addFilterQuery(SolrTweetSearch.FILTER_SPAM);
+        q.addFilterQuery(SolrTweetSearch.FILTER_NO_SPAM);
 
         return getTweetSearch().attachHighlighting(q);
     }

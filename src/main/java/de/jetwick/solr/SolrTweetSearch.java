@@ -73,7 +73,9 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     public static final String URL_COUNT = "url_i";
     public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";
     public static final String FILTER_NO_URL_ENTRY = URL_COUNT + ":0";
-    public static final String FILTER_SPAM = "quality_i:[" + SolrTweet.QUAL_SPAM + " TO *]";
+    public static final String QUALITY = "quality_i";
+    public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
+    public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
     public static final String TAG = "tag";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     protected Logger logger = LoggerFactory.getLogger(getClass());

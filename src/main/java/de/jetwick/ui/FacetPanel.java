@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.ui.util.FacetHelper;
@@ -78,6 +77,10 @@ public class FacetPanel extends Panel {
         tr.put(RT_COUNT + ":0", "no retweets");
         tr.put(RT_COUNT + ":[1 TO 10]", "few retweets");
         tr.put(RT_COUNT + ":[11 TO *]", "many retweets");
+
+        tr.put(QUALITY, "Spam");
+        tr.put(FILTER_NO_SPAM, "No Spam");
+        tr.put(FILTER_SPAM, "Only Spam");
 
         tr.put(langKey + ":" + UNKNOWN_LANG, "other");
         tr.put(langKey + ":" + DE, "Deutsch");
@@ -223,11 +226,9 @@ public class FacetPanel extends Panel {
         Map<String, Integer> filterToIndex = new LinkedHashMap<String, Integer>() {
 
             {
-//                put(userKey, 0);
                 put(IS_RT, 2);
                 put(langKey, 1);
-//                put(RT_COUNT, 3);
-//                put(URL_COUNT, 4);
+                put(QUALITY, 3);
             }
         };
         List<Entry<String, List<FacetHelper>>> ret = new ArrayList<Entry<String, List<FacetHelper>>>();

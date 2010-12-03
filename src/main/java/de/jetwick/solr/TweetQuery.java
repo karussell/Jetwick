@@ -54,6 +54,7 @@ public class TweetQuery extends JetwickQuery {
                 // setFacetMinCount(1).
                 setFacetLimit(10).
                 addFacetField(TAG).addFacetField("lang").
+                // originality
                 addFacetField(IS_RT).
                 addFacetField(FIRST_URL_TITLE).
                 //addFacetField(USER).set("f.user.facet.mincount", 1).set("f.user.facet.limit", 5).
@@ -67,10 +68,13 @@ public class TweetQuery extends JetwickQuery {
         // archive
         q.addFacetQuery(FILTER_ENTRY_OLD_DT);
 
-        // originality
-        q.addFacetQuery(RT_COUNT + ":[11 TO *]");
-        q.addFacetQuery(RT_COUNT + ":[1 TO 10]");
-        q.addFacetQuery(RT_COUNT + ":0");
+//        q.addFacetQuery(RT_COUNT + ":[11 TO *]");
+//        q.addFacetQuery(RT_COUNT + ":[1 TO 10]");
+//        q.addFacetQuery(RT_COUNT + ":0");
+
+        // spam
+        q.addFacetQuery(FILTER_SPAM);
+        q.addFacetQuery(FILTER_NO_SPAM);
 
         // links
         q.addFacetQuery(FILTER_URL_ENTRY);
