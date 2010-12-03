@@ -138,9 +138,11 @@ body, p {
     padding: 0 6px 0px 5px;
     margin-bottom: -2px;
 }
+
+.jetwickminilogo, .pannouslogo { float:left; }
 .jetwickminilogo a img {
-    padding-left: 25px;
-    margin-bottom: -15px;
+    padding-right: 5px;
+    /*margin-bottom: -15px;*/
     width: 60px;
 }
 
@@ -148,9 +150,8 @@ body, p {
     width: 110px;
     margin-bottom: -3px;
 }
-.pannouslogo {
-    padding-right: 150px;
-}
+
+.yourkitlogo { clear: both; }
 
 .searchform {        
     padding-top: 128px;
