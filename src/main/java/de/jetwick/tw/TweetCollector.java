@@ -23,6 +23,7 @@ import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.data.TagDao;
 import de.jetwick.rmi.RMIServer;
+import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.util.Helper;
 import java.util.Arrays;
 import java.util.List;
@@ -104,7 +105,7 @@ public class TweetCollector {
         twProducer.setUncaughtExceptionHandler(excHandler);
         twProducer.start();
 
-        TweetConsumer twConsumer = injector.getInstance(TweetConsumer.class);
+        TweetConsumer twConsumer = new TweetConsumer(cfg);
         twConsumer.setTweetPackages(twProducer.getTweetPackages());
         twConsumer.setTweetProducer(twProducer);
         twConsumer.setUncaughtExceptionHandler(excHandler);
@@ -112,6 +113,7 @@ public class TweetCollector {
         twConsumer.setOptimizeInterval(cfg.getTweetSearchOptimizeInterval());
         twConsumer.setOptimizeToSegmentsAfterUpdate(cfg.getTweetSearchCommitOptimizeSegments());
         twConsumer.setRemoveDays(cfg.getSolrRemoveDays());
+        twConsumer.setTweetSearch(new SolrTweetSearch(cfg));
         if (cfg.isTweetResolveUrl()) {
             twConsumer.setResolveUrls(true);
             twConsumer.setResolveThreads(cfg.getTweetResolveUrlThreads());
