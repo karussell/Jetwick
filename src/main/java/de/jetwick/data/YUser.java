@@ -87,8 +87,8 @@ public class YUser implements DbObject, Serializable {
 //    @Lob
 //    @Column(name = "tags")
     private Set<String> tags = new LinkedHashSet<String>();
-    private String tokenSecret;
-    private String secret;
+    private String twitterTokenSecret;
+    private String twitterToken;
 
     public YUser() {
     }
@@ -130,20 +130,20 @@ public class YUser implements DbObject, Serializable {
         }
     }
 
-    public String getSecret() {
-        return secret;
+    public String getTwitterToken() {
+        return twitterToken;
     }
 
-    public void setSecret(String secret) {
-        this.secret = secret;
+    public void setTwitterToken(String twitterToken) {
+        this.twitterToken = twitterToken;
     }
 
-    public String getTokenSecret() {
-        return tokenSecret;
+    public String getTwitterTokenSecret() {
+        return twitterTokenSecret;
     }
 
-    public void setTokenSecret(String tokenSecret) {
-        this.tokenSecret = tokenSecret;
+    public void setTwitterTokenSecret(String twitterTokenSecret) {
+        this.twitterTokenSecret = twitterTokenSecret;
     }
 
     /**

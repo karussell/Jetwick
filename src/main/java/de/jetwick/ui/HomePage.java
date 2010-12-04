@@ -266,7 +266,7 @@ public class HomePage extends WebPage {
                     q = new TweetQuery();
 
                 if (name == null) {
-                    getTweetSearch().applyFacetChange(q, SolrTweetSearch.FIRST_URL_TITLE, false);
+                    JetwickQuery.applyFacetChange(q, SolrTweetSearch.FIRST_URL_TITLE, false);
                 } else
                     q.addFilterQuery(SolrTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
 
@@ -370,7 +370,7 @@ public class HomePage extends WebPage {
             @Override
             protected void onSelectionChange(AjaxRequestTarget target, String newValue) {
                 SolrQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
-                twindexProvider.get().applyFacetChange(tmpQ, "dt", true);
+                JetwickQuery.applyFacetChange(tmpQ, SolrTweetSearch.DATE, true);
                 doSearch(tmpQ, 0, false, true);
                 updateAfterAjax(target, false);
             }
@@ -400,7 +400,7 @@ public class HomePage extends WebPage {
             @Override
             public void onFacetChange(AjaxRequestTarget target, String filterQuery, boolean selected) {
                 if (lastQuery != null) {
-                    getTweetSearch().applyFacetChange(lastQuery, filterQuery, selected);
+                    JetwickQuery.applyFacetChange(lastQuery, filterQuery, selected);
                 } else {
                     logger.error("last query cannot be null but was! ... when clicking on facets!?");
                     return;
@@ -418,12 +418,12 @@ public class HomePage extends WebPage {
             protected void onFacetChange(AjaxRequestTarget target, String filter, Boolean selected) {
                 if (lastQuery != null) {
                     if (selected == null) {
-                        getTweetSearch().removeFilterQueries(lastQuery, filter);
+                        JetwickQuery.removeFilterQueries(lastQuery, filter);
                     } else if (selected) {
 //                        getTweetSearch().expandFilterQuery(lastQuery, filter, true);
-                        getTweetSearch().replaceFilterQuery(lastQuery, filter, true);
+                        JetwickQuery.replaceFilterQuery(lastQuery, filter, true);
                     } else
-                        getTweetSearch().reduceFilterQuery(lastQuery, filter);
+                        JetwickQuery.reduceFilterQuery(lastQuery, filter);
                 } else {
                     logger.error("last query cannot be null but was! ... when clicking on facets!?");
                     return;
@@ -436,7 +436,7 @@ public class HomePage extends WebPage {
             @Override
             protected boolean isAlreadyFiltered(String filter) {
                 if (lastQuery != null)
-                    return getTweetSearch().containsFilter(lastQuery, filter);
+                    return JetwickQuery.containsFilter(lastQuery, filter);
 
                 return false;
             }
@@ -564,7 +564,7 @@ public class HomePage extends WebPage {
         // do not trigger background searchAndGetUsers if this query is the identical
         // to the last searchAndGetUsers or if it is an instant searchAndGetUsers
         if (instantSearch || lastQuery != null
-                && queryString.equals(JetwickQuery.extractQueryString(lastQuery))
+                && queryString.equals(JetwickQuery.extractNonNullQueryString(lastQuery))
                 && userName.equals(JetwickQuery.extractUserName(lastQuery)))
             startBGThread = false;
 
@@ -572,7 +572,7 @@ public class HomePage extends WebPage {
         if (!userName.isEmpty() && !queryString.isEmpty())
             twitterFallback = false;
 
-        if (getTweetSearch().containsFilterKey(query, "id"))
+        if (JetwickQuery.containsFilterKey(query, "id"))
             twitterFallback = false;
 
         if (!instantSearch)

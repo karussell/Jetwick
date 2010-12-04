@@ -150,7 +150,7 @@ public class SearchBox extends Panel {
     }
 
     public void init(SolrQuery solrQuery) {
-        this.query = JetwickQuery.extractQueryString(solrQuery);
+        this.query = JetwickQuery.extractNonNullQueryString(solrQuery);
         this.userName = JetwickQuery.extractUserName(solrQuery);
     }
 

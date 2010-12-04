@@ -136,8 +136,6 @@ public class SolrUserSearch extends SolrAbstractSearch {
     }
 
     public SolrInputDocument createDoc(SolrUser u) throws IOException {
-
-
         SolrInputDocument doc1 = new SolrInputDocument();
         // make sure that if we look for a specific user this user will show up first:
         doc1.addField(SCREEN_NAME, u.getScreenName());
@@ -145,6 +143,8 @@ public class SolrUserSearch extends SolrAbstractSearch {
         doc1.addField("iconUrl", u.getProfileImageUrl());
         doc1.addField("webUrl", u.getWebUrl());
         doc1.addField("bio", u.getDescription());
+        doc1.addField("token_s", u.getTwitterToken());
+        doc1.addField("tokenSecret_s", u.getTwitterTokenSecret());
 
         // some users were only mentioned by others ...
         Collection<SolrTweet> tweets = u.getOwnTweets();
@@ -175,6 +175,8 @@ public class SolrUserSearch extends SolrAbstractSearch {
         user.setProfileImageUrl((String) doc.getFieldValue("iconUrl"));
         user.setWebUrl((String) doc.getFieldValue("webUrl"));
         user.setDescription((String) doc.getFieldValue("bio"));
+        user.setTwitterToken((String) doc.getFieldValue("token_s"));
+        user.setTwitterTokenSecret((String) doc.getFieldValue("tokenSecret_s"));
 
         // only used for facet search? doc.getFieldValue("lang");        
 

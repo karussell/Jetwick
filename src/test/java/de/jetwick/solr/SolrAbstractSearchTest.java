@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import org.apache.solr.client.solrj.SolrQuery;
@@ -36,11 +35,11 @@ public class SolrAbstractSearchTest {
     @Test
     public void testExpandFQ() {
         SolrQuery q = new SolrQuery().addFilterQuery("{!tag=test}test:hi");
-        impl.expandFilterQuery(q, "test2:me", true);
+        JetwickQuery.expandFilterQuery(q, "test2:me", true);
         assertEquals(2, q.getFilterQueries().length);
         assertEquals("{!tag=test2}test2:me", q.getFilterQueries()[1]);
 
-        impl.expandFilterQuery(q, "test3:me", false);
+        JetwickQuery.expandFilterQuery(q, "test3:me", false);
         assertEquals(3, q.getFilterQueries().length);
         assertEquals("test3:me", q.getFilterQueries()[2]);
     }
@@ -48,14 +47,15 @@ public class SolrAbstractSearchTest {
     @Test
     public void testExpandFQ2() {
         SolrQuery q = new SolrQuery().addFilterQuery("{!tag=test}test:hi");
-        impl.expandFilterQuery(q, "test:me", true);
+        JetwickQuery.expandFilterQuery(q, "test:me", true);
         assertEquals(1, q.getFilterQueries().length);
         assertEquals("{!tag=test}test:hi OR test:me", q.getFilterQueries()[0]);
     }
- @Test
+
+    @Test
     public void testReplaceFQ() {
         SolrQuery q = new SolrQuery().addFilterQuery("{!tag=test}test:hi");
-        impl.replaceFilterQuery(q, "test:new", true);
+        JetwickQuery.replaceFilterQuery(q, "test:new", true);
         assertEquals(1, q.getFilterQueries().length);
         assertEquals("{!tag=test}test:new", q.getFilterQueries()[0]);
     }
@@ -63,15 +63,15 @@ public class SolrAbstractSearchTest {
     @Test
     public void testReduceFQ() {
         SolrQuery q = new SolrQuery().addFilterQuery("{!tag=test}test:hi");
-        assertFalse(impl.reduceFilterQuery(q, "test:me"));
-        assertTrue(impl.reduceFilterQuery(q, "test:hi"));
+        assertFalse(JetwickQuery.reduceFilterQuery(q, "test:me"));
+        assertTrue(JetwickQuery.reduceFilterQuery(q, "test:hi"));
         assertNull(q.getFilterQueries());
 
         q.addFilterQuery("{!tag=test}test:hi OR test:me");
-        assertTrue(impl.reduceFilterQuery(q, "test:me"));
+        assertTrue(JetwickQuery.reduceFilterQuery(q, "test:me"));
         assertEquals("{!tag=test}test:hi", q.getFilterQueries()[0]);
         q = new SolrQuery().addFilterQuery("{!tag=test}test:hi OR test:me");
-        assertTrue(impl.reduceFilterQuery(q, "test:hi"));
+        assertTrue(JetwickQuery.reduceFilterQuery(q, "test:hi"));
         assertEquals("{!tag=test}test:me", q.getFilterQueries()[0]);
     }
 
@@ -79,12 +79,12 @@ public class SolrAbstractSearchTest {
     public void testApplyFacetChange() {
         SolrQuery q = new SolrQuery().addFilterQuery("{!tag=test}test:hi");
         assertEquals(1, q.getFilterQueries().length);
-        impl.applyFacetChange(q, "{!tag=test}test:hi", false);
+        JetwickQuery.applyFacetChange(q, "{!tag=test}test:hi", false);
         assertNull(q.getFilterQueries());
 
         q = new SolrQuery().addFilterQuery("{!tag=test}test:piep");
         assertEquals(1, q.getFilterQueries().length);
-        impl.applyFacetChange(q, "{!tag=test}test", true);
+        JetwickQuery.applyFacetChange(q, "{!tag=test}test", true);
         assertNull(q.getFilterQueries());
     }
 
@@ -94,6 +94,7 @@ public class SolrAbstractSearchTest {
             return null;
         }
 
+        @Override
         public QueryResponse search(SolrQuery q) throws SolrServerException {
             return null;
         }

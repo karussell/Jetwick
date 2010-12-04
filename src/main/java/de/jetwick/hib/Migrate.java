@@ -15,8 +15,6 @@
  */
 package de.jetwick.hib;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import de.jetwick.config.DefaultModule;
 import org.hibernate.cfg.Configuration;
 
@@ -32,9 +30,7 @@ public class Migrate {
     public static void start() {
         new DefaultModule().installDbPasswords();
         HibernateUtil.setConfiguration(createConfig());
-        HibernateUtil.recreateSchemaFromMapping();
-        System.out.println("\n##################################################################\n"
-                + "DO NOT forget to fill in some more keywords other than the default!");
+        HibernateUtil.recreateSchemaFromMapping();        
     }
 
     public static Configuration createConfig() {

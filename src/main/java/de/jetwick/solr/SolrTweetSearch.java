@@ -786,9 +786,9 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             else {
                 lastQ = lastQ.getCopy();
                 // remove existing user filter
-                applyFacetChange(lastQ, "user", true);
+                JetwickQuery.applyFacetChange(lastQ, "user", true);
                 // remove any date restrictions
-                applyFacetChange(lastQ, "dt", true);
+                JetwickQuery.applyFacetChange(lastQ, "dt", true);
             }
 
             input = input.toLowerCase();
@@ -834,7 +834,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             else {
                 lastQ = lastQ.getCopy().setQuery(firstPart);
                 // remove any date restrictions
-                applyFacetChange(lastQ, "dt", true);
+                JetwickQuery.applyFacetChange(lastQ, "dt", true);
             }
 
             if (!secPart.trim().isEmpty())

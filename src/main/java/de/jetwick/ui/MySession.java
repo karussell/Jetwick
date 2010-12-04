@@ -48,7 +48,7 @@ public class MySession extends WebSession {
 
     public void init() {
         if (!twitterApiInitialized) {
-            logger.info("initialized");
+            logger.info("session initialized");
             twitterApiInitialized = true;
             // twitterSearch.init() is expensive so call it only once per session
             if (twitterSearch.init() && useDefaultUser) {

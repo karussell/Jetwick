@@ -17,6 +17,7 @@ package de.jetwick.solr;
 
 import de.jetwick.data.YUser;
 import de.jetwick.tw.TwitterSearch;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -29,9 +30,8 @@ import twitter4j.Tweet;
 public class SolrUser extends YUser {
 
     private float rep;
-//    private boolean dirtyOwnTweets = true;
-//    private List<SolrTweet> ownTweets = new ArrayList<SolrTweet>();
     private Collection<SolrTweet> ownTweets = new LinkedHashSet<SolrTweet>();
+    private Collection<SavedSearch> savedSearches = new ArrayList<SavedSearch>();
 
     /**
      * You'll need to call init after this
@@ -44,6 +44,14 @@ public class SolrUser extends YUser {
         setProfileImageUrl(tw.getProfileImageUrl());
         setLocation(TwitterSearch.toStandardLocation(tw.getLocation()));
         return this;
+    }
+
+    public void addSavedSearch(SavedSearch ss) {
+        savedSearches.add(ss);
+    }
+
+    public Collection<SavedSearch> getSavedSearches() {
+        return savedSearches;
     }
 
     public void addOwnTweet(SolrTweet tw) {
