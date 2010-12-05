@@ -19,6 +19,7 @@ import com.google.inject.AbstractModule;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweetSearch;
+import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.TwitterSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,9 @@ public class DefaultModule extends AbstractModule {
         bind(Configuration.class).toInstance(config);
         SolrTweetSearch tweetSearch = new SolrTweetSearch(config);
         bind(SolrTweetSearch.class).toInstance(tweetSearch);
+
+        SolrUserSearch userSearch = new SolrUserSearch(config);
+        bind(SolrUserSearch.class).toInstance(userSearch);
 
         SolrAdSearch adSearch = new SolrAdSearch(config);
         bind(SolrAdSearch.class).toInstance(adSearch);

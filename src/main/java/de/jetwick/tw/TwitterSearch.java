@@ -58,6 +58,7 @@ import twitter4j.http.RequestToken;
  */
 public class TwitterSearch implements Serializable {
 
+    public final static String COOKIE = "jetwick";
     /**
      * Do not use less than 20 api points for queueing searches of unloggedin users
      */
@@ -105,9 +106,8 @@ public class TwitterSearch implements Serializable {
 
     public Twitter createTwitter(String token, String tokenSecret) {
         setup();
-
-        // get this from your application details side !
         AccessToken aToken = new AccessToken(token, tokenSecret);
+        // get this from your application details side !
         Twitter t = new TwitterFactory().getOAuthAuthorizedInstance(
                 credits.getConsumerKey(), credits.getConsumerSecret(), aToken);
         try {
@@ -180,6 +180,9 @@ public class TwitterSearch implements Serializable {
     private int rl = -1;
 
     public int getRateLimitFromCache() {
+        if (twitter == null)
+            return -1;
+
         try {
             if (rl < 0)
                 rl = twitter.getRateLimitStatus().getRemainingHits();

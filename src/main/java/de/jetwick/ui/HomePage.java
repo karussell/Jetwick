@@ -25,6 +25,7 @@ import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
@@ -34,6 +35,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -46,6 +48,7 @@ import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.slf4j.Logger;
@@ -77,6 +80,8 @@ public class HomePage extends WebPage {
     @Inject
     private Provider<SolrTweetSearch> twindexProvider;
     @Inject
+    private Provider<SolrUserSearch> uindexProvider;
+    @Inject
     private Provider<RMIClient> rmiProvider;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
@@ -97,11 +102,13 @@ public class HomePage extends WebPage {
     }
 
     public HomePage(final PageParameters parameters) {
+        initTwitter4j();
+        getMySession().init((WebRequest) getRequest(), uindexProvider.get());
         String callback = parameters.getString("callback");
         if ("true".equals(callback)) {
             try {
                 TwitterSearch tmp = CallbackHelper.getParseTwitterUrl(getTwitterSearch(), parameters);
-                getMySession().setTwitterSearch(tmp);
+                getMySession().setTwitterSearch(tmp, uindexProvider.get(), (WebResponse) getResponse());
             } catch (Exception ex) {
                 logger.error("Error while parsing url from twitter", ex);
                 String msg = TwitterSearch.getMessage(ex);
@@ -109,7 +116,7 @@ public class HomePage extends WebPage {
                     error(msg);
                 else
                     error("Error when getting information from twitter! Please login again!");
-                getMySession().logout();
+                getMySession().logout(uindexProvider.get(), (WebResponse) getResponse());
             }
             // avoid showing the url parameters (e.g. refresh would let it failure!)
             setRedirect(true);
@@ -119,7 +126,17 @@ public class HomePage extends WebPage {
     }
 
     public HomePage(SolrQuery query, int page, boolean twitterFallback) {
+        initTwitter4j();
         init(query, page, twitterFallback);
+    }
+
+    private void initTwitter4j() {
+        try {
+            getMySession().init((WebRequest) getRequest(), uindexProvider.get());
+        } catch (Exception ex) {
+            logger.error("Error on twitter4j init.", ex);
+            error("Couldn't login. Please file report to http://twitter.com/jetwick " + new Date());
+        }
     }
 
     @Override
@@ -139,10 +156,6 @@ public class HomePage extends WebPage {
 
     public SolrTweetSearch getTweetSearch() {
         return twindexProvider.get();
-    }
-
-    public void setTwitterSearch(TwitterSearch twSearch) {
-        getMySession().setTwitterSearch(twSearch);
     }
 
     public void setRMIClient(Provider<RMIClient> rmiProvider) {
@@ -302,7 +315,7 @@ public class HomePage extends WebPage {
 
                 @Override
                 public void onLogout() {
-                    getMySession().logout();
+                    getMySession().logout(uindexProvider.get(), (WebResponse) getResponse());
                     setResponsePage(HomePage.class);
                 }
 
@@ -622,9 +635,9 @@ public class HomePage extends WebPage {
                             tweets = getTwitterSearch().searchAndGetUsers(queryString, users, TWEETS_IF_NO_HIT, 1);
                     }
                 } catch (TwitterException ex) {
-                    logger.warn("Warning while querying twitter:" + ex.toString());
+                    logger.warn("Warning while querying twitter:" + ex.getMessage());
                 } catch (Exception ex) {
-                    logger.error("Error while querying twitter:" + ex.toString());
+                    logger.error("Error while querying twitter:" + ex.getMessage());
                 }
             }
 

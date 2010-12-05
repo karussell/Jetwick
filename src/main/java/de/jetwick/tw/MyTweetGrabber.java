@@ -121,7 +121,7 @@ public class MyTweetGrabber implements Serializable {
                         rmiClient.get().init().send(new TweetPackageList(name).init(idCounter.addAndGet(1), tweets));
                 } catch (Exception ex) {
                     logger.warn("Error while sending " + tweets.size()
-                            + " tweets to queue server", ex);
+                            + " tweets to queue server" + ex.getMessage());
                 }
             }
         };

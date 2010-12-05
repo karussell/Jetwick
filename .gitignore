@@ -3,6 +3,7 @@ TODO.txt
 deploy*.sh
 *.log
 search/
+solandra/
 target/
 adindex/data/
 adindex/data.bak/

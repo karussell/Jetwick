@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -135,24 +134,30 @@ public class SolrUserSearch extends SolrAbstractSearch {
         }
     }
 
-    public SolrInputDocument createDoc(SolrUser u) throws IOException {
-        SolrInputDocument doc1 = new SolrInputDocument();
+    public SolrInputDocument createDoc(SolrUser user) throws IOException {
+        SolrInputDocument doc = new SolrInputDocument();
         // make sure that if we look for a specific user this user will show up first:
-        doc1.addField(SCREEN_NAME, u.getScreenName());
-        doc1.addField("realName", u.getRealName());
-        doc1.addField("iconUrl", u.getProfileImageUrl());
-        doc1.addField("webUrl", u.getWebUrl());
-        doc1.addField("bio", u.getDescription());
-        doc1.addField("token_s", u.getTwitterToken());
-        doc1.addField("tokenSecret_s", u.getTwitterTokenSecret());
+        doc.addField(SCREEN_NAME, user.getScreenName());
+        doc.addField("realName", user.getRealName());
+        doc.addField("iconUrl", user.getProfileImageUrl());
+        doc.addField("webUrl", user.getWebUrl());
+        doc.addField("bio", user.getDescription());
+        doc.addField("token_s", user.getTwitterToken());
+        doc.addField("tokenSecret_s", user.getTwitterTokenSecret());
+
+        doc.addField("createdAt_dt", user.getCreatedAt());
+        doc.addField("twCreatedAt_dt", user.getTwitterCreatedAt());
+
+        for (SavedSearch ss : user.getSavedSearches()) {
+        }
 
         // some users were only mentioned by others ...
-        Collection<SolrTweet> tweets = u.getOwnTweets();
+        Collection<SolrTweet> tweets = user.getOwnTweets();
         if (tweets.size() > 0) {
             TweetDetector extractor = new TweetDetector(tweets);
             for (Entry<String, Integer> entry : extractor.run().getSortedTerms()) {
                 if (entry.getValue() > termMinFrequency)
-                    doc1.addField("tag", entry.getKey());
+                    doc.addField("tag", entry.getKey());
             }
 
             StringFreqMap langs = new StringFreqMap();
@@ -161,11 +166,11 @@ public class SolrUserSearch extends SolrAbstractSearch {
             }
 
             for (Entry<String, Integer> lang : langs.getSorted()) {
-                doc1.addField("lang", lang.getKey());
+                doc.addField("lang", lang.getKey());
             }
         }
 
-        return doc1;
+        return doc;
     }
 
     public SolrUser readDoc(final SolrDocument doc) {
@@ -177,6 +182,10 @@ public class SolrUserSearch extends SolrAbstractSearch {
         user.setDescription((String) doc.getFieldValue("bio"));
         user.setTwitterToken((String) doc.getFieldValue("token_s"));
         user.setTwitterTokenSecret((String) doc.getFieldValue("tokenSecret_s"));
+
+        user.setUpdateAt((Date) doc.getFieldValue("timestamp"));
+        user.setCreatedAt((Date) doc.getFieldValue("createdAt_dt"));
+        user.setTwitterCreatedAt((Date) doc.getFieldValue("twCreatedAt_dt"));
 
         // only used for facet search? doc.getFieldValue("lang");        
 
@@ -218,6 +227,16 @@ public class SolrUserSearch extends SolrAbstractSearch {
         return query;
     }
 
+    public SolrUser getUserByToken(String token) throws SolrServerException {
+        Collection<SolrUser> res = collectUsers(search(new SolrQuery().addFilterQuery("token_s:" + token)));
+        if (res.size() == 0)
+            return null;
+        else if (res.size() == 1)
+            return res.iterator().next();
+        else
+            throw new IllegalStateException("token search:" + token + " returns more than one users:" + res);
+    }
+
     @Override
     public QueryResponse search(SolrQuery query) throws SolrServerException {
         return search(new ArrayList(), query);
@@ -225,15 +244,19 @@ public class SolrUserSearch extends SolrAbstractSearch {
 
     public QueryResponse search(Collection<SolrUser> users, SolrQuery query) throws SolrServerException {
         QueryResponse rsp = server.query(query);
+        users.addAll(collectUsers(rsp));
+        return rsp;
+    }
+
+    public Collection<SolrUser> collectUsers(QueryResponse rsp) {
         SolrDocumentList docs = rsp.getResults();
-        Map<String, Map<String, List<String>>> hlt = rsp.getHighlighting();
+        Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
 
         for (SolrDocument sd : docs) {
             SolrUser u = readDoc(sd);
             users.add(u);
         }
-
-        return rsp;
+        return users;
     }
 
 //    public static boolean isMlt(SolrQuery lastQuery) {

@@ -29,7 +29,6 @@ import twitter4j.Tweet;
  */
 public class SolrUser extends YUser {
 
-    private float rep;
     private Collection<SolrTweet> ownTweets = new LinkedHashSet<SolrTweet>();
     private Collection<SavedSearch> savedSearches = new ArrayList<SavedSearch>();
 
@@ -76,13 +75,5 @@ public class SolrUser extends YUser {
 //            dirtyOwnTweets = false;
 //        }
         return Collections.unmodifiableCollection(ownTweets);
-    }
-
-    public float getReputation() {
-        return rep;
-    }
-
-    public void setReputation(float rep) {
-        this.rep = rep;
     }
 }

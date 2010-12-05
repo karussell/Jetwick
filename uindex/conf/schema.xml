@@ -248,7 +248,7 @@
        when adding a document.
    -->
 
-        <!-- unique key -->
+        <!-- unique key == screenName -->
         <field name="name" type="string" indexed="true" stored="true" required="true" />
         <field name="realName" type="text" indexed="true" stored="true" />
 
@@ -258,6 +258,8 @@
 
         <field name="tag" type="string" indexed="true" stored="true" multiValued="true"/>
         <field name="lang" type="string" indexed="true" stored="true" multiValued="true"/>
+
+        <field name="timestamp" type="date" indexed="true" stored="true" default="NOW/MINUTE" />
 
         <!-- catchall field, containing all other searchable text fields (implemented
         via copyField further on in this schema  -->
@@ -296,11 +298,11 @@
     <copyField source="name" dest="text"/>
     <copyField source="tag" dest="text"/>
     <copyField source="bio" dest="text"/>
-    
+
     <!-- make the fields with less texts not that important compared to longer fields -->
     <!-- applies to all fields !
     <similarity class="de.jetwick.solrplugin.MySimilarity"/>
     -->
-    
-    <similarity class="org.apache.lucene.search.DefaultSimilarity"/>        
+
+    <similarity class="org.apache.lucene.search.DefaultSimilarity"/>
 </schema>

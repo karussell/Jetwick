@@ -74,6 +74,8 @@ public class YUser implements DbObject, Serializable {
     @Temporal(javax.persistence.TemporalType.TIMESTAMP)
     private Date createdAt;
     @Temporal(javax.persistence.TemporalType.TIMESTAMP)
+    private Date twitterCreatedAt;
+    @Temporal(javax.persistence.TemporalType.TIMESTAMP)
     private Date updateAt;
     // mappedBy in this case avoids a third USER_ID column in the join table YUSER_YUSER
     @ManyToMany(mappedBy = "followers")
@@ -89,11 +91,14 @@ public class YUser implements DbObject, Serializable {
     private Set<String> tags = new LinkedHashSet<String>();
     private String twitterTokenSecret;
     private String twitterToken;
+    private boolean adminUser = false;
 
     public YUser() {
+        setCreatedAt(new Date());
     }
 
     public YUser(String name) {
+        this();
         this.screenName = name.toLowerCase();
         if (screenName.trim().length() == 0)
             throw new IllegalArgumentException("Screenname must not be empty!");
@@ -153,7 +158,7 @@ public class YUser implements DbObject, Serializable {
      */
     public Status updateFieldsBy(User user) {
         twitterId = user.getId();
-        setCreatedAt(user.getCreatedAt());
+        setTwitterCreatedAt(user.getCreatedAt());
         setDescription(user.getDescription());
         addLanguage(user.getLang());
         setLocation(TwitterSearch.toStandardLocation(user.getLocation()));
@@ -172,12 +177,32 @@ public class YUser implements DbObject, Serializable {
         return user.getStatus();
     }
 
+    public void setTwitterCreatedAt(Date twitterCreatedAt) {
+        this.twitterCreatedAt = twitterCreatedAt;
+    }
+
+    public Date getTwitterCreatedAt() {
+        return twitterCreatedAt;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public void addLanguage(String lang) {
         langs.add(lang);
     }
 
     public Collection<String> getLanguages() {
         return langs;
+    }
+
+    public boolean isAdmin() {
+        return adminUser;
     }
 
     public void addFollower(YUser u) {
@@ -231,14 +256,6 @@ public class YUser implements DbObject, Serializable {
     // Should be used only for screen name fixing, because it acts as id!
     public void setsCREENnAME(String sn) {
         screenName = sn;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
     }
 
     public String getDescription() {

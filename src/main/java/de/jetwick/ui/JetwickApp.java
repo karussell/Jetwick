@@ -114,8 +114,8 @@ public class JetwickApp extends WebApplication {
     @Override
     public Session newSession(Request request, Response response) {
         boolean useDefaultUser = false;
-        if ("development".equals(cfg.getStage()))
-            useDefaultUser = true;
+//        if ("development".equals(cfg.getStage()))
+//            useDefaultUser = true;
 
         Session session = new MySession(request, useDefaultUser);
         getGuiceInjector().inject(session);

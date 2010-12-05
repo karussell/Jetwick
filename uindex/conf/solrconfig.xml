@@ -409,7 +409,7 @@
 
             <!-- Query Fields -->
             <str name="qf">
-                text^2 name^10 tag^2 bio realName
+                name^10 tag^2 bio realName
             </str>
 
             <!-- Phrase Fields

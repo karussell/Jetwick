@@ -53,4 +53,20 @@ public class Credits implements Serializable {
     public String getTokenSecret() {
         return tokenSecret;
     }
+
+    public void setConsumerKey(String consumerKey) {
+        this.consumerKey = consumerKey;
+    }
+
+    public void setConsumerSecret(String consumerSecret) {
+        this.consumerSecret = consumerSecret;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public void setTokenSecret(String tokenSecret) {
+        this.tokenSecret = tokenSecret;
+    }
 }
