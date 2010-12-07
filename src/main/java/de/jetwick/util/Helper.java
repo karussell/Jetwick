@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 import java.io.BufferedInputStream;
@@ -52,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TimeZone;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -86,6 +86,13 @@ public class Helper {
     private static final SimpleDateFormat sFormat = new SimpleDateFormat(localDateTimeFormatString);
     private static final String simpleDateString = "HH:mm yyyy-MM-dd";
     private static final SimpleDateFormat simpleFormat = new SimpleDateFormat(simpleDateString);
+
+    static {
+        sFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        simpleFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        System.out.println(Arrays.asList(TimeZone.getAvailableIDs()));
+//        System.out.println(sFormat.getTimeZone().getDisplayName());
+    }
 
     public static BufferedReader createBuffReader(File file) throws FileNotFoundException, UnsupportedEncodingException {
         return new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
@@ -299,7 +306,6 @@ public class Helper {
             return str;
         }
     }
-
 
     /**
      * encode space not as +

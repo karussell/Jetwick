@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 import java.io.IOException;
+import java.util.Date;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -42,6 +42,8 @@ public class HelperTest {
     @Test
     public void testTrim() {
         assertEquals("test test", Helper.trimNL("test\ntest"));
+
+        System.out.println(Helper.toLocalDateTime(new Date()));
     }
 
     @Test
