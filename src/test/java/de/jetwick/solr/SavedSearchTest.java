@@ -15,6 +15,9 @@
  */
 package de.jetwick.solr;
 
+import de.jetwick.util.Helper;
+import java.util.Collections;
+import java.util.Date;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -28,18 +31,50 @@ public class SavedSearchTest {
     public SavedSearchTest() {
     }
 
+//    @Test
+//    public void testCalcQueryTerms() {
+//        assertEquals(0, new SavedSearch(new SolrQuery()).calcQueryTerms().size());
+//        assertEquals(0, new SavedSearch(new SolrQuery("")).calcQueryTerms().size());
+//        assertEquals(0, new SavedSearch(new SolrQuery(" ")).calcQueryTerms().size());
+//        assertEquals(2, new SavedSearch(new SolrQuery(" test pest")).calcQueryTerms().size());
+//        assertEquals(1, new SavedSearch(new SolrQuery(" test test")).calcQueryTerms().size());
+//    }
     @Test
-    public void testCalcQueryTerms() {
-        assertEquals(0, new SavedSearch(new SolrQuery()).calcQueryTerms().size());
-        assertEquals(0, new SavedSearch(new SolrQuery("")).calcQueryTerms().size());
-        assertEquals(0, new SavedSearch(new SolrQuery(" ")).calcQueryTerms().size());
-        assertEquals(2, new SavedSearch(new SolrQuery(" test pest")).calcQueryTerms().size());
-        assertEquals(1, new SavedSearch(new SolrQuery(" test test")).calcQueryTerms().size());
+    public void testGetQueryWithoutDateFilter() {
+        assertNull(new SavedSearch(1, new SolrQuery().addFilterQuery("dt:[1 TO 2]")).getCleanQuery().getFilterQueries());
+        assertEquals(1, new SavedSearch(1, new SolrQuery().addFilterQuery("dt:[1 TO 2]").
+                addFilterQuery("xy:ab")).getCleanQuery().getFilterQueries().length);
     }
 
     @Test
-    public void testGetQuery() {
-        assertNull(new SavedSearch(new SolrQuery().addFilterQuery("dt:[1 TO 2]")).getQueryWithoutDate().getFilterQueries());
-        assertEquals(1, new SavedSearch(new SolrQuery().addFilterQuery("dt:[1 TO 2]").addFilterQuery("xy:ab")).getQueryWithoutDate().getFilterQueries().length);
+    public void testAddFacet() {
+        assertEndsWith("*:*", new SavedSearch(1, new SolrQuery()).calcFacetQuery());
+        assertEndsWith("*:*", new SavedSearch(1, new SolrQuery("")).calcFacetQuery());
+        assertEndsWith("tw:(peter) OR dest_title_t:(peter)", new SavedSearch(1, new SolrQuery("peter ")).calcFacetQuery());
+        assertEndsWith("tw:(peter AND pan) OR dest_title_t:(peter AND pan)", new SavedSearch(1, new SolrQuery("peter pan")).calcFacetQuery());
+
+        assertEndsWith("(tw:(peter AND pan) OR dest_title_t:(peter AND pan)) AND test:x",
+                new SavedSearch(1, new SolrQuery("peter pan").addFilterQuery("test:x")).calcFacetQuery());
+        assertEndsWith("(tw:(peter AND pan) OR dest_title_t:(peter AND pan)) AND test:x AND test2:y",
+                new SavedSearch(1, new SolrQuery("peter pan").addFilterQuery("test:x").addFilterQuery("test2:y")).calcFacetQuery());
+    }
+
+    @Test
+    public void testLastQueryDate() {
+        SolrQuery q = new SolrQuery("wicket");
+        SavedSearch ss = new SavedSearch(1, q);
+        assertEndsWith("tw:(wicket) OR dest_title_t:(wicket)", ss.calcFacetQuery());
+
+        Date date = ss.getLastQueryDate();
+        assertNull(date);
+        ss.getQuery(Collections.EMPTY_LIST);
+        date = ss.getLastQueryDate();
+        assertNotNull(date);
+        assertEndsWith("tw:(wicket) OR dest_title_t:(wicket) AND dt:["
+                + Helper.toLocalDateTime(date) + " TO *]", ss.calcFacetQuery());
+    }
+
+    public void assertEndsWith(String start, String str2) {
+        assertTrue("expected end:" + start + " but was:" + str2, str2.endsWith(start));
     }
 }

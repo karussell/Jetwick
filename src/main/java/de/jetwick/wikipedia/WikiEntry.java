@@ -20,6 +20,7 @@ import java.io.Serializable;
 
 public class WikiEntry implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     String url;
     String title;
     String text;

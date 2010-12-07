@@ -15,6 +15,7 @@
  */
 package de.jetwick.solr;
 
+import de.jetwick.util.Helper;
 import org.apache.solr.client.solrj.SolrQuery;
 
 /**
@@ -22,6 +23,25 @@ import org.apache.solr.client.solrj.SolrQuery;
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class JetwickQuery extends SolrQuery {
+
+    public static void removeFacets(SolrQuery query) {
+        query.setFacet(false);
+        String[] facets = query.getFacetFields();
+        if (facets != null)
+            for (String str : facets) {
+                query.removeFacetField(str);
+            }
+
+        query.set("facet.date", (String) null).
+                set("facet.date.start", (String) null).
+                set("facet.date.end", (String) null).
+                set("facet.date.gap", (String) null);
+
+        query.set("f.dest_title_1_s.facet.mincount", (String) null).
+                set("f.dest_title_1_s.facet.limit", (String) null).
+                set("f.tag.facet.mincount", (String) null).
+                set("f.tag.facet.limit", (String) null);
+    }
 
     public JetwickQuery(String queryStr) {
         init(queryStr);
@@ -232,5 +252,19 @@ public class JetwickQuery extends SolrQuery {
                 filterKey = filterKey.substring(index + 1);
         }
         return filterKey;
+    }
+
+    public static SolrQuery parse(String qString) {
+        SolrQuery q = new SolrQuery();
+        qString = Helper.urlDecode(qString);
+        for (String str : qString.split("&")) {
+            int index = str.indexOf("=");
+            if (str.trim().isEmpty() || index < 0)
+                continue;
+
+            q.add(str.substring(0, index), str.substring(index + 1));
+        }
+
+        return q;
     }
 }

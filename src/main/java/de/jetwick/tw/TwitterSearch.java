@@ -58,6 +58,7 @@ import twitter4j.http.RequestToken;
  */
 public class TwitterSearch implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     public final static String COOKIE = "jetwick";
     /**
      * Do not use less than 20 api points for queueing searches of unloggedin users
@@ -154,6 +155,16 @@ public class TwitterSearch implements Serializable {
         SolrUser user = new SolrUser(twitter.getScreenName());
         updateUserInfo(Arrays.asList(user));
         return user;
+    }
+
+    public User getTwitterUser() throws TwitterException {
+        ResponseList<User> list = twitter.lookupUsers(new String[]{twitter.getScreenName()});
+        if (list.size() == 0)
+            return null;
+        else if (list.size() == 1)
+            return list.get(0);
+        else
+            throw new IllegalStateException("returned more than one user for screen name:" + twitter.getScreenName());
     }
 
     public int getSecondsUntilReset() {

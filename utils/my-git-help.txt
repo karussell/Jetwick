@@ -3,7 +3,7 @@
 # add remote repo
 git remote add origin git@github.com:karussell/Jetwick.git
 
-# add new files or remove old
+# add new/untracked/deleted files or remove old
 git add -A
 
 # commit (is -a necessary?)

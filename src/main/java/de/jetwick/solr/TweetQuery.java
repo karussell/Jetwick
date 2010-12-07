@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.solr;
 
 import de.jetwick.tw.TweetDetector;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -80,6 +80,19 @@ public class TweetQuery extends JetwickQuery {
         q.addFacetQuery(FILTER_URL_ENTRY);
         q.addFacetQuery(FILTER_NO_URL_ENTRY);
 
+        return q;
+    }
+
+    public static SolrQuery updateSavedSearchFacets(SolrQuery q, Collection<SavedSearch> sss) {
+        String[] facQ = q.getFacetQuery();
+        if(facQ != null)
+        for(String str : facQ) {
+            if(SavedSearch.isSavedSearch(str))
+                q.removeFacetQuery(str);
+        }
+        for (SavedSearch ss : sss) {
+            q.addFacetQuery(ss.calcFacetQuery());
+        }
         return q;
     }
 

@@ -48,6 +48,7 @@ import twitter4j.User;
     @UniqueConstraint(columnNames = {"screenName"})})
 public class YUser implements DbObject, Serializable {
 
+    private static final long serialVersionUID = 2L;
     public static int OUT_OF_DATE_DAYS = 7;
     public static int DISPLAY_TWEETS = 2;
     public static final String UPDATE_AT = "updateAt";

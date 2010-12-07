@@ -129,8 +129,8 @@ public class SolrUserSearch extends SolrAbstractSearch {
                 server.add(doc);
             if (commit)
                 commit();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (Exception ex) {
+            logger.error("Couldn't save user:" + user, ex);
         }
     }
 
@@ -148,7 +148,17 @@ public class SolrUserSearch extends SolrAbstractSearch {
         doc.addField("createdAt_dt", user.getCreatedAt());
         doc.addField("twCreatedAt_dt", user.getTwitterCreatedAt());
 
+        int counter = 1;
         for (SavedSearch ss : user.getSavedSearches()) {
+            doc.addField("ss_" + counter + "_name_s", ss.getName());
+            doc.addField("ss_" + counter + "_query_s", ss.getCleanQuery().toString());
+            doc.addField("ss_" + counter + "_last_dt", ss.getLastQueryDate());
+
+            if (ss.getQueryTerm() != null && !ss.getQueryTerm().isEmpty()) {
+                // for tweetProducer (pick important via facets) and stats:
+                doc.addField("ss_qterms_mv_s", ss.getQueryTerm());
+            }
+            counter++;
         }
 
         // some users were only mentioned by others ...
@@ -174,8 +184,8 @@ public class SolrUserSearch extends SolrAbstractSearch {
     }
 
     public SolrUser readDoc(final SolrDocument doc) {
-        String name = (String) doc.getFieldValue(SCREEN_NAME);
-        SolrUser user = new SolrUser(name);
+        String userName = (String) doc.getFieldValue(SCREEN_NAME);
+        SolrUser user = new SolrUser(userName);
         user.setRealName((String) doc.getFieldValue("realName"));
         user.setProfileImageUrl((String) doc.getFieldValue("iconUrl"));
         user.setWebUrl((String) doc.getFieldValue("webUrl"));
@@ -187,6 +197,21 @@ public class SolrUserSearch extends SolrAbstractSearch {
         user.setCreatedAt((Date) doc.getFieldValue("createdAt_dt"));
         user.setTwitterCreatedAt((Date) doc.getFieldValue("twCreatedAt_dt"));
 
+        long counter = 1;
+        while (true) {
+            String name = (String) doc.getFieldValue("ss_" + counter + "_name_s");
+            if (name == null)
+                break;
+
+            String qString = (String) doc.getFieldValue("ss_" + counter + "_query_s");
+            SolrQuery q = JetwickQuery.parse(qString);
+            SavedSearch ss = new SavedSearch(counter, q);
+            ss.setName(name);
+            ss.setLastQueryDate((Date) doc.getFieldValue("ss_" + counter + "_last_dt"));
+            user.addSavedSearch(ss);
+
+            counter++;
+        }
         // only used for facet search? doc.getFieldValue("lang");        
 
         Collection<Object> tags = doc.getFieldValues("tag");
@@ -227,14 +252,34 @@ public class SolrUserSearch extends SolrAbstractSearch {
         return query;
     }
 
-    public SolrUser getUserByToken(String token) throws SolrServerException {
-        Collection<SolrUser> res = collectUsers(search(new SolrQuery().addFilterQuery("token_s:" + token)));
-        if (res.size() == 0)
+    public SolrUser findByTwitterToken(String token) {
+        try {
+            Collection<SolrUser> res = collectUsers(search(new SolrQuery().addFilterQuery("token_s:" + token)));
+            if (res.size() == 0)
+                return null;
+            else if (res.size() == 1)
+                return res.iterator().next();
+            else
+                throw new IllegalStateException("token search:" + token + " returns more than one users:" + res);
+        } catch (SolrServerException ex) {
+            logger.error("Couldn't load user with token:" + token + " " + ex.getMessage());
             return null;
-        else if (res.size() == 1)
-            return res.iterator().next();
-        else
-            throw new IllegalStateException("token search:" + token + " returns more than one users:" + res);
+        }
+    }
+
+    public SolrUser findByScreenName(String name) {
+        try {
+            Collection<SolrUser> res = collectUsers(search(new SolrQuery().addFilterQuery(SCREEN_NAME + ":" + name)));
+            if (res.size() == 0)
+                return null;
+            else if (res.size() == 1)
+                return res.iterator().next();
+            else
+                throw new IllegalStateException("screenName search:" + name + " returns more than one users:" + res);
+        } catch (SolrServerException ex) {
+            logger.error("Couldn't load user with screenName:" + name + " " + ex.getMessage());
+            return null;
+        }
     }
 
     @Override

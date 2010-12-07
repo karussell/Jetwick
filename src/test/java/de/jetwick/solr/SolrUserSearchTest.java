@@ -95,9 +95,20 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
     }
 
     @Test
+    public void testUpdate2() throws Exception {
+        SolrUser user = new SolrUser("karsten");
+        user.addSavedSearch(new SavedSearch(1, new SolrQuery("test")));
+        user.addSavedSearch(new SavedSearch(2, new SolrQuery("test2")));
+        userSearch.save(user, true);
+        assertEquals(1, userSearch.search("karsten").size());
+        user = userSearch.search("karsten").iterator().next();
+        assertEquals(2, user.getSavedSearches().size());
+    }
+
+    @Test
     public void testUpdateBatch() throws Exception {
         Set<SolrUser> list = new LinkedHashSet<SolrUser>();
-        SolrUser user = new SolrUser("karsten");        
+        SolrUser user = new SolrUser("karsten");
         list.add(user);
         SolrUser user2 = new SolrUser("peter");
         list.add(user2);

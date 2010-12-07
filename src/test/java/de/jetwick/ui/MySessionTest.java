@@ -19,6 +19,8 @@ import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
+import java.net.URL;
+import java.util.Date;
 import javax.servlet.http.Cookie;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -27,7 +29,10 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import twitter4j.RateLimitStatus;
+import twitter4j.Status;
 import twitter4j.TwitterException;
+import twitter4j.User;
 
 /**
  *
@@ -45,13 +50,9 @@ public class MySessionTest extends WicketPagesTestClass {
     }
 
     SolrUserSearch newMockUserSearch(SolrUser user) {
-        try {
-            SolrUserSearch s = mock(SolrUserSearch.class);
-            when(s.getUserByToken("normalToken")).thenReturn(user);
-            return s;
-        } catch (SolrServerException ex) {
-            throw new RuntimeException(ex);
-        }
+        SolrUserSearch s = mock(SolrUserSearch.class);
+        when(s.findByTwitterToken("normalToken")).thenReturn(user);
+        return s;
     }
 
     @Test
@@ -102,7 +103,7 @@ public class MySessionTest extends WicketPagesTestClass {
         TwitterSearch ts = mock(TwitterSearch.class);
         when(ts.init()).thenReturn(true);
         when(ts.getCredits()).thenReturn(new Credits("normalToken", "tSec", "x", "y"));
-        when(ts.getUser()).thenReturn(new SolrUser("testuser"));
+        when(ts.getTwitterUser()).thenReturn(new Twitter4JUser("testuser"));
 
         WebResponse resp = mock(WebResponse.class);
         SolrUser user = new SolrUser("testuser");

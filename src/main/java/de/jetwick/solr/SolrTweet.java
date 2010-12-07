@@ -42,6 +42,7 @@ import twitter4j.Tweet;
  */
 public class SolrTweet implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     public static final Comparator tweetIdComparator = new TwitterIdComparator();
     public static final int QUAL_MAX = 100;
     //

@@ -39,7 +39,11 @@ public class UserPanel extends Panel {
     public UserPanel(String id, final YUser user, final MyTweetGrabber grabber) {
         super(id);
 
-        add(new Label("loginText", "Hello " + user.getRealName() + "!"));
+        String name = user.getRealName();
+        if (name == null)
+            name = user.getScreenName();
+
+        add(new Label("loginText", "Hello " + name + "!"));
         add(new Link("logout") {
 
             @Override

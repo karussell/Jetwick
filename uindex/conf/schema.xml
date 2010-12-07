@@ -270,6 +270,7 @@
          -->
 
        <!-- some trie-coded dynamic fields for faster range queries -->
+        <dynamicField name="*_mv_s"  type="string"  indexed="true" multiValued="true" stored="true"/>
         <dynamicField name="*_i"  type="tint"    indexed="true"  stored="true"/>
         <dynamicField name="*_l"  type="tlong"   indexed="true"  stored="true"/>
         <dynamicField name="*_f"  type="tfloat"  indexed="true"  stored="true"/>

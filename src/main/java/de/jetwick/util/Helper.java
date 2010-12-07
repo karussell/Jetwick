@@ -37,6 +37,7 @@ import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -290,6 +291,15 @@ public class Helper {
             return str;
         }
     }
+
+    public static String urlDecode(String str) {
+        try {
+            return URLDecoder.decode(str, UTF8);
+        } catch (UnsupportedEncodingException ex) {
+            return str;
+        }
+    }
+
 
     /**
      * encode space not as +

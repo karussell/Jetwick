@@ -21,6 +21,7 @@ import com.google.inject.Provider;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.JetwickQuery;
+import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
@@ -68,6 +69,7 @@ public class HomePage extends WebPage {
     private FeedbackPanel feedbackPanel;
     private ResultsPanel resultsPanel;
     private FacetPanel facetPanel;
+    private SavedSearchPanel ssPanel;
     private TagCloudPanel tagCloud;
     private NavigationPanel navigationPanel;
     private SearchBox searchBox;
@@ -215,6 +217,7 @@ public class HomePage extends WebPage {
         }
 
         q.addFilterQuery(SolrTweetSearch.FILTER_NO_SPAM);
+        q.addFilterQuery(SolrTweetSearch.FILTER_IS_NOT_RT);
 
         return getTweetSearch().attachHighlighting(q);
     }
@@ -222,6 +225,7 @@ public class HomePage extends WebPage {
     public void updateAfterAjax(AjaxRequestTarget target, boolean updateSearchBox) {
         if (target != null) {
             target.addComponent(facetPanel);
+            target.addComponent(ssPanel);
             target.addComponent(resultsPanel);
             //already in resultsPanel target.addComponent(lazyLoadAdPanel);
 
@@ -241,7 +245,7 @@ public class HomePage extends WebPage {
         }
     }
 
-    public void init(SolrQuery query, int page, boolean twitterFallback) {
+    public void init(SolrQuery query, final int page, boolean twitterFallback) {
         feedbackPanel = new FeedbackPanel("feedback");
         add(feedbackPanel.setOutputMarkupId(true));
         add(new Label("title", new Model() {
@@ -307,11 +311,68 @@ public class HomePage extends WebPage {
             }
         };
         add(urlTrends.setOutputMarkupId(true));
+        ssPanel = new SavedSearchPanel("savedSearches") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target, long ssId) {
+                SolrUser user = getMySession().getUser();
+                SavedSearch ss = user.getSavedSearch(ssId);
+                if (ss != null) {
+                    doSearch(ss.getQuery(user.getSavedSearches()), 0, true);
+                    uindexProvider.get().save(user, true);
+                }
+
+                updateAfterAjax(target, true);
+            }
+
+            @Override
+            public void onRefresh(AjaxRequestTarget target) {
+                doSearch(createQuery(new PageParameters()), 0, false);
+                updateAfterAjax(target, true);
+            }
+
+            @Override
+            public void onRemove(AjaxRequestTarget target, long ssId) {
+                SolrUser user = getMySession().getUser();
+                user.removeSavedSearch(ssId);
+                uindexProvider.get().save(user, true);
+                doOldSearch(page);
+                updateAfterAjax(target, false);
+            }
+
+            @Override
+            public void onSave(AjaxRequestTarget target) {
+                SolrUser user = getMySession().getUser();
+                user.addSavedSearch(new SavedSearch(new Date().getTime(), lastQuery));
+                uindexProvider.get().save(user, true);
+                doOldSearch(page);
+                updateAfterAjax(target, false);
+            }
+
+            @Override
+            public String translate(String str) {
+                try {
+                    SavedSearch ss = getMySession().getUser().getSavedSearch(Long.parseLong(str));
+                    if (ss != null) {
+                        String name = ss.getName();
+                        if (name.length() > 20)
+                            return name.substring(0, 20) + "..";
+                        return name;
+                    }
+                } catch (NumberFormatException ex) {
+                    logger.warn("Wrong Number format for saved search:" + str, ex);
+                }
+
+                return super.translate(str);
+            }
+        };
+        add(ssPanel.setOutputMarkupId(true));
 
         if (getMySession().hasLoggedIn()) {
             add(new WebComponent("loginLink").setVisible(false));
             add(new UserPanel("userPanel", getMySession().getUser(),
-                    new MyTweetGrabber().init(getMySession().getUser().getScreenName()).setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
+                    new MyTweetGrabber().init(getMySession().getUser().getScreenName()).
+                    setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
 
                 @Override
                 public void onLogout() {
@@ -336,6 +397,7 @@ public class HomePage extends WebPage {
                 }
             });
         } else {
+            ssPanel.setVisible(false);
             try {
                 AjaxLink loginLink = CallbackHelper.createLink("loginLink", this);
                 add(loginLink);
@@ -556,6 +618,9 @@ public class HomePage extends WebPage {
     }
 
     public void doSearch(SolrQuery query, int page, boolean twitterFallback, boolean instantSearch) {
+        if (getMySession().hasLoggedIn())
+            TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
+
         String queryString = searchBox.getQuery();
 
         if (!instantSearch) {
@@ -664,6 +729,7 @@ public class HomePage extends WebPage {
             tweetThread = null;
 
         facetPanel.update(rsp, query);
+        ssPanel.update(rsp, query);
         tagCloud.update(rsp, query);
         urlTrends.update(rsp, query);
 

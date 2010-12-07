@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingQueue;
  */
 public class TweetPackageList extends AbstractTweetPackage {
 
+    private static final long serialVersionUID = 1L;
     private Collection<SolrTweet> tweets;
 
     public TweetPackageList(String name) {

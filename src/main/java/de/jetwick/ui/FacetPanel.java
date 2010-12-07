@@ -54,8 +54,7 @@ public class FacetPanel extends Panel {
     private List<Entry<String, List<FacetHelper>>> normalFacetFields = new ArrayList<Entry<String, List<FacetHelper>>>();
     private ListView tagView;
     private String dtKey = "dt";
-    private String userKey = "user";
-    private String langKey = "lang";
+    private String langKey = "lang";    
 
     public FacetPanel(String id) {
         super(id);
@@ -225,7 +224,7 @@ public class FacetPanel extends Panel {
         final int MAX_VAL = 4;
         Map<String, Integer> filterToIndex = new LinkedHashMap<String, Integer>() {
 
-            {
+            {                
                 put(IS_RT, 2);
                 put(langKey, 1);
                 put(QUALITY, 3);

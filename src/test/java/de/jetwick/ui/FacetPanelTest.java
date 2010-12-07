@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.ui.util.FacetHelper;
@@ -67,7 +66,7 @@ public class FacetPanelTest extends WicketPagesTestClass {
         List<Entry<String, List<FacetHelper>>> ret = panel.createFacetsFields(qr);
 
         assertEquals(5, ret.size());
-        
+
         // get language
         List<FacetHelper> dfh = ret.get(1).getValue();
         assertEquals(2, dfh.size());

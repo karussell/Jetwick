@@ -35,6 +35,7 @@ import javax.persistence.Version;
     @UniqueConstraint(columnNames = {"term"})})
 public class YTag implements DbObject, Serializable, Comparable<YTag> {
 
+    private static final long serialVersionUID = 1L;
     public static List<YTag> createList(List<String> terms) {
         List<YTag> list = new ArrayList<YTag>(terms.size());
         for (String term : terms) {

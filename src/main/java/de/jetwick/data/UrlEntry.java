@@ -24,6 +24,7 @@ import java.io.Serializable;
  */
 public class UrlEntry implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private int index = -1;
     private int lastIndex = -1;
     private String resolvedUrl;

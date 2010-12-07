@@ -17,10 +17,11 @@ package de.jetwick.solr;
 
 import de.jetwick.data.YUser;
 import de.jetwick.tw.TwitterSearch;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import twitter4j.Tweet;
 
 /**
@@ -29,8 +30,9 @@ import twitter4j.Tweet;
  */
 public class SolrUser extends YUser {
 
+    private static final long serialVersionUID = 1L;
     private Collection<SolrTweet> ownTweets = new LinkedHashSet<SolrTweet>();
-    private Collection<SavedSearch> savedSearches = new ArrayList<SavedSearch>();
+    private Map<Long, SavedSearch> savedSearches = new LinkedHashMap<Long, SavedSearch>();
 
     /**
      * You'll need to call init after this
@@ -46,11 +48,19 @@ public class SolrUser extends YUser {
     }
 
     public void addSavedSearch(SavedSearch ss) {
-        savedSearches.add(ss);
+        savedSearches.put(ss.getId(), ss);
+    }
+
+    public boolean removeSavedSearch(long ssId) {
+        return savedSearches.remove(ssId) != null;
+    }
+
+    public SavedSearch getSavedSearch(long id) {
+        return savedSearches.get(id);
     }
 
     public Collection<SavedSearch> getSavedSearches() {
-        return savedSearches;
+        return savedSearches.values();
     }
 
     public void addOwnTweet(SolrTweet tw) {

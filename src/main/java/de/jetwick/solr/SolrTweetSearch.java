@@ -60,6 +60,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     public static final String DATE = "dt";
     public static final String DATE_TAG = "{!tag=" + DATE + "}";
     public static final String IS_RT = "crt_b";
+    public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String RT_COUNT = "retw_i";
     public static final String USER = "user";
     public static final String FILTER_KEY_USER = USER + ":";

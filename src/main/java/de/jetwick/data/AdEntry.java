@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.data;
 
 import de.jetwick.util.MapEntry;
@@ -28,6 +27,7 @@ import java.util.Map.Entry;
  */
 public class AdEntry implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private List<Entry<String, String>> queryUser = new ArrayList<Entry<String, String>>();
     private String id;
     private String iconUrl;

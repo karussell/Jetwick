@@ -33,6 +33,7 @@ import twitter4j.TwitterException;
 
 public class MyTweetGrabber implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     public static AtomicInteger idCounter = new AtomicInteger(0);
     private static final Logger logger = LoggerFactory.getLogger(MyTweetGrabber.class);
     private String userName;

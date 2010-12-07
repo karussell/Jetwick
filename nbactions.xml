@@ -107,7 +107,7 @@
             <properties>
                 <exec.classpathScope>${classPathScope}</exec.classpathScope>
                 <exec.args>-classpath %classpath ${packageClassName}</exec.args>
-                <Env.MAVEN_OPTS>-Xmx500m</Env.MAVEN_OPTS>
+                <Env.MAVEN_OPTS>-Xmx500m -agentpath:/home/peterk/Programme/yourkit-profiler/bin/linux-x86-32/libyjpagent.so</Env.MAVEN_OPTS>
                 
                 <exec.executable>java</exec.executable>
                 
