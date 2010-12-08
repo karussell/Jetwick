@@ -89,6 +89,17 @@ public class JetwickQuery extends SolrQuery {
         return this;
     }
 
+    public static String getUserFilter(SolrQuery q) {
+        String fq[] = q.getFilterQueries();
+        if (fq != null) {
+            for (String str : fq) {
+                if (str.startsWith(SolrTweetSearch.FILTER_KEY_USER))
+                    return str;
+            }
+        }
+        return null;
+    }
+
     public static String extractNonNullQueryString(SolrQuery query) {
         String visibleString = query.getQuery();
         if (visibleString != null && visibleString.length() > 0)

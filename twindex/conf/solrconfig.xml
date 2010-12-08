@@ -366,9 +366,9 @@
                     <str name="rows">15</str>
                     <str name="facet.sort">count</str>
 
-                    <str name="facet.query">retw_i:[11 TO *]</str>
-                    <str name="facet.query">retw_i:[1 TO 10]</str>
-                    <str name="facet.query">retw_i:0</str>
+                    <str name="facet.query">retw_i:[5 TO *]</str>
+                    <str name="facet.query">retw_i:[20 TO *]</str>
+                    <str name="facet.query">retw_i:[50 TO *]</str>
 
                     <str name="facet.query">url_i:[1 TO *]</str>
                     <str name="facet.query">url_i:0</str>

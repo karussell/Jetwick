@@ -369,12 +369,7 @@ public class HomePage extends WebPage {
             public String translate(String str) {
                 try {
                     SavedSearch ss = getMySession().getUser().getSavedSearch(Long.parseLong(str));
-                    if (ss != null) {
-                        String name = ss.getName();
-                        if (name.length() > 20)
-                            return name.substring(0, 20) + "..";
-                        return name;
-                    }
+                    return ss.getName();
                 } catch (NumberFormatException ex) {
                     logger.warn("Wrong Number format for saved search:" + str, ex);
                 }

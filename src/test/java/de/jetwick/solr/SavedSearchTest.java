@@ -31,14 +31,13 @@ public class SavedSearchTest {
     public SavedSearchTest() {
     }
 
-//    @Test
-//    public void testCalcQueryTerms() {
-//        assertEquals(0, new SavedSearch(new SolrQuery()).calcQueryTerms().size());
-//        assertEquals(0, new SavedSearch(new SolrQuery("")).calcQueryTerms().size());
-//        assertEquals(0, new SavedSearch(new SolrQuery(" ")).calcQueryTerms().size());
-//        assertEquals(2, new SavedSearch(new SolrQuery(" test pest")).calcQueryTerms().size());
-//        assertEquals(1, new SavedSearch(new SolrQuery(" test test")).calcQueryTerms().size());
-//    }
+    @Test
+    public void testQuery() {
+        assertEquals("java, user:\"peter\"", new SavedSearch(1, new SolrQuery("java").addFilterQuery("user:\"peter\"")).getName());
+        assertEquals("user:\"peter\"", new SavedSearch(1, new SolrQuery().addFilterQuery("user:\"peter\"")).getName());
+        assertEquals("java, user:\"peter rich\"", new SavedSearch(1, new SolrQuery("java").addFilterQuery("user:\"peter rich\"")).getName());
+        assertEquals("java termin, user:\"peter test\"", new SavedSearch(1, new SolrQuery("java termin").addFilterQuery("user:\"peter test\"")).getName());
+    }
     @Test
     public void testGetQueryWithoutDateFilter() {
         assertNull(new SavedSearch(1, new SolrQuery().addFilterQuery("dt:[1 TO 2]")).getCleanQuery().getFilterQueries());

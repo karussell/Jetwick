@@ -76,8 +76,21 @@ public class SavedSearch implements Serializable {
     }
 
     public String getName() {
-        if (name == null)
-            return query.getQuery();
+        if (name == null) {
+            String qStr = query.getQuery();
+            String userFilter = JetwickQuery.getUserFilter(query);
+            if (userFilter != null) {
+                if (qStr == null)
+                    qStr = "";
+
+                if (!qStr.isEmpty())
+                    qStr += ", ";
+
+                qStr += userFilter;
+            }
+
+            return qStr;
+        }
         return name;
     }
 

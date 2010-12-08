@@ -105,12 +105,9 @@ public class MySession extends WebSession {
         twitterSearch.setTwitter4JInstance(token.getToken(), token.getTokenSecret());
         twitterSearchInitialized = true;
         try {
-            //TODO remove this:
-            logger.info("TOKEN:" + token);
-
+//            logger.info("TOKEN:" + token);
             Cookie cookie = new Cookie(TwitterSearch.COOKIE, token.getToken());
-            // TODO use https
-            //cookie.setSecure(true);
+            // TODO use https: cookie.setSecure(true);
             cookie.setComment("Supply autologin for jetwick.com");
             // four weeks
             cookie.setMaxAge(4 * 7 * 24 * 60 * 60);

@@ -26,12 +26,14 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
+import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.util.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +81,12 @@ public class SavedSearchPanel extends Panel {
                         SavedSearchPanel.this.onClick(target, ssId);
                     }
                 };
-                link.add(new Label("filterValue", h.displayName));
+
+                String name = h.displayName;
+                if (name.length() > 20)
+                    name = name.substring(0, 20) + "..";
+                link.add(new Label("filterValue", name));
+                link.add(new AttributeAppender("title", true, new Model(h.displayName), " "));
                 li.add(new Label("filterCount", " (" + h.count + ")"));
                 li.add(link);
 
@@ -109,7 +116,6 @@ public class SavedSearchPanel extends Panel {
 //        super.onBeforeRender();
 //        updateSSCounts(null);
 //    }
-
     public void updateSSCounts(AjaxRequestTarget target) {
     }
 
