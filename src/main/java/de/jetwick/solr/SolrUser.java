@@ -35,7 +35,7 @@ public class SolrUser extends YUser {
     private Map<Long, SavedSearch> savedSearches = new LinkedHashMap<Long, SavedSearch>();
 
     /**
-     * You'll need to call init after this
+     * You'll need to call setTwitter4JInstance after this
      */
     public SolrUser(String name) {
         super(name);

@@ -82,8 +82,9 @@ public class Util {
         Module module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
         Provider<RMIClient> rmiProvider = injector.getProvider(RMIClient.class);
+        Configuration cfg = injector.getInstance(Configuration.class);
         TwitterSearch twSearch = injector.getInstance(TwitterSearch.class);
-        twSearch.init();
+        twSearch.setTwitter4JInstance(cfg.getTwitterSearchCredits().getToken(), cfg.getTwitterSearchCredits().getTokenSecret());
         SolrTweetSearch fromUserSearch = new SolrTweetSearch(injector.getInstance(Configuration.class));
         SolrQuery query = new SolrQuery().addFilterQuery(SolrTweetSearch.UPDATE_DT + ":[* TO *]");
         query.setFacet(true).addFacetField("user").setFacetLimit(2000).setRows(0).setFacetSort("count");

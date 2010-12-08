@@ -24,6 +24,7 @@ import org.apache.wicket.protocol.http.WebApplication;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import org.apache.wicket.Application;
@@ -39,7 +40,11 @@ public class JetwickApp extends WebApplication {
     private Injector injector;
 
     public JetwickApp() {
-        injector = Guice.createInjector(new DefaultModule());
+        this(new DefaultModule());
+    }
+
+    public JetwickApp(Module mod) {
+        injector = Guice.createInjector(mod);
         cfg = injector.getInstance(Configuration.class);
     }
 

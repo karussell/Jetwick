@@ -17,6 +17,7 @@ package de.jetwick.tw;
 
 import com.google.inject.Inject;
 import de.jetwick.JetwickTestClass;
+import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
@@ -48,7 +49,8 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        twitterSearch.init();
+        Credits c = new Configuration().getTwitterSearchCredits();
+        twitterSearch.setTwitter4JInstance(c.getToken(), c.getTokenSecret());
     }
 
     @Override

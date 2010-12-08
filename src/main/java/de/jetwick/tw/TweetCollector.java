@@ -86,9 +86,9 @@ public class TweetCollector {
 
         Module module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
-        TwitterSearch tws = injector.getInstance(TwitterSearch.class);
-        tws.init();
+        TwitterSearch tws = injector.getInstance(TwitterSearch.class);        
         Configuration cfg = injector.getInstance(Configuration.class);
+        tws.setTwitter4JInstance(cfg.getTwitterSearchCredits().getToken(), cfg.getTwitterSearchCredits().getTokenSecret());
 
         // add at least the default tags      
         WorkManager manager = injector.getInstance(WorkManager.class);

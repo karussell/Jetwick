@@ -43,10 +43,10 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -55,6 +55,7 @@ import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
+import twitter4j.http.AccessToken;
 
 /**
  * TODO clean up this bloated class
@@ -105,14 +106,14 @@ public class HomePage extends WebPage {
 
     public HomePage(final PageParameters parameters) {
         initTwitter4j();
-        getMySession().init((WebRequest) getRequest(), uindexProvider.get());
         String callback = parameters.getString("callback");
         if ("true".equals(callback)) {
             try {
-                TwitterSearch tmp = CallbackHelper.getParseTwitterUrl(getTwitterSearch(), parameters);
-                getMySession().setTwitterSearch(tmp, uindexProvider.get(), (WebResponse) getResponse());
+                logger.info("Received callback");
+                AccessToken token = CallbackHelper.getParseTwitterUrl(getTwitterSearch(), parameters);
+                getMySession().setTwitterSearch(token, uindexProvider.get(), (WebResponse) getResponse());
             } catch (Exception ex) {
-                logger.error("Error while parsing url from twitter", ex);
+                logger.error("Error while receiving callback", ex);
                 String msg = TwitterSearch.getMessage(ex);
                 if (msg.length() > 0)
                     error(msg);
@@ -350,12 +351,15 @@ public class HomePage extends WebPage {
             @Override
             public void updateSSCounts(AjaxRequestTarget target) {
                 try {
-                    SolrQuery query = new SolrQuery().setFacet(true).setRows(0);
-                    TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
-                    update(getTweetSearch().search(query));
-                    if (target != null)
-                        target.addComponent(ssPanel);
-                    logger.info("Updated saved search counts!");
+                    SolrUser user = getMySession().getUser();
+                    if (user != null) {
+                        SolrQuery query = new SolrQuery().setFacet(true).setRows(0);
+                        TweetQuery.updateSavedSearchFacets(query, user.getSavedSearches());
+                        update(getTweetSearch().search(query));
+                        if (target != null)
+                            target.addComponent(ssPanel);
+                        logger.info("Updated saved search counts for " + user.getScreenName());
+                    }
                 } catch (Exception ex) {
                     logger.error("Error while searching in savedSearches", ex);
                 }
@@ -412,7 +416,7 @@ public class HomePage extends WebPage {
         } else {
             ssPanel.setVisible(false);
             try {
-                AjaxLink loginLink = CallbackHelper.createLink("loginLink", this);
+                Link loginLink = CallbackHelper.createLink("loginLink", this);
                 add(loginLink);
             } catch (Exception ex) {
                 logger.error("Couldn't add loginLink", ex);

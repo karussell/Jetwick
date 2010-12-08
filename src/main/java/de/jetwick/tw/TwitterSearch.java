@@ -66,31 +66,42 @@ public class TwitterSearch implements Serializable {
     public final static int LIMIT = 50;
     private Twitter twitter;
     protected Logger logger = LoggerFactory.getLogger(TwitterSearch.class);
-    private Credits credits;
+    private String consumerKey;
+    private String consumerSecret;
 
     public TwitterSearch() {
     }
 
-    public TwitterSearch setCredits(Credits credits) {
-        this.credits = credits;
+    public TwitterSearch setConsumer(String consumerKey, String consumerSecrect) {
+        this.consumerKey = consumerKey;
+        this.consumerSecret = consumerSecrect;
         return this;
     }
 
-    public Credits getCredits() {
-        return credits;
+    public String getConsumerKey() {
+        return consumerKey;
     }
 
-    public boolean init() {
-        if (twitter == null) {
-            if (credits == null)
-                throw new NullPointerException("Please use 'Credits' constructor!");
+    public String getConsumerSecret() {
+        return consumerKey;
+    }
 
-            logger.info("create new TwitterSearch");
-            twitter = createTwitter(credits.getToken(), credits.getTokenSecret());
-            return true;
-        }
+    public TwitterSearch setTwitter4JInstance(String token, String tokenSecret) {
+        if (consumerKey == null)
+            throw new NullPointerException("Please use init consumer settings!");
 
-        return false;
+        twitter = createTwitter(token, tokenSecret);
+        logger.info("create new TwitterSearch");
+        return this;
+    }
+
+    public TwitterSearch setTwitter4JInstance(Twitter tw) {
+        twitter = tw;
+        return this;
+    }
+
+    public Twitter getTwitter4JInstance() {
+        return twitter;
     }
 
     public void setup() {
@@ -110,7 +121,7 @@ public class TwitterSearch implements Serializable {
         AccessToken aToken = new AccessToken(token, tokenSecret);
         // get this from your application details side !
         Twitter t = new TwitterFactory().getOAuthAuthorizedInstance(
-                credits.getConsumerKey(), credits.getConsumerSecret(), aToken);
+                consumerKey, consumerSecret, aToken);
         try {
 //            RequestToken requestToken = t.getOAuthRequestToken();
 //            System.out.println("TW-URL:" + requestToken.getAuthorizationURL());
@@ -132,7 +143,7 @@ public class TwitterSearch implements Serializable {
      * @return the url where the user should be redirected to
      */
     public String oAuthLogin(String callbackUrl) throws Exception {
-        twitter = new TwitterFactory().getOAuthAuthorizedInstance(credits.getConsumerKey(), credits.getConsumerSecret());
+        twitter = new TwitterFactory().getOAuthAuthorizedInstance(consumerKey, consumerSecret);
         tmpRequestToken = twitter.getOAuthRequestToken(callbackUrl);
         return tmpRequestToken.getAuthenticationURL();
     }
@@ -141,18 +152,22 @@ public class TwitterSearch implements Serializable {
      * grab oauth_verifier from request of callback site
      * @return screenname or null
      */
-    public String oAuthOnCallBack(String oauth_verifierParameter) throws TwitterException {
+    public AccessToken oAuthOnCallBack(String oauth_verifierParameter) throws TwitterException {
         if (tmpRequestToken == null)
             throw new IllegalStateException("RequestToken is empty. Call testOAuth before!");
 
         AccessToken aToken = twitter.getOAuthAccessToken(tmpRequestToken, oauth_verifierParameter);
         twitter.verifyCredentials();
         tmpRequestToken = null;
-        return aToken.getScreenName();
+        return aToken;
     }
 
     public SolrUser getUser() throws TwitterException {
-        SolrUser user = new SolrUser(twitter.getScreenName());
+        return getUser(twitter.getScreenName());
+    }
+
+    public SolrUser getUser(String screenName) throws TwitterException {
+        SolrUser user = new SolrUser(screenName);
         updateUserInfo(Arrays.asList(user));
         return user;
     }

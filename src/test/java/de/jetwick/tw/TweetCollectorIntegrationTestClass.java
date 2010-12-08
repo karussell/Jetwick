@@ -85,6 +85,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));
         tweetSearch.commit();
 
+        Credits cred = new Configuration().getTwitterSearchCredits();
         TwitterSearch tws = new TwitterSearch() {
 
             @Override
@@ -111,8 +112,9 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
             public List<SolrTweet> getTweets(SolrUser user, Collection<SolrUser> users, int twPerPage) {
                 return Collections.EMPTY_LIST;
             }
-        }.setCredits(new Configuration().getTwitterSearchCredits());
-
+        }.setConsumer(cred.getConsumerKey(), cred.getConsumerSecret());
+        tws.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
+        
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
         tweetProducer.setUncaughtExceptionHandler(handler);
         tweetProducer.setMaxTime(1);

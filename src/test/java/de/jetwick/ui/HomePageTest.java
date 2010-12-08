@@ -166,8 +166,8 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public boolean init() {
-                return true;
+            public TwitterSearch setTwitter4JInstance(String token, String tokenSec) {
+                return this;
             }
 
             @Override
@@ -193,7 +193,7 @@ public class HomePageTest extends WicketPagesTestClass {
                 uString = "#" + user.getScreenName();
                 return returnUserTweets;
             }
-        }.setCredits(new Credits());
+        };
     }
 
     @Override

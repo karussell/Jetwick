@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.data.YUser;
 import de.jetwick.tw.TwitterSearch;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
+import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.protocol.http.RequestUtils;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
+import twitter4j.http.AccessToken;
 
 /**
  *
@@ -35,19 +36,18 @@ public class CallbackHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(CallbackHelper.class);
 
-    public static TwitterSearch getParseTwitterUrl(TwitterSearch twitterSearch,
+    public static AccessToken getParseTwitterUrl(TwitterSearch twitterSearch,
             final PageParameters parameters) throws TwitterException {
         String oAuthVerifier = parameters.getString("oauth_verifier");
 
         if (oAuthVerifier == null)
             throw new IllegalArgumentException("parameter oauth_verifier was null");
 
-        twitterSearch.oAuthOnCallBack(oAuthVerifier);
-        return twitterSearch;
+        return twitterSearch.oAuthOnCallBack(oAuthVerifier);
     }
 
-    public static AjaxLink createLink(String id, final HomePage page) {
-        return new AjaxLink(id) {
+    public static AjaxFallbackLink createLink(String id, final HomePage page) {
+        return new IndicatingAjaxFallbackLink(id) {
 
             @Override
             public void onClick(AjaxRequestTarget target) {

@@ -20,7 +20,6 @@ import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.TwitterSearch;
 import javax.servlet.http.Cookie;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.wicket.Request;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
@@ -29,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
 import twitter4j.User;
+import twitter4j.http.AccessToken;
 
 /**
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
@@ -41,7 +41,6 @@ public class MySession extends WebSession {
     private boolean useDefaultUser = false;
     private SolrUser user = null;
     private boolean twitterSearchInitialized = false;
-    private Cookie cookie;
 
     public MySession(Request request, boolean useDefaultUser) {
         super(request);
@@ -61,23 +60,22 @@ public class MySession extends WebSession {
         return twitterSearch;
     }
 
+    public void setTwitterSearch(TwitterSearch twitterSearch) {
+        this.twitterSearch = twitterSearch;
+    }
+
     public void init(WebRequest request, SolrUserSearch uSearch) {
         if (!twitterSearchInitialized) {
             twitterSearchInitialized = true;
-            cookie = request.getCookie(TwitterSearch.COOKIE);
+            Cookie cookie = request.getCookie(TwitterSearch.COOKIE);
             if (cookie != null) {
                 setUser(uSearch.findByTwitterToken(cookie.getValue()));
-                if (user != null) {
+                if (user != null)
                     logger.info("Found cookie for user:" + getUser().getScreenName());
-                    twitterSearch.getCredits().setToken(getUser().getTwitterToken());
-                    twitterSearch.getCredits().setTokenSecret(getUser().getTwitterTokenSecret());
-                }
             } else
-                logger.info("No cookie");
+                logger.info("No cookie found");
 
-            logger.info("twitter4j initialized for session");
-            // twitterSearch.init() is expensive so call it only once per session
-            if (twitterSearch.init() && useDefaultUser) {
+            if (useDefaultUser) {
                 try {
                     setUser(twitterSearch.getUser());
                 } catch (TwitterException ex) {
@@ -103,27 +101,33 @@ public class MySession extends WebSession {
     /**
      * Use only if specified ts is already initialized
      */
-    public Cookie setTwitterSearch(TwitterSearch ts, SolrUserSearch uSearch, WebResponse response) {
+    public Cookie setTwitterSearch(AccessToken token, SolrUserSearch uSearch, WebResponse response) {
+        twitterSearch.setTwitter4JInstance(token.getToken(), token.getTokenSecret());
         twitterSearchInitialized = true;
-        twitterSearch = ts;
         try {
-            String token = getTwitterSearch().getCredits().getToken();
-            cookie = new Cookie(TwitterSearch.COOKIE, token);
+            //TODO remove this:
+            logger.info("TOKEN:" + token);
+
+            Cookie cookie = new Cookie(TwitterSearch.COOKIE, token.getToken());
             // TODO use https
             //cookie.setSecure(true);
-            cookie.setComment("Supply autologin for jetwick");
-            // two weeks
-            cookie.setMaxAge(2 * 7 * 24 * 60 * 60);
+            cookie.setComment("Supply autologin for jetwick.com");
+            // four weeks
+            cookie.setMaxAge(4 * 7 * 24 * 60 * 60);
             response.addCookie(cookie);
 
             // get current infos
-            User twitterUser = getTwitterSearch().getTwitterUser();
+            User twitterUser = twitterSearch.getTwitterUser();
             if (twitterUser == null)
                 throw new IllegalStateException("user from twitterSearch cannot be null");
 
+            logger.info("new twitter4j initialized for user:" + twitterUser.getScreenName());
+
             // get current saved searches and update with current twitter infos
-            SolrUser tmpUser = uSearch.findByTwitterToken(token);
+            SolrUser tmpUser = uSearch.findByTwitterToken(token.getToken());
             if (tmpUser == null) {
+                logger.info("token for " + twitterUser.getScreenName() + " not found in user index");
+                // token will be removed on logout so get saved searches from uindex
                 tmpUser = uSearch.findByScreenName(twitterUser.getScreenName());
                 if (tmpUser == null) {
                     logger.info("user " + twitterUser.getScreenName() + " not found in user index");
@@ -132,8 +136,8 @@ public class MySession extends WebSession {
             }
 
             tmpUser.updateFieldsBy(twitterUser);
-            tmpUser.setTwitterToken(token);
-            tmpUser.setTwitterTokenSecret(getTwitterSearch().getCredits().getTokenSecret());
+            tmpUser.setTwitterToken(token.getToken());
+            tmpUser.setTwitterTokenSecret(token.getTokenSecret());
 
             // save user into user index
             uSearch.save(tmpUser, true);
@@ -141,7 +145,7 @@ public class MySession extends WebSession {
             // save user into session
             setUser(tmpUser);
 
-            logger.info("[stats] user login:" + twitterUser.getScreenName());
+            logger.info("[stats] user login:" + twitterUser.getScreenName() + " " + tmpUser.getScreenName());
             return cookie;
         } catch (TwitterException ex) {
             logger.error("Couldn't change twitterSearch user" + ex.getMessage());
@@ -150,8 +154,7 @@ public class MySession extends WebSession {
     }
 
     public void logout(SolrUserSearch uSearch, WebResponse response) {
-        if (cookie != null)
-            response.clearCookie(cookie);
+        response.clearCookie(new Cookie(TwitterSearch.COOKIE, ""));
 
         SolrUser tmpUser = getUser();
         if (tmpUser != null) {

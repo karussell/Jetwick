@@ -54,7 +54,7 @@ public class FacetPanel extends Panel {
     private List<Entry<String, List<FacetHelper>>> normalFacetFields = new ArrayList<Entry<String, List<FacetHelper>>>();
     private ListView tagView;
     private String dtKey = "dt";
-    private String langKey = "lang";    
+    private String langKey = "lang";
 
     public FacetPanel(String id) {
         super(id);
@@ -68,14 +68,14 @@ public class FacetPanel extends Panel {
         tr.put(IS_RT + ":true", "retweet");
         tr.put(IS_RT + ":false", "original");
 
-        tr.put("url_i", "Links");
+        tr.put(URL_COUNT, "Links");
         tr.put(FILTER_URL_ENTRY, "with links");
         tr.put(FILTER_NO_URL_ENTRY, "without links");
 
         tr.put(RT_COUNT, "Retweets");
-        tr.put(RT_COUNT + ":0", "no retweets");
-        tr.put(RT_COUNT + ":[1 TO 10]", "few retweets");
-        tr.put(RT_COUNT + ":[11 TO *]", "many retweets");
+        tr.put(RT_COUNT + ":[5 TO *]", "5 and more");
+        tr.put(RT_COUNT + ":[20 TO *]", "20 and more");
+        tr.put(RT_COUNT + ":[50 TO *]", "50 and more");
 
         tr.put(QUALITY, "Spam");
         tr.put(FILTER_NO_SPAM, "No Spam");
@@ -221,13 +221,15 @@ public class FacetPanel extends Panel {
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
     public List<Entry<String, List<FacetHelper>>> createFacetsFields(QueryResponse rsp) {
-        final int MAX_VAL = 4;
+        final int MAX_VAL = 5;
         Map<String, Integer> filterToIndex = new LinkedHashMap<String, Integer>() {
 
-            {                
-                put(IS_RT, 2);
+            {
                 put(langKey, 1);
-                put(QUALITY, 3);
+                put(RT_COUNT, 2);
+                put(URL_COUNT, 3);
+                put(IS_RT, 4);
+                put(QUALITY, 5);
             }
         };
         List<Entry<String, List<FacetHelper>>> ret = new ArrayList<Entry<String, List<FacetHelper>>>();

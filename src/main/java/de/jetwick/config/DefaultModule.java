@@ -16,10 +16,12 @@
 package de.jetwick.config;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provider;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUserSearch;
+import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +71,19 @@ public class DefaultModule extends AbstractModule {
     }
 
     public void installTwitterModule() {
-        bind(TwitterSearch.class).toInstance(new TwitterSearch().setCredits(config.getTwitterSearchCredits()));
+        final Credits cred = config.getTwitterSearchCredits();
+        final TwitterSearch ts = new TwitterSearch().setConsumer(
+                cred.getConsumerKey(), cred.getConsumerSecret());
+        ts.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
+
+        bind(TwitterSearch.class).toProvider(new Provider<TwitterSearch>() {
+
+            @Override
+            public TwitterSearch get() {
+                return new TwitterSearch().setConsumer(
+                        cred.getConsumerKey(), cred.getConsumerSecret()).
+                        setTwitter4JInstance(ts.getTwitter4JInstance());
+            }
+        });
     }
 }

@@ -71,7 +71,7 @@ body, p {
     display: inline;
 }
 .external-refs {     
-    padding: 0px 20px 0px 0px;
+    padding: 0px 20px 7px 0px;
     margin: 0px;
     font-size: 0.8em;
 }
@@ -154,11 +154,11 @@ body, p {
 .yourkitlogo { clear: both; }
 
 .searchform {        
-    padding-top: 128px;
+    padding-top: 130px;
     padding-bottom: 2px;
     background-image: url("../img/jetwick.png");
     background-repeat: no-repeat;
-    background-position: -20px 28px;
+    background-position: -15px 38px;
 }
 
 .searchboxhints {
@@ -176,9 +176,9 @@ body, p {
 .subtitle {
     font-style: italic;
     font-size: 0.9em;
-    padding-left: 60px;
-    padding-bottom: 20px;
-    margin-top: -43px;
+    padding-left: 65px;
+    padding-bottom: 8px;
+    margin-top: -37px;
 }
 
 div.wicket-aa {
@@ -276,7 +276,7 @@ url("../img/bottom-line.png")
 .filter {
     width: 145px;
     margin-top: 0px;
-    padding: 10px 15px 0px 10px;
+    padding: 0px 15px 0px 10px;
 }
 
 .filterNames ul li {
@@ -294,6 +294,13 @@ url("../img/bottom-line.png")
     color: gray;
 }
 
+.saved-searches {
+    padding-top: 8px;
+}
+.saved-searches .filterNames {
+    padding-bottom: 0px;
+    padding-left: 5px;
+}
 .querymessage {
     float: left;
     padding-left: 0px;

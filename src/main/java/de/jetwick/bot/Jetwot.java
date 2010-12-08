@@ -30,29 +30,12 @@ public class Jetwot {
     public static void main(String[] args) {
         new Jetwot().start();
     }
-
-    public TwitterSearch createJetwot() {
+    
+    public void start() {
         Configuration cfg = new Configuration();
         Credits credits = cfg.getJetwotCredits();
-        
-//        AccessToken aToken = new AccessToken(credits.getToken(), credits.getTokenSecret());
-//        Twitter tw = new TwitterFactory().getOAuthAuthorizedInstance(
-//                credits.getConsumerKey(), credits.getConsumerSecret(), aToken);
-//        try {
-//            tw.verifyCredentials();
-//        } catch (TwitterException ex) {
-//            throw new RuntimeException(ex);
-//        }
-
-        // the bot can be feeded through @jetwot java => q=java
-        // answer of jetwot: @xy thanks! I will try to find trends for 'java'
-        // restriction: one user per day = one query
-        return new TwitterSearch().setCredits(credits);
-    }
-
-    public void start() {
-        TwitterSearch tw = createJetwot();
-        tw.init();
+        TwitterSearch tw =  new TwitterSearch().setConsumer(credits.getConsumerKey(), credits.getConsumerSecret());
+        tw.setTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
         while (true) {
             // every 15 minutes check for new trending url. put title + url into cache
             // or even better facet over dt (every 20 minutes) and pick up the docs!

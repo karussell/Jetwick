@@ -27,7 +27,6 @@ import de.jetwick.solr.SolrTweetSearchTest;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.solr.SolrUserSearchTest;
-import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
@@ -52,7 +51,7 @@ public class WicketPagesTestClass {
     }
 
     protected JetwickApp createJetwickApp() {
-        injector = Guice.createInjector(new DefaultModule() {
+        DefaultModule mod = new DefaultModule() {
 
             @Override
             public void installTwitterModule() {
@@ -96,8 +95,9 @@ public class WicketPagesTestClass {
             public void installRMIModule() {
                 bind(RMIClient.class).toInstance(createRMIClient());
             }
-        });
-        return new JetwickApp() {
+        };
+        injector = Guice.createInjector(mod);
+        return new JetwickApp(mod) {
 
             @Override
             public String getConfigurationType() {
@@ -120,15 +120,15 @@ public class WicketPagesTestClass {
             }
 
             @Override
-            public boolean init() {
-                return true;
+            public TwitterSearch setTwitter4JInstance(String t, String ts) {
+                return this;
             }
 
             @Override
             public SolrUser getUser() throws TwitterException {
                 return new SolrUser("testUser");
             }
-        }.setCredits(new Credits());
+        }.setConsumer("", "");
     }
 
     protected RMIClient createRMIClient() {

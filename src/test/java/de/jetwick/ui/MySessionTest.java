@@ -17,22 +17,16 @@ package de.jetwick.ui;
 
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
-import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
-import java.net.URL;
-import java.util.Date;
 import javax.servlet.http.Cookie;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import twitter4j.RateLimitStatus;
-import twitter4j.Status;
 import twitter4j.TwitterException;
-import twitter4j.User;
+import twitter4j.http.AccessToken;
 
 /**
  *
@@ -101,14 +95,15 @@ public class MySessionTest extends WicketPagesTestClass {
         session.setUseDefaultUser(false);
 
         TwitterSearch ts = mock(TwitterSearch.class);
-        when(ts.init()).thenReturn(true);
-        when(ts.getCredits()).thenReturn(new Credits("normalToken", "tSec", "x", "y"));
+        when(ts.setTwitter4JInstance("normalToken", "tSec")).thenReturn(ts);
+        //when(ts.getCredits()).thenReturn(new Credits("normalToken", "tSec", "x", "y"));
         when(ts.getTwitterUser()).thenReturn(new Twitter4JUser("testuser"));
 
         WebResponse resp = mock(WebResponse.class);
         SolrUser user = new SolrUser("testuser");
         SolrUserSearch uSearch = newMockUserSearch(user);
-        Cookie cookie = session.setTwitterSearch(ts, uSearch, resp);
+        session.setTwitterSearch(ts);
+        Cookie cookie = session.setTwitterSearch(new AccessToken("normalToken", "tSec"), uSearch, resp);
         verify(uSearch).save(user, true);
         assertEquals(TwitterSearch.COOKIE, cookie.getName());
         assertEquals("normalToken", cookie.getValue());
@@ -116,6 +111,6 @@ public class MySessionTest extends WicketPagesTestClass {
         uSearch = newMockUserSearch(user);
         session.logout(uSearch, resp);
         verify(uSearch).save(user, true);
-        verify(resp).clearCookie(cookie);
+        //verify(resp).clearCookie(new Cookie(TwitterSearch.COOKIE, ""));
     }
 }
