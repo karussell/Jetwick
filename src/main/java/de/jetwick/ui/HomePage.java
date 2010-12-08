@@ -225,7 +225,6 @@ public class HomePage extends WebPage {
     public void updateAfterAjax(AjaxRequestTarget target, boolean updateSearchBox) {
         if (target != null) {
             target.addComponent(facetPanel);
-            target.addComponent(ssPanel);
             target.addComponent(resultsPanel);
             //already in resultsPanel target.addComponent(lazyLoadAdPanel);
 
@@ -311,6 +310,7 @@ public class HomePage extends WebPage {
             }
         };
         add(urlTrends.setOutputMarkupId(true));
+
         ssPanel = new SavedSearchPanel("savedSearches") {
 
             @Override
@@ -321,32 +321,44 @@ public class HomePage extends WebPage {
                     doSearch(ss.getQuery(user.getSavedSearches()), 0, true);
                     uindexProvider.get().save(user, true);
                 }
-
+                updateSSCounts(target);
                 updateAfterAjax(target, true);
             }
 
-            @Override
-            public void onRefresh(AjaxRequestTarget target) {
-                doSearch(createQuery(new PageParameters()), 0, false);
-                updateAfterAjax(target, true);
-            }
-
+//            @Override
+//            public void onRefresh(AjaxRequestTarget target) {
+//                doSearch(createQuery(new PageParameters()), 0, false);
+//                updateAfterAjax(target, true);
+//            }
             @Override
             public void onRemove(AjaxRequestTarget target, long ssId) {
                 SolrUser user = getMySession().getUser();
                 user.removeSavedSearch(ssId);
                 uindexProvider.get().save(user, true);
-                doOldSearch(page);
-                updateAfterAjax(target, false);
+                updateSSCounts(target);
             }
 
             @Override
             public void onSave(AjaxRequestTarget target) {
                 SolrUser user = getMySession().getUser();
-                user.addSavedSearch(new SavedSearch(new Date().getTime(), lastQuery));
+                SavedSearch ss = new SavedSearch(new Date().getTime(), lastQuery);
+                user.addSavedSearch(ss);
                 uindexProvider.get().save(user, true);
-                doOldSearch(page);
-                updateAfterAjax(target, false);
+                updateSSCounts(target);
+            }
+
+            @Override
+            public void updateSSCounts(AjaxRequestTarget target) {
+                try {
+                    SolrQuery query = new SolrQuery().setFacet(true).setRows(0);
+                    TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
+                    update(getTweetSearch().search(query));
+                    if (target != null)
+                        target.addComponent(ssPanel);
+                    logger.info("Updated saved search counts!");
+                } catch (Exception ex) {
+                    logger.error("Error while searching in savedSearches", ex);
+                }
             }
 
             @Override
@@ -366,6 +378,7 @@ public class HomePage extends WebPage {
                 return super.translate(str);
             }
         };
+        ssPanel.updateSSCounts(null);
         add(ssPanel.setOutputMarkupId(true));
 
         if (getMySession().hasLoggedIn()) {
@@ -729,7 +742,6 @@ public class HomePage extends WebPage {
             tweetThread = null;
 
         facetPanel.update(rsp, query);
-        ssPanel.update(rsp, query);
         tagCloud.update(rsp, query);
         urlTrends.update(rsp, query);
 

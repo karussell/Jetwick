@@ -19,14 +19,12 @@ import de.jetwick.ui.util.FacetHelper;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.markup.html.basic.Label;
@@ -34,6 +32,7 @@ import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.util.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,14 +60,6 @@ public class SavedSearchPanel extends Panel {
             }
         };
         add(saveSearch);
-        Link refreshLink = new AjaxFallbackLink("refreshLink") {
-
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                SavedSearchPanel.this.onRefresh(target);
-            }
-        };
-        add(refreshLink);
         savedSearchesView = new ListView("filterValues", savedSearches) {
 
             @Override
@@ -102,8 +93,24 @@ public class SavedSearchPanel extends Panel {
                 li.add(removeLink);
             }
         };
-
         add(savedSearchesView);
+
+        add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(60)) {
+
+            @Override
+            protected void onPostProcessTarget(AjaxRequestTarget target) {
+                updateSSCounts(target);
+            }
+        });
+    }
+
+//    @Override
+//    protected void onBeforeRender() {
+//        super.onBeforeRender();
+//        updateSSCounts(null);
+//    }
+
+    public void updateSSCounts(AjaxRequestTarget target) {
     }
 
     public String getFilterName(String name) {
@@ -111,7 +118,7 @@ public class SavedSearchPanel extends Panel {
         return name;
     }
 
-    public void update(QueryResponse rsp, SolrQuery query) {
+    public void update(QueryResponse rsp) {
         savedSearches.clear();
         if (rsp != null) {
             for (FacetHelper helper : createFacetsFields(rsp)) {
@@ -119,26 +126,6 @@ public class SavedSearchPanel extends Panel {
                     savedSearches.add(helper);
             }
         }
-    }
-
-    public void onClick(AjaxRequestTarget target, long ssId) {
-    }
-
-    public void onSave(AjaxRequestTarget target) {
-    }
-
-    public void onRefresh(AjaxRequestTarget target) {
-    }
-
-    public void onRemove(AjaxRequestTarget target, long ssId) {
-    }
-
-    public String translate(String str) {
-        String val = tr.get(str);
-        if (val == null)
-            return str;
-
-        return val;
     }
 
     /**
@@ -171,5 +158,24 @@ public class SavedSearchPanel extends Panel {
                 }
         }
         return list;
+    }
+
+    public void onClick(AjaxRequestTarget target, long ssId) {
+    }
+
+    public void onSave(AjaxRequestTarget target) {
+    }
+
+//    public void onRefresh(AjaxRequestTarget target) {
+//    }
+    public void onRemove(AjaxRequestTarget target, long ssId) {
+    }
+
+    public String translate(String str) {
+        String val = tr.get(str);
+        if (val == null)
+            return str;
+
+        return val;
     }
 }

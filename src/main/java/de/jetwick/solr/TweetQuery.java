@@ -85,14 +85,16 @@ public class TweetQuery extends JetwickQuery {
 
     public static SolrQuery updateSavedSearchFacets(SolrQuery q, Collection<SavedSearch> sss) {
         String[] facQ = q.getFacetQuery();
-        if(facQ != null)
-        for(String str : facQ) {
-            if(SavedSearch.isSavedSearch(str))
-                q.removeFacetQuery(str);
-        }
-        for (SavedSearch ss : sss) {
-            q.addFacetQuery(ss.calcFacetQuery());
-        }
+        if (facQ != null)
+            for (String str : facQ) {
+                if (SavedSearch.isSavedSearch(str))
+                    q.removeFacetQuery(str);
+            }
+
+        if (sss != null)
+            for (SavedSearch ss : sss) {
+                q.addFacetQuery(ss.calcFacetQuery());
+            }
         return q;
     }
 
