@@ -86,7 +86,7 @@ public class SolrAdSearch extends SolrAbstractSearch {
         List<AdEntry> res = new ArrayList<AdEntry>();
 
         if (!q.isEmpty())
-            search(res, new SolrQuery(q).setRows(2));
+            search(res, new SolrQuery(q).setRows(1));
         return res;
     }
 
