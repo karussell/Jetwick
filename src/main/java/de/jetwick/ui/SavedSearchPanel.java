@@ -62,6 +62,21 @@ public class SavedSearchPanel extends Panel {
             }
         };
         add(saveSearch);
+
+        AjaxFallbackLink link = new AjaxFallbackLink("saveInfo") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                SavedSearchPanel.this.onSave(target);
+            }
+
+            @Override
+            public boolean isVisible() {
+                return savedSearches.size() == 0;
+            }
+        };
+        add(link);
+
         savedSearchesView = new ListView("filterValues", savedSearches) {
 
             @Override
@@ -111,29 +126,6 @@ public class SavedSearchPanel extends Panel {
         });
     }
 
-//    @Override
-//    protected void onBeforeRender() {
-//        super.onBeforeRender();
-//        updateSSCounts(null);
-//    }
-    public void updateSSCounts(AjaxRequestTarget target) {
-    }
-
-    public String getFilterName(String name) {
-        // TODO return ss.getName();
-        return name;
-    }
-
-    public void update(QueryResponse rsp) {
-        savedSearches.clear();
-        if (rsp != null) {
-            for (FacetHelper helper : createFacetsFields(rsp)) {
-                if (helper != null)
-                    savedSearches.add(helper);
-            }
-        }
-    }
-
     /**
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
@@ -166,14 +158,25 @@ public class SavedSearchPanel extends Panel {
         return list;
     }
 
+    public void updateSSCounts(AjaxRequestTarget target) {
+    }
+
+    public void update(QueryResponse rsp) {
+        savedSearches.clear();
+        if (rsp != null) {
+            for (FacetHelper helper : createFacetsFields(rsp)) {
+                if (helper != null)
+                    savedSearches.add(helper);
+            }
+        }
+    }
+
     public void onClick(AjaxRequestTarget target, long ssId) {
     }
 
     public void onSave(AjaxRequestTarget target) {
     }
 
-//    public void onRefresh(AjaxRequestTarget target) {
-//    }
     public void onRemove(AjaxRequestTarget target, long ssId) {
     }
 

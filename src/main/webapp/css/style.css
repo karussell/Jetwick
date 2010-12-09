@@ -301,6 +301,15 @@ url("../img/bottom-line.png")
     padding-bottom: 0px;
     padding-left: 5px;
 }
+
+.saveInfo {
+    background-color: #ffffd6;
+    padding-left: 5px;
+}
+.saveInfo a {
+    font-size: 0.8em;
+    color: black;
+}
 .querymessage {
     float: left;
     padding-left: 0px;

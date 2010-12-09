@@ -326,11 +326,6 @@ public class HomePage extends WebPage {
                 updateAfterAjax(target, true);
             }
 
-//            @Override
-//            public void onRefresh(AjaxRequestTarget target) {
-//                doSearch(createQuery(new PageParameters()), 0, false);
-//                updateAfterAjax(target, true);
-//            }
             @Override
             public void onRemove(AjaxRequestTarget target, long ssId) {
                 SolrUser user = getMySession().getUser();

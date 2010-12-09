@@ -150,7 +150,6 @@ public class SolrUserSearch extends SolrAbstractSearch {
 
         int counter = 1;
         for (SavedSearch ss : user.getSavedSearches()) {
-            doc.addField("ss_" + counter + "_name_s", ss.getName());
             doc.addField("ss_" + counter + "_query_s", ss.getCleanQuery().toString());
             doc.addField("ss_" + counter + "_last_dt", ss.getLastQueryDate());
 
@@ -199,14 +198,12 @@ public class SolrUserSearch extends SolrAbstractSearch {
 
         long counter = 1;
         while (true) {
-            String name = (String) doc.getFieldValue("ss_" + counter + "_name_s");
-            if (name == null)
+            String qString = (String) doc.getFieldValue("ss_" + counter + "_query_s");
+            if (qString == null)
                 break;
 
-            String qString = (String) doc.getFieldValue("ss_" + counter + "_query_s");
             SolrQuery q = JetwickQuery.parse(qString);
-            SavedSearch ss = new SavedSearch(counter, q);
-            ss.setName(name);
+            SavedSearch ss = new SavedSearch(counter, q);            
             ss.setLastQueryDate((Date) doc.getFieldValue("ss_" + counter + "_last_dt"));
             user.addSavedSearch(ss);
 
