@@ -303,4 +303,22 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
         langs.put("de", 4);
         assertEquals(2, SolrUserSearch.filterLanguages(langs).size());
     }
+
+    @Test
+    public void testGetQueryTerms() throws Exception {
+        SolrUser user = new SolrUser("karsten");
+        user.addSavedSearch(new SavedSearch(1, new SolrQuery("peter test")));
+        user.addSavedSearch(new SavedSearch(2, new SolrQuery("peter tester")));
+        userSearch.save(user, false);
+        user = new SolrUser("peter");
+        user.addSavedSearch(new SavedSearch(1, new SolrQuery("peter test")));
+        user.addSavedSearch(new SavedSearch(2, new SolrQuery("karsten tester")));
+        userSearch.save(user, true);
+
+        Collection<String> coll = userSearch.getQueryTerms();
+        assertEquals(3, coll.size());
+        assertTrue(coll.contains("peter test"));
+        assertTrue(coll.contains("peter tester"));
+        assertTrue(coll.contains("karsten tester"));
+    }
 }

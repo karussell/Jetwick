@@ -361,7 +361,10 @@ public class TwitterSearch implements Serializable {
 
         boolean breakPaging = false;
         for (int page = 0; page < maxPages; page++) {
-            Query query = createQuery(term);
+            Query query = new Query(term);
+            // RECENT or POPULAR
+            query.setResultType(Query.MIXED);
+
             // avoid that more recent results disturb our paging!
             if (page > 0)
                 query.setMaxId(maxId);

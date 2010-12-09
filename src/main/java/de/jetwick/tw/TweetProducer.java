@@ -21,17 +21,22 @@ import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.Helper;
 import de.jetwick.util.StopWatch;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +58,7 @@ public class TweetProducer extends MyThread {
     private BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
     private TwitterSearch twSearch;
+    private SolrUserSearch userSearch;
     private int maxTime = -1;
     @Inject
     private WorkManager manager;
@@ -98,15 +104,6 @@ public class TweetProducer extends MyThread {
                     }
 
                     findNewTagsTime = System.currentTimeMillis();
-
-//                    Collection<String> trends = twSearch.getTrends();
-                    // sometimes add trends (not too often to avoid too much noise)
-//                    if (addTrends && rand.nextInt(4) < 3) {
-//                        logger.info("add trends:" + trends);
-//                        for (String t : trends) {
-//                            tags.add(new YTag(t).setTransient(true));
-//                        }
-//                    }
                 }
 
                 YTag tag = tags.poll();
@@ -157,7 +154,6 @@ public class TweetProducer extends MyThread {
                     if (!myWait(waitInSeconds))
                         break;
                 }
-//                else logger.info("ignored " + tag.getTerm() + " \t try again in:" + tag.getWaitingSeconds());
             }
         } finally {
             manager.endWork();
@@ -193,7 +189,31 @@ public class TweetProducer extends MyThread {
     }
 
     private void initTags() {
-        tags = new PriorityQueue<YTag>(tagDao.findAllSorted());
+        Map<String, YTag> tmp = new LinkedHashMap<String, YTag>();
+        for (YTag tag : tagDao.findAllSorted()) {
+            tmp.put(tag.getTerm(), tag);
+        }
+
+        try {
+            Collection<String> userQueryTerms = userSearch.getQueryTerms();
+            int counter = 0;
+            for (String str : userQueryTerms) {
+                YTag tag = tmp.get(str);
+                if (tag == null) {
+                    tmp.put(str, new YTag(str));
+                    counter++;
+                }
+            }
+            logger.info("Will add query terms " + counter + " of " + userQueryTerms);
+        } catch (SolrServerException ex) {
+            logger.error("Couldn't query user index to feed tweet index with user queries:" + ex.getMessage());
+        }
+
+        tags = new PriorityQueue<YTag>(tmp.values());
         logger.info("Using " + tags.size() + " tags. first tag is: " + tags.peek());
+    }
+
+    public void setUserSearch(SolrUserSearch userSearch) {
+        this.userSearch = userSearch;
     }
 }

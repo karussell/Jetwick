@@ -24,6 +24,7 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.data.TagDao;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.solr.SolrTweetSearch;
+import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.util.Helper;
 import java.util.Arrays;
 import java.util.List;
@@ -86,9 +87,10 @@ public class TweetCollector {
 
         Module module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
-        TwitterSearch tws = injector.getInstance(TwitterSearch.class);        
+        TwitterSearch tws = injector.getInstance(TwitterSearch.class);
+        SolrTweetSearch tweetSearch = injector.getInstance(SolrTweetSearch.class);
+        SolrUserSearch userSearch = injector.getInstance(SolrUserSearch.class);
         Configuration cfg = injector.getInstance(Configuration.class);
-        tws.setTwitter4JInstance(cfg.getTwitterSearchCredits().getToken(), cfg.getTwitterSearchCredits().getTokenSecret());
 
         // add at least the default tags      
         WorkManager manager = injector.getInstance(WorkManager.class);
@@ -102,6 +104,7 @@ public class TweetCollector {
         int tweetsPerBatch = cfg.getTweetsPerBatch();
         twProducer.setMaxFill(2 * tweetsPerBatch);
         twProducer.setTwitterSearch(tws);
+        twProducer.setUserSearch(userSearch);
         twProducer.setUncaughtExceptionHandler(excHandler);
         twProducer.start();
 
@@ -113,7 +116,7 @@ public class TweetCollector {
         twConsumer.setOptimizeInterval(cfg.getTweetSearchOptimizeInterval());
         twConsumer.setOptimizeToSegmentsAfterUpdate(cfg.getTweetSearchCommitOptimizeSegments());
         twConsumer.setRemoveDays(cfg.getSolrRemoveDays());
-        twConsumer.setTweetSearch(new SolrTweetSearch(cfg));
+        twConsumer.setTweetSearch(tweetSearch);
         if (cfg.isTweetResolveUrl()) {
             twConsumer.setResolveUrls(true);
             twConsumer.setResolveThreads(cfg.getTweetResolveUrlThreads());

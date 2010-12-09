@@ -23,6 +23,8 @@ import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrTweetSearchTest;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.SolrUserSearch;
+import de.jetwick.solr.SolrUserSearchTest;
 import de.jetwick.solr.TweetQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,20 +45,16 @@ import static org.junit.Assert.*;
 public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
     // TODO later: @Inject SolrUserSearch solr;
-//    private SolrUserSearchTest userSearchTester = new SolrUserSearchTest();
+    private SolrUserSearchTest userSearchTester = new SolrUserSearchTest();
     private SolrTweetSearchTest tweetSearchTester = new SolrTweetSearchTest();
     @Inject
     private TagDao tagDao;
-//    @Inject
-//    private UserDao userDao;
-//    @Inject
-//    private TweetDao tweetDao;
-
+    
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-//        userSearchTester.setUp();
+        userSearchTester.setUp();
         tweetSearchTester.setUp();
     }
 
@@ -64,7 +62,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-//        userSearchTester.tearDown();
+        userSearchTester.tearDown();
         tweetSearchTester.tearDown();
     }
 
@@ -82,6 +80,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         // already existing tweets must not harm
 //        tweetDao.save(new YTweet(3L, "duplicate tweet"));
         SolrTweetSearch tweetSearch = tweetSearchTester.getTweetSearch();
+        SolrUserSearch userSearch = userSearchTester.getUserSearch();
         tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));
         tweetSearch.commit();
 
@@ -119,6 +118,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         tweetProducer.setUncaughtExceptionHandler(handler);
         tweetProducer.setMaxTime(1);
         tweetProducer.setTwitterSearch(tws);
+        tweetProducer.setUserSearch(userSearch);
         tweetProducer.start();
 
         TweetConsumer tweetConsumer = getInstance(TweetConsumer.class);

@@ -28,17 +28,11 @@ public class SavedSearch implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final String SS_KEY = "{!key=ss:";
-    private String name;
     private SolrQuery query;
     private Date lastQueryDate;
     private final long id;
 
     public SavedSearch(long id, SolrQuery query) {
-        this(id, null, query);
-    }
-
-    SavedSearch(long id, String name, SolrQuery query) {
-        this.name = name;
         this.id = id;
         this.query = query.getCopy();
         JetwickQuery.removeFilterQueries(this.query, SolrTweetSearch.DATE);
@@ -71,27 +65,20 @@ public class SavedSearch implements Serializable {
         return tmpQ;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getName() {
-        if (name == null) {
-            String qStr = query.getQuery();
-            String userFilter = JetwickQuery.getUserFilter(query);
-            if (userFilter != null) {
-                if (qStr == null)
-                    qStr = "";
+        String qStr = query.getQuery();
+        String userFilter = JetwickQuery.getUserFilter(query);
+        if (userFilter != null) {
+            if (qStr == null)
+                qStr = "";
 
-                if (!qStr.isEmpty())
-                    qStr += ", ";
+            if (!qStr.isEmpty())
+                qStr += ", ";
 
-                qStr += userFilter;
-            }
-
-            return qStr;
+            qStr += userFilter;
         }
-        return name;
+
+        return qStr;
     }
 
     public String getQueryTerm() {

@@ -29,6 +29,8 @@ import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.response.FacetField;
+import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -46,7 +48,7 @@ import org.slf4j.LoggerFactory;
 public class SolrUserSearch extends SolrAbstractSearch {
 
     protected Logger logger = LoggerFactory.getLogger(getClass());
-    private static final String TEXT = "text";
+    private static final String QUERY_TERMS = "ss_qterms_mv_s";
     private static final String SCREEN_NAME = "name";
 
     public SolrUserSearch(String url) {
@@ -155,7 +157,7 @@ public class SolrUserSearch extends SolrAbstractSearch {
 
             if (ss.getQueryTerm() != null && !ss.getQueryTerm().isEmpty()) {
                 // for tweetProducer (pick important via facets) and stats:
-                doc.addField("ss_qterms_mv_s", ss.getQueryTerm());
+                doc.addField(QUERY_TERMS, ss.getQueryTerm());
             }
             counter++;
         }
@@ -203,7 +205,7 @@ public class SolrUserSearch extends SolrAbstractSearch {
                 break;
 
             SolrQuery q = JetwickQuery.parse(qString);
-            SavedSearch ss = new SavedSearch(counter, q);            
+            SavedSearch ss = new SavedSearch(counter, q);
             ss.setLastQueryDate((Date) doc.getFieldValue("ss_" + counter + "_last_dt"));
             user.addSavedSearch(ss);
 
@@ -277,6 +279,19 @@ public class SolrUserSearch extends SolrAbstractSearch {
             logger.error("Couldn't load user with screenName:" + name + " " + ex.getMessage());
             return null;
         }
+    }
+
+    // TODO facet pagination
+    public Collection<String> getQueryTerms() throws SolrServerException {
+        QueryResponse rsp = server.query(new SolrQuery().setFacet(true).addFacetField(QUERY_TERMS).setFacetMinCount(1));
+        FacetField ff = rsp.getFacetField(QUERY_TERMS);
+        Collection<String> res = new ArrayList<String>();
+        if (ff.getValues() != null)
+            for (Count cnt : ff.getValues()) {
+                if (cnt.getCount() > 0)
+                    res.add(cnt.getName());
+            }
+        return res;
     }
 
     @Override
