@@ -173,12 +173,12 @@ public class HomePage extends WebPage {
         // TODO M2.1 parameters.get("h").toString can cause NPE!!
         String hitsStr = parameters.getString("h");
         if (hitsStr != null) {
-            if ("10".equals(hitsStr))
-                hitsPerPage = 10;
-            else if ("30".equals(hitsStr))
-                hitsPerPage = 30;
-            else if ("50".equals(hitsStr))
-                hitsPerPage = 50;
+            try {
+                hitsPerPage = Integer.parseInt(hitsStr);
+                hitsPerPage = Math.min(100, hitsPerPage);
+            } catch (Exception ex) {
+                logger.warn("Couldn't parse hits per page:" + hitsStr + " " + ex.getMessage());
+            }
         }
 
         String idStr = parameters.getString("id");
