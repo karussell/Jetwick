@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
 import de.jetwick.hib.HibTestClass;
+import de.jetwick.solr.SolrUserSearch;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Queue;
 import java.util.Stack;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -54,10 +58,27 @@ public class TweetProducerTest extends HibTestClass {
     }
 
     @Test
-    public void testUpdateTag() {
+    public void testUpdateAndInitTag() {
         // make sure that updateTag is in a transaction
-        getInstance(TweetProducer.class).updateTagInTA(new YTag("test"), 6);
+        TweetProducer twProd = getInstance(TweetProducer.class);
+        twProd.updateTagInTA(new YTag("test"), 6);
         assertTrue(tagDao.findByName("test").getQueryInterval() < 10 * YTag.DEFAULT_Q_I);
+    }
+
+    @Test
+    public void testInitTagsNoException() throws SolrServerException {
+        TweetProducer twProd = getInstance(TweetProducer.class);
+        twProd.updateTagInTA(new YTag("test"), 6);
+        SolrUserSearch uSearch = mock(SolrUserSearch.class);
+        when(uSearch.getQueryTerms()).thenReturn(Arrays.asList("Test"));
+        twProd.setUserSearch(uSearch);
+        Collection<YTag> tags = twProd.initTags();
+
+        for (YTag tag : tags) {
+            twProd.updateTagInTA(tag, 5);
+        }
+
+        twProd.updateTagInTA(new YTag("anotherone"), 6);
     }
 
     @Test

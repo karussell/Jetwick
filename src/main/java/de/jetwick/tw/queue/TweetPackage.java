@@ -17,7 +17,7 @@ package de.jetwick.tw.queue;
 
 import de.jetwick.solr.SolrTweet;
 import java.io.Serializable;
-import java.util.concurrent.BlockingQueue;
+import java.util.Collection;
 
 /**
  * Used to transport tweets from UI to queue
@@ -31,9 +31,13 @@ import java.util.concurrent.BlockingQueue;
  */
 public interface TweetPackage extends Serializable {
 
-    public TweetPackage retrieveTweets(BlockingQueue<SolrTweet> result);
+    public Collection<SolrTweet> getTweets();
 
-    int getTweets();
+    int getSize();
+
+    String getName();
+
+    int getAgeInSeconds();
 
 //    int getProgress();
 //

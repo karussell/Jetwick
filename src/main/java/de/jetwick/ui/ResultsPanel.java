@@ -61,13 +61,12 @@ public class ResultsPanel extends Panel {
     private int tweetsPerUser;
     private String sort;
     private LabeledLink findOriginLink;
+    private Link translateAllLink;
+    private boolean translateAll = false;
     private int hitsPerPage;
 
     public ResultsPanel(String id, final String language) {
         super(id);
-
-//        WebMarkupContainer msgContainer = new WebMarkupContainer("queryMessage");
-//        add(msgContainer);
 
         add(new Label("qm", new PropertyModel(this, "queryMessage")));
         add(new Label("qmWarn", new PropertyModel(this, "queryMessageWarn")));
@@ -90,10 +89,25 @@ public class ResultsPanel extends Panel {
                 PageParameters pp = new PageParameters();
                 pp.add("findOrigin", query);
                 setResponsePage(getApplication().getHomePage(), pp);
-//                setResponsePage(HomePage.class, pp);
             }
         };
         add(findOriginLink);
+
+        /*
+        translateAllLink = new IndicatingAjaxFallbackLink("translateAllLink") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                if(target == null)
+                    return;
+
+                translateAll = !translateAll;
+                target.addComponent(ResultsPanel.this);
+            }
+        };
+        add(translateAllLink);
+         */
+
         add(createSortLink("sortRelevance", ""));
         add(createSortLink("sortRetweets", SolrTweetSearch.RT_COUNT + " desc"));
         add(createSortLink("sortLatest", SolrTweetSearch.DATE + " desc"));
@@ -152,9 +166,6 @@ public class ResultsPanel extends Panel {
 
                             @Override
                             public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {
-//                                SolrTweet tw1 = new SolrTweet(1L, "test", new SolrUser("peter"));
-//                                SolrTweet tw2 = new SolrTweet(2L, "java", new SolrUser("karsten"));
-//                                return Arrays.asList(tw1, tw2);
                                 return onTweetClick(id, retweet);
                             }
 

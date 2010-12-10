@@ -25,22 +25,27 @@
     </head>
     <body>
         <wicket:panel>
-            <div wicket:id="userModal"></div>
-            <div class="userpanel">
-                <ul>
-                    <li>
-                        <span wicket:id="loginText">[Logged in as]</span>
-                    </li>
-                    <li>
-                        <a wicket:id="logout">Logout</a>
-                    </li>
-                    <li>
-                        <a wicket:id="grabTweets" title="Makes tweets of any user searchable! (max 3200)">Grab Tweets</a>
-                    </li>
-                    <li>
-                        <a wicket:id="showTweets" title="Lists your sent tweets">Show My Tweets</a>
-                    </li>
-                </ul>
+            <a class="login-link" wicket:id="loginLink" title="Login with your twitter account">
+                <img height="35px" src="img/authenticate.png"/>
+            </a>
+            <div wicket:id="loginContainer">
+                <div wicket:id="userModal"></div>
+                <div class="userpanel">
+                    <ul>
+                        <li>
+                            <span wicket:id="loginText">[Logged in as]</span>
+                        </li>
+                        <li>
+                            <a wicket:id="logout">Logout</a>
+                        </li>
+                        <li>
+                            <a wicket:id="grabTweets" title="Makes tweets of any user searchable! (max 3200)">Grab Tweets</a>
+                        </li>
+                        <li>
+                            <a wicket:id="showTweets" title="Lists your sent tweets">Show My Tweets</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </wicket:panel>
     </body>

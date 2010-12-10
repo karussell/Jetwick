@@ -48,10 +48,10 @@ public class OneTweet extends Panel {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private String language;
-    private List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+    private List<SolrTweet> subTweets = new ArrayList<SolrTweet>();
     private boolean rtClicked = false;
     private boolean rpClicked = false;
-    private boolean trClicked = false;
+    private boolean translated = false;
     private boolean inReplyOfClicked = false;
 
     public OneTweet(String id, IModel<SolrTweet> model) {
@@ -107,10 +107,10 @@ public class OneTweet extends Panel {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 if (target != null) {
-                    tweets.clear();
+                    subTweets.clear();
                     target.addComponent(OneTweet.this);
                     if (!inReplyOfClicked)
-                        tweets.addAll(onInReplyOfClick(tweet.getInReplyTwitterId()));
+                        subTweets.addAll(onInReplyOfClick(tweet.getInReplyTwitterId()));
 
                     inReplyOfClicked = !inReplyOfClicked;
                 }
@@ -126,10 +126,10 @@ public class OneTweet extends Panel {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 if (target != null) {
-                    tweets.clear();
+                    subTweets.clear();
                     target.addComponent(OneTweet.this);
                     if (!rtClicked)
-                        tweets.addAll(onReplyClick(tweet.getTwitterId(), true));
+                        subTweets.addAll(onReplyClick(tweet.getTwitterId(), true));
 
                     rtClicked = !rtClicked;
                 }
@@ -145,10 +145,10 @@ public class OneTweet extends Panel {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 if (target != null) {
-                    tweets.clear();
+                    subTweets.clear();
                     target.addComponent(OneTweet.this);
                     if (!rpClicked)
-                        tweets.addAll(onReplyClick(tweet.getTwitterId(), false));
+                        subTweets.addAll(onReplyClick(tweet.getTwitterId(), false));
 
                     rpClicked = !rpClicked;
                 }
@@ -171,40 +171,15 @@ public class OneTweet extends Panel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                try {
-                    if (target != null) {
-                        Translate.setHttpReferrer("http://www.jetwick.com/");
-                        // stupid workaround for http://groups.google.com/group/google-translate-general/browse_thread/thread/8cdc2b71f5213cf7
-                        boolean replace = true;
-                        String origText = tweet.getText();
-                        if (origText.contains("# ") || origText.contains("@ "))
-                            replace = false;
-                        else {
-                            // use letters so that google thinks the word after the '#' is related to those letters and won't translate or mix it up.
-                            origText = origText.replaceAll("#", "XbllsHYBoPll").replaceAll("@", "XallsHYBoPll");
-                        }
+                if (target == null)
+                    return;
 
-                        String trText;
-                        if (!trClicked) {
-                            trText = Translate.tr(origText, Language.AUTO_DETECT, language);
-                            if (replace)
-                                trText = trText.replaceAll("XbllsHYBoPll", "#").replaceAll("XallsHYBoPll", "@");
-                        } else
-                            trText = tweet.getText();
-
-                        label.setDefaultModelObject(new Extractor().setText(trText).run().toString());
-                        label.setEscapeModelStrings(false);
-                        target.addComponent(label);
-
-                        trClicked = !trClicked;
-                    }
-                } catch (Exception ex) {
-                    logger.error(ex.getLocalizedMessage() + "! tweet:" + tweet);
-                }
+                translate(tweet, label);
+                target.addComponent(label);
             }
         });
 
-        ListView subTweets = new ListView("subtweets", new PropertyModel(this, "tweets")) {
+        ListView subTweetsView = new ListView("subtweets", new PropertyModel(this, "subTweets")) {
 
             @Override
             public void populateItem(final ListItem item) {
@@ -232,7 +207,36 @@ public class OneTweet extends Panel {
                 }.setLanguage(language));
             }
         };
-        add(subTweets);
+        add(subTweetsView);
+    }
+
+    public void translate(SolrTweet tweet, Label label) {
+        try {            
+            Translate.setHttpReferrer("http://www.jetwick.com/");
+            // workaround for http://groups.google.com/group/google-translate-general/browse_thread/thread/8cdc2b71f5213cf7
+            boolean replace = true;
+            String origText = tweet.getText();
+            if (origText.contains("# ") || origText.contains("@ "))
+                replace = false;
+            else {
+                // use letters so that google thinks the word after the '#' is related to those letters and won't translate or mix it up.
+                origText = origText.replaceAll("#", "XbllsHYBoPll").replaceAll("@", "XallsHYBoPll");
+            }
+
+            String trText;
+            if (!translated) {
+                trText = Translate.tr(origText, Language.AUTO_DETECT, language);
+                if (replace)
+                    trText = trText.replaceAll("XbllsHYBoPll", "#").replaceAll("XallsHYBoPll", "@");
+            } else
+                trText = tweet.getText();
+
+            label.setDefaultModelObject(new Extractor().setText(trText).run().toString());
+            label.setEscapeModelStrings(false);
+            translated = !translated;
+        } catch (Exception ex) {
+            logger.error("cannot translate tweet:" + tweet + " " + ex.getMessage());
+        }
     }
 
     public OneTweet setLanguage(String lang) {

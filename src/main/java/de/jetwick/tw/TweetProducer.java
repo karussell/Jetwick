@@ -59,7 +59,6 @@ public class TweetProducer extends MyThread {
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
     private TwitterSearch twSearch;
     private SolrUserSearch userSearch;
-    private int maxTime = -1;
     @Inject
     private WorkManager manager;
     private int maxFill = 2000;
@@ -68,7 +67,7 @@ public class TweetProducer extends MyThread {
         super("tweet-producer");
     }
 
-    public BlockingQueue<TweetPackage> getTweetPackages() {
+    public BlockingQueue<TweetPackage> getQueue() {
         return tweetPackages;
     }
 
@@ -86,8 +85,7 @@ public class TweetProducer extends MyThread {
         manager.beginWork();
         try {
             MAIN:
-            while (!isInterrupted()
-                    && (maxTime < 0 || (System.currentTimeMillis() - start) < maxTime)) {
+            while (!isInterrupted()) {
 
                 if (tags.isEmpty()) {
                     initTags();
@@ -178,17 +176,13 @@ public class TweetProducer extends MyThread {
         this.twSearch = tws;
     }
 
-    public void setMaxTime(int maxTimeInSeconds) {
-        this.maxTime = maxTimeInSeconds * 1000;
-    }
-
     @Transactional
     public void updateTagInTA(YTag tag, int hits) {
         tag.optimizeQueryFrequency(hits);
         tagDao.save(tag);
     }
 
-    private void initTags() {
+    Collection<YTag> initTags() {
         Map<String, YTag> tmp = new LinkedHashMap<String, YTag>();
         for (YTag tag : tagDao.findAllSorted()) {
             tmp.put(tag.getTerm(), tag);
@@ -198,6 +192,7 @@ public class TweetProducer extends MyThread {
             Collection<String> userQueryTerms = userSearch.getQueryTerms();
             int counter = 0;
             for (String str : userQueryTerms) {
+                str = str.toLowerCase();
                 YTag tag = tmp.get(str);
                 if (tag == null) {
                     tmp.put(str, new YTag(str));
@@ -211,6 +206,7 @@ public class TweetProducer extends MyThread {
 
         tags = new PriorityQueue<YTag>(tmp.values());
         logger.info("Using " + tags.size() + " tags. first tag is: " + tags.peek());
+        return tags;
     }
 
     public void setUserSearch(SolrUserSearch userSearch) {

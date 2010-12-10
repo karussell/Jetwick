@@ -373,47 +373,35 @@ public class HomePage extends WebPage {
             }
         };
         ssPanel.updateSSCounts(null);
+        if (!getMySession().hasLoggedIn())
+            ssPanel.setVisible(false);
+
         add(ssPanel.setOutputMarkupId(true));
 
-        if (getMySession().hasLoggedIn()) {
-            add(new WebComponent("loginLink").setVisible(false));
-            add(new UserPanel("userPanel", getMySession().getUser(),
-                    new MyTweetGrabber().init(getMySession().getUser().getScreenName()).
-                    setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch())) {
+        add(new UserPanel("userPanel", this) {
 
-                @Override
-                public void onLogout() {
-                    getMySession().logout(uindexProvider.get(), (WebResponse) getResponse());
-                    setResponsePage(HomePage.class);
-                }
-
-                @Override
-                public void updateAfterAjax(AjaxRequestTarget target) {
-                    HomePage.this.updateAfterAjax(target, false);
-                }
-
-                @Override
-                public void onShowTweets(AjaxRequestTarget target, String userName) {
-                    doSearch((TweetQuery) new TweetQuery().addUserFilter(userName), 0, false);
-                    HomePage.this.updateAfterAjax(target, true);
-                }
-
-                @Override
-                protected Collection<String> getUserChoices(String input) {
-                    return getTweetSearch().getUserChoices(lastQuery, input);
-                }
-            });
-        } else {
-            ssPanel.setVisible(false);
-            try {
-                Link loginLink = CallbackHelper.createLink("loginLink", this);
-                add(loginLink);
-            } catch (Exception ex) {
-                logger.error("Couldn't add loginLink", ex);
-                add(new WebComponent("loginLink").setVisible(false));
+            @Override
+            public void onLogout() {
+                getMySession().logout(uindexProvider.get(), (WebResponse) getResponse());
+                setResponsePage(HomePage.class);
             }
-            add(new WebComponent("userPanel").setVisible(false));
-        }
+
+            @Override
+            public void updateAfterAjax(AjaxRequestTarget target) {
+                HomePage.this.updateAfterAjax(target, false);
+            }
+
+            @Override
+            public void onShowTweets(AjaxRequestTarget target, String userName) {
+                doSearch((TweetQuery) new TweetQuery().addUserFilter(userName), 0, false);
+                HomePage.this.updateAfterAjax(target, true);
+            }
+
+            @Override
+            protected Collection<String> getUserChoices(String input) {
+                return getTweetSearch().getUserChoices(lastQuery, input);
+            }
+        });
 
         tagCloud = new TagCloudPanel("tagcloud") {
 
@@ -757,6 +745,10 @@ public class HomePage extends WebPage {
         navigationPanel.setHitsPerPage(hitsPerPage);
         navigationPanel.updateVisibility();
         logger.info("Finished Constructing UI");
+    }
+
+    public Provider<RMIClient> getRmiProvider() {
+        return rmiProvider;
     }
 
     public QueueThread queueTweets(Collection<SolrTweet> tweets,

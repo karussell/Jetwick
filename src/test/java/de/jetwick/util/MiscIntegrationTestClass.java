@@ -38,11 +38,7 @@ public class MiscIntegrationTestClass {
 
         url = "http://is.gd/en49t";
         newUrl = Helper.getResolvedUrl(url, 900);
-        assertTrue(url.length() < newUrl.length());
-
-        url = "http://tiny.cc/mnnct";
-        newUrl = Helper.getResolvedUrl(url, 2000);
-        assertTrue(url.length() < newUrl.length());
+        assertTrue(url.length() < newUrl.length());       
 
         url = "http://bit.ly/aowRP7";
         newUrl = Helper.getResolvedUrl(url, 900);

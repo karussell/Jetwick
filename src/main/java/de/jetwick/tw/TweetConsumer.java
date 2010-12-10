@@ -16,12 +16,16 @@
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
-import de.jetwick.config.Configuration;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.util.MyDate;
 import de.jetwick.util.StopWatch;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.concurrent.BlockingQueue;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.slf4j.Logger;
@@ -32,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetConsumer extends AbstractTweetConsumer {
+public class TweetConsumer extends MyThread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private BlockingQueue<TweetPackage> tweetPackages;
@@ -46,23 +50,21 @@ public class TweetConsumer extends AbstractTweetConsumer {
     // optimize should not happen directly after start of tweet consumer / collector!
     private long lastOptimizeTime = System.currentTimeMillis();
     private StopWatch sw1;
-
     @Inject
-    public TweetConsumer(Configuration cfg) {
-        super("tweet-consumer", cfg);
+    protected SolrTweetSearch tweetSearch;
+    private int removeDays = 8;
+
+    public TweetConsumer() {
+        super("tweet-consumer");
     }
 
     @Override
     public void run() {
-        logger.info("tweets per session:" + tweetBatchSize);
+        logger.info("tweets per solr session:" + tweetBatchSize);
         while (!isInterrupted()) {
             if (tweetPackages.isEmpty()) {
-                // do only break if tweets are empty AND producer is death
-                if (!producer.isAlive())
-                    break;
-
                 // TODO instead of a 'fixed' waiting               
-                // use producer.getCondition().await + signalAll
+                // use beforeThread.getCondition().await + signalAll
                 if (!myWait(1))
                     break;
 
@@ -72,7 +74,7 @@ public class TweetConsumer extends AbstractTweetConsumer {
             // make sure we really use the commit batch size
             // because solr doesn't want too frequent commits
             int count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
-            if (count < tweetBatchSize && producer.isAlive() && System.currentTimeMillis() - lastFeed < tweetBatchTime)
+            if (count < tweetBatchSize && System.currentTimeMillis() - lastFeed < tweetBatchTime)
                 continue;
 
             if (count == 0)
@@ -84,11 +86,10 @@ public class TweetConsumer extends AbstractTweetConsumer {
             Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
             sw1.stop();
             String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();
-            long time = System.currentTimeMillis();
 
+            long time = System.currentTimeMillis();
             if (optimizeInterval > 0)
                 str += "; next optimize in: " + (optimizeInterval - (time - lastOptimizeTime)) / 3600f / 1000f + "h ";
-
             logger.info(str);
             if (optimizeToSegmentsAfterUpdate > 0) {
                 if (optimizeInterval > 0 && time - lastOptimizeTime >= optimizeInterval) {
@@ -101,9 +102,49 @@ public class TweetConsumer extends AbstractTweetConsumer {
         }
         logger.info(getName() + " finished");
     }
+    private long allTweets = 0;
+    private long start = System.currentTimeMillis();
 
-    public void setTweetPackages(BlockingQueue<TweetPackage> tweets) {
-        this.tweetPackages = tweets;
+    public Collection<SolrTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
+        Collection<TweetPackage> donePackages = new ArrayList<TweetPackage>();
+        Collection<SolrTweet> tweetSet = new LinkedHashSet<SolrTweet>();
+        while (true) {
+            TweetPackage tw = tws.poll();
+            if (tw == null)
+                break;
+
+            donePackages.add(tw);
+            tweetSet.addAll(tw.getTweets());
+            if (tweetSet.size() > batch)
+                break;
+        }
+
+        try {
+            Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
+            allTweets += tweetSet.size();
+            float tweetsPerSec = allTweets / ((System.currentTimeMillis() - start) / 1000.0f);
+            String str = "receivedTweets:" + allTweets + " tweets/s:" + tweetsPerSec + " indexed: ";
+            for (TweetPackage pkg : donePackages) {
+                str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
+            }
+            logger.info(str);
+            return res;
+        } catch (Exception ex) {
+            logger.error("Couldn't update " + tweetSet.size() + " tweets.", ex);
+            return Collections.EMPTY_LIST;
+        }
+    }
+
+    public void setTweetSearch(SolrTweetSearch tweetSearch) {
+        this.tweetSearch = tweetSearch;
+    }
+
+    public void setRemoveDays(int solrRemoveDays) {
+        removeDays = solrRemoveDays;
+    }
+
+    public void setReadingQueue(BlockingQueue<TweetPackage> queue) {
+        tweetPackages = queue;
     }
 
     public void setTweetBatchSize(int tweetBatchSize) {

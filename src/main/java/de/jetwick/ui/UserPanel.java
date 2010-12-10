@@ -15,16 +15,24 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.data.YUser;
+import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.MyTweetGrabber;
 import java.util.Collection;
+import org.apache.wicket.AttributeModifier;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.behavior.AttributeAppender;
+import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.protocol.http.RequestUtils;
+import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,76 +44,110 @@ public class UserPanel extends Panel {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public UserPanel(String id, final YUser user, final MyTweetGrabber grabber) {
+    public UserPanel(String id, final HomePage homePageRef) {
         super(id);
-
-        String name = user.getRealName();
-        if (name == null)
-            name = user.getScreenName();
-
-        add(new Label("loginText", "Hello " + name + "!"));
-        add(new Link("logout") {
-
-            @Override
-            public void onClick() {
-                onLogout();
-            }
-        });
-        add(new AjaxFallbackLink("showTweets") {
+        Link loginLink = new IndicatingAjaxFallbackLink("loginLink") {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                onShowTweets(target, user.getScreenName());
-            }
-        });
-
-        final ModalWindow modalW = new ModalWindow("userModal");
-        add(modalW);
-        add(new AjaxLink("grabTweets") {
-
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                modalW.show(target);
-            }
-        });
-        modalW.setTitle("Specify the user and the number of tweets you want to grab");
-        final GrabTweetsDialog dialog = new GrabTweetsDialog(modalW.getContentId(), user.getScreenName(), grabber) {
-
-            @Override
-            public void updateAfterAjax(AjaxRequestTarget target) {
-                UserPanel.this.updateAfterAjax(target);
-            }
-
-            @Override
-            public void onClose(AjaxRequestTarget target) {
-                modalW.close(target);
-            }
-
-            @Override
-            protected Collection<String> getUserChoices(String input) {
-                return UserPanel.this.getUserChoices(input);
+                String url;
+                try {
+                    logger.info("Clicked Login!");
+                    PageParameters params = new PageParameters();
+                    params.add("callback", "true");
+                    String callbackUrl = RequestUtils.toAbsolutePath(urlFor(HomePage.class, params).toString());
+                    url = homePageRef.getTwitterSearch().oAuthLogin(callbackUrl);
+                    if (url != null)
+                        getRequestCycle().setRequestTarget(new RedirectRequestTarget(url));
+                } catch (Exception ex) {
+                    logger.error("Cannot login!", ex);
+                }
             }
         };
+        add(loginLink);
 
-        modalW.setContent(dialog);
-        modalW.setCloseButtonCallback(new ModalWindow.CloseButtonCallback() {
+        if (!homePageRef.getMySession().hasLoggedIn()) {
+            add(new WebMarkupContainer("loginContainer").setVisible(false));
+            add(new AttributeModifier("class", "logged-in", new Model("logged-out")));
+            return;
+        }
 
-            @Override
-            public boolean onCloseButtonClicked(AjaxRequestTarget target) {
-                logger.info("cancel grabber archiving thread!");
-                dialog.interruptGrabber();
-                modalW.close(target);
-                return true;
+        loginLink.setVisible(false);
+        WebMarkupContainer container = new WebMarkupContainer("loginContainer") {
+
+            {
+                final SolrUser user = homePageRef.getMySession().getUser();
+                String name = user.getRealName();
+                if (name == null)
+                    name = user.getScreenName();
+                add(new Label("loginText", "Hello " + name + "!"));
+                add(new Link("logout") {
+
+                    @Override
+                    public void onClick() {
+                        onLogout();
+                    }
+                });
+                add(new AjaxFallbackLink("showTweets") {
+
+                    @Override
+                    public void onClick(AjaxRequestTarget target) {
+                        onShowTweets(target, user.getScreenName());
+                    }
+                });
+
+                final ModalWindow modalW = new ModalWindow("userModal");
+                add(modalW);
+                add(new AjaxLink("grabTweets") {
+
+                    @Override
+                    public void onClick(AjaxRequestTarget target) {
+                        modalW.show(target);
+                    }
+                });
+                modalW.setTitle("Specify the user and the number of tweets you want to grab");
+                MyTweetGrabber grabber = new MyTweetGrabber().init(user.getScreenName()).
+                        setRmiClient(homePageRef.getRmiProvider()).setTweetSearch(homePageRef.getTwitterSearch());
+                final GrabTweetsDialog dialog = new GrabTweetsDialog(modalW.getContentId(), user.getScreenName(), grabber) {
+
+                    @Override
+                    public void updateAfterAjax(AjaxRequestTarget target) {
+                        UserPanel.this.updateAfterAjax(target);
+                    }
+
+                    @Override
+                    public void onClose(AjaxRequestTarget target) {
+                        modalW.close(target);
+                    }
+
+                    @Override
+                    protected Collection<String> getUserChoices(String input) {
+                        return UserPanel.this.getUserChoices(input);
+                    }
+                };
+
+                modalW.setContent(dialog);
+                modalW.setCloseButtonCallback(new ModalWindow.CloseButtonCallback() {
+
+                    @Override
+                    public boolean onCloseButtonClicked(AjaxRequestTarget target) {
+                        logger.info("cancel grabber archiving thread!");
+                        dialog.interruptGrabber();
+                        modalW.close(target);
+                        return true;
+                    }
+                });
+                modalW.setWindowClosedCallback(new ModalWindow.WindowClosedCallback() {
+
+                    @Override
+                    public void onClose(AjaxRequestTarget target) {
+                        logger.info("closed dialog");
+                    }
+                });
+                modalW.setCookieName("user-modal");
             }
-        });
-        modalW.setWindowClosedCallback(new ModalWindow.WindowClosedCallback() {
-
-            @Override
-            public void onClose(AjaxRequestTarget target) {
-                logger.info("closed dialog");
-            }
-        });
-        modalW.setCookieName("user-modal");
+        };
+        add(container);
     }
 
     protected Collection<String> getUserChoices(String input) {

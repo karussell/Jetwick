@@ -18,7 +18,6 @@ package de.jetwick.tw.queue;
 import de.jetwick.solr.SolrTweet;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.concurrent.BlockingQueue;
 
 /**
  *
@@ -42,9 +41,7 @@ public class TweetPackageList extends AbstractTweetPackage {
     }
 
     @Override
-    public TweetPackage retrieveTweets(BlockingQueue<SolrTweet> result) {
-        if (tweets != null)
-            result.addAll(tweets);
-        return this;
+    public Collection<SolrTweet> getTweets() {
+        return tweets;
     }
 }

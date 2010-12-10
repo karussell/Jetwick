@@ -180,7 +180,8 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 doc.addField("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
                 doc.addField("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
                 doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
-//                doc.addField("dest_snippet_" + counter + "_t", urlEntry.getResolvedSnippet());
+                if (counter >= 3)
+                    break;
             }
         }
 
@@ -607,7 +608,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                     }
                 }
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                logger.error("couldn't connect to orig tweet:" + ex.getMessage());
             }
         }
         return null;
@@ -680,7 +681,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counter);
             selectOriginalTweetsWithReplies(query, origTweets.values(), updatedTweets);
         } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            logger.error("couldn't find replies in batch:" + ex.getMessage());
         }
     }
 
@@ -745,7 +746,8 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             orig.addReply(reply);
             return true;
         } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            logger.error("couldn't addReply:" + ex.getMessage());
+            return false;
         }
     }
 

@@ -157,7 +157,7 @@ public class SolrUserSearch extends SolrAbstractSearch {
 
             if (ss.getQueryTerm() != null && !ss.getQueryTerm().isEmpty()) {
                 // for tweetProducer (pick important via facets) and stats:
-                doc.addField(QUERY_TERMS, ss.getQueryTerm());
+                doc.addField(QUERY_TERMS, ss.getQueryTerm().toLowerCase());
             }
             counter++;
         }

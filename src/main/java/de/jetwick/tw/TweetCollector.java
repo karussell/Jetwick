@@ -25,11 +25,11 @@ import de.jetwick.data.TagDao;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUserSearch;
-import de.jetwick.util.Helper;
+import de.jetwick.tw.queue.TweetPackage;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,18 +56,10 @@ public class TweetCollector {
     };
 
     public static void main(String[] args) throws InterruptedException {
-        int maxTime = -1;
-
         if (args.length == 0) {
             logger.info("You can specify the maximal time in seconds to collect "
                     + "the tweets via: -maxTime=100 (-1 means forever)");
-        } else {
-            Map<String, String> map = Helper.parseArguments(args);
-            String maxTimeStr = map.get("maxTime");
-            if (maxTimeStr != null)
-                maxTime = Integer.parseInt(maxTimeStr);
         }
-        logger.info("max collect time:" + maxTime);
 
         Runnable runOnExit = new Runnable() {
 
@@ -99,50 +91,54 @@ public class TweetCollector {
         tagDao.addAll(DEFAULT_ST);
         manager.endWork();
 
+        // producer -> queue1 -> resolve url (max threads) -> queue2 -> feed solr (min time, max tweets)
+        //              /\
+        //              ||
+        //          rmi from UI
+
+        // feeding queue1 from twitter4j searches
         TweetProducer twProducer = injector.getInstance(TweetProducer.class);
-        twProducer.setMaxTime(maxTime);
         int tweetsPerBatch = cfg.getTweetsPerBatch();
         twProducer.setMaxFill(2 * tweetsPerBatch);
         twProducer.setTwitterSearch(tws);
         twProducer.setUserSearch(userSearch);
         twProducer.setUncaughtExceptionHandler(excHandler);
-        twProducer.start();
 
-        TweetConsumer twConsumer = new TweetConsumer(cfg);
-        twConsumer.setTweetPackages(twProducer.getTweetPackages());
-        twConsumer.setTweetProducer(twProducer);
+        BlockingQueue<TweetPackage> queue1 = twProducer.getQueue();
+        // feeding queue1 from UI
+        RMIServer rmiServer = injector.getInstance(RMIServer.class);
+        rmiServer.setFeedingQueue(queue1);
+        Thread rmiServerThread = rmiServer.createThread();
+
+        // reading queue1 and send to queue2
+        TweetUrlResolver twUrlResolver = injector.getInstance(TweetUrlResolver.class);
+        twUrlResolver.setReadingQueue(queue1);
+        twUrlResolver.setResolveThreads(cfg.getTweetResolveUrlThreads());
+        twUrlResolver.setResolveTimeout(cfg.getTweetResolveUrlTimeout());
+        twUrlResolver.setUncaughtExceptionHandler(excHandler);
+        twUrlResolver.setTest(false);
+        //twUrlResolver.setUrlTitleCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
+
+        // reading queue2
+        BlockingQueue<TweetPackage> queue2 = twUrlResolver.getResultQueue();
+        TweetConsumer twConsumer = new TweetConsumer();
+        twConsumer.setReadingQueue(queue2);
         twConsumer.setUncaughtExceptionHandler(excHandler);
         twConsumer.setTweetBatchSize(tweetsPerBatch);
         twConsumer.setOptimizeInterval(cfg.getTweetSearchOptimizeInterval());
         twConsumer.setOptimizeToSegmentsAfterUpdate(cfg.getTweetSearchCommitOptimizeSegments());
         twConsumer.setRemoveDays(cfg.getSolrRemoveDays());
         twConsumer.setTweetSearch(tweetSearch);
-        if (cfg.isTweetResolveUrl()) {
-            twConsumer.setResolveUrls(true);
-            twConsumer.setResolveThreads(cfg.getTweetResolveUrlThreads());
-            twConsumer.setResolveTimeout(cfg.getTweetResolveUrlTimeout());
-            twConsumer.setUrlTitleCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
-        }
-        twConsumer.start();
 
-//        TweetUpdater twUpdater = injector.getInstance(TweetUpdater.class);
-//        twUpdater.setUsersPerUpdate(10);
-//        twUpdater.setTweetProducer(twProducer);
-//        twUpdater.setTwitterSearch(tws);
-//        twUpdater.setUncaughtExceptionHandler(excHandler);
-//        twUpdater.start();
-
-        RMIServer rmiServer = injector.getInstance(RMIServer.class);
-        rmiServer.setTweetPackages(twProducer.getTweetPackages());
-        Thread rmiServerThread = rmiServer.createThread();
         rmiServerThread.start();
+        twConsumer.start();
+        twUrlResolver.start();
+        twProducer.start();
 
         twProducer.join();
-        twConsumer.join();
-//        twUpdater.join();
+        twConsumer.interrupt();
+        twUrlResolver.interrupt();
         rmiServerThread.interrupt();
-
-        // use CyclicBarrier + FutureTask + Executors
     }
 }
 

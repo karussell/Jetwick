@@ -46,27 +46,6 @@ public class CallbackHelper {
         return twitterSearch.oAuthOnCallBack(oAuthVerifier);
     }
 
-    public static AjaxFallbackLink createLink(String id, final HomePage page) {
-        return new IndicatingAjaxFallbackLink(id) {
-
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                String url;
-                try {
-                    logger.info("Clicked Login!");
-                    PageParameters params = new PageParameters();
-                    params.add("callback", "true");
-                    String callbackUrl = RequestUtils.toAbsolutePath(urlFor(HomePage.class, params).toString());
-                    url = page.getTwitterSearch().oAuthLogin(callbackUrl);
-                    if (url != null)
-                        getRequestCycle().setRequestTarget(new RedirectRequestTarget(url));
-                } catch (Exception ex) {
-                    logger.error("Cannot login!", ex);
-                }
-            }
-        };
-    }
-
     public static String getMessage(YUser user) {
         String realName = "";
         if (user.getRealName() != null)

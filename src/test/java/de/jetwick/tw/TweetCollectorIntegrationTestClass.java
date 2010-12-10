@@ -115,22 +115,20 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         tws.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
         
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
-        tweetProducer.setUncaughtExceptionHandler(handler);
-        tweetProducer.setMaxTime(1);
+        tweetProducer.setUncaughtExceptionHandler(handler);        
         tweetProducer.setTwitterSearch(tws);
         tweetProducer.setUserSearch(userSearch);
         tweetProducer.start();
 
         TweetConsumer tweetConsumer = getInstance(TweetConsumer.class);
         tweetConsumer.setUncaughtExceptionHandler(handler);
-        tweetConsumer.setTweetPackages(tweetProducer.getTweetPackages());
-        tweetConsumer.setTweetProducer(tweetProducer);
+        tweetConsumer.setReadingQueue(tweetProducer.getQueue());
         tweetConsumer.setTweetBatchSize(1);
         tweetConsumer.setTweetSearch(tweetSearch);
         tweetConsumer.start();
 
-        tweetProducer.join();
-        tweetConsumer.join();
+        tweetProducer.join(3000);
+        tweetConsumer.interrupt();
         checkExceptions(exceptionMap);
 
 //        YUser u = userDao.findByName("timetabling");

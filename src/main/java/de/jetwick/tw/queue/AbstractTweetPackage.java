@@ -123,7 +123,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
     }
 
     @Override
-    public int getTweets() {
+    public int getSize() {
         return tweets;
     }
 
@@ -138,7 +138,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return processedTweets;
     }
 
-    int getAgeInSeconds() {
+    public int getAgeInSeconds() {
         return Math.round((System.currentTimeMillis() - created.getTime()) / 1000f);
     }
 
@@ -150,7 +150,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
     public static int calcNumberOfTweets(Collection<TweetPackage> coll) {
         int count = 0;
         for (TweetPackage pkg : coll) {
-            count += pkg.getTweets();
+            count += pkg.getSize();
         }
         return count;
     }

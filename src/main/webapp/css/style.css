@@ -50,10 +50,15 @@ body, p {
     float: left;
 }
 
-.auth {
+.logged-in {
     margin-top: 0px;
     padding: 3px 10px 3px 10px;
     background-color: #f2f1f1;
+}
+
+.logged-out {
+    margin-top: 0px;
+    margin-bottom: -10px;
 }
 
 .userpanel {
@@ -70,6 +75,7 @@ body, p {
     margin: 0px;
     display: inline;
 }
+
 .external-refs {     
     padding: 0px 20px 7px 0px;
     margin: 0px;
