@@ -17,6 +17,7 @@ package de.jetwick.tw;
 
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.Helper;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ public class TweetUrlResolver extends MyThread {
     private boolean test = true;
     private BlockingQueue<TweetPackage> packages;
     private BlockingQueue<TweetPackage> resultPackages = new LinkedBlockingQueue<TweetPackage>();
+    private int maxFill = 2000;
 
     public TweetUrlResolver() {
         super("tweet-urlresolver");
@@ -93,10 +95,13 @@ public class TweetUrlResolver extends MyThread {
                         TweetPackage pkg = packages.poll();
                         if (pkg == null) {
                             if (!myWait(1))
-                                break;
+                                return null;
+
                             continue;
                         }
-                        if (tmp == 0)
+
+                        // log not too often
+                        if (tmp == 0 || tmp == 1)
                             logger.info("sentTweets:" + allTweets.get());
 
                         for (SolrTweet tw : pkg.getTweets()) {
@@ -110,9 +115,20 @@ public class TweetUrlResolver extends MyThread {
                             }
                         }
                         resultPackages.add(pkg);
-                    }
-                    return null;
-                }
+                        int count = 0;
+                        while (true) {
+                            count = AbstractTweetPackage.calcNumberOfTweets(resultPackages);
+                            if (count < maxFill)
+                                break;
+
+                            // log not too often
+                            if (tmp == 0 || tmp == 1)
+                                logger.info("... WAITING! " + count + " are too many tweets from url resolving!");
+                            if (!myWait(20))
+                                return null;
+                        }
+                    } // while
+                } // call
             });
         }
         try {

@@ -106,7 +106,7 @@ public class UserPanel extends Panel {
                     }
                 });
                 modalW.setTitle("Specify the user and the number of tweets you want to grab");
-                MyTweetGrabber grabber = new MyTweetGrabber().init(user.getScreenName()).
+                MyTweetGrabber grabber = new MyTweetGrabber(homePageRef.getLastSearches()).init(user.getScreenName()).
                         setRmiClient(homePageRef.getRmiProvider()).setTweetSearch(homePageRef.getTwitterSearch());
                 final GrabTweetsDialog dialog = new GrabTweetsDialog(modalW.getContentId(), user.getScreenName(), grabber) {
 

@@ -343,14 +343,37 @@ public class Helper {
     /**
      * @return a sorted list where the string with the highest integer value comes first!
      */
-    public static List<Entry<String, Integer>> sort(Collection<Entry<String, Integer>> entrySet) {
-        List<Entry<String, Integer>> sorted = new ArrayList<Entry<String, Integer>>(entrySet);
-        Collections.sort(sorted, new Comparator<Entry<String, Integer>>() {
+    public static <T> List<Entry<T, Integer>> sort(Collection<Entry<T, Integer>> entrySet) {
+        List<Entry<T, Integer>> sorted = new ArrayList<Entry<T, Integer>>(entrySet);
+        Collections.sort(sorted, new Comparator<Entry<T, Integer>>() {
 
             @Override
-            public int compare(Entry<String, Integer> o1, Entry<String, Integer> o2) {
+            public int compare(Entry<T, Integer> o1, Entry<T, Integer> o2) {
                 int i1 = o1.getValue();
                 int i2 = o2.getValue();
+                if (i1 < i2)
+                    return 1;
+                else if (i1 > i2)
+                    return -1;
+                else
+                    return 0;
+            }
+        });
+
+        return sorted;
+    }
+
+    /**
+     * @return a sorted list where the string with the highest integer value comes first!
+     */
+    public static <T> List<Entry<T, Long>> sortLong(Collection<Entry<T, Long>> entrySet) {
+        List<Entry<T, Long>> sorted = new ArrayList<Entry<T, Long>>(entrySet);
+        Collections.sort(sorted, new Comparator<Entry<T, Long>>() {
+
+            @Override
+            public int compare(Entry<T, Long> o1, Entry<T, Long> o2) {
+                long i1 = o1.getValue();
+                long i2 = o2.getValue();
                 if (i1 < i2)
                     return 1;
                 else if (i1 > i2)

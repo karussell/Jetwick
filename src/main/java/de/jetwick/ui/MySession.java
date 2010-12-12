@@ -38,18 +38,11 @@ public class MySession extends WebSession {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     @Inject
     private TwitterSearch twitterSearch;
-    private boolean useDefaultUser = false;
     private SolrUser user = null;
     private boolean twitterSearchInitialized = false;
 
-    public MySession(Request request, boolean useDefaultUser) {
+    public MySession(Request request) {
         super(request);
-        this.useDefaultUser = useDefaultUser;
-    }
-
-    MySession setUseDefaultUser(boolean useDefaultUser) {
-        this.useDefaultUser = useDefaultUser;
-        return this;
     }
 
     void setTwitterSearchInitialized(boolean twitterSearchInitialized) {
@@ -74,14 +67,6 @@ public class MySession extends WebSession {
                     logger.info("Found cookie for user:" + getUser().getScreenName());
             } else
                 logger.info("No cookie found");
-
-            if (useDefaultUser) {
-                try {
-                    setUser(twitterSearch.getUser());
-                } catch (TwitterException ex) {
-                    logger.error("Couldn't init dev account!", ex);
-                }
-            }
         }
     }
 

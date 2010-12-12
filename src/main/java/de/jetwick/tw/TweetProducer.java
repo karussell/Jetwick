@@ -113,7 +113,7 @@ public class TweetProducer extends MyThread {
                         if (count < maxFill)
                             break;
 
-                        logger.info("... WAITING! " + count + " are too many tweets in the pipe!");
+                        logger.info("... WAITING! " + count + " are too many tweets from twitter4j searching!");
                         if (!myWait(20))
                             break MAIN;
                     }

@@ -19,7 +19,6 @@ import de.jetwick.config.Configuration;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
-import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.tw.queue.TweetPackage;
@@ -55,6 +54,7 @@ public class HomePageTest extends WicketPagesTestClass {
     }
 
     public void reset() {
+        sentTweets = null;
         uString = "";
         qString = "";
         SolrUser u = new SolrUser("peter");
@@ -105,6 +105,24 @@ public class HomePageTest extends WicketPagesTestClass {
 
         assertEquals("", qString);
         assertEquals("#java", uString);
+    }
+
+    @Test
+    public void testAvoidDuplicateSearchEnqueueing() throws InterruptedException {
+        HomePage page = getInstance(HomePage.class);
+
+        QueueThread p = page.queueTweets(null, null, "java");
+        p.run();
+        assertNotNull(sentTweets);
+        assertEquals("", qString);
+        assertEquals("#java", uString);
+
+        reset();
+        p = page.queueTweets(null, null, "java");
+        p.run();
+        assertNull(sentTweets);
+        assertEquals("", qString);
+        assertEquals("", uString);
     }
 
     @Test

@@ -54,14 +54,8 @@ public class MySessionTest extends WicketPagesTestClass {
         MySession session = (MySession) tester.getWicketSession();
         assertNull(session.getUser());
 
-        session.setUseDefaultUser(false);
         session.init(tester.getWicketRequest(), newMockUserSearch(null));
         assertNull(session.getUser());
-
-        session.setTwitterSearchInitialized(false);
-        session.setUseDefaultUser(true);
-        session.init(tester.getWicketRequest(), newMockUserSearch(null));
-        assertNotNull(session.getUser());
         session.logout(newMockUserSearch(null), tester.getWicketResponse());
         assertNull(session.getUser());
     }
@@ -69,8 +63,6 @@ public class MySessionTest extends WicketPagesTestClass {
     @Test
     public void testInitFromCookie() {
         MySession session = (MySession) tester.getWicketSession();
-        session.setUseDefaultUser(false);
-
         WebRequest req = mock(WebRequest.class);
         when(req.getCookie(TwitterSearch.COOKIE)).thenReturn(new Cookie(TwitterSearch.COOKIE, "normalToken"));
         session.init(req, newMockUserSearch(new SolrUser("testuser")));
@@ -80,10 +72,7 @@ public class MySessionTest extends WicketPagesTestClass {
     @Test
     public void testDoNotInitFromWrongCookie() {
         MySession session = (MySession) tester.getWicketSession();
-        session.setUseDefaultUser(false);
-
         WebRequest req = mock(WebRequest.class);
-        session.setUseDefaultUser(false);
         when(req.getCookie(TwitterSearch.COOKIE)).thenReturn(new Cookie("tokenWrong", null));
         session.init(req, newMockUserSearch(new SolrUser("testuser")));
         assertNull(session.getUser());
@@ -92,8 +81,6 @@ public class MySessionTest extends WicketPagesTestClass {
     @Test
     public void testSetCookie() throws TwitterException {
         MySession session = (MySession) tester.getWicketSession();
-        session.setUseDefaultUser(false);
-
         TwitterSearch ts = mock(TwitterSearch.class);
         when(ts.setTwitter4JInstance("normalToken", "tSec")).thenReturn(ts);
         //when(ts.getCredits()).thenReturn(new Credits("normalToken", "tSec", "x", "y"));

@@ -17,12 +17,14 @@ package de.jetwick.config;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.util.MaxBoundSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,7 @@ public class DefaultModule extends AbstractModule {
     @Override
     protected void configure() {
         logger.info(config.toString());
+        installLastSearches();
         installTwitterModule();
         installSolrModule();
         installDbPasswords();
@@ -85,5 +88,10 @@ public class DefaultModule extends AbstractModule {
                         setTwitter4JInstance(ts.getTwitter4JInstance());
             }
         });
+    }
+
+    public void installLastSearches() {
+        bind(MaxBoundSet.class).in(Singleton.class);
+//        bind(MaxBoundSet.class).toInstance(new MaxBoundSet<String>(30, 60).setMaxAge(10 * 60 * 1000));
     }
 }

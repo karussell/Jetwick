@@ -25,12 +25,11 @@ import de.jetwick.rmi.RMIClient;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
-import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.Helper;
+import de.jetwick.util.MaxBoundSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.FacetField;
@@ -108,9 +107,10 @@ public class Util {
 
             logger.info(counter++ + "> feed pipe from " + tmpUser.getName() + " with " + tmpUser.getCount() + " tweets");
 
+            MaxBoundSet boundSet = new MaxBoundSet<String>(0, 0);
             // try updating can fail so try max 3 times
             for (int trial = 0; trial < 3; trial++) {
-                MyTweetGrabber grabber = new MyTweetGrabber().init(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
+                MyTweetGrabber grabber = new MyTweetGrabber(boundSet).init(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
                         setRmiClient(rmiProvider).setTweetSearch(twSearch);
                 QueueThread pkg = grabber.queueTweetPackage();
                 Thread t = new Thread(pkg);

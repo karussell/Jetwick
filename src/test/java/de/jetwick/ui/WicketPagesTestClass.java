@@ -97,7 +97,7 @@ public class WicketPagesTestClass {
             }
         };
         injector = Guice.createInjector(mod);
-        return new JetwickApp(mod) {
+        return new JetwickApp(injector) {
 
             @Override
             public String getConfigurationType() {
@@ -116,7 +116,7 @@ public class WicketPagesTestClass {
 
             @Override
             public int getRateLimit() {
-                return 100;
+                    return 100;
             }
 
             @Override

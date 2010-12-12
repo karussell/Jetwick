@@ -103,6 +103,7 @@ public class TweetConsumer extends MyThread {
         logger.info(getName() + " finished");
     }
     private long allTweets = 0;
+    private long indexedTweets = 0;
     private long start = System.currentTimeMillis();
 
     public Collection<SolrTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
@@ -122,8 +123,9 @@ public class TweetConsumer extends MyThread {
         try {
             Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
             allTweets += tweetSet.size();
-            float tweetsPerSec = allTweets / ((System.currentTimeMillis() - start) / 1000.0f);
-            String str = "receivedTweets:" + allTweets + " tweets/s:" + tweetsPerSec + " indexed: ";
+            indexedTweets += res.size();
+            float tweetsPerSec = indexedTweets / ((System.currentTimeMillis() - start) / 1000.0f);
+            String str = "receivedTweets:" + allTweets + " indexedTweets:" + indexedTweets + " tweets/s:" + tweetsPerSec + " indexed: ";
             for (TweetPackage pkg : donePackages) {
                 str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
             }

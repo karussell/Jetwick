@@ -24,7 +24,6 @@ import org.apache.wicket.protocol.http.WebApplication;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Module;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import org.apache.wicket.Application;
@@ -40,11 +39,11 @@ public class JetwickApp extends WebApplication {
     private Injector injector;
 
     public JetwickApp() {
-        this(new DefaultModule());
+        this(Guice.createInjector(new DefaultModule()));
     }
 
-    public JetwickApp(Module mod) {
-        injector = Guice.createInjector(mod);
+    public JetwickApp(Injector inj) {
+        injector = inj;
         cfg = injector.getInstance(Configuration.class);
     }
 
@@ -118,11 +117,7 @@ public class JetwickApp extends WebApplication {
 
     @Override
     public Session newSession(Request request, Response response) {
-        boolean useDefaultUser = false;
-//        if ("development".equals(cfg.getStage()))
-//            useDefaultUser = true;
-
-        Session session = new MySession(request, useDefaultUser);
+        Session session = new MySession(request);
         getGuiceInjector().inject(session);
         return session;
 

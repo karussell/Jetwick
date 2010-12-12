@@ -18,6 +18,7 @@ package de.jetwick.ui;
 import de.jetwick.tw.MyTweetGrabber;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.JetwickQuery;
@@ -31,6 +32,7 @@ import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
+import de.jetwick.util.MaxBoundSet;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -43,10 +45,8 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -86,11 +86,17 @@ public class HomePage extends WebPage {
     private Provider<SolrUserSearch> uindexProvider;
     @Inject
     private Provider<RMIClient> rmiProvider;
+    @Inject
+    private MaxBoundSet<String> lastSearches;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
     private transient Thread tweetThread;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
+
+    public MaxBoundSet<String> getLastSearches() {
+        return lastSearches;
+    }
 
     public TwitterSearch getTwitterSearch() {
         return getMySession().getTwitterSearch();
@@ -754,7 +760,7 @@ public class HomePage extends WebPage {
     public QueueThread queueTweets(Collection<SolrTweet> tweets,
             String qs, String userName) {
 
-        MyTweetGrabber grabber = new MyTweetGrabber();
+        MyTweetGrabber grabber = new MyTweetGrabber(getLastSearches());
         grabber.init(tweets, userName, qs).setTweetsCount(TWEETS_IF_HIT).
                 setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch());
         return grabber.queueTweetPackage();

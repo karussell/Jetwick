@@ -21,6 +21,7 @@ import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.tw.queue.TweetPackageList;
+import de.jetwick.util.MaxBoundSet;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,15 +36,17 @@ public class MyTweetGrabber implements Serializable {
 
     private static final long serialVersionUID = 1L;
     public static AtomicInteger idCounter = new AtomicInteger(0);
-    private static final Logger logger = LoggerFactory.getLogger(MyTweetGrabber.class);
+    private final Logger logger = LoggerFactory.getLogger(MyTweetGrabber.class);
     private String userName;
     private String queryStr;
     private TwitterSearch tweetSearch;
     private Provider<RMIClient> rmiClient;
     private int tweetCount;
     private Collection<SolrTweet> tweets;
+    private final MaxBoundSet<String> lastSearches;
 
-    public MyTweetGrabber() {
+    public MyTweetGrabber(MaxBoundSet<String> lastSearchesSingelton) {
+        this.lastSearches = lastSearchesSingelton;
     }
 
     public MyTweetGrabber init(String userName) {
@@ -94,22 +97,27 @@ public class MyTweetGrabber implements Serializable {
                 }
 
                 String name = "";
-                if (tweets == null) {
-                    tweets = new LinkedBlockingQueue<SolrTweet>();
+                if (tweets == null) {                    
                     if (userName != null && !userName.isEmpty()) {
                         try {
-                            name = "grab user:" + userName;
-                            tweets.addAll(tweetSearch.getTweets(new SolrUser(userName), new ArrayList<SolrUser>(), tweetCount));
-                            logger.info("add tweets from user search: " + userName);
+                            if (!isSearchDoneInLastMinutes("user:" + userName)) {
+                                name = "grab user:" + userName;
+                                tweets = new LinkedBlockingQueue<SolrTweet>();
+                                tweets.addAll(tweetSearch.getTweets(new SolrUser(userName), new ArrayList<SolrUser>(), tweetCount));
+                                logger.info("add " + tweets.size() + " tweets from user search: " + userName);
+                            }
                         } catch (TwitterException ex) {
                             doAbort(ex);
                             logger.warn("Couldn't update user: " + userName + " " + ex.getLocalizedMessage());
                         }
                     } else if (queryStr != null && !queryStr.isEmpty()) {
                         try {
-                            name = "grab query:" + queryStr;
-                            tweetSearch.search(queryStr, tweets, tweetCount, 0);
-                            logger.info("added tweets via twitter search: " + queryStr);
+                            if (!isSearchDoneInLastMinutes(queryStr)) {
+                                name = "grab query:" + queryStr;
+                                tweets = new LinkedBlockingQueue<SolrTweet>();
+                                tweetSearch.search(queryStr, tweets, tweetCount, 0);
+                                logger.info("added " + tweets.size() + " tweets via twitter search: " + queryStr);
+                            }
                         } catch (TwitterException ex) {
                             doAbort(ex);
                             logger.warn("Couldn't query twitter: " + queryStr + " " + ex.getLocalizedMessage());
@@ -121,11 +129,14 @@ public class MyTweetGrabber implements Serializable {
                     if (tweets != null && tweets.size() > 0)
                         rmiClient.get().init().send(new TweetPackageList(name).init(idCounter.addAndGet(1), tweets));
                 } catch (Exception ex) {
-                    logger.warn("Error while sending " + tweets.size()
-                            + " tweets to queue server" + ex.getMessage());
+                    logger.warn("Error while sending tweets to queue server" + ex.getMessage());
                 }
             }
         };
+    }
+
+    public boolean isSearchDoneInLastMinutes(String string) {
+        return !lastSearches.add(string);
     }
 
     public QueueThread queueArchiving() {
