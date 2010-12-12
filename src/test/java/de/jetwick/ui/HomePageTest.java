@@ -118,7 +118,7 @@ public class HomePageTest extends WicketPagesTestClass {
         assertEquals("#java", uString);
 
         reset();
-        p = page.queueTweets(null, null, "java");
+        p = page.queueTweets(null, null, "Java");
         p.run();
         assertNull(sentTweets);
         assertEquals("", qString);

@@ -136,7 +136,7 @@ public class MyTweetGrabber implements Serializable {
     }
 
     public boolean isSearchDoneInLastMinutes(String string) {
-        return !lastSearches.add(string);
+        return !lastSearches.add(string.toLowerCase());
     }
 
     public QueueThread queueArchiving() {
