@@ -685,14 +685,26 @@ public class Helper {
     }
 
     public static String[] translateAll(String[] texts, Language[] froms, Language[] tos) throws Exception {
-        Translate.setHttpReferrer("http://www.jetwick.com/");
+        // the following is faster but often fails in Translate.execute:
+        // retrieveJSON(url, parametersBuilder.toString()).getJSONArray("responseData");
+
+//        Translate.setHttpReferrer("http://www.jetwick.com/");
+//        for (int i = 0; i < texts.length; i++) {
+//            texts[i] = workAroundBefore(texts[i]);
+//        }
+//        String[] res = Translate.execute(texts, froms, tos);
+//        for (int i = 0; i < res.length; i++) {
+//            res[i] = workAroundAfter(res[i]);
+//        }
+        String res[] = new String[texts.length];
         for (int i = 0; i < texts.length; i++) {
-            texts[i] = workAroundBefore(texts[i]);
+            try {
+                res[i] = translate(texts[i], froms[i], tos[i]);
+            } catch (Exception ex) {
+                logger.warn("Cannot translate:" + texts[i] + " " + ex.getMessage());
+            }
         }
-        String[] res = Translate.execute(texts, froms, tos);
-        for (int i = 0; i < res.length; i++) {
-            res[i] = workAroundAfter(res[i]);
-        }
+
         return res;
     }
 
