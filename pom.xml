@@ -96,6 +96,7 @@
             <artifactId>wicket-guice</artifactId>
             <version>${wicket.version}</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>com.visural</groupId>
             <artifactId>visural-wicket</artifactId>
@@ -106,6 +107,7 @@
             <artifactId>visural-common</artifactId>
             <version>0.4.3</version>
         </dependency>
+        -->
 
         <!--
          <dependency>
@@ -385,6 +387,7 @@
             <name>Peter's Repository with warp persist, mydoggy, PgsLookAndFeel, ... </name>
             <url>http://peat_hal.users.sourceforge.net/m2repository/</url>
         </repository>
+        <!--
         <repository>
             <id>visural-wicket</id>
             <name>visural-wicket</name>
@@ -395,6 +398,7 @@
             <name>visural-common</name>
             <url>http://visural-common.googlecode.com/svn/trunk/visural-common/maven/</url>
         </repository>
+        -->
         
     </repositories>
 </project>

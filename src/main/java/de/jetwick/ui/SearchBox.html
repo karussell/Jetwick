@@ -26,7 +26,23 @@
     <body>
         <wicket:panel>
             <script type="text/javascript">/*<![CDATA[/*>*/
-                Wicket.Event.add(window, "domready", function(event) {                                      
+                Wicket.Event.add(window, "domready", function(event) {
+                    qb=document.getElementById('querybox');
+                    qbBlur =  function(event) {
+                        if(qb.value==''){
+                            qb.setAttribute('class', 'search-tweet-tf-inact');
+                            qb.value='Search Twitter';
+                        }
+                        return true;
+                    };
+                    qbFocus = function(event) {
+                        if(qb.value=='Search Twitter')qb.value='';
+                        qb.setAttribute('class', 'search-tweet-tf');
+                        return true;
+                    };
+                    Wicket.Event.add(qb, "blur",  qbBlur);
+                    Wicket.Event.add(qb, "focus", qbFocus);
+
                     ub=document.getElementById('userbox');
                     ubBlur = function(event) {
                         if(ub.value==''){
@@ -44,11 +60,12 @@
                     Wicket.Event.add(ub, "blur",  ubBlur);
                     Wicket.Event.add(ub, "focus", ubFocus);
 
-                    ubBlur();                  
+                    ubBlur();                    
 
                     fo=document.getElementById('queryform');
                     Wicket.Event.add(fo, "submit", function(event) {
-                        ubFocus();                        
+                        ubFocus();
+                        qbFocus();
                     });
                 });
 
