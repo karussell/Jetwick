@@ -322,7 +322,12 @@ url("../img/bottom-line.png")
     padding-right: 10px;
 }
 
-.findOriginLink {
+.translate-all {
+    float: left;
+    clear: left;
+}
+
+.find-origin-link {
     float: left;
     padding-right: 10px;
 }

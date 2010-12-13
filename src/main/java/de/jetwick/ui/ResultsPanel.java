@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.ui.util.LabeledLink;
@@ -61,7 +60,7 @@ public class ResultsPanel extends Panel {
     private int tweetsPerUser;
     private String sort;
     private LabeledLink findOriginLink;
-    private Link translateAllLink;
+    private LabeledLink translateAllLink;
     private boolean translateAll = false;
     private int hitsPerPage;
 
@@ -93,12 +92,20 @@ public class ResultsPanel extends Panel {
         };
         add(findOriginLink);
 
-        /*
-        translateAllLink = new IndicatingAjaxFallbackLink("translateAllLink") {
+        translateAllLink = new LabeledLink("translateAllLink", null, new Model<String>() {
+
+            @Override
+            public String getObject() {
+                if (translateAll)
+                    return "Show original language";
+                else
+                    return "Translate tweets to '" + language + "'";
+            }
+        }) {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                if(target == null)
+                if (target == null)
                     return;
 
                 translateAll = !translateAll;
@@ -106,7 +113,6 @@ public class ResultsPanel extends Panel {
             }
         };
         add(translateAllLink);
-         */
 
         add(createSortLink("sortRelevance", ""));
         add(createSortLink("sortRetweets", SolrTweetSearch.RT_COUNT + " desc"));
@@ -142,10 +148,6 @@ public class ResultsPanel extends Panel {
                     }
                 };
                 item.add(new ExternalLink("latestTw", twitterUrl, "twitter.com/" + name));
-//                item.add(new ExternalLink("voteUpLink",
-//                        Helper.toReplyStatusHref("@" + user.getScreenName()
-//                        + " +1 Tweet On! #jetwick", null, null, true)));
-
                 item.add(showLatestTweets.add(new ContextImage("profileImg", user.getProfileImageUrl())));
 
                 List<SolrTweet> tweets = new ArrayList<SolrTweet>();
@@ -163,6 +165,11 @@ public class ResultsPanel extends Panel {
                     @Override
                     public void populateItem(final ListItem item) {
                         item.add(new OneTweet("oneTweet", item.getModel()) {
+
+                            @Override
+                            public boolean isTranslateAll() {
+                                return translateAll;
+                            }
 
                             @Override
                             public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {

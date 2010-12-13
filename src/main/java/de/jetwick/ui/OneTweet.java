@@ -36,6 +36,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ public class OneTweet extends Panel {
     private List<SolrTweet> subTweets = new ArrayList<SolrTweet>();
     private boolean rtClicked = false;
     private boolean rpClicked = false;
-    private boolean translated = false;
+    private boolean clickedTranslate = false;
     private boolean inReplyOfClicked = false;
 
     public OneTweet(String id, IModel<SolrTweet> model) {
@@ -80,8 +81,13 @@ public class OneTweet extends Panel {
         spamIndicator.setVisible(tweet.isSpam());
         add(spamIndicator);
 
-        final String origText = new Extractor().setTweet(tweet).run().toString();
-        final Label label = new Label("tweetText", origText);
+        final Label label = new Label("tweetText", new Model<String>() {
+
+            @Override
+            public String getObject() {
+                return new Extractor().setText(translate(tweet)).run().toString();
+            }
+        });
         label.setEscapeModelStrings(false);
         label.setOutputMarkupId(true);
         add(label);
@@ -174,7 +180,8 @@ public class OneTweet extends Panel {
                 if (target == null)
                     return;
 
-                translate(tweet, label);
+                clickedTranslate = !clickedTranslate;
+                //translate(tweet, label);
                 target.addComponent(label);
             }
         });
@@ -210,33 +217,35 @@ public class OneTweet extends Panel {
         add(subTweetsView);
     }
 
-    public void translate(SolrTweet tweet, Label label) {
-        try {            
-            Translate.setHttpReferrer("http://www.jetwick.com/");
-            // workaround for http://groups.google.com/group/google-translate-general/browse_thread/thread/8cdc2b71f5213cf7
-            boolean replace = true;
-            String origText = tweet.getText();
-            if (origText.contains("# ") || origText.contains("@ "))
-                replace = false;
-            else {
-                // use letters so that google thinks the word after the '#' is related to those letters and won't translate or mix it up.
-                origText = origText.replaceAll("#", "XbllsHYBoPll").replaceAll("@", "XallsHYBoPll");
-            }
+    public String translate(SolrTweet tweet) {
+        String trText = tweet.getText();
+        
+        if (clickedTranslate || isTranslateAll()) {
+            try {
+                Translate.setHttpReferrer("http://www.jetwick.com/");
+                // workaround for http://groups.google.com/group/google-translate-general/browse_thread/thread/8cdc2b71f5213cf7
+                boolean replace = true;
+                String origText = tweet.getText();
+                if (origText.contains("# ") || origText.contains("@ "))
+                    replace = false;
+                else {
+                    // use letters so that google thinks the word after the '#' is related to those letters and won't translate or mix it up.
+                    origText = origText.replaceAll("#", "XbllsHYBoPll").replaceAll("@", "XallsHYBoPll");
+                }
 
-            String trText;
-            if (!translated) {
                 trText = Translate.tr(origText, Language.AUTO_DETECT, language);
                 if (replace)
                     trText = trText.replaceAll("XbllsHYBoPll", "#").replaceAll("XallsHYBoPll", "@");
-            } else
-                trText = tweet.getText();
-
-            label.setDefaultModelObject(new Extractor().setText(trText).run().toString());
-            label.setEscapeModelStrings(false);
-            translated = !translated;
-        } catch (Exception ex) {
-            logger.error("cannot translate tweet:" + tweet + " " + ex.getMessage());
+            } catch (Exception ex) {
+                logger.error("cannot translate tweet:" + tweet + " " + ex.getMessage());
+            }
         }
+
+        return trText;
+    }
+
+    public boolean isTranslateAll() {
+        return false;
     }
 
     public OneTweet setLanguage(String lang) {
