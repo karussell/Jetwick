@@ -307,6 +307,8 @@ public class ResultsPanel extends Panel {
     }
 
     public void clear() {
+        translateAll = false;
+        translateMap.clear();
         users.clear();
         queryMessage = "";
         queryMessageWarn = "";
