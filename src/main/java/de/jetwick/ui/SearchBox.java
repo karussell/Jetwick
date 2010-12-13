@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.solr.JetwickQuery;
+import de.jetwick.ui.util.DefaultFocusBehaviour;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
@@ -43,6 +43,7 @@ public class SearchBox extends Panel {
     private String query;
     private String userName;
     private AutoCompleteTextField queryTF;
+//    private TextField queryTF;
 
     public SearchBox(String id) {
         super(id);
@@ -104,7 +105,7 @@ public class SearchBox extends Panel {
         AutoCompleteSettings config = new AutoCompleteSettings().setUseHideShowCoveredIEFix(false);
         config.setThrottleDelay(300);
 
-        // connect the form's textfield with the java property
+        // connect the form's textfield with the java property        
         queryTF = new MyAutoCompleteTextField("textField",
                 new PropertyModel(this, "query"), config) {
 
@@ -118,7 +119,8 @@ public class SearchBox extends Panel {
                 SearchBox.this.onSelectionChange(target, newValue);
             }
         };
-        // autosubmit when user selects choice -> problem the user text will be submitted although it should be cleared before submit
+        queryTF.add(new DefaultFocusBehaviour());
+        // autosubmit when user selects choice -> problem: the user text will be submitted although it should be cleared before submit
 //        queryTF.add(new AjaxFormSubmitBehavior(form, "onchange") {
 //
 //            @Override

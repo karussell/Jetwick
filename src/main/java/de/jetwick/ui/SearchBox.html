@@ -26,23 +26,7 @@
     <body>
         <wicket:panel>
             <script type="text/javascript">/*<![CDATA[/*>*/
-                Wicket.Event.add(window, "domready", function(event) {
-                    qb=document.getElementById('querybox');
-                    qbBlur =  function(event) {
-                        if(qb.value==''){
-                            qb.setAttribute('class', 'search-tweet-tf-inact');
-                            qb.value='Search Twitter';
-                        }
-                        return true;
-                    };
-                    qbFocus = function(event) {
-                        if(qb.value=='Search Twitter')qb.value='';
-                        qb.setAttribute('class', 'search-tweet-tf');
-                        return true;
-                    };
-                    Wicket.Event.add(qb, "blur",  qbBlur);
-                    Wicket.Event.add(qb, "focus", qbFocus);
-
+                Wicket.Event.add(window, "domready", function(event) {                                      
                     ub=document.getElementById('userbox');
                     ubBlur = function(event) {
                         if(ub.value==''){
@@ -60,13 +44,11 @@
                     Wicket.Event.add(ub, "blur",  ubBlur);
                     Wicket.Event.add(ub, "focus", ubFocus);
 
-                    ubBlur();
-                    qbBlur();
+                    ubBlur();                  
 
                     fo=document.getElementById('queryform');
                     Wicket.Event.add(fo, "submit", function(event) {
-                        ubFocus();
-                        qbFocus();
+                        ubFocus();                        
                     });
                 });
 
@@ -79,7 +61,7 @@
                             <input id="querybox" type="text" wicket:id="textField" class="search-tweet-tf"
                                    name="q" title="Enter your query"/>
                             <input id="userbox" type="text" wicket:id="userTextField" class="search-user-tf"
-                                   name="u" title="Enter user name"/>
+                                   name="u" title="Restrict search result to one user"/>
                             <input type="submit" value="Search" class="searchform-button"/>
                         </div>
                         <div class="searchboxhints">
