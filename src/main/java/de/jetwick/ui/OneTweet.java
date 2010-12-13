@@ -17,7 +17,6 @@ package de.jetwick.ui;
 
 import de.jetwick.ui.util.LabeledLink;
 import com.google.api.translate.Language;
-import com.google.api.translate.Translate;
 import de.jetwick.data.YUser;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.tw.Extractor;
@@ -218,24 +217,14 @@ public class OneTweet extends Panel {
     }
 
     public String translate(SolrTweet tweet) {
-        String trText = tweet.getText();
-        
-        if (clickedTranslate || isTranslateAll()) {
-            try {
-                Translate.setHttpReferrer("http://www.jetwick.com/");
-                // workaround for http://groups.google.com/group/google-translate-general/browse_thread/thread/8cdc2b71f5213cf7
-                boolean replace = true;
-                String origText = tweet.getText();
-                if (origText.contains("# ") || origText.contains("@ "))
-                    replace = false;
-                else {
-                    // use letters so that google thinks the word after the '#' is related to those letters and won't translate or mix it up.
-                    origText = origText.replaceAll("#", "XbllsHYBoPll").replaceAll("@", "XallsHYBoPll");
-                }
+        String trText = getTextFromTranslateAllAction(tweet.getTwitterId());
+        if (trText != null)
+            return trText;
 
-                trText = Translate.tr(origText, Language.AUTO_DETECT, language);
-                if (replace)
-                    trText = trText.replaceAll("XbllsHYBoPll", "#").replaceAll("XallsHYBoPll", "@");
+        trText = tweet.getText();
+        if (clickedTranslate) {
+            try {
+                trText = Helper.translate(trText, Language.AUTO_DETECT, Language.fromString(language));
             } catch (Exception ex) {
                 logger.error("cannot translate tweet:" + tweet + " " + ex.getMessage());
             }
@@ -244,8 +233,8 @@ public class OneTweet extends Panel {
         return trText;
     }
 
-    public boolean isTranslateAll() {
-        return false;
+    public String getTextFromTranslateAllAction(long id) {
+        return null;
     }
 
     public OneTweet setLanguage(String lang) {

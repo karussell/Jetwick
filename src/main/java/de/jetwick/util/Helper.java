@@ -15,6 +15,8 @@
  */
 package de.jetwick.util;
 
+import com.google.api.translate.Language;
+import com.google.api.translate.Translate;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -667,5 +669,45 @@ public class Helper {
             arr[idx + 1] = StrUtils.HEX_DIGITS[b & 0xf];
         }
         return new String(arr);
+    }
+
+    public static String translate(String txt, Language fromLanguage, Language toLanguage) throws Exception {
+        Translate.setHttpReferrer("http://www.jetwick.com/");
+
+        txt = workAroundBefore(txt);
+        try {
+            txt = Translate.execute(txt, fromLanguage, toLanguage);
+        } catch (Exception ex) {
+            // if language detection fails
+            txt = Translate.execute(txt, Language.ENGLISH, toLanguage);
+        }
+        return workAroundAfter(txt);
+    }
+
+    public static String[] translateAll(String[] texts, Language[] froms, Language[] tos) throws Exception {
+        Translate.setHttpReferrer("http://www.jetwick.com/");
+        for (int i = 0; i < texts.length; i++) {
+            texts[i] = workAroundBefore(texts[i]);
+        }
+        String[] res = Translate.execute(texts, froms, tos);
+        for (int i = 0; i < res.length; i++) {
+            res[i] = workAroundAfter(res[i]);
+        }
+        return res;
+    }
+
+    /**
+     * workaround for http://groups.google.com/group/google-translate-general/browse_thread/thread/8cdc2b71f5213cf7
+     */
+    private static String workAroundBefore(String origText) {
+        if (origText.contains("# ") || origText.contains("@ "))
+            return origText;
+        else
+            // use letters so that google thinks the word after the '#' is related to those letters and won't translate or mix it up.
+            return origText.replaceAll("#", "XbllsHYBoPll").replaceAll("@", "XallsHYBoPll");
+    }
+
+    private static String workAroundAfter(String origText) {
+        return origText.replaceAll("XbllsHYBoPll", "#").replaceAll("XallsHYBoPll", "@");
     }
 }

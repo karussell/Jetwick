@@ -18,7 +18,6 @@ package de.jetwick.ui;
 import de.jetwick.tw.MyTweetGrabber;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.JetwickQuery;

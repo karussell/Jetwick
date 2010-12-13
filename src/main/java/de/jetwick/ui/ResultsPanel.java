@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import com.google.api.translate.Language;
 import de.jetwick.ui.util.LabeledLink;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
@@ -24,7 +25,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
@@ -44,6 +49,8 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -51,6 +58,7 @@ import org.apache.wicket.util.resource.StringResourceStream;
  */
 public class ResultsPanel extends Panel {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private ListView userView;
     private List<SolrUser> users = new ArrayList<SolrUser>();
     private String queryMessage;
@@ -61,10 +69,17 @@ public class ResultsPanel extends Panel {
     private String sort;
     private LabeledLink findOriginLink;
     private LabeledLink translateAllLink;
+    private Map<Long, String> translateMap = new LinkedHashMap<Long, String>();
     private boolean translateAll = false;
     private int hitsPerPage;
 
-    public ResultsPanel(String id, final String language) {
+    // for test
+    public ResultsPanel(String id) {
+        this(id, "en");
+        add(new OneLineAdLazyLoadPanel("onelinead"));
+    }
+
+    public ResultsPanel(String id, final String toLanguage) {
         super(id);
 
         add(new Label("qm", new PropertyModel(this, "queryMessage")));
@@ -99,7 +114,8 @@ public class ResultsPanel extends Panel {
                 if (translateAll)
                     return "Show original language";
                 else
-                    return "Translate tweets to '" + language + "'";
+                    // get english name of iso language chars
+                    return "Translate tweets into " + new Locale(toLanguage).getDisplayLanguage(new Locale("en"));
             }
         }) {
 
@@ -109,6 +125,8 @@ public class ResultsPanel extends Panel {
                     return;
 
                 translateAll = !translateAll;
+                if (!translateAll)
+                    translateMap.clear();
                 target.addComponent(ResultsPanel.this);
             }
         };
@@ -120,6 +138,8 @@ public class ResultsPanel extends Panel {
         add(createSortLink("sortOldest", SolrTweetSearch.DATE + " asc"));
 
         userView = new ListView("users", users) {
+
+            Map<Long, SolrTweet> allTweets = new LinkedHashMap<Long, SolrTweet>();
 
             @Override
             public void populateItem(final ListItem item) {
@@ -150,7 +170,7 @@ public class ResultsPanel extends Panel {
                 item.add(new ExternalLink("latestTw", twitterUrl, "twitter.com/" + name));
                 item.add(showLatestTweets.add(new ContextImage("profileImg", user.getProfileImageUrl())));
 
-                List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+                final List<SolrTweet> tweets = new ArrayList<SolrTweet>();
                 int counter = 0;
 
                 for (SolrTweet tw : user.getOwnTweets()) {
@@ -158,6 +178,7 @@ public class ResultsPanel extends Panel {
                         break;
 
                     tweets.add(tw);
+                    allTweets.put(tw.getTwitterId(), tw);
                     counter++;
                 }
                 ListView tweetView = new ListView("tweets", tweets) {
@@ -167,8 +188,11 @@ public class ResultsPanel extends Panel {
                         item.add(new OneTweet("oneTweet", item.getModel()) {
 
                             @Override
-                            public boolean isTranslateAll() {
-                                return translateAll;
+                            public String getTextFromTranslateAllAction(long id) {
+                                if (translateAll && translateMap.size() == 0)
+                                    fillTranslateMap(allTweets.values(), toLanguage);
+
+                                return translateMap.get(id);
                             }
 
                             @Override
@@ -190,7 +214,7 @@ public class ResultsPanel extends Panel {
                             public Collection<SolrTweet> onInReplyOfClick(long id) {
                                 return ResultsPanel.this.onInReplyOfClick(id);
                             }
-                        }.setLanguage(language));
+                        }.setLanguage(toLanguage));
                     }
                 };
                 item.add(tweetView);
@@ -223,6 +247,39 @@ public class ResultsPanel extends Panel {
                 onHtmlExport();
             }
         });
+    }
+
+    public void fillTranslateMap(Collection<SolrTweet> tweets, String toLang) {
+        Map<Integer, Long> index2Id = new LinkedHashMap<Integer, Long>();
+        String[] texts = new String[tweets.size()];
+        Language[] froms = new Language[tweets.size()];
+        Language[] tos = new Language[tweets.size()];
+
+        try {
+            Language toLanguage = Language.fromString(toLang);
+            Iterator<SolrTweet> iter = tweets.iterator();
+            for (int i = 0; i < texts.length; i++) {
+                SolrTweet tweet = iter.next();
+                index2Id.put(i, tweet.getTwitterId());
+                texts[i] = tweet.getText();
+                froms[i] = Language.AUTO_DETECT;
+                tos[i] = toLanguage;
+            }
+
+            String newTxts[] = Helper.translateAll(texts, froms, tos);
+            for (int i = 0; i < newTxts.length; i++) {
+                Long twitterId = index2Id.get(i);
+                if (twitterId != null)
+                    translateMap.put(twitterId, newTxts[i]);
+            }
+//            System.out.println(translateMap);
+        } catch (Exception ex) {
+            logger.error("Couldn't translate all tweets", ex);
+        }
+    }
+
+    Map<Long, String> getTranslateMap() {
+        return translateMap;
     }
 
     public void onUserClick(String userName, String query) {

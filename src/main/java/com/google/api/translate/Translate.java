@@ -55,18 +55,6 @@ public final class Translate extends GoogleAPI {
         return getJSONResponse(json);
     }
 
-    public static String tr(final String text, final Language from, final String to) throws Exception {
-        validateReferrer();
-
-        final URL url = new URL(URL);
-        final String parameters = PARAMETERS.replaceAll("#FROM#", from.toString()).replaceAll("#TO#", to)
-                + URLEncoder.encode(text, ENCODING);
-
-        final JSONObject json = retrieveJSON(url, parameters);
-
-        return getJSONResponse(json);
-    }
-
     /**
      * Translates an array of text Strings from a given Language to another given Language using Google Translate.
      * 
@@ -156,8 +144,12 @@ public final class Translate extends GoogleAPI {
 
         for (int i = 0; i < json.length(); i++) {
             final JSONObject obj = json.getJSONObject(i);
-
-            responses[i] = getJSONResponse(obj);
+            try {
+                responses[i] = getJSONResponse(obj);
+            } catch (Exception ex) {
+                // one failure should not effect the other texts
+                responses[i] = text[i];
+            }
         }
 
         return responses;

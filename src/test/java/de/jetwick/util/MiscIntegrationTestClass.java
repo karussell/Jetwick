@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 import com.google.api.translate.Language;
@@ -38,7 +37,7 @@ public class MiscIntegrationTestClass {
 
         url = "http://is.gd/en49t";
         newUrl = Helper.getResolvedUrl(url, 900);
-        assertTrue(url.length() < newUrl.length());       
+        assertTrue(url.length() < newUrl.length());
 
         url = "http://bit.ly/aowRP7";
         newUrl = Helper.getResolvedUrl(url, 900);
@@ -53,7 +52,7 @@ public class MiscIntegrationTestClass {
     }
 
     @Test
-    public void testGetUrlTitle() {                
+    public void testGetUrlTitle() {
         assertEquals("Google", Helper.getUrlTitle("http://google.de", 1000));
 
         // encoding is now windows-1251
@@ -72,14 +71,15 @@ public class MiscIntegrationTestClass {
 
         Helper.enableCookieMgmt();
         // the following site directs to login (als a unique title)
-        Helper.getUrlTitle("http://ow.ly/2LbUA", 2000);       
+        Helper.getUrlTitle("http://ow.ly/2LbUA", 2000);
     }
 
     @Test
     public void testTranslate() throws Exception {
         Translate.setHttpReferrer("http://jetwick.com");
-        System.out.println(Translate.tr("Estoy listo para seguir discutiendo http://www.cubadebate.cu/reflexiones-fidel/2010... #USA #Iran #Cuba #EEUU #Obama #FidelCastro",
-                Language.AUTO_DETECT, "de"));
+        System.out.println(Translate.execute("Estoy listo para seguir discutiendo http://www.cubadebate.cu/reflexiones-fidel/2010... "
+                + "#USA #Iran #Cuba #EEUU #Obama #FidelCastro",
+                Language.AUTO_DETECT, Language.fromString("de")));
     }
 
     @Test
