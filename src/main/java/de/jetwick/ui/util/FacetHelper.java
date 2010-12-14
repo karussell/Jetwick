@@ -18,14 +18,14 @@ package de.jetwick.ui.util;
 
 import java.io.Serializable;
 
-public class FacetHelper implements Serializable {
+public class FacetHelper<T> implements Serializable {
 
     public String key;
-    public String value;
+    public T value;
     public String displayName;
     public long count;
 
-    public FacetHelper(String filterKey, String filterValue, String displayName, long count) {
+    public FacetHelper(String filterKey, T filterValue, String displayName, long count) {
         this.key = filterKey;
         this.value = filterValue;
         this.displayName = displayName;
@@ -33,7 +33,7 @@ public class FacetHelper implements Serializable {
     }
 
     public String getFilter() {
-        return key + ":" + value;
+        return key + ":" + value.toString();
     }
 
     @Override

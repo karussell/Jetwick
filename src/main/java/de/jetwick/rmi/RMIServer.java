@@ -70,7 +70,7 @@ public class RMIServer implements CommunicationService {
 
         // prevent us from OOMs
         if (tweetQueue.size() > 500) {
-            logger.error("didn't prozessed " + tws.getTweets() + " tweets. queue is full: " + tweetQueue.size());
+            logger.error("didn't prozessed " + tws.getTweets().size() + " tweets. queue is full: " + tweetQueue.size());
             return;
         }
 

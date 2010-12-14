@@ -20,12 +20,12 @@ import de.jetwick.ui.util.FacetHelper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
@@ -49,7 +49,7 @@ public class SavedSearchPanel extends Panel {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private Map<String, String> tr = new LinkedHashMap<String, String>();
-    private List<FacetHelper> savedSearches = new ArrayList<FacetHelper>();
+    private List<FacetHelper<Long>> savedSearches = new ArrayList<FacetHelper<Long>>();
     private ListView savedSearchesView;
     private String SAVED_SEARCHES = "ss";
 
@@ -61,7 +61,7 @@ public class SavedSearchPanel extends Panel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                SavedSearchPanel.this.onSave(target);
+                SavedSearchPanel.this.onSave(target, new Date().getTime());
             }
         };
         add(saveSearch);
@@ -70,7 +70,7 @@ public class SavedSearchPanel extends Panel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                SavedSearchPanel.this.onSave(target);
+                SavedSearchPanel.this.onSave(target, new Date().getTime());
             }
 
             @Override
@@ -84,13 +84,8 @@ public class SavedSearchPanel extends Panel {
 
             @Override
             protected void populateItem(ListItem li) {
-                final FacetHelper h = (FacetHelper) li.getModelObject();
-                long tmp = -1;
-                try {
-                    tmp = Long.parseLong(h.value);
-                } catch (Exception ex) {
-                    logger.error("onFacetChange", ex);
-                }
+                final FacetHelper<Long> h = (FacetHelper<Long>) li.getModelObject();
+                long tmp = h.value;
                 final long ssId = tmp;
                 Link link = new IndicatingAjaxFallbackLink("filterValueLink") {
 
@@ -100,12 +95,16 @@ public class SavedSearchPanel extends Panel {
                     }
                 };
 
+
                 String name = h.displayName;
                 if (name.length() > 20)
                     name = name.substring(0, 20) + "..";
                 else if (name.length() < 1)
                     name = "<empty>";
-                
+
+                if (ssId == 0)
+                    name = "last:" + name;
+
                 link.add(new Label("filterValue", name));
                 link.add(new AttributeAppender("title", true, new Model(h.displayName), " "));
                 Label label4count = new Label("filterCount", " (" + h.count + ")");
@@ -113,7 +112,6 @@ public class SavedSearchPanel extends Panel {
                     link.add(new AttributeAppender("class", new Model("gray"), " "));
                     label4count.add(new AttributeAppender("class", new Model("gray"), " "));
                 }
-                //label4count.add(new AttributeModifier("class", "filter-count", false, new Model("")));
 
                 li.add(label4count);
                 li.add(link);
@@ -130,10 +128,12 @@ public class SavedSearchPanel extends Panel {
         };
         add(savedSearchesView);
 
+        // execute forever
         add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(30)) {
 
             @Override
             protected void onPostProcessTarget(AjaxRequestTarget target) {
+                // update count of all queries
                 updateSSCounts(target);
             }
         });
@@ -158,27 +158,34 @@ public class SavedSearchPanel extends Panel {
                     if (firstIndex < 0)
                         continue;
 
-                    String val = entry.getKey().substring(firstIndex + SAVED_SEARCHES.length() + 1);
+                    long val = -1;
+                    try {
+                        val = Long.parseLong(entry.getKey().substring(firstIndex + SAVED_SEARCHES.length() + 1));
+                    } catch (Exception ex) {
+                    }
 
                     // do not exclude smaller zero
                     count = entry.getValue();
                     if (count == null)
                         count = 0;
 
-                    list.add(new FacetHelper(SAVED_SEARCHES, val, translate(val), count));
+                    list.add(new FacetHelper<Long>(SAVED_SEARCHES, val, translate(val), count));
                 }
         }
         return list;
     }
-    private Comparator<FacetHelper> comp = new Comparator<FacetHelper>() {
+    private static Comparator<FacetHelper> comp = new Comparator<FacetHelper>() {
 
         @Override
         public int compare(FacetHelper o1, FacetHelper o2) {
-            if (o1.displayName == null)
+            long val1 = (Long) o1.value;
+            long val2 = (Long) o2.value;
+            if (val1 < val2)
                 return -1;
-            else if (o2.displayName == null)
+            else if (val1 > val2)
                 return 1;
-            return o1.displayName.compareTo(o2.displayName);
+            else
+                return 0;
         }
     };
 
@@ -199,17 +206,13 @@ public class SavedSearchPanel extends Panel {
     public void onClick(AjaxRequestTarget target, long ssId) {
     }
 
-    public void onSave(AjaxRequestTarget target) {
+    public void onSave(AjaxRequestTarget target, long ssId) {
     }
 
     public void onRemove(AjaxRequestTarget target, long ssId) {
     }
 
-    public String translate(String str) {
-        String val = tr.get(str);
-        if (val == null)
-            return str;
-
-        return val;
+    public String translate(long val) {
+        return "" + val;
     }
 }

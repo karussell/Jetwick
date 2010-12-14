@@ -123,6 +123,14 @@ public class HomePageTest extends WicketPagesTestClass {
         assertNull(sentTweets);
         assertEquals("", qString);
         assertEquals("", uString);
+
+//        reset();
+//        page = getInstance(HomePage.class);
+//        p = page.queueTweets(null, null, "Java");
+//        p.run();
+//        assertNull(sentTweets);
+//        assertEquals("", qString);
+//        assertEquals("", uString);
     }
 
     @Test
@@ -163,7 +171,7 @@ public class HomePageTest extends WicketPagesTestClass {
 
         // if 'normal query' AND 'user search' then set twitterFallback = false but trigger backgr. thread
         reset();
-        page.doSearch(new SolrQuery("java").addFilterQuery("user:test"), 0, true);        
+        page.doSearch(new SolrQuery("java").addFilterQuery("user:test"), 0, true);
         page.getQueueThread().join();
         assertEquals("#test", uString);
         assertEquals("", qString);

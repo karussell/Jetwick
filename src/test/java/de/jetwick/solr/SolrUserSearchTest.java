@@ -18,7 +18,6 @@ package de.jetwick.solr;
 import java.util.Set;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -321,4 +320,12 @@ public class SolrUserSearchTest extends MyAbstractSolrTestCase {
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
     }
+    
+//    @Test
+//    public void testGetLastQuery() throws Exception {
+//        SolrUser user = new SolrUser("karsten");
+//        user.addSavedSearch(new SavedSearch(0, new SolrQuery("test")));
+//        userSearch.save(user, true);
+//        assertEquals("test", userSearch.findByScreenName("karsten").getSavedSearch(0).getQueryTerm());
+//    }
 }

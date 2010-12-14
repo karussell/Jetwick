@@ -151,7 +151,7 @@ public class SolrUserSearch extends SolrAbstractSearch {
         doc.addField("twCreatedAt_dt", user.getTwitterCreatedAt());
 
         int counter = 1;
-        for (SavedSearch ss : user.getSavedSearches()) {
+        for (SavedSearch ss : user.getSavedSearches()) {                    
             doc.addField("ss_" + counter + "_query_s", ss.getCleanQuery().toString());
             doc.addField("ss_" + counter + "_last_dt", ss.getLastQueryDate());
 
@@ -199,16 +199,16 @@ public class SolrUserSearch extends SolrAbstractSearch {
         user.setTwitterCreatedAt((Date) doc.getFieldValue("twCreatedAt_dt"));
 
         long counter = 1;
-        while (true) {
+        while (true) {            
             String qString = (String) doc.getFieldValue("ss_" + counter + "_query_s");
             if (qString == null)
+                // backward compatibility
                 break;
 
             SolrQuery q = JetwickQuery.parse(qString);
             SavedSearch ss = new SavedSearch(counter, q);
             ss.setLastQueryDate((Date) doc.getFieldValue("ss_" + counter + "_last_dt"));
             user.addSavedSearch(ss);
-
             counter++;
         }
         // only used for facet search? doc.getFieldValue("lang");        

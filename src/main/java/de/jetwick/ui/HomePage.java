@@ -241,6 +241,7 @@ public class HomePage extends WebPage {
             target.addComponent(dateFilter);
             target.addComponent(urlTrends);
             target.addComponent(feedbackPanel);
+            target.addComponent(ssPanel);
 
             // no ajax for wikipedia to avoid requests
             //target.addComponent(wikiPanel);
@@ -340,9 +341,9 @@ public class HomePage extends WebPage {
             }
 
             @Override
-            public void onSave(AjaxRequestTarget target) {
+            public void onSave(AjaxRequestTarget target, long ssId) {
+                SavedSearch ss = new SavedSearch(ssId, lastQuery);
                 SolrUser user = getMySession().getUser();
-                SavedSearch ss = new SavedSearch(new Date().getTime(), lastQuery);
                 user.addSavedSearch(ss);
                 uindexProvider.get().save(user, true);
                 updateSSCounts(target);
@@ -366,15 +367,9 @@ public class HomePage extends WebPage {
             }
 
             @Override
-            public String translate(String str) {
-                try {
-                    SavedSearch ss = getMySession().getUser().getSavedSearch(Long.parseLong(str));
-                    return ss.getName();
-                } catch (NumberFormatException ex) {
-                    logger.warn("Wrong Number format for saved search:" + str, ex);
-                }
-
-                return super.translate(str);
+            public String translate(long id) {
+                SavedSearch ss = getMySession().getUser().getSavedSearch(id);
+                return ss.getName();
             }
         };
         ssPanel.updateSSCounts(null);
@@ -618,9 +613,6 @@ public class HomePage extends WebPage {
     }
 
     public void doSearch(SolrQuery query, int page, boolean twitterFallback, boolean instantSearch) {
-        if (getMySession().hasLoggedIn())
-            TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
-
         String queryString = searchBox.getQuery();
 
         if (!instantSearch) {
@@ -658,6 +650,10 @@ public class HomePage extends WebPage {
 
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
         getTweetSearch().attachPagability(query, page, hitsPerPage);
+
+
+        if (getMySession().hasLoggedIn())
+            TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
 
         long start = System.currentTimeMillis();
         long totalHits = 0;
