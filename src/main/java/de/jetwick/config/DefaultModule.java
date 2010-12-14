@@ -17,8 +17,6 @@ package de.jetwick.config;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
-import com.google.inject.Scope;
-import com.google.inject.Singleton;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweetSearch;
@@ -93,7 +91,7 @@ public class DefaultModule extends AbstractModule {
 
     public void installLastSearches() {
         logger.info("install maxBoundSet singleton");
-        bind(MaxBoundSet.class).asEagerSingleton();
-//        bind(MaxBoundSet.class).toInstance(new MaxBoundSet<String>(30, 60).setMaxAge(10 * 60 * 1000));
+//        bind(MaxBoundSet.class).asEagerSingleton();
+        bind(MaxBoundSet.class).toInstance(new MaxBoundSet<String>(30, 60).setMaxAge(10 * 60 * 1000));
     }
 }

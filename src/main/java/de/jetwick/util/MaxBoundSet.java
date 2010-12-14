@@ -37,11 +37,6 @@ public class MaxBoundSet<T> {
     private Map<T, Long> objMap = new LinkedHashMap<T, Long>();
     private final ReentrantLock lock = new ReentrantLock(true);
 
-    public MaxBoundSet() {
-        this(30, 60);
-        setMaxAge(10 * 60 * 1000);
-    }
-
     public MaxBoundSet(int minSize, int maxSize) {
         this.maxSize = maxSize;
         this.minSize = minSize;

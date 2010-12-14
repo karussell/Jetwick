@@ -86,15 +86,15 @@ public class HomePage extends WebPage {
     @Inject
     private Provider<RMIClient> rmiProvider;
     @Inject
-    private MaxBoundSet<String> lastSearches;
+    private Provider<MaxBoundSet> lastSearches;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
     private transient Thread tweetThread;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
-
+    
     public MaxBoundSet<String> getLastSearches() {
-        return lastSearches;
+        return lastSearches.get();
     }
 
     public TwitterSearch getTwitterSearch() {

@@ -1,4 +1,5 @@
-.gitignore~
+.*~
+*~
 TODO.txt
 deploy*.sh
 *.log
