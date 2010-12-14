@@ -285,27 +285,29 @@ url("../img/bottom-line.png")
     padding: 0px 15px 0px 10px;
 }
 
-.filterNames ul li {
-    font-size: 0.9em;
-}
 .filter-rm { font-weight: bold }
-
-.filter .filterCount {
+.filter .filter-count {
     font-size: 0.7em;
     color: gray
 }
 .filter ul { margin-top: 0px; padding-top: 5px; padding-left: 5px; }
-.filterNames { padding-bottom: 15px;}
-.filterNames ul li span.gray {
-    color: gray;
-}
+
+.filter-names { padding-bottom: 15px;}
+.filter-names ul li { font-size: 0.9em; }
+.filter-names ul li span.gray { color: gray; }
 
 .saved-searches {
     padding-top: 8px;
 }
-.saved-searches .filterNames {
+.saved-searches .filter-names {
     padding-bottom: 0px;
     padding-left: 5px;
+}
+.saved-searches .filter-count {
+    color: black;
+}
+.saved-searches .gray {
+    color: gray;
 }
 
 .saveInfo {
@@ -460,19 +462,11 @@ url("../img/bottom-line.png")
 
 .tweet-important-links li a {
     font-size: 12px;
-    /*border: 1px dashed gray;*/
-    /*background: buttonface;*/
 }
 
 .tweet-text .i-tw-link, .tweet-text .ex-tw-link  {
     color: #003f6e;
 }
-
-/* we shouldn't gave spam tweet such a great attention  
-.spam-indicator {
-    background-color: #ffc9c9;
-}
-*/
 
 .user-name { font-weight: bold; font-size: 0.8em; }
 
@@ -484,8 +478,7 @@ url("../img/bottom-line.png")
     clear: right;
 }
 
-.tweet .user-name a span {    
-    /*color: red;*/
+.tweet .user-name a span {        
     float: left;
     padding-right: 5px;
 }

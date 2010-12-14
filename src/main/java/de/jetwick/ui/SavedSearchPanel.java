@@ -18,11 +18,14 @@ package de.jetwick.ui;
 import de.jetwick.ui.util.FacetHelper;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
@@ -102,7 +105,14 @@ public class SavedSearchPanel extends Panel {
                     name = name.substring(0, 20) + "..";
                 link.add(new Label("filterValue", name));
                 link.add(new AttributeAppender("title", true, new Model(h.displayName), " "));
-                li.add(new Label("filterCount", " (" + h.count + ")"));
+                Label label4count = new Label("filterCount", " (" + h.count + ")");
+                if (h.count < 1) {
+                    link.add(new AttributeAppender("class", new Model("gray"), " "));
+                    label4count.add(new AttributeAppender("class", new Model("gray"), " "));
+                }
+                    //label4count.add(new AttributeModifier("class", "filter-count", false, new Model("")));
+
+                li.add(label4count);
                 li.add(link);
 
                 Link removeLink = new AjaxFallbackLink("removeLink") {
@@ -117,7 +127,7 @@ public class SavedSearchPanel extends Panel {
         };
         add(savedSearchesView);
 
-        add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(60)) {
+        add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(30)) {
 
             @Override
             protected void onPostProcessTarget(AjaxRequestTarget target) {
@@ -157,6 +167,17 @@ public class SavedSearchPanel extends Panel {
         }
         return list;
     }
+    private Comparator<FacetHelper> comp = new Comparator<FacetHelper>() {
+
+        @Override
+        public int compare(FacetHelper o1, FacetHelper o2) {
+            if (o1.displayName == null)
+                return -1;
+            else if (o2.displayName == null)
+                return 1;
+            return o1.displayName.compareTo(o2.displayName);
+        }
+    };
 
     public void updateSSCounts(AjaxRequestTarget target) {
     }
@@ -169,6 +190,7 @@ public class SavedSearchPanel extends Panel {
                     savedSearches.add(helper);
             }
         }
+        Collections.sort(savedSearches, comp);
     }
 
     public void onClick(AjaxRequestTarget target, long ssId) {

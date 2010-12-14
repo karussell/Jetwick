@@ -26,7 +26,7 @@
     <body>
         <wicket:panel>            
             <div class="filter saved-searches">
-                <div class="filterNames">
+                <div class="filter-names">
                     <div title="Save any search">Searches                        
                         <a wicket:id="saveSearch" title="Add current search to this saved search list"><img src="img/feed_add.png"/></a>
                     </div>
@@ -37,9 +37,9 @@
                     </div>
                     <ul>                        
                         <li wicket:id="filterValues">
+                            <a wicket:id="removeLink"><img src="img/cancel-light.png"/></a>                            
                             <a wicket:id="filterValueLink"><span wicket:id="filterValue">[filter value]</span></a>
-                            <a wicket:id="removeLink"><img src="img/cancel-light.png"/></a>
-                            <span class="filterCount" wicket:id="filterCount">[count]</span>
+                            <span class="filter-count" wicket:id="filterCount">[count]</span>
                         </li>
                     </ul>
                 </div>

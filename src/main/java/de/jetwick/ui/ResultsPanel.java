@@ -73,7 +73,7 @@ public class ResultsPanel extends Panel {
     private boolean translateAll = false;
     private int hitsPerPage;
 
-    // for test
+    // for test only
     public ResultsPanel(String id) {
         this(id, "en");
         add(new OneLineAdLazyLoadPanel("onelinead"));
