@@ -103,6 +103,9 @@ public class SavedSearchPanel extends Panel {
                 String name = h.displayName;
                 if (name.length() > 20)
                     name = name.substring(0, 20) + "..";
+                else if (name.length() < 1)
+                    name = "<empty>";
+                
                 link.add(new Label("filterValue", name));
                 link.add(new AttributeAppender("title", true, new Model(h.displayName), " "));
                 Label label4count = new Label("filterCount", " (" + h.count + ")");
@@ -110,7 +113,7 @@ public class SavedSearchPanel extends Panel {
                     link.add(new AttributeAppender("class", new Model("gray"), " "));
                     label4count.add(new AttributeAppender("class", new Model("gray"), " "));
                 }
-                    //label4count.add(new AttributeModifier("class", "filter-count", false, new Model("")));
+                //label4count.add(new AttributeModifier("class", "filter-count", false, new Model("")));
 
                 li.add(label4count);
                 li.add(link);

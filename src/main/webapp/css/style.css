@@ -309,7 +309,10 @@ url("../img/bottom-line.png")
 .saved-searches .gray {
     color: gray;
 }
-
+.saved-searches .remove-link {
+    margin-left: -5px;
+    padding-right: 4px;
+}
 .saveInfo {
     background-color: #ffffd6;
     padding-left: 5px;
@@ -671,7 +674,7 @@ li.ol-ad {
 
 .tagcloud {
     float: left;
-    padding-top: 10px;
+    padding-top: 7px;
 }
 
 .tagcloud .var-size-0  { font-size: 12px;}
