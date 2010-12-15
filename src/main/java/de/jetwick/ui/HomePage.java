@@ -31,7 +31,6 @@ import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
-import de.jetwick.util.MaxBoundSet;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -82,20 +81,15 @@ public class HomePage extends WebPage {
     @Inject
     private Provider<SolrTweetSearch> twindexProvider;
     @Inject
-    private Provider<SolrUserSearch> uindexProvider;
+    private Provider<SolrUserSearch> uindexProvider;    
     @Inject
-    private Provider<RMIClient> rmiProvider;
-    @Inject
-    private Provider<MaxBoundSet> lastSearches;
+    private MyTweetGrabber grabber;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
     private transient Thread tweetThread;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
     
-    public MaxBoundSet<String> getLastSearches() {
-        return lastSearches.get();
-    }
 
     public TwitterSearch getTwitterSearch() {
         return getMySession().getTwitterSearch();
@@ -164,10 +158,6 @@ public class HomePage extends WebPage {
 
     public SolrTweetSearch getTweetSearch() {
         return twindexProvider.get();
-    }
-
-    public void setRMIClient(Provider<RMIClient> rmiProvider) {
-        this.rmiProvider = rmiProvider;
     }
 
     public Thread getQueueThread() {
@@ -748,16 +738,9 @@ public class HomePage extends WebPage {
         logger.info("Finished Constructing UI");
     }
 
-    public Provider<RMIClient> getRmiProvider() {
-        return rmiProvider;
-    }
-
     public QueueThread queueTweets(Collection<SolrTweet> tweets,
-            String qs, String userName) {
-
-        MyTweetGrabber grabber = new MyTweetGrabber(getLastSearches());
-        grabber.init(tweets, userName, qs).setTweetsCount(TWEETS_IF_HIT).
-                setRmiClient(rmiProvider).setTweetSearch(getTwitterSearch());
-        return grabber.queueTweetPackage();
+            String qs, String userName) {               
+        return grabber.init(tweets, qs, userName).setTweetsCount(TWEETS_IF_HIT).
+                setTwitterSearch(getTwitterSearch()).queueTweetPackage();
     }
 }

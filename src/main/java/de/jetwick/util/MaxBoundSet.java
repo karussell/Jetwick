@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A set which ignores element with an age older than maxAge when calling
@@ -31,6 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class MaxBoundSet<T> {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private int maxSize;
     private int minSize;
     private long maxAge;
@@ -90,6 +93,7 @@ public class MaxBoundSet<T> {
      * Reduces the current size of the set to minSize
      */
     public void clean() {
+        logger.info("clean! " + objMap.size());
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {

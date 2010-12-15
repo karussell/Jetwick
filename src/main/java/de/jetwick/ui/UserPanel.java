@@ -17,6 +17,7 @@ package de.jetwick.ui;
 
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.MyTweetGrabber;
+import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.PageParameters;
@@ -105,10 +106,13 @@ public class UserPanel extends Panel {
                     }
                 });
                 modalW.setTitle("Specify the user and the number of tweets you want to grab");
-                MyTweetGrabber grabber = new MyTweetGrabber(homePageRef.getLastSearches()).init(user.getScreenName()).
-                        setRmiClient(homePageRef.getRmiProvider()).setTweetSearch(homePageRef.getTwitterSearch());
-                final GrabTweetsDialog dialog = new GrabTweetsDialog(modalW.getContentId(), user.getScreenName(), grabber) {
+                
+                final GrabTweetsDialog dialog = new GrabTweetsDialog(modalW.getContentId(), user.getScreenName()) {
 
+                    @Override
+                    public TwitterSearch getTwitterSearch() {
+                        return homePageRef.getTwitterSearch();
+                    }
                     @Override
                     public void updateAfterAjax(AjaxRequestTarget target) {
                         UserPanel.this.updateAfterAjax(target);

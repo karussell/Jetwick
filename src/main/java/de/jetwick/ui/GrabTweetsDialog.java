@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import com.google.inject.Inject;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
@@ -50,8 +51,10 @@ public class GrabTweetsDialog extends Panel {
     private String userName;
     private transient QueueThread pkg;
     private boolean started = false;
+    @Inject
+    private MyTweetGrabber grabber;
 
-    public GrabTweetsDialog(String id, String user, final MyTweetGrabber grabber) {
+    public GrabTweetsDialog(String id, String user) {
         super(id);
 
         this.userName = user;
@@ -100,6 +103,7 @@ public class GrabTweetsDialog extends Panel {
                     if (getMaxTweets() > 0) {
                         grabber.setUserName(userName);
                         grabber.setTweetsCount(getMaxTweets());
+                        grabber.setTwitterSearch(getTwitterSearch());
                         pkg = grabber.queueArchiving();
                         new Thread(pkg).start();
                     }
@@ -132,6 +136,10 @@ public class GrabTweetsDialog extends Panel {
         choices.getModel().setObject(choices.getChoices().get(0));
         choices.setNullValid(false);
         form.add(choices);
+    }
+
+    protected TwitterSearch getTwitterSearch() {
+        throw new RuntimeException();
     }
 
     protected Collection<String> getUserChoices(String input) {

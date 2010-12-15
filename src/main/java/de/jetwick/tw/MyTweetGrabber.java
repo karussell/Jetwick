@@ -15,6 +15,7 @@
  */
 package de.jetwick.tw;
 
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.SolrTweet;
@@ -40,21 +41,17 @@ public class MyTweetGrabber implements Serializable {
     private String userName;
     private String queryStr;
     private TwitterSearch tweetSearch;
+    @Inject
     private Provider<RMIClient> rmiClient;
     private int tweetCount;
     private Collection<SolrTweet> tweets;
-    private final MaxBoundSet<String> lastSearches;
+    @Inject
+    private Provider<MaxBoundSet> lastSearches;
 
-    public MyTweetGrabber(MaxBoundSet<String> lastSearchesSingelton) {
-        this.lastSearches = lastSearchesSingelton;
+    public MyTweetGrabber() {
     }
 
-    public MyTweetGrabber init(String userName) {
-        init(null, userName, null);
-        return this;
-    }
-
-    public MyTweetGrabber init(Collection<SolrTweet> tweets, String userName, String query) {
+    public MyTweetGrabber init(Collection<SolrTweet> tweets, String query, String userName) {
         this.tweets = tweets;
         this.userName = userName;
         this.queryStr = query;
@@ -69,7 +66,7 @@ public class MyTweetGrabber implements Serializable {
         return userName;
     }
 
-    public MyTweetGrabber setTweetSearch(TwitterSearch ts) {
+    public MyTweetGrabber setTwitterSearch(TwitterSearch ts) {
         this.tweetSearch = ts;
         return this;
     }
@@ -137,8 +134,8 @@ public class MyTweetGrabber implements Serializable {
         };
     }
 
-    public boolean isSearchDoneInLastMinutes(String string) {        
-        return !lastSearches.add(string.toLowerCase());
+    public boolean isSearchDoneInLastMinutes(String string) {
+        return !lastSearches.get().add(string.toLowerCase());
     }
 
     public QueueThread queueArchiving() {
@@ -187,5 +184,16 @@ public class MyTweetGrabber implements Serializable {
 
     public int getTweetCount() {
         return tweetCount;
+    }
+
+    public MyTweetGrabber setMyBoundSet(final MaxBoundSet<String> boundSet) {
+        lastSearches = new Provider<MaxBoundSet>() {
+
+            @Override
+            public MaxBoundSet get() {
+                return boundSet;
+            }
+        };
+        return this;
     }
 }

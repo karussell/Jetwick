@@ -92,6 +92,6 @@ public class DefaultModule extends AbstractModule {
     public void installLastSearches() {
         logger.info("install maxBoundSet singleton");
 //        bind(MaxBoundSet.class).asEagerSingleton();
-        bind(MaxBoundSet.class).toInstance(new MaxBoundSet<String>(30, 60).setMaxAge(10 * 60 * 1000));
+        bind(MaxBoundSet.class).toInstance(new MaxBoundSet<String>(250, 500).setMaxAge(10 * 60 * 1000));
     }
 }

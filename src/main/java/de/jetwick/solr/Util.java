@@ -110,8 +110,9 @@ public class Util {
             MaxBoundSet boundSet = new MaxBoundSet<String>(0, 0);
             // try updating can fail so try max 3 times
             for (int trial = 0; trial < 3; trial++) {
-                MyTweetGrabber grabber = new MyTweetGrabber(boundSet).init(null, tmpUser.getName(), null).setTweetsCount((int) tmpUser.getCount()).
-                        setRmiClient(rmiProvider).setTweetSearch(twSearch);
+                MyTweetGrabber grabber = new MyTweetGrabber().setMyBoundSet(boundSet).
+                        init(null, null, tmpUser.getName()).setTweetsCount((int) tmpUser.getCount()).
+                        setRmiClient(rmiProvider).setTwitterSearch(twSearch);
                 QueueThread pkg = grabber.queueTweetPackage();
                 Thread t = new Thread(pkg);
                 t.start();
