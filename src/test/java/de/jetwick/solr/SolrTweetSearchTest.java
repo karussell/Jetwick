@@ -707,6 +707,45 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
     }
 
     @Test
+    public void testAdSearch() throws Exception {
+        SolrTweet tw = createTweet(1L, "text jetwick @jetwick", "peter");
+        tw.setRt(1);
+        tw.setQuality(100);
+        twSearch.update(Arrays.asList(tw));
+        twSearch.commit();
+        assertEquals(1, twSearch.search("text").size());
+        assertEquals(0, twSearch.searchAds("text").size());
+
+        tw = createTweet(1L, "text #jetwick", "peter");
+        tw.setQuality(100);
+        twSearch.update(Arrays.asList(tw));
+        twSearch.commit();
+        assertEquals(0, twSearch.searchAds("text").size());
+
+        tw = createTweet(1L, "RT @karsten: text #jetwick", "peter");
+        tw.setRt(1);
+        tw.setQuality(100);
+        twSearch.update(Arrays.asList(tw));
+        twSearch.commit();
+        assertEquals(0, twSearch.searchAds("text").size());
+
+        tw = createTweet(1L, "text #jetwick", "peter");
+        tw.setRt(1);
+        tw.setQuality(90);
+        twSearch.update(Arrays.asList(tw));
+        twSearch.commit();
+        assertEquals(1, twSearch.searchAds("text").size());
+        assertEquals(0, twSearch.searchAds(" ").size());
+
+        tw = createTweet(1L, "text #jetwick", "peter");
+        tw.setQuality(89);
+        tw.setRt(1);
+        twSearch.update(Arrays.asList(tw));
+        twSearch.commit();
+        assertEquals(0, twSearch.searchAds("text").size());
+    }
+
+    @Test
     public void testGetMoreTweets() throws IOException {
         // fill index with 2 tweets and 1 user
         SolrTweet tw2;

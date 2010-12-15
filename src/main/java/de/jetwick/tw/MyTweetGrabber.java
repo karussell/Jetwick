@@ -98,7 +98,7 @@ public class MyTweetGrabber implements Serializable {
                     if (userName != null && !userName.isEmpty()) {
                         try {
                             if (!isSearchDoneInLastMinutes("user:" + userName)) {
-                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
+//                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
                                 name = "grab user:" + userName;
                                 tweets = new LinkedBlockingQueue<SolrTweet>();
                                 tweets.addAll(tweetSearch.getTweets(new SolrUser(userName), new ArrayList<SolrUser>(), tweetCount));
@@ -111,7 +111,7 @@ public class MyTweetGrabber implements Serializable {
                     } else if (queryStr != null && !queryStr.isEmpty()) {
                         try {
                             if (!isSearchDoneInLastMinutes(queryStr)) {
-                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
+//                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
                                 name = "grab query:" + queryStr;
                                 tweets = new LinkedBlockingQueue<SolrTweet>();
                                 tweetSearch.search(queryStr, tweets, tweetCount, 0);

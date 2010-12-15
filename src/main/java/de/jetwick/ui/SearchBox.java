@@ -103,7 +103,7 @@ public class SearchBox extends Panel {
 
         form.add(new ExternalLink("tweetQuery", hrefModel));
         AutoCompleteSettings config = new AutoCompleteSettings().setUseHideShowCoveredIEFix(false);
-        config.setThrottleDelay(300);
+        config.setThrottleDelay(200);
 
         // connect the form's textfield with the java property        
         queryTF = new MyAutoCompleteTextField("textField",

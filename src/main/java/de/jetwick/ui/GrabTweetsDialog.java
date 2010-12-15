@@ -115,7 +115,7 @@ public class GrabTweetsDialog extends Panel {
         });
         add(form);
         AutoCompleteSettings config = new AutoCompleteSettings().setUseHideShowCoveredIEFix(false);
-        config.setThrottleDelay(300);
+        config.setThrottleDelay(200);
         form.add(field = new MyAutoCompleteTextField("userName", new PropertyModel(this, "userName"), config) {
 
             @Override

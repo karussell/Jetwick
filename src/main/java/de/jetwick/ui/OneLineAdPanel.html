@@ -25,17 +25,21 @@
     </head>
     <body>
         <wicket:panel>
-            <ul class="ol-ads">
-                <li class="ol-ad" wicket:id="users">
-                    <a wicket:id="profileUrl" href="#">
-                        <img wicket:id="profileImg"/>
-                        <span wicket:id="userName">[userName]</span>
-                    </a>
-                </li>
-            </ul>
-            <a href="imprint">
-                <img src="img/adbutton.png" title="Your Ad-Line For Free! Contact us!" class="ol-ad-button"/>
-            </a>
+            <div>
+                <a href="imprint">
+                    <img src="img/adbutton.png" title="Your Ad-Line For Free! Contact us!" class="ol-ad-button"/>
+                </a>
+                <ul class="ol-ads">                    
+                    <li wicket:id="tweets">
+                        <div class="ol-ad">
+                            <a class="profile-url" wicket:id="profileUrl" target="_blank" href="#" title="Search User on Jetwick">
+                                <img wicket:id="profileImg"/>
+                            </a>
+                            <div wicket:id="oneTweet"></div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
         </wicket:panel>
     </body>
 </html>

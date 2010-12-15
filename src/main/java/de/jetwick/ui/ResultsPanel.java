@@ -72,8 +72,10 @@ public class ResultsPanel extends Panel {
     private Map<Long, String> translateMap = new LinkedHashMap<Long, String>();
     private boolean translateAll = false;
     private int hitsPerPage;
-
+    private OneLineAdLazyLoadPanel lazyLoadAdPanel;
+    private Map<Long, SolrTweet> allTweets = new LinkedHashMap<Long, SolrTweet>();
     // for test only
+
     public ResultsPanel(String id) {
         this(id, "en");
         add(new OneLineAdLazyLoadPanel("onelinead"));
@@ -82,8 +84,28 @@ public class ResultsPanel extends Panel {
     public ResultsPanel(String id, final String toLanguage) {
         super(id);
 
+        lazyLoadAdPanel = new OneLineAdLazyLoadPanel("onelinead") {
+
+            @Override
+            public OneLineAdPanel createAdPanel(String id) {
+                return new OneLineAdPanel(id) {
+
+                    @Override
+                    public OneTweet createOneTweetPanel(String id) {
+                        return createOneTweet(id, toLanguage);
+                    }
+                };
+            }
+        };
+        add(lazyLoadAdPanel.setOutputMarkupId(true));
         add(new Label("qm", new PropertyModel(this, "queryMessage")));
-        add(new Label("qmWarn", new PropertyModel(this, "queryMessageWarn")));
+        add(new Label("qmWarn", new PropertyModel(this, "queryMessageWarn")) {
+
+            @Override
+            public boolean isVisible() {
+                return queryMessageWarn != null && queryMessageWarn.length() > 0;
+            }
+        });
 
         add(createHitLink(15));
         add(createHitLink(30));
@@ -93,7 +115,10 @@ public class ResultsPanel extends Panel {
 
             @Override
             public Serializable getObject() {
-                return "Find origin of '" + query + "'";
+                String str = query;
+                if (str.length() > 20)
+                    str = str.substring(0, 20) + "..";
+                return "Find origin of '" + str + "'";
             }
         };
         findOriginLink = new LabeledLink("findOriginLink", null, qModel, false) {
@@ -105,8 +130,8 @@ public class ResultsPanel extends Panel {
                 setResponsePage(getApplication().getHomePage(), pp);
             }
         };
-        add(findOriginLink);
 
+        add(findOriginLink);
         translateAllLink = new LabeledLink("translateAllLink", null, new Model<String>() {
 
             @Override
@@ -130,16 +155,14 @@ public class ResultsPanel extends Panel {
                 target.addComponent(ResultsPanel.this);
             }
         };
-        add(translateAllLink);
 
+        add(translateAllLink);
         add(createSortLink("sortRelevance", ""));
         add(createSortLink("sortRetweets", SolrTweetSearch.RT_COUNT + " desc"));
         add(createSortLink("sortLatest", SolrTweetSearch.DATE + " desc"));
         add(createSortLink("sortOldest", SolrTweetSearch.DATE + " asc"));
 
         userView = new ListView("users", users) {
-
-            Map<Long, SolrTweet> allTweets = new LinkedHashMap<Long, SolrTweet>();
 
             @Override
             public void populateItem(final ListItem item) {
@@ -185,36 +208,7 @@ public class ResultsPanel extends Panel {
 
                     @Override
                     public void populateItem(final ListItem item) {
-                        item.add(new OneTweet("oneTweet", item.getModel()) {
-
-                            @Override
-                            public String getTextFromTranslateAllAction(long id) {
-                                if (translateAll && translateMap.size() == 0)
-                                    fillTranslateMap(allTweets.values(), toLanguage);
-
-                                return translateMap.get(id);
-                            }
-
-                            @Override
-                            public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {
-                                return onTweetClick(id, retweet);
-                            }
-
-                            @Override
-                            public void onUserClick(String screenName) {
-                                ResultsPanel.this.onUserClick(screenName, null);
-                            }
-
-                            @Override
-                            public void onFindSimilarClick(SolrTweet tweet) {
-                                ResultsPanel.this.onFindSimilar(tweet);
-                            }
-
-                            @Override
-                            public Collection<SolrTweet> onInReplyOfClick(long id) {
-                                return ResultsPanel.this.onInReplyOfClick(id);
-                            }
-                        }.setLanguage(toLanguage));
+                        item.add(createOneTweet("oneTweet", toLanguage).init(item.getModel(), false));
                     }
                 };
                 item.add(tweetView);
@@ -222,7 +216,6 @@ public class ResultsPanel extends Panel {
         };
 
         add(userView);
-
         WebResource export = new WebResource() {
 
             @Override
@@ -236,10 +229,9 @@ public class ResultsPanel extends Panel {
                 response.setAttachmentHeader("tweets.csv");
             }
         };
+
         export.setCacheable(false);
-
         add(new ResourceLink("exportCsvLink", export));
-
         add(new Link("exportHtmlLink") {
 
             @Override
@@ -247,6 +239,39 @@ public class ResultsPanel extends Panel {
                 onHtmlExport();
             }
         });
+    }
+
+    public OneTweet createOneTweet(String id, final String lang) {
+        return new OneTweet("oneTweet") {
+
+            @Override
+            public String getTextFromTranslateAllAction(long id) {
+                if (translateAll && translateMap.size() == 0)
+                    fillTranslateMap(allTweets.values(), lang);
+
+                return translateMap.get(id);
+            }
+
+            @Override
+            public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {
+                return onTweetClick(id, retweet);
+            }
+
+            @Override
+            public void onUserClick(String screenName) {
+                ResultsPanel.this.onUserClick(screenName, null);
+            }
+
+            @Override
+            public void onFindSimilarClick(SolrTweet tweet) {
+                ResultsPanel.this.onFindSimilar(tweet);
+            }
+
+            @Override
+            public Collection<SolrTweet> onInReplyOfClick(long id) {
+                return ResultsPanel.this.onInReplyOfClick(id);
+            }
+        }.setLanguage(lang);
     }
 
     public void fillTranslateMap(Collection<SolrTweet> tweets, String toLang) {
@@ -307,6 +332,7 @@ public class ResultsPanel extends Panel {
     }
 
     public void clear() {
+        allTweets.clear();
         translateAll = false;
         translateMap.clear();
         users.clear();
@@ -393,5 +419,9 @@ public class ResultsPanel extends Panel {
         }, " "));
 
         return link;
+    }
+
+    public void setAdQuery(String queryString) {
+        lazyLoadAdPanel.setSearchQuery(queryString);
     }
 }

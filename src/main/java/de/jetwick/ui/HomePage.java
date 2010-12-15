@@ -19,10 +19,8 @@ import de.jetwick.tw.MyTweetGrabber;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import de.jetwick.data.UrlEntry;
-import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SavedSearch;
-import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
@@ -76,20 +74,18 @@ public class HomePage extends WebPage {
     private String remoteHost = "";
     private WikipediaLazyLoadPanel wikiPanel;
     private UrlTrendPanel urlTrends;
-    @Inject
-    private Provider<SolrAdSearch> adsProvider;
+//    @Inject
+//    private Provider<SolrAdSearch> adsProvider;
     @Inject
     private Provider<SolrTweetSearch> twindexProvider;
     @Inject
-    private Provider<SolrUserSearch> uindexProvider;    
+    private Provider<SolrUserSearch> uindexProvider;
     @Inject
     private MyTweetGrabber grabber;
-    private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private JSDateFilter dateFilter;
     private transient Thread tweetThread;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
-    
 
     public TwitterSearch getTwitterSearch() {
         return getMySession().getTwitterSearch();
@@ -529,6 +525,7 @@ public class HomePage extends WebPage {
 //                if (userName != null)
 //                    query.addFilterQuery(SolrTweetSearch.FILTER_KEY_USER + "\"" + userName.trim() + "\"");
 
+                System.out.println("NOW!");
                 PageParameters p = new PageParameters();
                 if (queryStr != null && !queryStr.isEmpty())
                     p.add("q", queryStr);
@@ -579,10 +576,7 @@ public class HomePage extends WebPage {
                 }
             }
         };
-        resultsPanel.setOutputMarkupId(true);
-        resultsPanel.add(lazyLoadAdPanel = new OneLineAdLazyLoadPanel("onelinead"));
-        lazyLoadAdPanel.setAdsProvider(adsProvider);
-        add(resultsPanel);
+        add(resultsPanel.setOutputMarkupId(true));
 
         add(wikiPanel = new WikipediaLazyLoadPanel("wikipanel"));
 
@@ -617,7 +611,7 @@ public class HomePage extends WebPage {
 
         String userName = searchBox.getUserName();
 
-        lazyLoadAdPanel.setSearchQuery(queryString);
+        resultsPanel.setAdQuery(queryString);
         wikiPanel.setParams(queryString, language);
         boolean startBGThread = true;
 
@@ -693,7 +687,9 @@ public class HomePage extends WebPage {
             }
 
             if (users.size() == 0) {
-                msg = "Sorry, nothing found " + msg + ".";
+                if (!msg.isEmpty())
+                    msg = " " + msg;
+                msg = "Sorry, nothing found" + msg + ".";
             } else {
                 resultsPanel.setQueryMessageWarn("Sparse results.");
                 msg = "Using twitter-search " + msg + ".";
@@ -739,7 +735,7 @@ public class HomePage extends WebPage {
     }
 
     public QueueThread queueTweets(Collection<SolrTweet> tweets,
-            String qs, String userName) {               
+            String qs, String userName) {
         return grabber.init(tweets, qs, userName).setTweetsCount(TWEETS_IF_HIT).
                 setTwitterSearch(getTwitterSearch()).queueTweetPackage();
     }

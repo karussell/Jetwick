@@ -27,20 +27,23 @@
         <wicket:panel>            
             <div id="resultslist">
                 <div id="resultslist-header">
-                    <span wicket:id="qmWarn" class="querymessage warn">[Msg]</span>
-                    <span wicket:id="qm" class="querymessage">[Msg]</span>                    
-                    <div wicket:id="findOriginLink" class="find-origin-link"
-                         title="You will get the oldest, most retweeted content">[FindOriginOfQuery]</div>
-                    <div wicket:id="translateAllLink" class="translate-all" title="Translate all tweets into your language detected from the browser">[Translate All]</div>
-                    <div class="sorting">
-                        Sort
-                        <a wicket:id="sortRelevance">relevance</a>
-                        <a wicket:id="sortRetweets">retweets</a>
-                        <a wicket:id="sortLatest">latest</a>
-                        <a wicket:id="sortOldest">oldest</a>
+                    <div>
+                        <div wicket:id="findOriginLink" class="find-origin-link"
+                             title="You will get the oldest, most retweeted content">[FindOriginOfQuery]</div>
+                        <span wicket:id="qmWarn" class="querymessage warn">[Msg]</span>
+                        <span wicket:id="qm" class="querymessage">[Msg]</span>                        
                     </div>
-                    <!-- we need a none-floating container to force the bottom border to be at the bottom-->
-                    <div style="visibility: hidden;">_</div>
+                    <div>
+                        <div class="sorting">
+                            Sort
+                            <a wicket:id="sortRelevance">relevance</a>
+                            <a wicket:id="sortRetweets">retweets</a>
+                            <a wicket:id="sortLatest">latest</a>
+                            <a wicket:id="sortOldest">oldest</a>
+                        </div>
+                        <div wicket:id="translateAllLink" class="translate-all"
+                             title="Translate all tweets into your language detected from the browser">[Translate All]</div>                        
+                    </div>
                 </div>                
                 <div wicket:id="onelinead" class="onelinead ol-ad-hidden"/>
                 <ul class="users">
@@ -74,16 +77,16 @@
                     </li>
                 </ul>
                 <div id="resultslist-footer">
+                    <div class="export-link">
+                        Export as <a wicket:id="exportCsvLink" href="#">csv</a> |
+                        <a wicket:id="exportHtmlLink" href="#">html</a>
+                    </div>
                     <div class="hitsPerPage">
                         Tweets per page
                         <a wicket:id="hits15" href="#" title="Show 15 tweets per page">15</a>
                         <a wicket:id="hits30" href="#" title="Show 30 tweets per page">30</a>
                         <a wicket:id="hits60" href="#" title="Show 60 tweets per page">60</a>
-                    </div>
-                    <div class="export-link">
-                        Export as <a wicket:id="exportCsvLink" href="#">csv</a> |
-                        <a wicket:id="exportHtmlLink" href="#">html</a>
-                    </div>
+                    </div>                   
                 </div>
             </div>            
         </wicket:panel>

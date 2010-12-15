@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
+import com.google.inject.Inject;
 import com.google.inject.Provider;
-import de.jetwick.data.AdEntry;
-import de.jetwick.solr.SolrAdSearch;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrTweetSearch;
 import java.util.Collection;
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.ajax.markup.html.AjaxLazyLoadPanel;
@@ -35,7 +35,8 @@ public class OneLineAdLazyLoadPanel extends AjaxLazyLoadPanel {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private String searchQuery;
-    private Provider<SolrAdSearch> adsProvider;
+    @Inject
+    private Provider<SolrTweetSearch> adsProvider;
 
     public OneLineAdLazyLoadPanel(String id) {
         super(id);
@@ -47,12 +48,16 @@ public class OneLineAdLazyLoadPanel extends AjaxLazyLoadPanel {
         return new Label(markupId, "<span/>").setEscapeModelStrings(false);
     }
 
+    public OneLineAdPanel createAdPanel(String id) {
+        throw new UnsupportedOperationException("overwrite this");
+    }
+
     @Override
     public Component getLazyLoadComponent(String markupId) {
-        OneLineAdPanel adPanel = new OneLineAdPanel(markupId);
-        Collection<AdEntry> ads = null;
+        OneLineAdPanel adPanel = createAdPanel(markupId);
+        Collection<SolrTweet> ads = null;
         try {
-            ads = adsProvider.get().search(searchQuery);
+            ads = adsProvider.get().searchAds(searchQuery);
         } catch (Exception ex) {
             logger.error("Couldn't query adindex!" + ex.getMessage());
         }
@@ -68,7 +73,7 @@ public class OneLineAdLazyLoadPanel extends AjaxLazyLoadPanel {
         this.searchQuery = searchQuery;
     }
 
-    public void setAdsProvider(Provider<SolrAdSearch> adsProvider) {
+    public void setAdsProvider(Provider<SolrTweetSearch> adsProvider) {
         this.adsProvider = adsProvider;
     }
 }

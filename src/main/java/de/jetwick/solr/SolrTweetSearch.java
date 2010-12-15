@@ -918,4 +918,25 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
         return sb.toString();
     }
+
+    public Collection<SolrTweet> searchAds(String query) throws SolrServerException {
+        query = query.trim();
+        if (query.isEmpty())
+            return Collections.EMPTY_LIST;
+
+        Collection<SolrUser> users = new LinkedHashSet<SolrUser>();        
+        search(users, new SolrQuery(query).addFilterQuery("tw:#jetwick").
+                addFilterQuery(RT_COUNT + ":[1 TO *]").
+                addFilterQuery(QUALITY + ":[90 TO 100]").
+                addFilterQuery(IS_RT + ":false").
+                addFilterQuery(DATE + ":[NOW/DAY-3DAYS TO NOW]").
+                setSortField(RT_COUNT, SolrQuery.ORDER.desc));
+
+        Set<SolrTweet> res = new LinkedHashSet<SolrTweet>();
+        for (SolrUser u : users) {
+            if (u.getOwnTweets().size() > 0)
+                res.add(u.getOwnTweets().iterator().next());
+        }
+        return res;
+    }
 }

@@ -17,8 +17,8 @@ package de.jetwick.ui;
 
 import de.jetwick.ui.util.LabeledLink;
 import com.google.api.translate.Language;
-import de.jetwick.data.YUser;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.Extractor;
 import de.jetwick.util.Helper;
 import java.util.ArrayList;
@@ -54,15 +54,18 @@ public class OneTweet extends Panel {
     private boolean clickedTranslate = false;
     private boolean inReplyOfClicked = false;
 
-    public OneTweet(String id, IModel<SolrTweet> model) {
-        this(id, model, false);
+    public OneTweet(String id) {
+        super(id);
     }
 
-    public OneTweet(String id, IModel<SolrTweet> model, boolean showUser) {
-        super(id);
+    public OneTweet init(IModel<SolrTweet> model, boolean showUser) {
         setOutputMarkupId(true);
         final SolrTweet tweet = model.getObject();
-        final YUser user = tweet.getFromUser();
+        if(tweet == null) {
+            setVisible(false);
+            return this;
+        }
+        final SolrUser user = tweet.getFromUser();
 
         if (showUser) {
             LabeledLink userNameLink = new LabeledLink("userNameLink", user.getScreenName() + ":", false) {
@@ -189,7 +192,7 @@ public class OneTweet extends Panel {
 
             @Override
             public void populateItem(final ListItem item) {
-                item.add(new OneTweet("suboneTweet", item.getModel(), true) {
+                item.add(new OneTweet("suboneTweet") {
 
                     @Override
                     public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {
@@ -210,10 +213,12 @@ public class OneTweet extends Panel {
                     public Collection<SolrTweet> onInReplyOfClick(long id) {
                         return OneTweet.this.onInReplyOfClick(id);
                     }
-                }.setLanguage(language));
+                }.init(item.getModel(), true).setLanguage(language));
             }
         };
         add(subTweetsView);
+
+        return this;
     }
 
     public String translate(SolrTweet tweet) {

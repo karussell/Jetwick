@@ -235,9 +235,10 @@ public class SolrTweet implements Serializable {
         this.reply = rp;
     }
 
-    public void addReply(SolrTweet tw) {
+    public SolrTweet addReply(SolrTweet tw) {
         replies.add(tw);
         tw.setInReplyOf(this);
+        return this;
     }
 
     public int getReplyCount() {

@@ -321,40 +321,25 @@ url("../img/bottom-line.png")
     font-size: 0.8em;
     color: black;
 }
-.querymessage {
-    float: left;
+.querymessage {    
     padding-left: 0px;
-    padding-right: 10px;
+    padding-right: 7px;
 }
 
-.translate-all {
-    float: left;
-    clear: left;
+.translate-all {    
 }
 
 .find-origin-link {
-    float: left;
-    padding-right: 10px;
-}
-.sorting {        
     float: right;
-    clear: right;
+    padding-left: 10px;
 }
 
 .sorting .selected, .hitsPerPage .selected  {
     font-weight: bold;
 }
 
-.export-link { float: right; }
 
-.hitsPerPage { float: left; }
-
-.export-link, .hitsPerPage {    
-    font-size: 0.8em;
-    padding-top: 0px;
-}
-
-#resultslist {
+#resultslist {    
     padding-left: 0px;
     padding-top: 5px;
     padding-bottom: 5px;
@@ -362,24 +347,32 @@ url("../img/bottom-line.png")
     border-bottom: gray 1px solid;
 }
 
-#resultslist ul { padding-left: 0px; }
+#resultslist ul {
+    padding-left: 0px; 
+    margin: 0px;
+}
 #resultslist .users {
     margin: 0px;
 }
 
 #resultslist-header {
-    font-size: 0.8em;
-    padding-bottom: 5px;
-    border-bottom: 1px solid gray;
-    float: left;
-    width: 100%;
+    min-height: 40px;
+    font-size: 0.8em;    
+    border-bottom: 1px solid gray;        
 }
 
-
-#resultslist-footer {
+#resultslist-header .sorting {    
+    float: right;    
+}
+#resultslist-footer {    
     padding: 4px;
-    /* why I need this? */
-    min-height: 15px;
+}
+
+.export-link { float: right; }
+
+.export-link, .hitsPerPage {
+    font-size: 0.8em;
+    padding-top: 0px;
 }
 
 .cleanusers li {
@@ -390,7 +383,7 @@ url("../img/bottom-line.png")
     border: none;
 }
 
-.users {   
+.users {    
     /*float: left; -> do not set otherwise the width is not of equal length*/
     padding-top: 2px;
     /*margin-bottom: 5px;*/
@@ -398,7 +391,7 @@ url("../img/bottom-line.png")
 .user {
     /*float: left; -> do not set otherwise the width is not of equal length*/
     padding: 15px 15px 0px 15px;
-    border-bottom: 1px solid gray;
+    border-bottom: 1px solid gray;    
 }
 
 .bio {
@@ -427,15 +420,14 @@ url("../img/bottom-line.png")
 
 .tweet-text {
     /* default is larger which is better font-size: 0.9em; */
-
     /* avoid too lengthy words destroying our layout */
     word-wrap: break-word;
-    clear: both;
+    clear: left;
     /* if we click a link which is on the lowest line the sliders will appear and sometimes trifft man neben den Link!
        overflow: auto; */
 }
-.tweet-links {    
-    float: right;
+.tweet-links {
+    margin-right: auto;
     padding-left: 10px;
     padding-top: 3px;
 }
@@ -455,7 +447,7 @@ url("../img/bottom-line.png")
 }
 
 .tweet-important-links li {
-    padding-left: 15px;
+    padding-left: 5px;
     display: inline;
 }
 .tweet-important-links {
@@ -475,10 +467,6 @@ url("../img/bottom-line.png")
 
 .tweet .user-name {
     padding: 0 0 0 0;
-}
-
-.tweet .tweet-text {    
-    clear: right;
 }
 
 .tweet .user-name a span {        
@@ -501,12 +489,10 @@ url("../img/bottom-line.png")
 }
 
 .tweets {
-    padding: 0px 0px 10px 0px;
-    clear: both;
+    padding: 0px 0px 10px 0px;    
 }
 
-.subtweets {
-    clear: both;
+.subtweets {    
     padding-left: 15px;
     padding-top: 5px;
 }
@@ -540,17 +526,11 @@ url("../img/bottom-line.png")
 }
 
 .more-tw-label img { height: 14px; }
-/*
-.more-tw-label {
-    padding-left: 17px;
-    background-image: url("../img/pencil.png");
-    background-repeat: no-repeat;
-}*/
 
 .user-left {
     margin-top: 1px;
     min-height: 22px;
-    clear: right;
+    /*clear: right;*/
 }
 .user-name {
     padding-left: 10px;
@@ -578,48 +558,34 @@ url("../img/bottom-line.png")
     font-size: 20px;
 }
 
-.onelinead {
-    clear: both;
+.ol-ads .ol-ad {
+    padding: 8px 2px;
 }
-
-/* one line ads */
-li.ol-ad {    
-    padding: 10px 5px 10px 10px;
+.ol-ads li {
     display: inline;
 }
 
-.ol-ads {    
+/* overwrite normal tweet */
+.ol-ads .ol-ad .profile-url {
+    float: left;
+}
+.ol-ads .ol-ad .tweet-text {
+    clear: none;
+}
+.ol-ads .ol-ad .profile-url img {
+    width: 25px;
+    padding: 5px 5px;
+}
+.ol-ads {
     background-color: #fff0e2;
     border-bottom: 1px solid gray;
-    padding-top: 8px;
-    padding-bottom: 15px;
     font-size: 0.91em;
-}
-
-.ol-ads a:hover {
-    text-decoration: none;
-    color: blue;
-}
-
-.ol-ads {
-    margin: 0px 0px 10px 0px;
-    padding-left: 10px;
-    /* if ad has no image then the bar would be too small: */
     min-height: 30px;
 }
-
-.ol-ads a img {
-    margin-bottom: -10px;
-    width:  35px;
-    height: 35px;
-}
-
 .ol-ad-button {
     float: right;
-    padding: 0;
-    margin-top: -63px;
+    padding: 0px 0px;
 }
-
 #info-panel {
     float: left;
     width: 330px;
@@ -627,10 +593,9 @@ li.ol-ad {
     margin: 0px;
 }
 
-/* great thanks to http://snook.ca/archives/html_and_css/content_overlay_css for overlay stuff*/
+/* thanks to http://snook.ca/archives/html_and_css/content_overlay_css for overlay stuff*/
 .url-more {
     display: none;
-
     /* applies only for cssClass:hover where display:block !! */
     white-space: normal;
     position: absolute;

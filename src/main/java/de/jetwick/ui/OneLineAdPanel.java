@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
-import de.jetwick.data.AdEntry;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.Map.Entry;
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.behavior.AttributeAppender;
-import org.apache.wicket.markup.html.basic.Label;
+import java.util.Iterator;
+import java.util.Random;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
+import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.markup.html.image.ContextImage;
-import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
 
 /**
  *
@@ -38,41 +36,53 @@ import org.apache.wicket.model.PropertyModel;
  */
 public class OneLineAdPanel extends Panel {
 
-    private ListView userView;
-    private List<AdEntry> ads = new ArrayList<AdEntry>();
+    private Random rand = new Random();
+    private ListView tweetView;
+    private ArrayList<SolrTweet> tweets = new ArrayList<SolrTweet>();
 
     public OneLineAdPanel(String id) {
         super(id);
-
-        userView = new ListView("users", new PropertyModel(this, "ads")) {
+        // TODO
+        final String LANGUAGE = "de";
+        tweetView = new ListView<SolrTweet>("tweets", tweets) {
 
             @Override
-            public void populateItem(final ListItem item) {
-                final AdEntry searchObj = (AdEntry) item.getModelObject();
-                Link link = new Link("profileUrl") {
+            protected void populateItem(ListItem<SolrTweet> item) {
+                SolrTweet tweet = item.getModelObject();
+                final SolrUser user = tweet.getFromUser();
+                final OneTweet oneTweetPanel = createOneTweetPanel("oneTweet").init(new Model<SolrTweet>(tweet), false).setLanguage(LANGUAGE);
+                AjaxFallbackLink showLatestTweets = new IndicatingAjaxFallbackLink("profileUrl") {
 
                     @Override
-                    public void onClick() {
-                        Entry<String, String> e = searchObj.getQueryUserPairs().iterator().next();
-                        PageParameters pp = new PageParameters();
-                        pp.add("q", e.getKey());
-                        pp.add("u", e.getValue());
-                        setResponsePage(HomePage.class, pp);
+                    public void onClick(AjaxRequestTarget target) {
+                        if (target != null)
+                            oneTweetPanel.onUserClick(user.getScreenName());
                     }
                 };
-                link.add(new AttributeAppender("title", new Model(searchObj.getDescription()), " "));
-                item.add(link.add(new ContextImage("profileImg", searchObj.getIconUrl())).
-                        add(new Label("userName", searchObj.getTitle())));
+                item.add(showLatestTweets.add(new ContextImage("profileImg", user.getProfileImageUrl())));
+                item.add(oneTweetPanel);
             }
         };
-
-        add(userView);
+        add(tweetView);
     }
 
-    public void setAds(Collection<AdEntry> adList) {
-        ads.clear();
-        for (AdEntry e : adList) {
-            ads.add(e);
+    public OneTweet createOneTweetPanel(String id) {
+        throw new UnsupportedOperationException("overwrite this");
+    }
+
+    public void setAds(Collection<SolrTweet> adList) {
+        tweets.clear();
+        if (adList.size() > 0) {
+            int index = rand.nextInt(adList.size());
+            int rt = adList.iterator().next().getRetweetCount();
+            Iterator<SolrTweet> iter = adList.iterator();
+            for (int i = 0; i < adList.size(); i++) {
+                SolrTweet tw = iter.next();
+                if (i == index || tw.getRetweetCount() != rt) {
+                    tweets.add(tw);
+                    break;
+                }
+            }
         }
     }
 }
