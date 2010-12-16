@@ -39,16 +39,14 @@ public class OneLineAdPanel extends Panel {
     private ArrayList<SolrTweet> tweets = new ArrayList<SolrTweet>();
 
     public OneLineAdPanel(String id) {
-        super(id);
-        // TODO
-        final String LANGUAGE = "de";
+        super(id);        
         tweetView = new ListView<SolrTweet>("tweets", tweets) {
 
             @Override
             protected void populateItem(ListItem<SolrTweet> item) {
                 SolrTweet tweet = item.getModelObject();
                 final SolrUser user = tweet.getFromUser();
-                final OneTweet oneTweetPanel = createOneTweetPanel("oneTweet").init(new Model<SolrTweet>(tweet), false).setLanguage(LANGUAGE);
+                final OneTweet oneTweetPanel = createOneTweetPanel("oneTweet").init(new Model<SolrTweet>(tweet), false);
                 Link showLatestTweets = new Link("profileUrl") {
 
                     @Override
@@ -70,16 +68,19 @@ public class OneLineAdPanel extends Panel {
     public void setAds(Collection<SolrTweet> adList) {
         tweets.clear();
         if (adList.size() > 0) {
-            int index = rand.nextInt(adList.size());
-            int rt = adList.iterator().next().getRetweetCount();
+            int index = rand.nextInt(adList.size());            
             Iterator<SolrTweet> iter = adList.iterator();
-            for (int i = 0; i < adList.size(); i++) {
+            SolrTweet prevTw = iter.next();
+            for (int i = 0; iter.hasNext(); i++) {
                 SolrTweet tw = iter.next();
-                if (i == index || tw.getRetweetCount() != rt) {
-                    tweets.add(tw);
+                if (i == index || tw.getRetweetCount() != prevTw.getRetweetCount()) {
+                    tweets.add(prevTw);
                     break;
                 }
+                prevTw = tw;
             }
+            if(tweets.size() == 0)
+                tweets.add(prevTw);
         }
     }
 }
