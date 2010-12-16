@@ -36,6 +36,7 @@ import javax.persistence.Version;
 public class YTag implements DbObject, Serializable, Comparable<YTag> {
 
     private static final long serialVersionUID = 1L;
+
     public static List<YTag> createList(List<String> terms) {
         List<YTag> list = new ArrayList<YTag>(terms.size());
         for (String term : terms) {
@@ -129,11 +130,18 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
         else
             queryInterval = (long) (20.0 / newTweets) * queryInterval;
 
-        // force at least 1 second
-        queryInterval = Math.max(queryInterval, 1 * 1001);
+        // force at least 5 second
+        queryInterval = Math.max(queryInterval, 5 * 1001);
+
+        // force max 20 min
+        queryInterval = Math.min(queryInterval, 20 * 60 * 1001);
+
+        // force max 5 min for jetwick
+        if ("#jetwick".equalsIgnoreCase(term) || "jetwick".equalsIgnoreCase(term))
+            queryInterval = Math.min(queryInterval, 5 * 60 * 1001);
 
         // force max 5 hours
-        queryInterval = Math.min(queryInterval, 3 * 3600 * 1001);
+//        queryInterval = Math.min(queryInterval, 3 * 3600 * 1001);
 
 //        logger.info(newTweets + " hits for " + term + "\t" + lastId
 //                + "\t => query interval was: " + Math.round(old / 1000f)
