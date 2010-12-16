@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 /**
@@ -26,9 +25,11 @@ public class MyThread extends Thread {
         super(name);
     }
 
-    protected synchronized boolean myWait(int seconds) {
+    protected synchronized boolean myWait(float seconds) {
         try {
-            wait(seconds * 1000);
+            if (seconds <= 0)
+                return true;
+            wait((int) (seconds * 1000.0));
             return true;
         } catch (InterruptedException ex) {
             return false;

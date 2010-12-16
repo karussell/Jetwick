@@ -118,7 +118,7 @@ public class TweetProducer extends MyThread {
                             break MAIN;
                     }
 
-                    int waitInSeconds = 1;
+                    float waitInSeconds = 0.1f;
                     try {
                         swSearch.start();
                         long maxId = 0;
