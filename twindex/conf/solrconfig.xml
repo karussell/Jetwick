@@ -480,7 +480,7 @@
 
             <!-- Query Fields -->
             <str name="qf">
-                tw dest_title_t
+                tw dest_title_t user^0
             </str>
 
             <!-- Phrase Fields
