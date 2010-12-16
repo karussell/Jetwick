@@ -105,7 +105,7 @@ body, p {
 .external-refs-right .about-head {
     text-align: center;
     font-size: 24px;
-    padding: 18px 15px 18px 15px;
+    padding: 24px 15px 18px 15px;
     background-color: #ffffd6;
 }
 
@@ -116,6 +116,11 @@ body, p {
     font-size: 0.65em;
     color: #0063AC;
     text-decoration: underline;
+}
+.external-refs-right .adinfo {
+    float: right;
+    font-size: 0.7em;
+    padding-right: 2px;
 }
 
 .right { float: right; }
