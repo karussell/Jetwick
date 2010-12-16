@@ -926,7 +926,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();        
         search(users, new SolrQuery(query).addFilterQuery("tw:#jetwick").
-                addFilterQuery(RT_COUNT + ":[1 TO *]").
+//                addFilterQuery(RT_COUNT + ":[1 TO *]").
                 addFilterQuery(QUALITY + ":[90 TO 100]").
                 addFilterQuery(IS_RT + ":false").
                 addFilterQuery(DATE + ":[NOW/DAY-3DAYS TO NOW]").

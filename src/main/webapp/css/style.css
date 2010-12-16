@@ -82,6 +82,15 @@ body, p {
     font-size: 0.8em;
 }
 
+.external-refs ul li {
+    padding-left: 5px;
+    padding-bottom: 7px;
+}
+
+.external-refs ul li a, .external-refs-right ul li a {
+    color: black; font-size: 0.80em;
+}
+
 .external-refs-right {     
     padding: 0px 10px 11px 0px;
     margin: 0px
@@ -93,18 +102,20 @@ body, p {
     padding-left: 10px;
 }
 
-.external-refs ul li {
-    padding-left: 5px;
-    padding-bottom: 7px;    
+.external-refs-right .about-head {
+    text-align: center;
+    font-size: 24px;
+    padding: 18px 15px 18px 15px;
+    background-color: #ffffd6;
 }
 
-/*horizontal
-.external-refs-right ul li {
-     display: inline;
-}*/
-
-.external-refs ul li a, .external-refs-right ul li a {
-    color: black; font-size: 0.80em;
+.external-refs-right .details {
+    text-align: center;
+}
+.external-refs-right .details a {    
+    font-size: 0.65em;
+    color: #0063AC;
+    text-decoration: underline;
 }
 
 .right { float: right; }

@@ -716,11 +716,12 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(1, twSearch.search("text").size());
         assertEquals(0, twSearch.searchAds("text").size());
 
-        tw = createNowTweet(1L, "text #jetwick", "peter");
-        tw.setQuality(100);
-        twSearch.update(Arrays.asList(tw));
-        twSearch.commit();
-        assertEquals(0, twSearch.searchAds("text").size());
+        // at the moment no retweets are required
+//        tw = createNowTweet(1L, "text #jetwick", "peter");
+//        tw.setQuality(100);
+//        twSearch.update(Arrays.asList(tw));
+//        twSearch.commit();
+//        assertEquals(0, twSearch.searchAds("text").size());
 
         tw = createNowTweet(1L, "RT @karsten: text #jetwick", "peter");
         tw.setRt(1);
