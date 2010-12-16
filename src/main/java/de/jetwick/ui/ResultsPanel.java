@@ -182,12 +182,11 @@ public class ResultsPanel extends Panel {
                 };
                 item.add(userNameLink);
 
-                AjaxFallbackLink showLatestTweets = new IndicatingAjaxFallbackLink("profileUrl") {
+                Link showLatestTweets = new Link("profileUrl") {
 
                     @Override
-                    public void onClick(AjaxRequestTarget target) {
-                        if (target != null)
-                            onUserClick(user.getScreenName(), null);
+                    public void onClick() {
+                        onUserClick(user.getScreenName(), null);
                     }
                 };
                 item.add(new ExternalLink("latestTw", twitterUrl, "twitter.com/" + name));

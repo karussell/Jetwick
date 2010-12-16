@@ -21,10 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
-import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.markup.html.image.ContextImage;
+import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -51,12 +49,11 @@ public class OneLineAdPanel extends Panel {
                 SolrTweet tweet = item.getModelObject();
                 final SolrUser user = tweet.getFromUser();
                 final OneTweet oneTweetPanel = createOneTweetPanel("oneTweet").init(new Model<SolrTweet>(tweet), false).setLanguage(LANGUAGE);
-                AjaxFallbackLink showLatestTweets = new IndicatingAjaxFallbackLink("profileUrl") {
+                Link showLatestTweets = new Link("profileUrl") {
 
                     @Override
-                    public void onClick(AjaxRequestTarget target) {
-                        if (target != null)
-                            oneTweetPanel.onUserClick(user.getScreenName());
+                    public void onClick() {
+                        oneTweetPanel.onUserClick(user.getScreenName());
                     }
                 };
                 item.add(showLatestTweets.add(new ContextImage("profileImg", user.getProfileImageUrl())));

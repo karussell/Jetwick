@@ -525,7 +525,7 @@ public class HomePage extends WebPage {
 //                if (userName != null)
 //                    query.addFilterQuery(SolrTweetSearch.FILTER_KEY_USER + "\"" + userName.trim() + "\"");
 
-                System.out.println("NOW!");
+                System.out.println("NOW!:" + userName + " " + queryStr);
                 PageParameters p = new PageParameters();
                 if (queryStr != null && !queryStr.isEmpty())
                     p.add("q", queryStr);
