@@ -78,7 +78,6 @@ public class ResultsPanel extends Panel {
 
     public ResultsPanel(String id) {
         this(id, "en");
-        add(new OneLineAdLazyLoadPanel("onelinead"));
     }
 
     public ResultsPanel(String id, final String toLanguage) {
@@ -115,6 +114,8 @@ public class ResultsPanel extends Panel {
 
             @Override
             public Serializable getObject() {
+                if (query == null)
+                    return "";
                 String str = query;
                 if (str.length() > 20)
                     str = str.substring(0, 20) + "..";

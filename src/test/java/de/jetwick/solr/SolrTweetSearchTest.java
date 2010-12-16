@@ -708,7 +708,7 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testAdSearch() throws Exception {
-        SolrTweet tw = createTweet(1L, "text jetwick @jetwick", "peter");
+        SolrTweet tw = createNowTweet(1L, "text jetwick @jetwick", "peter");
         tw.setRt(1);
         tw.setQuality(100);
         twSearch.update(Arrays.asList(tw));
@@ -716,20 +716,20 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(1, twSearch.search("text").size());
         assertEquals(0, twSearch.searchAds("text").size());
 
-        tw = createTweet(1L, "text #jetwick", "peter");
+        tw = createNowTweet(1L, "text #jetwick", "peter");
         tw.setQuality(100);
         twSearch.update(Arrays.asList(tw));
         twSearch.commit();
         assertEquals(0, twSearch.searchAds("text").size());
 
-        tw = createTweet(1L, "RT @karsten: text #jetwick", "peter");
+        tw = createNowTweet(1L, "RT @karsten: text #jetwick", "peter");
         tw.setRt(1);
         tw.setQuality(100);
         twSearch.update(Arrays.asList(tw));
         twSearch.commit();
         assertEquals(0, twSearch.searchAds("text").size());
 
-        tw = createTweet(1L, "text #jetwick", "peter");
+        tw = createNowTweet(1L, "text #jetwick", "peter");
         tw.setRt(1);
         tw.setQuality(90);
         twSearch.update(Arrays.asList(tw));
@@ -737,7 +737,7 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         assertEquals(1, twSearch.searchAds("text").size());
         assertEquals(0, twSearch.searchAds(" ").size());
 
-        tw = createTweet(1L, "text #jetwick", "peter");
+        tw = createNowTweet(1L, "text #jetwick", "peter");
         tw.setQuality(89);
         tw.setRt(1);
         twSearch.update(Arrays.asList(tw));
@@ -772,6 +772,10 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     SolrTweet createTweet(long id, String twText, String user) {
         return new SolrTweet(id, twText, new SolrUser(user)).setCreatedAt(new Date(id));
+    }
+
+    SolrTweet createNowTweet(long id, String twText, String user) {
+        return new SolrTweet(id, twText, new SolrUser(user)).setCreatedAt(new Date());
     }
 
     SolrTweet createOldTweet(long id, String twText, String user) {
