@@ -51,7 +51,8 @@ public class RMIServer implements CommunicationService {
                     // get the address of this host.
                     String host = (InetAddress.getLocalHost()).toString();
                     logger.info("address=" + host + " port=" + config.getRMIPort());
-                    CommunicationService stub = (CommunicationService) UnicastRemoteObject.exportObject(RMIServer.this, 0);
+                    CommunicationService stub = (CommunicationService) UnicastRemoteObject.
+                            exportObject(RMIServer.this, config.getRMIPort());
                     Registry registry = LocateRegistry.createRegistry(config.getRMIPort());
                     registry.rebind(config.getRMIService(), stub);
                 } catch (Exception ex) {
