@@ -26,12 +26,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
+import org.apache.wicket.ajax.IAjaxIndicatorAware;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.behavior.AttributeAppender;
+import org.apache.wicket.extensions.ajax.markup.html.AjaxIndicatorAppender;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
@@ -52,6 +58,7 @@ public class SavedSearchPanel extends Panel {
     private List<FacetHelper<Long>> savedSearches = new ArrayList<FacetHelper<Long>>();
     private ListView savedSearchesView;
     private String SAVED_SEARCHES = "ss";
+    private boolean isInitialized = false;
 
     public SavedSearchPanel(String id) {
         super(id);
@@ -75,10 +82,21 @@ public class SavedSearchPanel extends Panel {
 
             @Override
             public boolean isVisible() {
-                return savedSearches.size() == 0;
+                return isInitialized && savedSearches.size() == 0;
             }
         };
-        add(link);
+        add(link.setOutputMarkupId(true));
+
+        add(new WebMarkupContainer("indicatorImage") {
+
+            @Override
+            public boolean isVisible() {
+                return !isInitialized;
+            }
+        }.setOutputMarkupId(true));
+
+        // don't know how to utilize IAjaxIndicatorAware + getAjaxIndicatorMarkupId() { return indicator.getMarkupId();
+        //add(indicator);
 
         savedSearchesView = new ListView("filterValues", savedSearches) {
 
@@ -127,6 +145,17 @@ public class SavedSearchPanel extends Panel {
             }
         };
         add(savedSearchesView);
+
+        // execute one time
+        add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(1)) {
+
+            @Override
+            protected void onPostProcessTarget(AjaxRequestTarget target) {
+                updateSSCounts(target);
+                isInitialized = true;
+                stop();
+            }
+        });
 
         // execute forever
         add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(30)) {

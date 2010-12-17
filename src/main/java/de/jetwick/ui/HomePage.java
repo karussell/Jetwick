@@ -237,7 +237,7 @@ public class HomePage extends WebPage {
         }
     }
 
-    public void init(SolrQuery query, final int page, boolean twitterFallback) {
+    public void init(SolrQuery query, final int page, boolean twitterFallback) {        
         feedbackPanel = new FeedbackPanel("feedback");
         add(feedbackPanel.setOutputMarkupId(true));
         add(new Label("title", new Model() {
@@ -342,6 +342,7 @@ public class HomePage extends WebPage {
                     if (user != null) {
                         SolrQuery query = new SolrQuery().setFacet(true).setRows(0);
                         TweetQuery.updateSavedSearchFacets(query, user.getSavedSearches());
+                        logger.info("Start updateSSCounts getTweetSearch");
                         update(getTweetSearch().search(query));
                         if (target != null)
                             target.addComponent(ssPanel);
@@ -357,8 +358,8 @@ public class HomePage extends WebPage {
                 SavedSearch ss = getMySession().getUser().getSavedSearch(id);
                 return ss.getName();
             }
-        };
-        ssPanel.updateSSCounts(null);
+        };        
+        
         if (!getMySession().hasLoggedIn())
             ssPanel.setVisible(false);
 
@@ -598,7 +599,6 @@ public class HomePage extends WebPage {
 
     public void doSearch(SolrQuery query, int page, boolean twitterFallback, boolean instantSearch) {
         String queryString = searchBox.getQuery();
-
         if (!instantSearch) {
             // change text field
             searchBox.init(query);
@@ -610,7 +610,6 @@ public class HomePage extends WebPage {
         }
 
         String userName = searchBox.getUserName();
-
         resultsPanel.setAdQuery(queryString);
         wikiPanel.setParams(queryString, language);
         boolean startBGThread = true;
@@ -635,13 +634,11 @@ public class HomePage extends WebPage {
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
         getTweetSearch().attachPagability(query, page, hitsPerPage);
 
-
         if (getMySession().hasLoggedIn())
             TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
 
         long start = System.currentTimeMillis();
-        long totalHits = 0;
-        float time;
+        long totalHits = 0;        
         QueryResponse rsp = null;
         try {
             rsp = getTweetSearch().search(users, query);
@@ -655,7 +652,7 @@ public class HomePage extends WebPage {
         Collection<SolrTweet> tweets = null;
         String msg = "";
         if (totalHits > 0) {
-            time = (System.currentTimeMillis() - start) / 100.0f;
+            float time = (System.currentTimeMillis() - start) / 100.0f;
             time = Math.round(time) / 10f;
             msg = "Found " + totalHits + " tweets in " + time + " s";
         } else {
