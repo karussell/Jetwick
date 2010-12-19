@@ -51,7 +51,6 @@ public class TweetProducer extends MyThread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Lock lock = new ReentrantLock();
-    private StopWatch swSearch = new StopWatch("search");
     private final Condition condition = lock.newCondition();
     @Inject
     private TagDao tagDao;
@@ -62,6 +61,8 @@ public class TweetProducer extends MyThread {
     @Inject
     private WorkManager manager;
     private int maxFill = 2000;
+    private long feededTweets = 0;
+    private long start = System.currentTimeMillis();
 
     public TweetProducer() {
         super("tweet-producer");
@@ -73,7 +74,6 @@ public class TweetProducer extends MyThread {
 
     @Override
     public void run() {
-        long start = System.currentTimeMillis();
         logger.info("tweet number batch:" + maxFill);
 
         // to resolve even urls which requires cookies
@@ -119,8 +119,7 @@ public class TweetProducer extends MyThread {
                     }
 
                     float waitInSeconds = 0.1f;
-                    try {
-                        swSearch.start();
+                    try {                        
                         long maxId = 0;
                         LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
                         if (tag.isHomeTimeline()) {
@@ -130,10 +129,11 @@ public class TweetProducer extends MyThread {
                             maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
 
                         int hits = tmp.size();
-                        tag.setLastId(maxId);
-                        swSearch.stop();
-                        logger.info(swSearch + " \tqueue= " + count + " \t + "
-                                + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages() + " lastId:" + tag.getLastId());
+                        tag.setLastId(maxId);                        
+                        feededTweets += hits;
+                        float tweetsPerSec = feededTweets / ((System.currentTimeMillis() - start) / 1000.0f);
+                        logger.info("tweets/sec:" + tweetsPerSec + " \tqueue= " + count + " \t + "
+                                + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
 
                         tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
 
