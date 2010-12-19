@@ -492,6 +492,7 @@
     <requestHandler name="/replication" class="solr.ReplicationHandler" enable="${replication.master:false}" >
         <lst name="master">
             <!--Replicate on 'startup' and 'commit'. 'optimize' is also a valid value for replicateAfter. -->
+            <str name="replicateAfter">commit</str>
             <str name="replicateAfter">optimize</str>
             <str name="confFiles">solrconfig.xml,schema.xml,spellings.txt,stopwords.txt,synonyms.txt,protwords.txt</str>
         </lst>
@@ -501,13 +502,14 @@
         <lst name="slave">
             <!-- fully qualified url for the replication handler of master.
               It is possible to pass on this as a request param for the fetchindex command-->
-            <str name="masterUrl">http://localhost:8080/uindex-m/replication</str>
+            <str name="masterUrl">${replication.url:http://localhost:8081/uindex-m/replication}</str>
 
             <!--Interval in which the slave should poll master. Format is HH:mm:ss
             If this is absent slave does not poll automatically. But a fetchindex can be triggered from the admin or the http API -->
-            <!--
-            <str name="pollInterval">00:10:00</str>
-            -->
+
+            <str name="pollInterval">${replication.poll:00:10:00}</str>
+            <str name="httpBasicAuthUser">${replication.user:user}</str>
+            <str name="httpBasicAuthPassword">${replication.pw:pw}</str>
         </lst>
     </requestHandler>
 
