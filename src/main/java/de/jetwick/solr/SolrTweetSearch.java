@@ -376,6 +376,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
     public Collection<SolrTweet> searchReplies(long id, boolean retweet) {
         try {
+            //"*:*"
             SolrQuery sq = new SolrQuery().addFilterQuery("crt_b:" + retweet).addFilterQuery("inreply_l:" + id);
             QueryResponse rsp = server.query(sq);
             return collectTweets(rsp);
@@ -431,6 +432,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 }
 
                 // get existing tweets and users
+                // "*:*"
                 SolrQuery query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counts);
                 QueryResponse rsp = search(query);
                 SolrDocumentList docs = rsp.getResults();
@@ -519,6 +521,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 continue;
 
             //  fetch 10 tweets if less than 5 tweets are in the cache
+            // "*:*"
             SolrQuery query = new SolrQuery().addFilterQuery("user:" + us.getScreenName()).setRows(10);
             try {
                 QueryResponse rsp = search(query);
@@ -591,6 +594,9 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         return updatedTweets;
     }
 
+    /**
+     * add relation to existing/original tweet
+     */
     public SolrTweet connectToOrigTweet(SolrTweet tw, String toUserStr) {
         if (tw.isRetweet() && SolrTweet.isDefaultInReplyId(tw.getInReplyTwitterId())) {
             // connect retweets to tweets only searchTweetsDays old
@@ -608,7 +614,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                     }
                 }
             } catch (Exception ex) {
-                logger.error("couldn't connect to orig tweet:" + ex.getMessage());
+                logger.error("couldn't connect tweet to orig tweet:" + ex.getMessage());
             }
         }
         return null;
@@ -674,10 +680,12 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         try {
             // get tweets which replies our existing tweets
             // INREPLY_ID:"tweets[i].id"
+            // "*:*"
             SolrQuery query = new SolrQuery().addFilterQuery(replyIdStr.toString()).setRows(origTweets.size());
             findRepliesForOriginalTweets(query, origTweets, updatedTweets);
 
             // get original tweets where we have replies
+            // "*:*"
             query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counter);
             selectOriginalTweetsWithReplies(query, origTweets.values(), updatedTweets);
         } catch (Exception ex) {
@@ -737,6 +745,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
         try {
             // ensure that reply.user has not already a tweet in orig.replies
+            // "*:*"
             SolrQuery q = new SolrQuery().addFilterQuery(INREPLY_ID + ":" + orig.getTwitterId()).
                     addFilterQuery("-id:" + reply.getTwitterId()).
                     addFilterQuery("user:" + reply.getFromUser().getScreenName());
@@ -876,6 +885,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         try {
             List<SolrUser> list = new ArrayList<SolrUser>();
             // get all tweets of the user so set rows large ...
+            // "*:*"
             search(list, new SolrQuery().addFilterQuery("user:" + uName.toLowerCase()).setRows(10));
 
             if (list.size() == 0)
@@ -889,6 +899,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
     long countAll() {
         try {
+            // "*:*"
             return server.query(new SolrQuery()).getResults().getNumFound();
         } catch (SolrServerException ex) {
             throw new RuntimeException(ex);

@@ -68,7 +68,7 @@ public class JetwickQuery extends SolrQuery {
         if (queryStr == null)
             queryStr = "";
         queryStr = queryStr.replaceAll("--", "-").trim();
-        if (queryStr.equals("*") || queryStr.isEmpty())
+        if (queryStr.isEmpty() || queryStr.equals("*:*") || queryStr.equals("*"))
             queryStr = "";
         setQuery(queryStr);
         return attachFacetibility();
