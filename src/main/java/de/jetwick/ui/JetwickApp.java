@@ -55,7 +55,7 @@ public class JetwickApp extends WebApplication {
     protected void init() {
         super.init();
 
-        getApplicationSettings().setPageExpiredErrorPage(HomePage.class);
+        getApplicationSettings().setPageExpiredErrorPage(SessionTimeout.class);
         getApplicationSettings().setInternalErrorPage(ErrorPage.class);
 
         // default is <em> </em> for disabled links

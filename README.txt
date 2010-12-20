@@ -17,5 +17,5 @@ Get Started
 ===========
 
  * Try it live:   http://jetwick.com
- * Installation:  https://github.com/karussell/Jetwick/wiki
+ * Installation:  https://github.com/karussell/Jetwick/wiki/Installation
  * Report issues: https://github.com/karussell/Jetwick/issues

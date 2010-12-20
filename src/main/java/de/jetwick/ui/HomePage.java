@@ -100,7 +100,7 @@ public class HomePage extends WebPage {
     }
 
     public HomePage(final PageParameters parameters) {
-        initTwitter4j();
+        initSession();
         String callback = parameters.getString("callback");
         if ("true".equals(callback)) {
             try {
@@ -124,13 +124,16 @@ public class HomePage extends WebPage {
     }
 
     public HomePage(SolrQuery query, int page, boolean twitterFallback) {
-        initTwitter4j();
+        initSession();
         init(query, page, twitterFallback);
     }
 
-    private void initTwitter4j() {
+    private void initSession() {
         try {
             getMySession().init((WebRequest) getRequest(), uindexProvider.get());
+            String msg = getMySession().getSessionTimeoutMessage();
+            if(!msg.isEmpty())
+                info(msg);
         } catch (Exception ex) {
             logger.error("Error on twitter4j init.", ex);
             error("Couldn't login. Please file report to http://twitter.com/jetwick " + new Date());

@@ -40,9 +40,23 @@ public class MySession extends WebSession {
     private TwitterSearch twitterSearch;
     private SolrUser user = null;
     private boolean twitterSearchInitialized = false;
+    private boolean sessionTimedout = false;
 
     public MySession(Request request) {
         super(request);
+    }
+
+    public void setSessionTimedout(boolean sessionTimedout) {
+        this.sessionTimedout = sessionTimedout;
+    }
+
+    public String getSessionTimeoutMessage() {
+        String str = "";
+        if (sessionTimedout)
+            str = "Jetwick was in sleepmode. Please try again.";
+
+        sessionTimedout = false;
+        return str;
     }
 
     void setTwitterSearchInitialized(boolean twitterSearchInitialized) {
