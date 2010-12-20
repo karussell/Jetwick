@@ -132,7 +132,7 @@ public class HomePage extends WebPage {
         try {
             getMySession().init((WebRequest) getRequest(), uindexProvider.get());
             String msg = getMySession().getSessionTimeoutMessage();
-            if(!msg.isEmpty())
+            if (!msg.isEmpty())
                 info(msg);
         } catch (Exception ex) {
             logger.error("Error on twitter4j init.", ex);
@@ -211,6 +211,14 @@ public class HomePage extends WebPage {
             }
         }
 
+        String sort = parameters.getString("sort");
+        if ("retweets".equals(sort))
+            JetwickQuery.setSort(q, SolrTweetSearch.RT_COUNT + " desc");
+        else if ("latest".equals(sort))
+            JetwickQuery.setSort(q, SolrTweetSearch.DATE + " desc");
+        else if ("oldest".equals(sort))
+            JetwickQuery.setSort(q, SolrTweetSearch.DATE + " asc");
+
         q.addFilterQuery(SolrTweetSearch.FILTER_NO_SPAM);
         q.addFilterQuery(SolrTweetSearch.FILTER_IS_NOT_RT);
 
@@ -240,7 +248,7 @@ public class HomePage extends WebPage {
         }
     }
 
-    public void init(SolrQuery query, final int page, boolean twitterFallback) {        
+    public void init(SolrQuery query, final int page, boolean twitterFallback) {
         feedbackPanel = new FeedbackPanel("feedback");
         add(feedbackPanel.setOutputMarkupId(true));
         add(new Label("title", new Model() {
@@ -361,8 +369,8 @@ public class HomePage extends WebPage {
                 SavedSearch ss = getMySession().getUser().getSavedSearch(id);
                 return ss.getName();
             }
-        };        
-        
+        };
+
         if (!getMySession().hasLoggedIn())
             ssPanel.setVisible(false);
 
@@ -641,7 +649,7 @@ public class HomePage extends WebPage {
             TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
 
         long start = System.currentTimeMillis();
-        long totalHits = 0;        
+        long totalHits = 0;
         QueryResponse rsp = null;
         try {
             rsp = getTweetSearch().search(users, query);
