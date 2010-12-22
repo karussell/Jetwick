@@ -87,7 +87,7 @@ public class OneTweet extends Panel {
 
             @Override
             public String getObject() {
-                return new Extractor().setText(translate(tweet)).run().toString();
+                return new Extractor().setTweet(tweet).setText(translate(tweet)).run().toString();
             }
         });
         label.setEscapeModelStrings(false);
