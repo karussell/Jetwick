@@ -68,9 +68,13 @@ public class FacetPanel extends Panel {
         tr.put(IS_RT + ":true", "retweet");
         tr.put(IS_RT + ":false", "original");
 
+        tr.put(DUP_COUNT, "Duplicates");
+        tr.put(DUP_COUNT + ":[* TO 0]", "without");
+        tr.put(DUP_COUNT + ":[1 TO *]", "only duplicated");
+
         tr.put(URL_COUNT, "Links");
-        tr.put(FILTER_URL_ENTRY, "with links");
-        tr.put(FILTER_NO_URL_ENTRY, "without links");
+        tr.put(FILTER_URL_ENTRY, "with");
+        tr.put(FILTER_NO_URL_ENTRY, "without");
 
         tr.put(RT_COUNT, "Retweets");
         tr.put(RT_COUNT + ":[5 TO *]", "5 and more");
@@ -78,7 +82,7 @@ public class FacetPanel extends Panel {
         tr.put(RT_COUNT + ":[50 TO *]", "50 and more");
 
         tr.put(QUALITY, "Spam");
-        tr.put(FILTER_NO_SPAM, "No Spam");
+        tr.put(FILTER_NO_SPAM, "without");
         tr.put(FILTER_SPAM, "Only Spam");
 
         tr.put(langKey + ":" + UNKNOWN_LANG, "Other");
@@ -221,7 +225,7 @@ public class FacetPanel extends Panel {
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
     public List<Entry<String, List<FacetHelper>>> createFacetsFields(QueryResponse rsp) {
-        final int MAX_VAL = 5;
+        final int MAX_VAL = 6;
         Map<String, Integer> filterToIndex = new LinkedHashMap<String, Integer>() {
 
             {
@@ -229,7 +233,8 @@ public class FacetPanel extends Panel {
                 put(RT_COUNT, 2);
                 put(URL_COUNT, 3);
                 put(IS_RT, 4);
-                put(QUALITY, 5);
+                put(DUP_COUNT, 5);
+                put(QUALITY, 6);
             }
         };
         List<Entry<String, List<FacetHelper>>> ret = new ArrayList<Entry<String, List<FacetHelper>>>();

@@ -52,6 +52,22 @@ public class TweetDetectorTest {
     }
 
     @Test
+    public void testSkipUser() {
+        List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+        tweets.add(createTweet(1L, "@userA term @userB term4!"));
+        tweets.add(createTweet(2L, "@userA term o"));
+        TweetDetector extractor = new TweetDetector(tweets);
+        extractor.setTermMaxCount(10);
+        List<Entry<String, Integer>> mostFrequentTerms = extractor.run().getSortedTerms();
+
+        // ignore o which is too short
+        // ignore @usera which starts with @
+        assertEquals(2, mostFrequentTerms.size());
+        assertEquals("term", mostFrequentTerms.get(0).getKey());
+        assertEquals(2, (int) mostFrequentTerms.get(0).getValue());
+    }
+
+    @Test
     public void testUrlsInTerms() {
         List<SolrTweet> tweets = new ArrayList<SolrTweet>();
         tweets.add(createTweet(1, "the god http://www.jetwick.com/hihiho/test.html <b>http</b>://<b>bit</b>.ly/9FZv5E"));
@@ -93,12 +109,12 @@ public class TweetDetectorTest {
 
     @Test
     public void testStripNoiseFromWords() {
-        assertEquals(" hi ", TweetDetector.stripNoiseFromWord("@hi@"));
+        assertEquals("@hi@", TweetDetector.stripNoiseFromWord("@hi@"));
         assertEquals("pet ", TweetDetector.stripNoiseFromWord("pet."));
-        assertEquals(" peter ", TweetDetector.stripNoiseFromWord("@peter."));
-        assertEquals(" pet er ", TweetDetector.stripNoiseFromWord("@pet,er!"));
-        assertEquals(" pet er ", TweetDetector.stripNoiseFromWord("@pet,er!"));
-        assertEquals(" peter_mueller", TweetDetector.stripNoiseFromWord("@<b>peter</b>_mueller"));
+        assertEquals("@peter ", TweetDetector.stripNoiseFromWord("@peter."));
+        assertEquals("@pet er ", TweetDetector.stripNoiseFromWord("@pet,er!"));
+        assertEquals("@pet er ", TweetDetector.stripNoiseFromWord("@pet,er!"));
+        assertEquals("@peter_mueller", TweetDetector.stripNoiseFromWord("@<b>peter</b>_mueller"));
         assertEquals("  peter  ", TweetDetector.stripNoiseFromWord(">>peter<<"));
         assertEquals(" peter ", TweetDetector.stripNoiseFromWord("\"peter\""));
         assertEquals("don't", TweetDetector.stripNoiseFromWord("don't"));

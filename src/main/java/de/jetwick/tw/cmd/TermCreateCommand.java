@@ -19,9 +19,13 @@ import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.util.AnyExecutor;
 import de.jetwick.tw.TweetDetector;
+import de.jetwick.util.Helper;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import org.apache.solr.update.processor.Lookup3Signature;
+import org.apache.solr.update.processor.Signature;
 
 /**
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
@@ -130,7 +134,7 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         for (SolrTweet older : currentTweet.getFromUser().getOwnTweets()) {
             if (older == currentTweet)
                 continue;
-            
+
             // create tags to decide if tags of currentTweet are important
             calcTermsWithoutNoise(older);
             // count only one term per tweet
@@ -146,11 +150,8 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
             // performance improvement of comparison: use int[] instead of byte[]
 //            if (Arrays.equals(tw.getTextSignature(), older.getTextSignature()))
 //                qual = qual * 0.7;
-
-            // use Jaccard index
-            int a = currentTweet.getTextTerms().andSize(older.getTextTerms());
-            double b = currentTweet.getTextTerms().orSize(older.getTextTerms());
-            double ji = a / b;
+                        
+            double ji = calcJaccardIndex(currentTweet.getTextTerms(), older.getTextTerms());
 
             if (ji >= 0.8) {
                 // nearly equal terms
@@ -201,6 +202,12 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         return qual;
     }
 
+    public static double calcJaccardIndex(StringFreqMap map1, StringFreqMap map2) {
+        int a = map1.andSize(map2);
+        double b = map1.orSize(map2);
+        return a / b;
+    }
+
     public void calcTermsWithoutNoise(SolrTweet tw) {
         if (tw.getTextTerms().size() > 0)
             return;
@@ -209,18 +216,36 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         tw.setTextTerms(extractor.getTerms());
         tw.setLanguages(extractor.getLanguages());
 
-
-        // we don't need the signature because we have the jaccard index
-//        String strForSig = "";
-//        for (Entry<String, Integer> entry : tw.getTextTerms().getSortedFreqLimit(0.05f)) {
-//            strForSig += entry.getKey() + " " + entry.getValue() + ";";
+        // create text signature, sort against frequency
+//        int termsAtOnce = 2;
+//        int packs = 3;
+//        int maxTerms = packs * termsAtOnce;
+//        Signature sig = null;
+//        List<Signature> sigs = new ArrayList<Signature>();
+//        List<Entry<String, Integer>> frequentTerms = tw.getTextTerms().getSortedTermLimited(maxTerms);
+////        Set<String> sortedTerms = new TreeSet<String>();
+////        for (Entry<String, Integer> e : frequentTerms) {
+////            sortedTerms.add(e.getKey());
+////        }
+//
+//        // now sort the remaining terms alphabetically to compensate term mixure
+//        // TODO: it would be better to sort terms alphabetically only if they have equal count
+//        int counter = 0;
+//        for (Entry<String, Integer> term : frequentTerms) {
+////          for (String term : sortedTerms) {
+//            if (counter++ % termsAtOnce == 0) {
+//                //sig = new MD5Signature();
+//                // we can convert this easily to long because it is only 64 bit
+//                sig = new Lookup3Signature();
+//                sigs.add(sig);
+//            }
+//
+//            sig.add(term.getKey());
+////            sig.add(term);
 //        }
 //
-//        // use Lookup3Signature which is faster but only 64 bit?
-//        MD5Signature sig = new MD5Signature();
-//        sig.add(strForSig);
-//
-//        // Helper.sigToString(sig.getSignature)
-//        tw.setTextSignature(sig.getSignature());
+//        for (Signature tmpSig : sigs) {
+//            tw.addTextSignature(Helper.byteArray2long(tmpSig.getSignature()));
+//        }
     }
 }

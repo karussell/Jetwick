@@ -655,22 +655,6 @@ public class Helper {
         return ClientUtils.escapeQueryChars(str);
     }
 
-    /**
-     * copied from org/apache/solr/update/processor/SignatureUpdateProcessorFactory.java
-     * @param signature
-     * @return
-     */
-    public static String sigToString(byte[] signature) {
-        char[] arr = new char[signature.length << 1];
-        for (int i = 0; i < signature.length; i++) {
-            int b = signature[i];
-            int idx = i << 1;
-            arr[idx] = StrUtils.HEX_DIGITS[(b >> 4) & 0xf];
-            arr[idx + 1] = StrUtils.HEX_DIGITS[b & 0xf];
-        }
-        return new String(arr);
-    }
-
     public static String translate(String txt, Language fromLanguage, Language toLanguage) throws Exception {
         Translate.setHttpReferrer("http://www.jetwick.com/");
 
@@ -721,5 +705,68 @@ public class Helper {
 
     private static String workAroundAfter(String origText) {
         return origText.replaceAll("XbllsHYBoPll", "#").replaceAll("XallsHYBoPll", "@");
+    }
+
+    public static byte bitString2byte(String str) {
+        int res = 0;
+
+        if (str.length() > 8)
+            throw new UnsupportedOperationException("string length may be max 8");
+
+        for (int i = 0; i < str.length(); i++) {
+            res = res << 1;
+
+            if ('1' == str.charAt(i)) {
+                res |= 1;
+            } else if ('0' == str.charAt(i)) {
+            } else
+                throw new UnsupportedOperationException("string may contain only 1 or 0");
+        }
+
+        return (byte) res;
+    }
+
+    public static String byte2bitString(byte b) {
+        int integ = b;
+        String res = "";
+        for (int j = 0; j < 8; j++) {
+            if ((integ & 0x01) == 1)
+                res = "1" + res;
+            else
+                res = "0" + res;
+
+            integ = integ >> 1;
+        }
+
+        return res;
+    }
+
+    public static long byteArray2long(byte[] signature) {
+        if (signature.length > 8)
+            throw new UnsupportedOperationException("Cannot lossless convert byte array into long if length is greater than 8");
+
+        long val = 0;
+        for (int i = signature.length - 1; i >= 0; i--) {
+            val  = val << 8;            
+            val |= signature[i];
+        }
+
+        return val;
+    }
+
+    /**
+     * copied from org/apache/solr/update/processor/SignatureUpdateProcessorFactory.java
+     * @param signature
+     * @return
+     */
+    public static String sigToString(byte[] signature) {
+        char[] arr = new char[signature.length << 1];
+        for (int i = 0; i < signature.length; i++) {
+            int b = signature[i];
+            int idx = i << 1;
+            arr[idx] = StrUtils.HEX_DIGITS[(b >> 4) & 0xf];
+            arr[idx + 1] = StrUtils.HEX_DIGITS[b & 0xf];
+        }
+        return new String(arr);
     }
 }

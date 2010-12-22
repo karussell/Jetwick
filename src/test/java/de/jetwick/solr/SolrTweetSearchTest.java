@@ -280,13 +280,22 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
     }
 
     @Test
-    public void testSimilarQuery() {
-        SolrQuery q = new TweetQuery().createSimilarQuery(new SolrTweet(1L, "Test test jAva http://blabli", new SolrUser("tmp")));
-        assertTrue(q.getQuery().contains("test"));
-        assertTrue(q.getQuery().contains("java"));
-        assertFalse(q.getQuery().contains("http"));
-        q = new TweetQuery().createSimilarQuery(new SolrTweet(1L, "RT @user: test", new SolrUser("tmp")));
-        assertFalse(q.getQuery().contains("user"));
+    public void testFindDuplicates() throws SolrServerException {
+        twSearch.update(new SolrTweet(1L, "wikileaks is not a wtf", new SolrUser("userA")), false);
+        twSearch.update(new SolrTweet(2L, "news about wikileaks", new SolrUser("userB")), false);
+
+        SolrTweet tw3 = new SolrTweet(3L, "wtf means wikileaks task force", new SolrUser("userC"));
+        SolrTweet tw4 = new SolrTweet(4L, "wtf wikileaks task force", new SolrUser("userD"));
+        SolrTweet tw5 = new SolrTweet(5L, "RT @userC: wtf means wikileaks task force", new SolrUser("userE"));
+        twSearch.update(Arrays.asList(tw3, tw4, tw5), new Date(0));
+        assertEquals("should find tweet 4", 1, tw3.getDuplicates().size());
+        assertEquals("should find tweet 3", 1, tw4.getDuplicates().size());
+
+        Map<Long, SolrTweet> map = new LinkedHashMap<Long, SolrTweet>();
+        SolrTweet tw = new SolrTweet(10L, "wtf wikileaks task force", new SolrUser("peter"));
+        map.put(10L, tw);
+        twSearch.findDuplicates(map);
+        assertEquals("should find tweets 3 and 4", 2, tw.getDuplicates().size());
     }
 
     @Test

@@ -43,6 +43,11 @@ public class JetwickQuery extends SolrQuery {
                 set("f.tag.facet.limit", (String) null);
     }
 
+    public JetwickQuery(boolean init) {
+        if (init)
+            init("");
+    }
+
     public JetwickQuery(String queryStr) {
         init(queryStr);
     }

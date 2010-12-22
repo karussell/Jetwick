@@ -62,6 +62,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     public static final String IS_RT = "crt_b";
     public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String RT_COUNT = "retw_i";
+    public static final String DUP_COUNT = "dups_i";
     public static final String USER = "user";
     public static final String FILTER_KEY_USER = USER + ":";
     public static final String UPDATE_DT = "update_dt";
@@ -79,8 +80,12 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
     public static final String TAG = "tag";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
-    protected Logger logger = LoggerFactory.getLogger(getClass());
-    private static final int MAX_TWEETS_PER_REQ = 100;
+    private Logger logger = LoggerFactory.getLogger(getClass());
+    protected static final int MAX_TWEETS_PER_REQ = 100;
+
+    /* for elastic search */
+    protected SolrTweetSearch() {
+    }
 
     public SolrTweetSearch(String url) {
         createServer(url, null, null, false);
@@ -191,6 +196,8 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 //        doc.addField("qual_debug_s", tw.getQualDebug());
         doc.addField("repl_i", tw.getReplyCount());
         doc.addField(RT_COUNT, tw.getRetweetCount());
+        doc.addField(DUP_COUNT, tw.getDuplicates().size());
+        doc.addField(DUP_COUNT + "_s", tw.getDuplicates().toString());
 
         return doc;
     }
@@ -475,6 +482,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             updateTweets.addAll(twMap.values());
             updateTweets.addAll(findReplies(twMap));
             updateTweets.addAll(findRetweets(twMap, usersMap));
+            updateTweets.addAll(findDuplicates(twMap));
 
             // add the additionally fetched tweets to the user but do not add to updateTweets
             // this is a bit expensive ~30-40sec for every update call on a large index!
@@ -513,9 +521,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
      * more efficient
      */
     public void fetchMoreTweets(Map<Long, SolrTweet> tweets, final Map<String, SolrUser> userMap) {
-
         for (SolrUser us : userMap.values()) {
-
             // guarantee 5 tweets to be in the cache
             if (us.getOwnTweets().size() > 4)
                 continue;
@@ -536,6 +542,63 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 throw new RuntimeException(ex);
             }
         }
+    }
+
+    public Collection<SolrTweet> findDuplicates(Map<Long, SolrTweet> tweets) {
+        final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
+        TermCreateCommand termCommand = new TermCreateCommand();
+
+        for (SolrTweet currentTweet : tweets.values()) {
+            if (currentTweet.isRetweet())
+                continue;
+
+            termCommand.calcTermsWithoutNoise(currentTweet);
+            List textTerms = currentTweet.getTextTerms().getSortedTermLimited(6);
+            SolrQuery q = new TweetQuery(false).createSimilarQuery(currentTweet, textTerms).
+                    addFilterQuery(FILTER_ENTRY_LATEST_DT).setRows(10);
+            // force dismax and specify required matching terms
+            q.set("qf", TWEET_TEXT);
+            q.set("defType", "dismax");
+            q.set("mm", "4");
+
+            if (textTerms.size() < 3)
+                continue;
+
+            int dups = 0;
+            // find dups in index
+            try {
+                for (SolrTweet simTweet : collectTweets(search(q))) {
+                    if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
+                        continue;
+
+                    termCommand.calcTermsWithoutNoise(simTweet);
+                    if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
+                            >= 0.7) {
+                        currentTweet.addDuplicate(simTweet.getTwitterId());
+                        dups++;
+                    }
+                }
+            } catch (SolrServerException ex) {
+                logger.warn("Coudn't trigger duplicat search for " + currentTweet + " " + ex.getMessage());
+            }
+
+            // find dups in map
+            for (SolrTweet simTweet : tweets.values()) {
+                if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()) || simTweet.isRetweet())
+                    continue;
+
+                termCommand.calcTermsWithoutNoise(simTweet);
+                if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
+                        >= 0.7) {
+                    currentTweet.addDuplicate(simTweet.getTwitterId());
+                    dups++;
+                }
+            }
+
+//            tw.setDuplicates(dups);
+        }
+
+        return updatedTweets;
     }
 
     /**
@@ -588,7 +651,6 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         for (SolrTweet tw : tweets.values()) {
             if (tw.isRetweet())
                 extractor.setTweet(tw).run();
-
         }
 
         return updatedTweets;
@@ -935,9 +997,9 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         if (query.isEmpty())
             return Collections.EMPTY_LIST;
 
-        Collection<SolrUser> users = new LinkedHashSet<SolrUser>();        
+        Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
         search(users, new SolrQuery(query).addFilterQuery("tw:#jetwick").
-//                addFilterQuery(RT_COUNT + ":[1 TO *]").
+                //                addFilterQuery(RT_COUNT + ":[1 TO *]").
                 addFilterQuery(QUALITY + ":[90 TO 100]").
                 addFilterQuery(IS_RT + ":false").
                 addFilterQuery(DATE + ":[NOW/DAY-3DAYS TO NOW]").

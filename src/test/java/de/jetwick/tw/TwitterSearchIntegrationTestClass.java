@@ -75,13 +75,13 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void testNormalAccountAgainstSpam() throws TwitterException {
         List<SolrTweet> list = new ArrayList<SolrTweet>();
-        list = twitterSearch.getTweets(new SolrUser("pannous"), 100);
-        for (SolrTweet tw : list) {            
+        list = twitterSearch.getTweets(new SolrUser("berniecezee2573"), 100);
+        for (SolrTweet tw : list) {
             for (UrlEntry entry : new FakeUrlExtractor().setText(tw.getText()).run().getUrlEntries()) {
                 tw.addUrlEntry(entry);
             }
             SolrTweet tw2 = new TermCreateCommand().execute(tw);
-//            System.out.println(tw2.getQuality() + " " + tw2.getQualDebug() + " " + tw2.getText());
+            System.out.println(tw2.getQuality() + " " + tw2.getQualDebug() + " " + tw2.getText());
         }
     }
 

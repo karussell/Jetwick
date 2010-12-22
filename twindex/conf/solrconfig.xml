@@ -370,6 +370,9 @@
                     <str name="facet.query">retw_i:[20 TO *]</str>
                     <str name="facet.query">retw_i:[50 TO *]</str>
 
+                    <str name="facet.query">dups_i:[* TO 0]</str>
+                    <str name="facet.query">dups_i:[1 TO *]</str>
+
                     <str name="facet.query">url_i:[1 TO *]</str>
                     <str name="facet.query">url_i:0</str>
 

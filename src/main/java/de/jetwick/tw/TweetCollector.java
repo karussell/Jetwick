@@ -66,13 +66,7 @@ public class TweetCollector {
 
             @Override
             public void run() {
-                logger.info("Finished via Shutdown hook!\n\nNow listing current thread stack traces");
-
-                for (Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
-                    for (StackTraceElement el : entry.getValue()) {
-                        logger.info(entry.getKey().getName() + " " + el);
-                    }
-                }
+                logger.info("Finished via Shutdown hook!");
             }
         };
 

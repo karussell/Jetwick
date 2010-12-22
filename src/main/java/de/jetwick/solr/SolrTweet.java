@@ -76,7 +76,8 @@ public class SolrTweet implements Serializable {
     private int reply;
     private String qualDebug;
     private int qualReductions = 0;
-    private byte[] textSignature;
+//    private Collection<Long> textSignature;
+    private Collection<Long> duplicates = new LinkedHashSet<Long>();
 
     /**
      * You'll need to call init after that constructor
@@ -171,13 +172,16 @@ public class SolrTweet implements Serializable {
         this.textTerms = textTerms;
     }
 
-    public byte[] getTextSignature() {
-        return textSignature;
-    }
-
-    public void setTextSignature(byte[] textSignature) {
-        this.textSignature = textSignature;
-    }
+//    public Collection<Long> getTextSignature() {
+//        return textSignature;
+//    }
+//
+//    public void addTextSignature(long signature) {
+//        if (textSignature == null)
+//            textSignature = new ArrayList<Long>();
+//
+//        this.textSignature.add(signature);
+//    }
 
     public long getInReplyTwitterId() {
         return inReplyTwitterId;
@@ -522,5 +526,16 @@ public class SolrTweet implements Serializable {
             langs.add(lang);
             words.put(str, langs);
         }
+    }
+
+    /**
+     * specifies how many existing tweets with similar content were found
+     */
+    public Collection<Long> getDuplicates() {
+        return duplicates;
+    }
+
+    public void addDuplicate(long twId) {
+        duplicates.add(twId);
     }
 }

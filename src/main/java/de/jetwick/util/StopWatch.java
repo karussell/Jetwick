@@ -22,16 +22,28 @@ package de.jetwick.util;
  */
 public class StopWatch {
 
-    private long lastTime = 0;
-    private long time = 0;
+    private long lastTime;
+    private long time;
     private String name = "";
 
     public StopWatch(String name) {
         this.name = name;
     }
 
-    public void start() {
+    public StopWatch clear() {
+        lastTime = 0;
+        time = 0;
+        return this;
+    }
+
+    public StopWatch setName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public StopWatch start() {
         lastTime = System.currentTimeMillis();
+        return this;
     }
 
     public StopWatch stop() {

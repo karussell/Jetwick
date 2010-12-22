@@ -15,7 +15,7 @@
  */
 package de.jetwick.solr;
 
-import de.jetwick.tw.TweetDetector;
+import de.jetwick.tw.cmd.TermCreateCommand;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
@@ -30,6 +30,10 @@ import static de.jetwick.solr.SolrTweetSearch.*;
 public class TweetQuery extends JetwickQuery {
 
     public TweetQuery() {
+    }
+
+    public TweetQuery(boolean init) {
+        super(init);
     }
 
     public TweetQuery(String queryStr) {
@@ -55,7 +59,7 @@ public class TweetQuery extends JetwickQuery {
                 setFacetLimit(10).
                 addFacetField(TAG).addFacetField("lang").
                 // originality
-                addFacetField(IS_RT).                
+                addFacetField(IS_RT).
                 addFacetField(FIRST_URL_TITLE).
                 //addFacetField(USER).set("f.user.facet.mincount", 1).set("f.user.facet.limit", 5).
                 set("f.dest_title_1_s.facet.mincount", 1).
@@ -70,7 +74,10 @@ public class TweetQuery extends JetwickQuery {
 
         q.addFacetQuery(RT_COUNT + ":[5 TO *]");
         q.addFacetQuery(RT_COUNT + ":[20 TO *]");
-        q.addFacetQuery(RT_COUNT + ":[50 TO *]");                
+        q.addFacetQuery(RT_COUNT + ":[50 TO *]");
+
+        q.addFacetQuery(DUP_COUNT + ":[* TO 0]");
+        q.addFacetQuery(DUP_COUNT + ":[1 TO *]");
 
         // spam
         q.addFacetQuery(FILTER_SPAM);
@@ -99,20 +106,18 @@ public class TweetQuery extends JetwickQuery {
     }
 
     public TweetQuery createSimilarQuery(SolrTweet tweet) {
-        String text;
-        if (tweet.isRetweet())
-            text = tweet.extractRTText();
-        else
-            text = tweet.getText();
+        new TermCreateCommand().calcTermsWithoutNoise(tweet);
+        return createSimilarQuery(tweet, tweet.getTextTerms().getSortedTermLimited(6));
+    }
 
-        StringBuilder sb = new StringBuilder();
+    public TweetQuery createSimilarQuery(SolrTweet tweet, Collection<Entry<String, Integer>> terms) {
         Set<String> set = new LinkedHashSet<String>();
-        for (Entry<String, Integer> entry :
-                new TweetDetector().runOne(text).getSortedTerms()) {
 
+        for (Entry<String, Integer> entry : terms) {
             set.add(entry.getKey());
         }
 
+        StringBuilder sb = new StringBuilder();
         for (String str : set) {
             sb.append(str);
             sb.append(" ");

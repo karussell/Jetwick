@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import de.jetwick.solr.SolrTweet;
@@ -44,7 +43,7 @@ public class TweetDetector {
     public static final String RU = "ru";
     public static final String SP = "sp";
     private Collection<SolrTweet> tweets;
-    private int termMaxCount = 8;
+    private int termMaxCount = 6;
     private StringFreqMap languages = new StringFreqMap();
     private StringFreqMap terms = new StringFreqMap();
 
@@ -70,7 +69,7 @@ public class TweetDetector {
         // ignore urls
         // urls contain all characters except spaces: [^ ] and we need this multple times: *
         str = str.replaceAll("http[s]?://[^ ]*", " ");
-        str = str.replaceAll("[\\\"\\:\\.\\!\\?\\)\\(\\[\\]\\,\\@\\>\\<\\-\\n\\t\\&]", " ");
+        str = str.replaceAll("[\\\"\\:\\.\\!\\?\\)\\(\\[\\]\\,\\>\\<\\-\\n\\t\\&]", " ");
         str = str.replaceAll(" #", " ");
         // or at the beginning of the line
         if (str.charAt(0) == '#')
@@ -170,7 +169,7 @@ public class TweetDetector {
         for (String term : tmpTerms) {
 //            term = term.trim();
             counter++;
-            if (term.length() < 2 || term.length() > 70)
+            if (term.length() < 2 || term.length() > 70 || term.startsWith("@"))
                 continue;
 
             Set<String> langs = SolrTweet.NOISE_WORDS.get(term);
@@ -178,7 +177,7 @@ public class TweetDetector {
                 // skip the last term for language detection
                 if (counter < tmpTerms.length) {
                     for (String lang : langs) {
-                        
+
                         if (lang.equals(TweetDetector.NUM)
                                 || lang.equals(TweetDetector.SINGLE)
                                 || lang.equals(TweetDetector.MISC_LANG))

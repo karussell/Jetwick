@@ -16,6 +16,7 @@
 package de.jetwick.util;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.Date;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -98,6 +99,26 @@ public class HelperTest {
                 res[0]);
         assertEquals("Frustrated investigators might have chosen to leak information that their superiors bottled up, perhaps averting the terrorism attacks.",
                 res[1]);
+    }
+
+    @Test
+    public void testByteArray2Long() throws IOException {
+        assertEquals(1 + 16 + 64, Helper.bitString2byte("1010001"));
+        assertEquals("00001010", Helper.byte2bitString(Helper.bitString2byte("00001010")));
+        assertEquals("00111010", Helper.byte2bitString(Helper.bitString2byte("00111010")));
+        assertEquals("11111111", Helper.byte2bitString(Helper.bitString2byte("11111111")));
+        assertEquals("00000000", Helper.byte2bitString(Helper.bitString2byte("00000000")));
+
+        byte[] bytes = new byte[4];
+        bytes[0] = Helper.bitString2byte("00010001");
+        bytes[1] = Helper.bitString2byte("00000001");
+        assertEquals(1 + 16 + 256, Helper.byteArray2long(bytes));
+
+        bytes = new byte[4];
+        bytes[0] = Helper.bitString2byte("00010001");
+        bytes[1] = Helper.bitString2byte("00000001");
+        bytes[2] = Helper.bitString2byte("00010010");
+        assertEquals(1 + 16 + 256 + (long) Math.pow(2, 17) + (long) Math.pow(2, 20), Helper.byteArray2long(bytes));
     }
 
     public static byte[] fileToString(String name) throws IOException {

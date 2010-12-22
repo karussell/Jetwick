@@ -17,7 +17,9 @@ package de.jetwick.tw.cmd;
 
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.FakeUrlExtractor;
 import de.jetwick.tw.TweetDetector;
 import de.jetwick.util.MyDate;
@@ -27,6 +29,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
+import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.Test;
 
@@ -327,5 +330,38 @@ public class TermCreateCommandTest {
         tw.getLanguages().inc("en", 2);
         otherLanguages = new StringFreqMap().set("de", 1).set("en", 1);
         assertEquals(TweetDetector.UNKNOWN_LANG, new TermCreateCommand().detectLanguage(tw, otherLanguages));
+    }
+
+//    @Test
+//    public void testSignature() {
+//        SolrTweet tw = new SolrTweet(1L, "wtf wtf text", new SolrUser("tmp"));
+//        new TermCreateCommand().calcTermsWithoutNoise(tw);
+//        assertTrue(tw.getTextSignature().size() > 0);
+//        SolrTweet tw2 = new SolrTweet(2L, "wtf wtf text", new SolrUser("tmp"));
+//        new TermCreateCommand().calcTermsWithoutNoise(tw2);
+//        assertEquals(tw.getTextSignature(), tw2.getTextSignature());
+//
+//        SolrTweet tw3 = new SolrTweet(3L, "wtf wtf text wikileaks info", new SolrUser("tmp"));
+//        new TermCreateCommand().calcTermsWithoutNoise(tw3);
+//        int counter = 0;
+//        for (Long val : tw3.getTextSignature()) {
+//            if (tw2.getTextSignature().contains(val))
+//                counter++;
+//        }
+//        assertTrue("At least on signature should be identical for tweet2 and tweet3", counter > 0);
+//    }
+
+    @Test
+    public void testNow() {
+        SolrTweet tw = new SolrTweet(1L, "IF YOU KNOW ANYBODY IN #ATL THAT NEEDS A PART TIME JOB GET AT ME !!! MUST BE ABLE TO PASS DRUG TEST AND BACKGROUND CHECK!", new SolrUser("tmp"));
+        new TermCreateCommand().calcTermsWithoutNoise(tw);
+        List textTerms = tw.getTextTerms().getSortedTermLimited(6);
+        SolrQuery q = new TweetQuery(false).createSimilarQuery(tw, textTerms).
+                    addFilterQuery(SolrTweetSearch.FILTER_ENTRY_LATEST_DT).setRows(10);
+            // force dismax and specify required matching terms
+            q.set("qf", SolrTweetSearch.TWEET_TEXT);
+            q.set("defType", "dismax");
+            q.set("mm", "4");
+        System.out.println(q.toString());
     }
 }
