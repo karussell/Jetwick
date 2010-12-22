@@ -220,6 +220,7 @@ public class HomePage extends WebPage {
             JetwickQuery.setSort(q, SolrTweetSearch.DATE + " asc");
 
         q.addFilterQuery(SolrTweetSearch.FILTER_NO_SPAM);
+        //q.addFilterQuery(SolrTweetSearch.FILTER_NO_DUPS);
         q.addFilterQuery(SolrTweetSearch.FILTER_IS_NOT_RT);
 
         return getTweetSearch().attachHighlighting(q);

@@ -45,7 +45,7 @@ public class TweetUrlResolver extends MyThread {
     private boolean test = true;
     private BlockingQueue<TweetPackage> packages;
     private BlockingQueue<TweetPackage> resultPackages = new LinkedBlockingQueue<TweetPackage>();
-    private int maxFill = 2000;
+    private int maxFill = 1000;
 
     public TweetUrlResolver() {
         super("tweet-urlresolver");

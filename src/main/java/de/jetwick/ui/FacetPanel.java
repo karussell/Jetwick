@@ -69,8 +69,8 @@ public class FacetPanel extends Panel {
         tr.put(IS_RT + ":false", "original");
 
         tr.put(DUP_COUNT, "Duplicates");
-        tr.put(DUP_COUNT + ":[* TO 0]", "without");
-        tr.put(DUP_COUNT + ":[1 TO *]", "only duplicated");
+        tr.put(FILTER_NO_DUPS, "without");
+        tr.put(FILTER_ONLY_DUPS, "only duplicated");
 
         tr.put(URL_COUNT, "Links");
         tr.put(FILTER_URL_ENTRY, "with");

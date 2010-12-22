@@ -281,18 +281,21 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testFindDuplicates() throws SolrServerException {
+
         twSearch.update(new SolrTweet(1L, "wikileaks is not a wtf", new SolrUser("userA")), false);
         twSearch.update(new SolrTweet(2L, "news about wikileaks", new SolrUser("userB")), false);
 
-        SolrTweet tw3 = new SolrTweet(3L, "wtf means wikileaks task force", new SolrUser("userC"));
-        SolrTweet tw4 = new SolrTweet(4L, "wtf wikileaks task force", new SolrUser("userD"));
-        SolrTweet tw5 = new SolrTweet(5L, "RT @userC: wtf means wikileaks task force", new SolrUser("userE"));
+        // find dup is restricted to the last hour so use a current date
+        MyDate dt = new MyDate();
+        SolrTweet tw3 = new SolrTweet(3L, "wtf means wikileaks task force", new SolrUser("userC")).setCreatedAt(dt.toDate());
+        SolrTweet tw4 = new SolrTweet(4L, "wtf wikileaks task force", new SolrUser("userD")).setCreatedAt(dt.plusMinutes(1).toDate());
+        SolrTweet tw5 = new SolrTweet(5L, "RT @userC: wtf means wikileaks task force", new SolrUser("userE")).setCreatedAt(dt.plusMinutes(1).toDate());
         twSearch.update(Arrays.asList(tw3, tw4, tw5), new Date(0));
-        assertEquals("should find tweet 4", 1, tw3.getDuplicates().size());
+        assertEquals("should be empty. should NOT find tweet 4 because it is younger", 0, tw3.getDuplicates().size());
         assertEquals("should find tweet 3", 1, tw4.getDuplicates().size());
 
         Map<Long, SolrTweet> map = new LinkedHashMap<Long, SolrTweet>();
-        SolrTweet tw = new SolrTweet(10L, "wtf wikileaks task force", new SolrUser("peter"));
+        SolrTweet tw = new SolrTweet(10L, "wtf wikileaks task force", new SolrUser("peter")).setCreatedAt(dt.plusMinutes(1).toDate());
         map.put(10L, tw);
         twSearch.findDuplicates(map);
         assertEquals("should find tweets 3 and 4", 2, tw.getDuplicates().size());

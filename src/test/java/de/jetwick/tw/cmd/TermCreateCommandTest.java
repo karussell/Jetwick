@@ -353,7 +353,7 @@ public class TermCreateCommandTest {
 
     @Test
     public void testNow() {
-        SolrTweet tw = new SolrTweet(1L, "IF YOU KNOW ANYBODY IN #ATL THAT NEEDS A PART TIME JOB GET AT ME !!! MUST BE ABLE TO PASS DRUG TEST AND BACKGROUND CHECK!", new SolrUser("tmp"));
+        SolrTweet tw = new SolrTweet(1L, "Arrayth most tweeted VIDEO in Array ||  http://bit.ly/d2VzXw", new SolrUser("tmp"));
         new TermCreateCommand().calcTermsWithoutNoise(tw);
         List textTerms = tw.getTextTerms().getSortedTermLimited(6);
         SolrQuery q = new TweetQuery(false).createSimilarQuery(tw, textTerms).

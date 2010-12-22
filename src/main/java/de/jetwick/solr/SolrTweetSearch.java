@@ -63,6 +63,8 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String RT_COUNT = "retw_i";
     public static final String DUP_COUNT = "dups_i";
+    public static final String FILTER_NO_DUPS = DUP_COUNT + ":[* TO 0]";
+    public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO *]";
     public static final String USER = "user";
     public static final String FILTER_KEY_USER = USER + ":";
     public static final String UPDATE_DT = "update_dt";
@@ -586,6 +588,9 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             for (SolrTweet simTweet : tweets.values()) {
                 if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()) || simTweet.isRetweet())
                     continue;
+
+                if (currentTweet.getCreatedAt().getTime() < simTweet.getCreatedAt().getTime() )
+                    continue;                
 
                 termCommand.calcTermsWithoutNoise(simTweet);
                 if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
