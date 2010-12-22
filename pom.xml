@@ -77,6 +77,18 @@
         -->
 
         <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>0.13.1</version>
+        </dependency>
+        <!-- required dep for elastic search -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.wicket</groupId>
             <artifactId>wicket</artifactId>
             <version>${wicket.version}</version>
@@ -214,6 +226,7 @@
             <version>1.8.5</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -399,7 +412,14 @@
             <url>http://visural-common.googlecode.com/svn/trunk/visural-common/maven/</url>
         </repository>
         -->
-        
+
+        <repository>
+            <id>sonatype-releases</id>
+            <name>Sonatype Releases Repository</name>
+            <url>http://oss.sonatype.org/content/repositories/releases/</url>
+        </repository>
+
     </repositories>
 </project>
+
 
