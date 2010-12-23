@@ -20,6 +20,8 @@ import com.google.inject.Injector;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.rmi.RMIClient;
+import de.jetwick.solr.SolrAdSearch;
+import de.jetwick.solr.SolrAdSearchTest;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrTweetSearchTest;
 import de.jetwick.solr.SolrUser;
@@ -79,6 +81,14 @@ public class WicketPagesTestClass {
                     throw new UnsupportedOperationException("Cannot setup tweet search", ex);
                 }
                 bind(SolrTweetSearch.class).toInstance(stst.getTweetSearch());
+
+                SolrAdSearchTest sAd = new SolrAdSearchTest();
+                try {
+                    sAd.setUp();
+                } catch (Exception ex) {
+                    throw new UnsupportedOperationException("Cannot setup tweet search", ex);
+                }
+                bind(SolrAdSearch.class).toInstance(sAd.getTweetSearch());
             }
 
             @Override
