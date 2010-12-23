@@ -108,7 +108,7 @@ public class Jetwot {
 
             if (selectedTweet != null) {
                 logger.info("retweet:" + selectedTweet);
-                //tw4j.doRetweet(selectedTweet.getTwitterId());
+                tw4j.doRetweet(selectedTweet.getTwitterId());
 
                 for (String term : selectedTweet.getTextTerms().keySet()) {
                     termCache.add(term);
