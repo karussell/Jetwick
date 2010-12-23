@@ -19,9 +19,13 @@ import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.util.AnyExecutor;
 import de.jetwick.tw.TweetDetector;
+import de.jetwick.util.Helper;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import org.apache.solr.update.processor.Lookup3Signature;
+import org.apache.solr.update.processor.Signature;
 
 /**
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net

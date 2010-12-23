@@ -353,8 +353,15 @@ public class TermCreateCommandTest {
 
     @Test
     public void testFindDuplicateQuery() {
-        SolrTweet tw = new SolrTweet(1L, "Landon Donovan -- U.S. soccer superstar and World Cup hero -- has filed for divorce from his wife Bianca Kajlich... http://bit.ly/fh4DLI", new SolrUser("tmp"));        
-        SolrQuery q = new TweetQuery(false).createSimilarQuery(tw);
+        SolrTweet tw = new SolrTweet(1L, "Landon Donovan -- U.S. soccer superstar and World Cup hero -- has filed for divorce from his wife Bianca Kajlich... http://bit.ly/fh4DLI", new SolrUser("tmp"));
+        new TermCreateCommand().calcTermsWithoutNoise(tw);
+        List textTerms = tw.getTextTerms().getSortedTermLimited(6);
+        SolrQuery q = new TweetQuery(false).createSimilarQuery(tw, textTerms).
+                    addFilterQuery(SolrTweetSearch.FILTER_ENTRY_LATEST_DT).setRows(10);
+            // force dismax and specify required matching terms
+            q.set("qf", SolrTweetSearch.TWEET_TEXT);
+            q.set("defType", "dismax");
+            q.set("mm", "4");
         System.out.println(q.toString());
     }
 }
