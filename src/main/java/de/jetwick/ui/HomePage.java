@@ -529,17 +529,11 @@ public class HomePage extends WebPage {
                     JetwickQuery.setSort(lastQuery, sortStr);
                     doSearch(lastQuery, 0, false);
                     updateAfterAjax(target, false);
-//                    setResponsePage(new HomePage(lastQuery, 0, false));
                 }
             }
 
             @Override
             public void onUserClick(String userName, String queryStr) {
-//                SolrQuery query = getTweetSearch().createTweetQuery(queryStr);
-//                if (userName != null)
-//                    query.addFilterQuery(SolrTweetSearch.FILTER_KEY_USER + "\"" + userName.trim() + "\"");
-
-                System.out.println("NOW!:" + userName + " " + queryStr);
                 PageParameters p = new PageParameters();
                 if (queryStr != null && !queryStr.isEmpty())
                     p.add("q", queryStr);
@@ -556,10 +550,11 @@ public class HomePage extends WebPage {
             }
 
             @Override
-            public void onFindSimilar(SolrTweet tweet) {
+            public void onFindSimilar(SolrTweet tweet, AjaxRequestTarget target) {
                 SolrQuery query = new TweetQuery().createSimilarQuery(tweet);
                 logger.info("[stats] similar search:" + query);
-                setResponsePage(new HomePage(query, 0, true));
+                doSearch(query, 0, false);
+                updateAfterAjax(target, false);
             }
 
             @Override

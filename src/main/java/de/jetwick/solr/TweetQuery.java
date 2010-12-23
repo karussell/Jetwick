@@ -104,13 +104,14 @@ public class TweetQuery extends JetwickQuery {
             }
         return q;
     }
+    private final static double MM_BORDER = 0.7;
 
     public TweetQuery createSimilarQuery(SolrTweet tweet) {
         new TermCreateCommand().calcTermsWithoutNoise(tweet);
-        return createSimilarQuery(tweet, tweet.getTextTerms().getSortedTermLimited(6));
+        return createSimilarQuery(tweet.getTextTerms().getSortedTermLimited(6));
     }
 
-    public TweetQuery createSimilarQuery(SolrTweet tweet, Collection<Entry<String, Integer>> terms) {
+    private TweetQuery createSimilarQuery(Collection<Entry<String, Integer>> terms) {
         Set<String> set = new LinkedHashSet<String>();
 
         for (Entry<String, Integer> entry : terms) {
@@ -123,6 +124,16 @@ public class TweetQuery extends JetwickQuery {
             sb.append(" ");
         }
 
+        // force dismax and specify required matching terms
+        set("qf", TWEET_TEXT);
+        set("defType", "dismax");
+        // TODO can we use solr settings instead?
+        int mmTweets = (int) Math.round(terms.size() * MM_BORDER);
+        // maximal 6 terms
+        mmTweets = Math.min(6, mmTweets);
+        // minimal 4 terms
+        mmTweets = Math.max(4, mmTweets);
+        set("mm", "" + mmTweets);
         return (TweetQuery) setQuery(sb.toString()).addFilterQuery(IS_RT + ":\"false\"");
     }
 }
