@@ -31,6 +31,7 @@ import de.jetwick.util.MaxBoundSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Random;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class Jetwot {
         Map<String, String> params = Helper.parseArguments(args);
         long interval = 1 * 60 * 1000L;
         try {
-            String str = params.get("interval");            
+            String str = params.get("interval");
             char unit = str.charAt(str.length() - 1);
             str = str.substring(0, str.length() - 1);
             if (unit == 'h') {
@@ -59,12 +60,20 @@ public class Jetwot {
         } catch (Exception ex) {
             logger.warn("Cannot parse interval parameter:" + ex.getMessage());
         }
+        int minRT = 15;
+        try {
+            minRT = Integer.parseInt(params.get("minRT"));
+        } catch (Exception ex) {
+            logger.warn("Cannot parse interval parameter:" + ex.getMessage());
+        }
 
-        new Jetwot().start(-1, interval);
+
+        new Jetwot().setMinRT(minRT).start(-1, interval);
     }
     private static Logger logger = LoggerFactory.getLogger(Jetwot.class);
     protected SolrTweetSearch tweetSearch;
     protected TwitterSearch tw4j;
+    private int minRT = 15;
 
     public void init() {
         Configuration cfg = new Configuration();
@@ -82,6 +91,7 @@ public class Jetwot {
         MaxBoundSet<Long> idCache = new MaxBoundSet<Long>(500, 1000);
         MaxBoundSet<String> termCache = new MaxBoundSet<String>(50, 100).setMaxAge(2 * 24 * 3600L);
         TermCreateCommand command = new TermCreateCommand();
+        Random rand = new Random();
         for (int i = 0; cycles < 0 || i < cycles; i++) {
             logger.info("id cache:" + idCache.size());
             logger.info("term cache:" + termCache.size());
@@ -107,13 +117,17 @@ public class Jetwot {
             }
 
             if (selectedTweet != null) {
-                logger.info("retweet:" + selectedTweet);
-                tw4j.doRetweet(selectedTweet.getTwitterId());
+                try {                    
+                    tw4j.doRetweet(selectedTweet.getTwitterId());
 
-                for (String term : selectedTweet.getTextTerms().keySet()) {
-                    termCache.add(term);
+                    for (String term : selectedTweet.getTextTerms().keySet()) {
+                        termCache.add(term);
+                    }
+                    idCache.add(selectedTweet.getTwitterId());
+                    logger.info("retweeted:" + selectedTweet);
+                } catch (Exception ex) {
+                    logger.error("Couldn't retweet tweet:" + selectedTweet + " " + ex.getMessage());
                 }
-                idCache.add(selectedTweet.getTwitterId());
             }
 
             // Create tweet for Trending URLS?
@@ -126,8 +140,10 @@ public class Jetwot {
             // twitter.postTweet("'Title ABOUT XY' short.url/test");
 
             try {
-                logger.info("wait " + (interval / 1000f) + " sec");
-                Thread.sleep(interval);
+                // add some noise when waiting to avoid being identified or filtered out as bot ;-)
+                long tmp = (long) (interval + interval * rand.nextDouble() * 0.3);
+                logger.info("wait " + (tmp / 1000f) + " sec");
+                Thread.sleep(tmp);
             } catch (InterruptedException ex) {
                 logger.warn("Interrupted " + ex.getMessage());
                 break;
@@ -139,7 +155,7 @@ public class Jetwot {
         SolrQuery query = new SolrQuery().addFilterQuery(FILTER_ENTRY_LATEST_DT).
                 addFilterQuery(QUALITY + ":[90 TO *]").
                 addFilterQuery(DUP_COUNT + ":0").
-                addFilterQuery(RT_COUNT + ":[20 TO *]").
+                addFilterQuery(RT_COUNT + ":[" + minRT + " TO *]").
                 addFilterQuery(IS_RT + ":false").
                 setSortField(RT_COUNT, SolrQuery.ORDER.desc).
                 setRows(50);
@@ -154,5 +170,10 @@ public class Jetwot {
             }
         }
         return Collections.EMPTY_LIST;
+    }
+
+    public Jetwot setMinRT(int minRT) {
+        this.minRT = minRT;
+        return this;
     }
 }
