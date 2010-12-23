@@ -76,7 +76,7 @@ public class RMIServer implements CommunicationService {
         }
 
         tweetQueue.add(tws);
-//        logger.info("queued " + tws);
+        logger.info("queued " + tws.getName());
     }
 
     public void setFeedingQueue(BlockingQueue<TweetPackage> tweets) {

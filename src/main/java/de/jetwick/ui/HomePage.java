@@ -195,11 +195,12 @@ public class HomePage extends WebPage {
             }
         }
 
+        String userName = null;
         if (q == null) {
             String queryStr = parameters.getString("q");
             if (queryStr == null)
                 queryStr = "";
-            String userName = parameters.getString("u");
+            userName = parameters.getString("u");
             q = new TweetQuery(queryStr).addUserFilter(userName);
 
             // avoid slow queries for *:* query and filter against latest tweets
@@ -217,9 +218,11 @@ public class HomePage extends WebPage {
         else if ("oldest".equals(sort))
             JetwickQuery.setSort(q, SolrTweetSearch.DATE + " asc");
 
-        q.addFilterQuery(SolrTweetSearch.FILTER_NO_SPAM);
-        //q.addFilterQuery(SolrTweetSearch.FILTER_NO_DUPS);
-        q.addFilterQuery(SolrTweetSearch.FILTER_IS_NOT_RT);
+        if (userName == null) {
+            q.addFilterQuery(SolrTweetSearch.FILTER_NO_SPAM);
+            q.addFilterQuery(SolrTweetSearch.FILTER_NO_DUPS);
+            q.addFilterQuery(SolrTweetSearch.FILTER_IS_NOT_RT);
+        }
 
         return getTweetSearch().attachHighlighting(q);
     }
