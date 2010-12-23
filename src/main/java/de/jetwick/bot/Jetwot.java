@@ -26,9 +26,11 @@ import static de.jetwick.solr.SolrTweetSearch.*;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.cmd.TermCreateCommand;
+import de.jetwick.util.Helper;
 import de.jetwick.util.MaxBoundSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +43,26 @@ import org.slf4j.LoggerFactory;
 public class Jetwot {
 
     public static void main(String[] args) {
-        new Jetwot().start();
+        Map<String, String> params = Helper.parseArguments(args);
+        long interval = 1 * 60 * 1000L;
+        try {
+            String str = params.get("interval");            
+            char unit = str.charAt(str.length() - 1);
+            str = str.substring(0, str.length() - 1);
+            if (unit == 'h') {
+                // in hours
+                interval = Long.parseLong(str) * 60 * 60 * 1000L;
+            } else if (unit == 'm') {
+                // in minutes
+                interval = Long.parseLong(str) * 60 * 1000L;
+            }
+        } catch (Exception ex) {
+            logger.warn("Cannot parse interval parameter:" + ex.getMessage());
+        }
+
+        new Jetwot().start(-1, interval);
     }
-    private Logger logger = LoggerFactory.getLogger(getClass());
+    private static Logger logger = LoggerFactory.getLogger(Jetwot.class);
     protected SolrTweetSearch tweetSearch;
     protected TwitterSearch tw4j;
 
@@ -57,11 +76,7 @@ public class Jetwot {
         tw4j.setTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
     }
 
-    public void start() {
-        start(-1, 1 * 60 * 1000L);
-    }
-
-    public void start(int cycles, long wait) {
+    public void start(int cycles, long interval) {
         init();
 
         MaxBoundSet<Long> idCache = new MaxBoundSet<Long>(500, 1000);
@@ -101,6 +116,7 @@ public class Jetwot {
                 idCache.add(selectedTweet.getTwitterId());
             }
 
+            // Create tweet for Trending URLS?
             // every 15 minutes check for new trending url. put title + url into cache
             // or even better facet over dt (every 20 minutes) and pick up the docs!
             // f.dest_title_1_s.facet.limit=20
@@ -110,8 +126,8 @@ public class Jetwot {
             // twitter.postTweet("'Title ABOUT XY' short.url/test");
 
             try {
-                logger.info("wait " + (wait / 1000f) + " sec");
-                Thread.sleep(wait);
+                logger.info("wait " + (interval / 1000f) + " sec");
+                Thread.sleep(interval);
             } catch (InterruptedException ex) {
                 logger.warn("Interrupted " + ex.getMessage());
                 break;

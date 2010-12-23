@@ -57,11 +57,6 @@ public class TweetCollector {
     };
 
     public static void main(String[] args) throws InterruptedException {
-        if (args.length == 0) {
-            logger.info("You can specify the maximal time in seconds to collect "
-                    + "the tweets via: -maxTime=100 (-1 means forever)");
-        }
-
         Runnable runOnExit = new Runnable() {
 
             @Override
