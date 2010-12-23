@@ -29,7 +29,6 @@ import de.jetwick.data.UserDao;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
 import de.jetwick.hib.HibernateUtil;
-import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
@@ -73,9 +72,7 @@ public class Statistics {
     }
 
     @Inject
-    private SolrTweetSearch tweetSearch;
-    @Inject
-    private SolrAdSearch adSearch;
+    private SolrTweetSearch tweetSearch;    
     @Inject
     private TagDao tagDao;
     @Inject
@@ -100,14 +97,7 @@ public class Statistics {
                 HibernateUtil.recreateSchemaFromMapping();
 
             return;
-        }
-
-        argStr = map.get("importAds");
-        if (argStr != null) {
-            Collection<AdEntry> ads = adSearch.importFromFile(argStr);
-            logger.info("added ads:" + ads);
-            return;
-        }
+        }      
 
         argStr = map.get("listTweets");
         if (argStr != null) {
