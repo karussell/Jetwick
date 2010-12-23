@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 import com.google.inject.Guice;
@@ -29,7 +28,6 @@ import de.jetwick.data.UserDao;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
 import de.jetwick.hib.HibernateUtil;
-import de.jetwick.solr.SolrAdSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
@@ -71,11 +69,8 @@ public class Statistics {
 
         new Statistics().start(map);
     }
-
     @Inject
     private SolrTweetSearch tweetSearch;
-    @Inject
-    private SolrAdSearch adSearch;
     @Inject
     private TagDao tagDao;
     @Inject
@@ -99,13 +94,6 @@ public class Statistics {
             } else
                 HibernateUtil.recreateSchemaFromMapping();
 
-            return;
-        }
-
-        argStr = map.get("importAds");
-        if (argStr != null) {
-            Collection<AdEntry> ads = adSearch.importFromFile(argStr);
-            logger.info("added ads:" + ads);
             return;
         }
 

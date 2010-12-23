@@ -79,25 +79,6 @@ public class Configuration {
         return get(key);
     }
 
-    public String getAdSearchUrl() {
-        String key = "solr.adsearch.url";
-        return get(key, true);
-    }
-
-    public String getAdSearchLogin() {
-        String key = "solr.adsearch.login";
-        return get(key);
-    }
-
-    public String getAdSearchPassword() {
-        String key = "solr.adsearch.password";
-        return get(key);
-    }
-
-    public boolean getAdStreamingServer() {
-        return Boolean.parseBoolean(get("solr.adsearch.streamingserver"));
-    }
-
     public int getTweetsPerBatch() {
         String key = "solr.twcollector.batchsize";
         return Integer.parseInt(get(key, true));

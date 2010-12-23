@@ -74,8 +74,6 @@ public class HomePage extends WebPage {
     private String remoteHost = "";
     private WikipediaLazyLoadPanel wikiPanel;
     private UrlTrendPanel urlTrends;
-//    @Inject
-//    private Provider<SolrAdSearch> adsProvider;
     @Inject
     private Provider<SolrTweetSearch> twindexProvider;
     @Inject
