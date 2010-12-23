@@ -352,8 +352,8 @@ public class TermCreateCommandTest {
 //    }
 
     @Test
-    public void testNow() {
-        SolrTweet tw = new SolrTweet(1L, "Arrayth most tweeted VIDEO in Array ||  http://bit.ly/d2VzXw", new SolrUser("tmp"));
+    public void testFindDuplicateQuery() {
+        SolrTweet tw = new SolrTweet(1L, "Landon Donovan -- U.S. soccer superstar and World Cup hero -- has filed for divorce from his wife Bianca Kajlich... http://bit.ly/fh4DLI", new SolrUser("tmp"));
         new TermCreateCommand().calcTermsWithoutNoise(tw);
         List textTerms = tw.getTextTerms().getSortedTermLimited(6);
         SolrQuery q = new TweetQuery(false).createSimilarQuery(tw, textTerms).

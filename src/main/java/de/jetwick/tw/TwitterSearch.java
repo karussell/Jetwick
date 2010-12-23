@@ -693,6 +693,15 @@ public class TwitterSearch implements Serializable {
         }
     }
 
+    public Status doRetweet(long twitterId) {
+        try {
+            return twitter.retweetStatus(twitterId);
+        } catch (Exception ex) {
+            logger.error("Couldn't retweet tweet with id:" + twitterId + " " + ex.getMessage());
+            return null;
+        }
+    }
+
     private void myWait(int i) {
         try {
             Thread.sleep(i * 1000);

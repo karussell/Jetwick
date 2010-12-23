@@ -550,21 +550,30 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
         TermCreateCommand termCommand = new TermCreateCommand();
 
+        double MM_BORDER = 0.7;
+        double JACC_BORDER = 0.6;
         for (SolrTweet currentTweet : tweets.values()) {
             if (currentTweet.isRetweet())
                 continue;
 
             termCommand.calcTermsWithoutNoise(currentTweet);
             List textTerms = currentTweet.getTextTerms().getSortedTermLimited(6);
+
+            if (textTerms.size() < 3)
+                continue;
+
             SolrQuery q = new TweetQuery(false).createSimilarQuery(currentTweet, textTerms).
                     addFilterQuery(FILTER_ENTRY_LATEST_DT).setRows(10);
             // force dismax and specify required matching terms
             q.set("qf", TWEET_TEXT);
             q.set("defType", "dismax");
-            q.set("mm", "4");
-
-            if (textTerms.size() < 3)
-                continue;
+            // TODO can we use solr settings instead?
+            int mmTweets = (int) Math.round(textTerms.size() * MM_BORDER);
+            // maximal 6 terms
+            mmTweets = Math.min(6, mmTweets);
+            // minimal 4 terms
+            mmTweets = Math.max(4, mmTweets);
+            q.set("mm", "" + mmTweets);
 
             int dups = 0;
             // find dups in index
@@ -575,7 +584,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
                     termCommand.calcTermsWithoutNoise(simTweet);
                     if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
-                            >= 0.7) {
+                            >= JACC_BORDER) {
                         currentTweet.addDuplicate(simTweet.getTwitterId());
                         dups++;
                     }
@@ -584,17 +593,17 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 logger.warn("Coudn't trigger duplicat search for " + currentTweet + " " + ex.getMessage());
             }
 
-            // find dups in map
+            // find dups in tweets map
             for (SolrTweet simTweet : tweets.values()) {
                 if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()) || simTweet.isRetweet())
                     continue;
 
-                if (currentTweet.getCreatedAt().getTime() < simTweet.getCreatedAt().getTime() )
-                    continue;                
+                if (currentTweet.getCreatedAt().getTime() < simTweet.getCreatedAt().getTime())
+                    continue;
 
                 termCommand.calcTermsWithoutNoise(simTweet);
                 if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
-                        >= 0.7) {
+                        >= JACC_BORDER) {
                     currentTweet.addDuplicate(simTweet.getTwitterId());
                     dups++;
                 }

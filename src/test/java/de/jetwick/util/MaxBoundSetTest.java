@@ -58,4 +58,15 @@ public class MaxBoundSetTest {
         assertEquals(true, set.add("1"));
         assertEquals(1, set.size());
     }
+
+    @Test
+    public void testContainsAge() throws InterruptedException {
+        MaxBoundSet<String> set = new MaxBoundSet<String>(1, 2);
+        set.setMaxAge(100);
+        set.add("test");
+        assertEquals(true, set.contains("test"));
+        assertEquals(true, set.contains("test"));
+        Thread.sleep(200);
+        assertEquals(false, set.contains("test"));
+    }
 }

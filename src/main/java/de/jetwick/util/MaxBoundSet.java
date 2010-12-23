@@ -36,7 +36,7 @@ public class MaxBoundSet<T> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private int maxSize;
     private int minSize;
-    private long maxAge;
+    private long maxAge = Long.MAX_VALUE;
     private Map<T, Long> objMap = new LinkedHashMap<T, Long>();
     private final ReentrantLock lock = new ReentrantLock(true);
 
@@ -73,11 +73,11 @@ public class MaxBoundSet<T> {
 
         if (objMap.size() + 1 > maxSize)
             clean();
-
-        long now = System.currentTimeMillis();
+        
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            long now = System.currentTimeMillis();
             Long lastTime = objMap.put(t, now);
             // return true if previous element was null or if previous element was too old
             if (lastTime != null && now - lastTime <= maxAge)
@@ -103,6 +103,21 @@ public class MaxBoundSet<T> {
             for (int i = size; i >= minSize; i--) {
                 objMap.remove(iter.next().getKey());
             }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public boolean contains(T t) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            long now = System.currentTimeMillis();
+            Long lastTime = objMap.get(t);
+            if (lastTime != null && now - lastTime <= maxAge)
+                return true;
+            else
+                return false;
         } finally {
             lock.unlock();
         }

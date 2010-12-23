@@ -262,8 +262,9 @@ public class SolrTweet implements Serializable {
             inReplyTwitterId = inReplyOf.getTwitterId();
     }
 
-    public void setRt(int rt) {
+    public SolrTweet setRt(int rt) {
         this.retweetCount = rt;
+        return this;
     }
 
     public int getRetweetCount() {
