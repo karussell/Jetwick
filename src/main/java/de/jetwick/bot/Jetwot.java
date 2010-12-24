@@ -89,7 +89,8 @@ public class Jetwot {
         init();
 
         MaxBoundSet<Long> idCache = new MaxBoundSet<Long>(500, 1000);
-        MaxBoundSet<String> termCache = new MaxBoundSet<String>(50, 100).setMaxAge(2 * 24 * 3600L);
+        // two days
+        MaxBoundSet<String> termCache = new MaxBoundSet<String>(50, 100).setMaxAge(2 * 24 * 3600 * 1000L);
         TermCreateCommand command = new TermCreateCommand();
         Random rand = new Random();
         for (int i = 0; cycles < 0 || i < cycles; i++) {
@@ -102,12 +103,13 @@ public class Jetwot {
                 if (tw.getTextTerms().size() > 4 && !idCache.contains(tw.getTwitterId())) {
                     boolean containsTerm = false;
 
-                    for (String term : tw.getTextTerms().keySet()) {
-                        if (termCache.contains(term)) {
-                            containsTerm = true;
-                            break;
+                    if (termCache.size() > 0)
+                        for (String term : tw.getTextTerms().keySet()) {
+                            if (termCache.contains(term)) {
+                                containsTerm = true;
+                                break;
+                            }
                         }
-                    }
 
                     if (!containsTerm) {
                         selectedTweet = tw;
@@ -117,7 +119,7 @@ public class Jetwot {
             }
 
             if (selectedTweet != null) {
-                try {                    
+                try {
                     tw4j.doRetweet(selectedTweet.getTwitterId());
 
                     for (String term : selectedTweet.getTextTerms().keySet()) {

@@ -36,9 +36,9 @@ import twitter4j.Status;
 public class JetwotTest {
 
     public JetwotTest() {
-    }
-    private long currentTwId;
-    private List<SolrTweet> todoTweets = new ArrayList();
+    }   
+    private List<SolrTweet> todoTweets = new ArrayList<SolrTweet>();
+    private List<Long> retweeted = new ArrayList<Long>();
     private Jetwot bot;
 
     @Before
@@ -47,7 +47,7 @@ public class JetwotTest {
     }
 
     public void reset() {
-        currentTwId = -1;
+        retweeted.clear();
         todoTweets.clear();
         bot = new Jetwot() {
 
@@ -57,7 +57,7 @@ public class JetwotTest {
 
                     @Override
                     public Status doRetweet(long twitterId) {
-                        currentTwId = twitterId;
+                        retweeted.add(twitterId);
                         return null;
                     }
                 };
@@ -86,7 +86,18 @@ public class JetwotTest {
 
         bot.start(1, 0);
 
-        assertEquals(2L, currentTwId);
-        assertEquals(1, 1);
+        assertEquals(1, retweeted.size());
+        assertTrue(retweeted.contains(2L));
+    }
+
+    @Test
+    public void testAvoidSimilarRetweets() {
+        todoTweets.add(new SolrTweet(1L, "Dear kids, There is NO Santa Claus. Those presents are from your parents. \"With love, WikiLeaks\"", new SolrUser("ihackinjosh")).setRt(5));
+        todoTweets.add(new SolrTweet(2L, "Dear Kids, There is no Santa. Those presents are from your parents. Sincerely, Wikileaks. http://lil.as/1Nu (via @sapnabhavnani)", new SolrUser("dearblankplease")).setRt(4));
+
+        bot.start(2, 0);
+
+        assertEquals(1, retweeted.size());
+        assertTrue(retweeted.contains(1L));
     }
 }
