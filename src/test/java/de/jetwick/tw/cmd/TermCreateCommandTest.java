@@ -353,7 +353,7 @@ public class TermCreateCommandTest {
 
     @Test
     public void testFindDuplicateQuery() {
-        SolrTweet tw = new SolrTweet(1L, "Landon Donovan -- U.S. soccer superstar and World Cup hero -- has filed for divorce from his wife Bianca Kajlich... http://bit.ly/fh4DLI", new SolrUser("tmp"));        
+        SolrTweet tw = new SolrTweet(1L, ">‎​Dear children there is no Santa. those presents are from your parents. Love, WikiLeaks. /via @frasereC4", new SolrUser("tmp"));
         SolrQuery q = new TweetQuery(false).createSimilarQuery(tw);
         System.out.println(q.toString());
     }

@@ -83,6 +83,10 @@ public class TweetUrlResolver extends MyThread {
         packages = tweetPackages;
         return this;
     }
+
+    public BlockingQueue<TweetPackage> getResultQueue() {
+        return resultPackages;
+    }
     private AtomicLong allTweets = new AtomicLong(0);
 
     @Override
@@ -95,43 +99,52 @@ public class TweetUrlResolver extends MyThread {
 
                 @Override
                 public Object call() throws Exception {
-                    while (true) {
-                        TweetPackage pkg = packages.poll();
-                        if (pkg == null) {
-                            if (!myWait(1))
-                                return null;
-
-                            continue;
-                        }
-
-                        // log not too often
-                        if (tmp == 0 || tmp == 1)
-                            logger.info("sentTweets:" + allTweets.get());
-
-                        for (SolrTweet tw : pkg.getTweets()) {
-                            allTweets.addAndGet(1);
-                            UrlExtractor extractor = createExtractor();
-                            for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
-                                if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
-                                    continue;
-
-                                tw.addUrlEntry(ue);
-                            }
-                        }
-                        resultPackages.add(pkg);
-                        int count = 0;
+                    try {
                         while (true) {
-                            count = AbstractTweetPackage.calcNumberOfTweets(resultPackages);
-                            if (count < maxFill)
-                                break;
+                            TweetPackage pkg = packages.poll();
+                            if (pkg == null) {
+                                // log not too often
+                                if (tmp == 0 || tmp == 1)
+                                    logger.info("urlResolver: no tweet packages in queue");
+                                
+                                if (!myWait(10))
+                                    return null;
 
+                                continue;
+                            }
+
+                            for (SolrTweet tw : pkg.getTweets()) {
+                                allTweets.addAndGet(1);
+                                UrlExtractor extractor = createExtractor();
+                                for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
+                                    if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
+                                        continue;
+
+                                    tw.addUrlEntry(ue);
+                                }
+                            }
+                            resultPackages.add(pkg);
                             // log not too often
                             if (tmp == 0 || tmp == 1)
-                                logger.info("... WAITING! " + count + " are too many tweets from url resolving!");
-                            if (!myWait(20))
-                                return null;
-                        }
-                    } // while
+                                logger.info("sentTweets:" + allTweets.get());
+
+                            int count = 0;
+                            while (true) {
+                                count = AbstractTweetPackage.calcNumberOfTweets(resultPackages);
+                                if (count < maxFill)
+                                    break;
+
+                                // log not too often
+                                if (tmp == 0 || tmp == 1)
+                                    logger.info("... WAITING! " + count + " are too many tweets from url resolving!");
+                                if (!myWait(20))
+                                    return null;
+                            }
+                        } // while
+                    } catch (Exception ex) {
+                        logger.error("one url resolver died", ex);
+                    }
+                    return null;
                 } // call
             });
         }
@@ -140,12 +153,10 @@ public class TweetUrlResolver extends MyThread {
                 getService().invokeAll(workerCollection, 100, TimeUnit.MILLISECONDS);
             else
                 getService().invokeAll(workerCollection);
+
+            logger.info("FINISHED " + getName());
         } catch (InterruptedException ex) {
             logger.info(getName() + " was interrupted:" + ex.getMessage());
         }
-    }
-
-    public BlockingQueue<TweetPackage> getResultQueue() {
-        return resultPackages;
     }
 }

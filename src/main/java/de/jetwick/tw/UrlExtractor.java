@@ -99,6 +99,8 @@ public class UrlExtractor extends Extractor {
                 String title_snippet[] = getInfo(url, resolveTimeout);
                 if (!urlTitleCleaner.contains(title_snippet[0]))
                     entry.setResolvedTitle(title_snippet[0]);
+                else
+                    entry.setResolvedTitle("");
 
                 sw.stop();
                 entry.setResolvedDomain(Helper.extractDomain(url));

@@ -108,7 +108,8 @@ public class TweetQuery extends JetwickQuery {
 
     public TweetQuery createSimilarQuery(SolrTweet tweet) {
         new TermCreateCommand().calcTermsWithoutNoise(tweet);
-        return createSimilarQuery(tweet.getTextTerms().getSortedTermLimited(6));
+        // getSortedTermLimited was 6
+        return createSimilarQuery(tweet.getTextTerms().getSortedTermLimited(8));
     }
 
     private TweetQuery createSimilarQuery(Collection<Entry<String, Integer>> terms) {
@@ -134,6 +135,10 @@ public class TweetQuery extends JetwickQuery {
         // minimal 4 terms
         mmTweets = Math.max(4, mmTweets);
         set("mm", "" + mmTweets);
-        return (TweetQuery) setQuery(sb.toString()).addFilterQuery(IS_RT + ":\"false\"");
+        return (TweetQuery) setQuery(cleanupQuery(sb.toString())).addFilterQuery(IS_RT + ":\"false\"");
+    }
+
+    public static String cleanupQuery(String str) {
+        return str.replaceAll("\\|\\|", " ");
     }
 }

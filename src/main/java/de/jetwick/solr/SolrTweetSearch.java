@@ -571,7 +571,6 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 continue;
 
             int dups = 0;
-
             try {
                 // find dups in index
                 for (SolrTweet simTweet : collectTweets(search(q))) {

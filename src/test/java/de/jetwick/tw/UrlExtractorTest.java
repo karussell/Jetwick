@@ -15,18 +15,18 @@
  */
 package de.jetwick.tw;
 
-import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +77,8 @@ public class UrlExtractorTest {
                 createTweet(6L, "http://notval.l/"),
                 createTweet(7L, "http://vali.d.le/"),
                 createTweet(8L, "baöoruhasdfiuhas df aisudfh asildufhas dfasduifh http://vali.d.le/"),
-                createTweet(9L, " http://url.de/1 http://url.de/2\n http://url.de/3  "))).run();
+                createTweet(9L, " http://url.de/1 http://url.de/2\n http://url.de/3  "))).
+                run();
         ret = twp.getResultQueue();
         assertEquals(1, get(0).size());
         assertEquals("http://hiho", get(0).iterator().next().getResolvedUrl());
@@ -105,13 +106,29 @@ public class UrlExtractorTest {
     @Test
     public void testResolveTitle() throws InterruptedException {
         TweetUrlResolver twp = createUrlResolver();
-        twp.setReadingQueue(createPkg(
-                createTweet(1L, "test http://hiho.de test2"))).run();
+        twp.setReadingQueue(createPkg(createTweet(1L, "test http://hiho.de test2"))).
+                run();
         ret = twp.getResultQueue();
 
         assertEquals("http://hiho.de_x", getFirst(0).getResolvedUrl());
         assertEquals("hiho.de_x", getFirst(0).getResolvedDomain());
         assertEquals("http://hiho.de_x_t", getFirst(0).getResolvedTitle());
+    }
+
+    @Test
+    public void testResolveTitleWithUrlCleaner() throws InterruptedException {
+        TweetUrlResolver twp = new TweetUrlResolver() {
+
+            @Override
+            public UrlExtractor createExtractor() {
+                return new FakeUrlExtractor().setCleaner(new UrlTitleCleaner(new BufferedReader(new StringReader("http://hiho.de_x_t"))));
+            }
+        };
+        twp.setReadingQueue(createPkg(createTweet(1L, "test http://hiho.de test2"))).
+                run();
+        ret = twp.getResultQueue();
+        // do not add to urlentries
+        assertEquals(0, get(0).size());
     }
 
     @Test
@@ -136,8 +153,8 @@ public class UrlExtractorTest {
             }
         };
 
-        twp.setReadingQueue(createPkg(
-                createTweet(1L, "test http://hiho.de test2"))).run();
+        twp.setReadingQueue(createPkg(createTweet(1L, "test http://hiho.de test2"))).
+                run();
         ret = twp.getResultQueue();
         assertEquals("http://hiho.de", getFirst(0).getResolvedUrl());
         assertEquals("hiho.de", getFirst(0).getResolvedDomain());
@@ -150,7 +167,8 @@ public class UrlExtractorTest {
 
         twp.setReadingQueue(createPkg(
                 createTweet(1L, "correction ! RT @timetabling: @ptrthomas not really jetty + wicket, but nearly ;-) see http://is.gd/eoXjX and http://wp.me/p8zlh-z6"),
-                createTweet(2L, "Samsung Vibrant Android Smartphone Drops To One Penny With Amazon [Shopping ...: TFTS (blog)And on... http://bit.ly/ahlIIw http://ib2.in/bB"))).run();
+                createTweet(2L, "Samsung Vibrant Android Smartphone Drops To One Penny With Amazon [Shopping ...: TFTS (blog)And on... http://bit.ly/ahlIIw http://ib2.in/bB"))).
+                run();
         ret = twp.getResultQueue();
         assertEquals(2, get(0).size());
         Iterator<UrlEntry> iter = get(0).iterator();

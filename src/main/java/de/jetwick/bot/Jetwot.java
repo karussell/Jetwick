@@ -89,8 +89,8 @@ public class Jetwot {
         tw4j.setTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
 
         try {
-            for (SolrTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<SolrUser>(), 30)) {
-                idCache.add(tw.getTwitterId());
+            for (SolrTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<SolrUser>(), 20)) {
+                addToCaches(tw);
             }
         } catch (Exception ex) {
             logger.error("Couldn't initialize id cache", ex);
@@ -131,10 +131,7 @@ public class Jetwot {
                 try {
                     tw4j.doRetweet(selectedTweet.getTwitterId());
 
-                    for (String term : selectedTweet.getTextTerms().keySet()) {
-                        termCache.add(term);
-                    }
-                    idCache.add(selectedTweet.getTwitterId());
+                    addToCaches(selectedTweet);
                     logger.info("retweeted:" + selectedTweet);
                 } catch (Exception ex) {
                     logger.error("Couldn't retweet tweet:" + selectedTweet + " " + ex.getMessage());
@@ -163,11 +160,17 @@ public class Jetwot {
     }
 
     public Collection<SolrTweet> search() {
-        SolrQuery query = new SolrQuery().addFilterQuery(FILTER_ENTRY_LATEST_DT).
+        SolrQuery query = new SolrQuery(). // should be not too old
+                addFilterQuery(FILTER_ENTRY_LATEST_DT).
+                // should be high quality
                 addFilterQuery(QUALITY + ":[90 TO *]").
+                // should be the first tweet with this content
                 addFilterQuery(DUP_COUNT + ":0").
+                // only tweets which were already tweeted minRT-times
                 addFilterQuery(RT_COUNT + ":[" + minRT + " TO *]").
+                // only original tweets
                 addFilterQuery(IS_RT + ":false").
+                // for english our spam + dup detection works ok
                 addFilterQuery("lang:en").
                 setSortField(RT_COUNT, SolrQuery.ORDER.desc).
                 setRows(50);
@@ -187,5 +190,12 @@ public class Jetwot {
     public Jetwot setMinRT(int minRT) {
         this.minRT = minRT;
         return this;
+    }
+
+    protected void addToCaches(SolrTweet selectedTweet) {
+        for (String term : selectedTweet.getTextTerms().keySet()) {
+            termCache.add(term);
+        }
+        idCache.add(selectedTweet.getTwitterId());
     }
 }

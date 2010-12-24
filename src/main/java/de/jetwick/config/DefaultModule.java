@@ -98,7 +98,7 @@ public class DefaultModule extends AbstractModule {
             UrlTitleCleaner cleaner = new UrlTitleCleaner(config.getUrlTitleAvoidList());
             bind(UrlTitleCleaner.class).toInstance(cleaner);
         } catch (Exception ex) {
-            logger.error("Ignoring file:" + config.getUrlTitleAvoidList() + " " + ex.getMessage());
+            logger.error("error while reading url-title-file:" + config.getUrlTitleAvoidList() + " " + ex.getMessage());
         }
     }
 }

@@ -37,4 +37,9 @@ public class TweetQueryTest {
         q = new TweetQuery().createSimilarQuery(new SolrTweet(1L, "RT @user: test", new SolrUser("tmp")));
         assertFalse("query mustn't contain user", q.getQuery().contains("user"));
     }
+
+    @Test
+    public void testCleanUp() {
+        assertEquals("test   todo", TweetQuery.cleanupQuery("test || todo"));
+    }
 }
