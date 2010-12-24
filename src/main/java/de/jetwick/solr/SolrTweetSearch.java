@@ -186,7 +186,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 doc.addField("url_pos_" + counter + "_s", urlEntry.getIndex() + "," + urlEntry.getLastIndex());
                 doc.addField("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
                 doc.addField("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
+
+                // hashCode because if urls have some title but different url
+//                doc.addField("dest_title_" + counter + "_s", "_" + Math.abs(urlEntry.getResolvedUrl().hashCode()) + "_" + urlEntry.getResolvedTitle());
                 doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
+
                 if (counter >= 3)
                     break;
             }
@@ -270,6 +274,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
         for (int counter = 0; counter < urls.length; counter++) {
             String str = (String) doc.getFieldValue("dest_title_" + (counter + 1) + "_s");
+            if(str.startsWith("_")) {
+                int index2 = str.indexOf("_", 1);
+                if(index2 > 1)
+                    str = str.substring(index2 + 1);
+            }
             urls[counter].setResolvedTitle(str);
         }
         return urls;
@@ -562,7 +571,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 continue;
 
             int dups = 0;
-            
+
             try {
                 // find dups in index
                 for (SolrTweet simTweet : collectTweets(search(q))) {

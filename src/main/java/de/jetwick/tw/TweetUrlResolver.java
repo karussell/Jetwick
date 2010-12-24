@@ -15,6 +15,7 @@
  */
 package de.jetwick.tw;
 
+import com.google.inject.Inject;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.tw.queue.AbstractTweetPackage;
@@ -46,6 +47,9 @@ public class TweetUrlResolver extends MyThread {
     private BlockingQueue<TweetPackage> packages;
     private BlockingQueue<TweetPackage> resultPackages = new LinkedBlockingQueue<TweetPackage>();
     private int maxFill = 1000;
+    @Inject
+    // if no inject then use empty list:
+    private UrlTitleCleaner urlCleaner = new UrlTitleCleaner();
 
     public TweetUrlResolver() {
         super("tweet-urlresolver");
@@ -72,7 +76,7 @@ public class TweetUrlResolver extends MyThread {
     }
 
     public UrlExtractor createExtractor() {
-        return new UrlExtractor().setResolveTimeout(resolveTimeout);
+        return new UrlExtractor().setCleaner(urlCleaner).setResolveTimeout(resolveTimeout);
     }
 
     public TweetUrlResolver setReadingQueue(BlockingQueue<TweetPackage> tweetPackages) {
@@ -144,101 +148,4 @@ public class TweetUrlResolver extends MyThread {
     public BlockingQueue<TweetPackage> getResultQueue() {
         return resultPackages;
     }
-    /**
-     * Resolve the detected urls for the specified tweets.
-     * @param tweets where the tweets come from
-     * @param outTweets where the new tweets (with the new text) will be saved
-     * @param threadCount how many threads to use
-     */
-//    public void resolveUrls(final BlockingQueue<SolrTweet> tweets,
-//            final BlockingQueue<SolrTweet> outTweets, int threadCount) {
-//        int maxThreads = Math.min(threadCount, tweets.size() / 5 + 1);
-//        Collection<Callable<Object>> coll = new ArrayList<Callable<Object>>(maxThreads);
-//        for (int i = 0; i < maxThreads; i++) {
-//            coll.add(new Callable() {
-//
-//                @Override
-//                public Object call() throws Exception {
-//                    while (true) {
-//                        SolrTweet tmpTw = tweets.poll();
-//                        if (tmpTw == null)
-//                            break;
-//
-//                        UrlExtractor extractor = createExtractor();
-//                        for (UrlEntry ue : extractor.setText(tmpTw.getText()).run().getUrlEntries()) {
-//                            if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
-//                                continue;
-//
-//                            tmpTw.addUrlEntry(ue);
-//                        }
-//                        outTweets.add(tmpTw);
-//                    }
-//                    return null;
-//                }
-//            });
-//        }
-//        // this will block the current thread
-//        //getService().invokeAll(coll, 2L, TimeUnit.MINUTES);
-//
-//        startResolve(coll);
-//        try {
-//            finishResolve();
-//        } catch (InterruptedException ex) {
-//            Thread.currentThread().interrupt();
-//        }
-//    }
-//
-//    long remainingNanos;
-//    long lastTime;
-//
-//    public void startResolve(Collection<Callable<Object>> callables) {
-//        lastTime = System.nanoTime();
-//        remainingNanos = TimeUnit.MINUTES.toNanos(2);
-//        futures.clear();
-//        for (Callable<Object> t : callables) {
-//            futures.add(new FutureTask<Object>(t));
-//        }
-//        // Interleave time checks and calls to execute in case
-//        // executor doesn't have any/much parallelism.
-//        Iterator<Future<Object>> it = futures.iterator();
-//        while (it.hasNext()) {
-//            getService().execute((Runnable) (it.next()));
-//            long now = System.nanoTime();
-//            remainingNanos -= now - lastTime;
-//            lastTime = now;
-//            if (remainingNanos <= 0)
-//                return;
-//        }
-//    }
-//
-//    public void finishResolve() throws InterruptedException {
-//        boolean done = false;
-//        try {
-//            for (Future<Object> f : futures) {
-//                if (!f.isDone()) {
-//                    if (remainingNanos <= 0)
-//                        return;
-//                    try {
-//                        f.get(remainingNanos, TimeUnit.NANOSECONDS);
-//                    } catch (CancellationException ignore) {
-//                    } catch (ExecutionException ignore) {
-//                    } catch (TimeoutException toe) {
-//                        return;
-//                    }
-//                    long now = System.nanoTime();
-//                    remainingNanos -= now - lastTime;
-//                    lastTime = now;
-//                }
-//            }
-//            done = true;
-//            return;
-//        } finally {
-//            if (!done)
-//                for (Future<Object> f : futures) {
-//                    f.cancel(true);
-//                }
-//
-//            futures.clear();
-//        }
-//    }
 }

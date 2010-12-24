@@ -26,7 +26,6 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.behavior.AttributeAppender;
@@ -82,27 +81,14 @@ public class UrlTrendPanel extends Panel {
             public void populateItem(final ListItem item) {
                 final Entry<String, Long> url = (Entry) item.getModelObject();
 
-                String title = Helper.trimAll(url.getKey());
+                String title = url.getKey();
+                if (title.startsWith("_")) {
+                    int index2 = title.indexOf("_", 1);
+                    if (index2 > 1)
+                        title = title.substring(index2 + 1);
+                }
+                title = Helper.trimAll(title);
                 title = Helper.htmlEntityDecode(title);
-
-//                MarkupContainer moreUrlInfo = new MarkupContainer("moreUrlInfo") {
-//                };
-//                String cl = "moreUrl" + ++counter;
-//                moreUrlInfo.add(new AttributeAppender("class", new Model(cl), " "));
-//                addUrl(cl);
-//                item.add(moreUrlInfo);
-//
-//                Link moreUrlLink = new AjaxFallbackLink("moreUrlLink") {
-//
-//                    @Override
-//                    public void onClick(AjaxRequestTarget target) {
-//                        onUrlClick(target, url.getKey());
-//                    }
-//                };
-//
-//                moreUrlLink.add(new Label("urlLabel", title));
-//                moreUrlInfo.add(moreUrlLink);
-
                 Link contextLink = new AjaxFallbackLink("urlLink") {
 
                     @Override
@@ -169,9 +155,10 @@ public class UrlTrendPanel extends Panel {
                 for (FacetField ff : facetFields) {
                     if (SolrTweetSearch.FIRST_URL_TITLE.equals(ff.getName()) && ff.getValues() != null) {
                         for (Count cnt : ff.getValues()) {
+                            String str = cnt.getName();
                             // although we avoid indexing empty title -> its save to do it again ;-)
-                            if (!cnt.getName().isEmpty())
-                                urls.add(new MapEntry<String, Long>(cnt.getName(), cnt.getCount()));
+                            if (!str.isEmpty())
+                                urls.add(new MapEntry<String, Long>(str, cnt.getCount()));
                         }
                         break;
                     }

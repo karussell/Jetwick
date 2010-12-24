@@ -22,12 +22,14 @@ import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
+import de.jetwick.solr.SolrUser;
 import static de.jetwick.solr.SolrTweetSearch.*;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.Helper;
 import de.jetwick.util.MaxBoundSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -67,13 +69,15 @@ public class Jetwot {
             logger.warn("Cannot parse interval parameter:" + ex.getMessage());
         }
 
-
         new Jetwot().setMinRT(minRT).start(-1, interval);
     }
     private static Logger logger = LoggerFactory.getLogger(Jetwot.class);
     protected SolrTweetSearch tweetSearch;
     protected TwitterSearch tw4j;
     private int minRT = 15;
+    private MaxBoundSet<Long> idCache = new MaxBoundSet<Long>(500, 1000);
+    // two days
+    private MaxBoundSet<String> termCache = new MaxBoundSet<String>(50, 100).setMaxAge(2 * 24 * 3600 * 1000L);
 
     public void init() {
         Configuration cfg = new Configuration();
@@ -83,14 +87,19 @@ public class Jetwot {
         tweetSearch = injector.getInstance(SolrTweetSearch.class);
         tw4j = new TwitterSearch().setConsumer(credits.getConsumerKey(), credits.getConsumerSecret());
         tw4j.setTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
+
+        try {
+            for (SolrTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<SolrUser>(), 30)) {
+                idCache.add(tw.getTwitterId());
+            }
+        } catch (Exception ex) {
+            logger.error("Couldn't initialize id cache", ex);
+        }
     }
 
     public void start(int cycles, long interval) {
         init();
 
-        MaxBoundSet<Long> idCache = new MaxBoundSet<Long>(500, 1000);
-        // two days
-        MaxBoundSet<String> termCache = new MaxBoundSet<String>(50, 100).setMaxAge(2 * 24 * 3600 * 1000L);
         TermCreateCommand command = new TermCreateCommand();
         Random rand = new Random();
         for (int i = 0; cycles < 0 || i < cycles; i++) {
@@ -159,6 +168,7 @@ public class Jetwot {
                 addFilterQuery(DUP_COUNT + ":0").
                 addFilterQuery(RT_COUNT + ":[" + minRT + " TO *]").
                 addFilterQuery(IS_RT + ":false").
+                addFilterQuery("lang:en").
                 setSortField(RT_COUNT, SolrQuery.ORDER.desc).
                 setRows(50);
 

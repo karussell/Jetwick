@@ -22,6 +22,7 @@ import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.UrlTitleCleaner;
 import de.jetwick.util.MaxBoundSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ public class DefaultModule extends AbstractModule {
         installDbPasswords();
         installDbModule();
         installRMIModule();
+        installUrlCleaner();
     }
 
     public void installDbPasswords() {
@@ -89,5 +91,14 @@ public class DefaultModule extends AbstractModule {
         logger.info("install maxBoundSet singleton");
 //        bind(MaxBoundSet.class).asEagerSingleton();
         bind(MaxBoundSet.class).toInstance(new MaxBoundSet<String>(250, 500).setMaxAge(10 * 60 * 1000));
+    }
+
+    public void installUrlCleaner() {
+        try {
+            UrlTitleCleaner cleaner = new UrlTitleCleaner(config.getUrlTitleAvoidList());
+            bind(UrlTitleCleaner.class).toInstance(cleaner);
+        } catch (Exception ex) {
+            logger.error("Ignoring file:" + config.getUrlTitleAvoidList() + " " + ex.getMessage());
+        }
     }
 }

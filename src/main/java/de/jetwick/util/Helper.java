@@ -511,7 +511,7 @@ public class Helper {
             hConn.setConnectTimeout(timeout);
             hConn.setReadTimeout(timeout);
             // default length of bufferedinputstream is 8k
-            byte[] arr = new byte[8192];
+            byte[] arr = new byte[4096];
             BufferedInputStream in = new BufferedInputStream(hConn.getInputStream(), arr.length);
             in.read(arr);
             return getUrlInfosFromText(arr);
@@ -747,7 +747,7 @@ public class Helper {
 
         long val = 0;
         for (int i = signature.length - 1; i >= 0; i--) {
-            val  = val << 8;            
+            val = val << 8;
             val |= signature[i];
         }
 

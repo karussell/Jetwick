@@ -719,6 +719,28 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
     }
 
     @Test
+    public void testSameUrlTitleButDifferentUrl() throws IOException {
+        SolrTweet tw1 = new SolrTweet(1L, "text", new SolrUser("peter"));
+        List<UrlEntry> entries = new ArrayList<UrlEntry>();
+        UrlEntry urlEntry = new UrlEntry(2, 18, "http://fulltest.de/url2");
+        urlEntry.setResolvedDomain("resolved-domain.de");
+        urlEntry.setResolvedTitle("ResolvedTitel");
+        entries.add(urlEntry);
+        tw1.setUrlEntries(entries);
+
+        SolrTweet tw2 = new SolrTweet(1L, "text2", new SolrUser("peter2"));
+        entries = new ArrayList<UrlEntry>();
+        urlEntry = new UrlEntry(2, 18, "http://fulltest.de/urlNext");
+        urlEntry.setResolvedDomain("resolved-domain.de");
+        urlEntry.setResolvedTitle("ResolvedTitel");
+        entries.add(urlEntry);
+        tw2.setUrlEntries(entries);
+
+        twSearch.update(Arrays.asList(tw1, tw2));
+
+    }
+
+    @Test
     public void testAdSearch() throws Exception {
         SolrTweet tw = createNowTweet(1L, "text jetwick @jetwick", "peter");
         tw.setRt(1);
