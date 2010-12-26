@@ -188,8 +188,8 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 doc.addField("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
 
                 // hashCode because if urls have some title but different url
-//                doc.addField("dest_title_" + counter + "_s", "_" + Math.abs(urlEntry.getResolvedUrl().hashCode()) + "_" + urlEntry.getResolvedTitle());
-                doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
+                doc.addField("dest_title_" + counter + "_s", "_" + Math.abs(urlEntry.getResolvedUrl().hashCode()) + "_" + urlEntry.getResolvedTitle());
+//                doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
 
                 if (counter >= 3)
                     break;

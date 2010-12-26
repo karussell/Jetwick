@@ -15,8 +15,10 @@
  */
 package de.jetwick.util;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -73,7 +75,7 @@ public class MaxBoundSet<T> {
 
         if (objMap.size() + 1 > maxSize)
             clean();
-        
+
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -118,6 +120,16 @@ public class MaxBoundSet<T> {
                 return true;
             else
                 return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public Collection<T> values() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return new LinkedHashSet(objMap.keySet());
         } finally {
             lock.unlock();
         }

@@ -83,8 +83,7 @@ public class TweetConsumer extends MyThread {
 
             lastFeed = System.currentTimeMillis();
             sw1 = new StopWatch(" ");
-            sw1.start();
-            logger.info("NOW to index");
+            sw1.start();            
             Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
             sw1.stop();
             String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();

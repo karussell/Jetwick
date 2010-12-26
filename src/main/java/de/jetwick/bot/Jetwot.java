@@ -29,6 +29,7 @@ import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.Helper;
 import de.jetwick.util.MaxBoundSet;
+import de.jetwick.util.MyDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,7 +48,7 @@ public class Jetwot {
 
     public static void main(String[] args) {
         Map<String, String> params = Helper.parseArguments(args);
-        long interval = 1 * 60 * 1000L;
+        long interval = 10 * 1000L;
         try {
             String str = params.get("interval");
             char unit = str.charAt(str.length() - 1);
@@ -74,10 +75,10 @@ public class Jetwot {
     private static Logger logger = LoggerFactory.getLogger(Jetwot.class);
     protected SolrTweetSearch tweetSearch;
     protected TwitterSearch tw4j;
-    private int minRT = 15;
-    private MaxBoundSet<Long> idCache = new MaxBoundSet<Long>(500, 1000);
-    // two days
-    private MaxBoundSet<String> termCache = new MaxBoundSet<String>(50, 100).setMaxAge(2 * 24 * 3600 * 1000L);
+    private int minRT = 25;
+    private MaxBoundSet<SolrTweet> tweetCache = new MaxBoundSet<SolrTweet>(50, 100).setMaxAge(3 * 24 * 3600 * 1000L);
+    private TermCreateCommand command = new TermCreateCommand();
+    private Random rand = new Random();
 
     public void init() {
         Configuration cfg = new Configuration();
@@ -90,6 +91,7 @@ public class Jetwot {
 
         try {
             for (SolrTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<SolrUser>(), 20)) {
+                command.calcTermsWithoutNoise(tw);
                 addToCaches(tw);
             }
         } catch (Exception ex) {
@@ -100,30 +102,30 @@ public class Jetwot {
     public void start(int cycles, long interval) {
         init();
 
-        TermCreateCommand command = new TermCreateCommand();
-        Random rand = new Random();
         for (int i = 0; cycles < 0 || i < cycles; i++) {
-            logger.info("id cache:" + idCache.size());
-            logger.info("term cache:" + termCache.size());
-            Collection<SolrTweet> tweets = search();
+            logger.info("tweet cache:" + tweetCache.size());
+            Collection<SolrTweet> newSearchedTweets = search();
             SolrTweet selectedTweet = null;
-            for (SolrTweet tw : tweets) {
-                command.calcTermsWithoutNoise(tw);
-                if (tw.getTextTerms().size() > 4 && !idCache.contains(tw.getTwitterId())) {
-                    boolean containsTerm = false;
 
-                    if (termCache.size() > 0)
-                        for (String term : tw.getTextTerms().keySet()) {
-                            if (termCache.contains(term)) {
-                                containsTerm = true;
-                                break;
-                            }
-                        }
+            for (SolrTweet newSearchTw : newSearchedTweets) {
+                command.calcTermsWithoutNoise(newSearchTw);
+                if (newSearchTw.getTextTerms().size() >= 4) {
+                    float maxJc = -1;
+                    for (SolrTweet twInCache : tweetCache.values()) {
+                        float jcIndex = (float) TermCreateCommand.calcJaccardIndex(twInCache.getTextTerms(), newSearchTw.getTextTerms());
+                        if (maxJc < jcIndex)
+                            maxJc = jcIndex;
+                    }
 
-                    if (!containsTerm) {
-                        selectedTweet = tw;
+                    if (maxJc < 0.2 || maxJc == -1) {
+                        selectedTweet = newSearchTw;
+                        logger.info("new  tweet with    max jacc index= " + maxJc + ":" + newSearchTw.getText());
                         break;
                     }
+
+                    logger.info("skip tweet because max jacc index= " + maxJc + ":" + newSearchTw.getText());
+                } else {
+                    logger.info("skip tweet because too less terms= " + newSearchTw.getTextTerms().size() + "  :" + newSearchTw.getText());
                 }
             }
 
@@ -132,7 +134,7 @@ public class Jetwot {
                     tw4j.doRetweet(selectedTweet.getTwitterId());
 
                     addToCaches(selectedTweet);
-                    logger.info("retweeted:" + selectedTweet);
+                    logger.info("=> retweeted:" + selectedTweet.getText() + " " + selectedTweet.getTwitterId());
                 } catch (Exception ex) {
                     logger.error("Couldn't retweet tweet:" + selectedTweet + " " + ex.getMessage());
                 }
@@ -150,7 +152,8 @@ public class Jetwot {
             try {
                 // add some noise when waiting to avoid being identified or filtered out as bot ;-)
                 long tmp = (long) (interval + interval * rand.nextDouble() * 0.3);
-                logger.info("wait " + (tmp / 1000f) + " sec");
+
+                logger.info("wait " + (tmp / 60f / 1000f) + " minutes => next tweet on: " + new MyDate().plusMillis(tmp));
                 Thread.sleep(tmp);
             } catch (InterruptedException ex) {
                 logger.warn("Interrupted " + ex.getMessage());
@@ -171,7 +174,7 @@ public class Jetwot {
                 // only original tweets
                 addFilterQuery(IS_RT + ":false").
                 // for english our spam + dup detection works ok
-                addFilterQuery("lang:en").
+                addFilterQuery("lang:(en OR de OR sp)").
                 setSortField(RT_COUNT, SolrQuery.ORDER.desc).
                 setRows(50);
 
@@ -193,9 +196,6 @@ public class Jetwot {
     }
 
     protected void addToCaches(SolrTweet selectedTweet) {
-        for (String term : selectedTweet.getTextTerms().keySet()) {
-            termCache.add(term);
-        }
-        idCache.add(selectedTweet.getTwitterId());
+        tweetCache.add(selectedTweet);
     }
 }

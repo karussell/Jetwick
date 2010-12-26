@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 import java.util.Date;
@@ -26,7 +25,8 @@ import java.util.Date;
 public class MyDate implements Cloneable {
 
     private long time;
-    public static long ONE_MINUTE = 60 * 1000L;
+    public static long ONE_SECOND = 1000L;
+    public static long ONE_MINUTE = 60 * ONE_SECOND;
     public static long ONE_HOUR = 60 * ONE_MINUTE;
     public static long ONE_DAY = 24 * ONE_HOUR;
 
@@ -52,6 +52,16 @@ public class MyDate implements Cloneable {
 
     public MyDate plusDays(int days) {
         time += days * ONE_DAY;
+        return this;
+    }
+
+    public MyDate plusMillis(long ms) {
+        time += ms;
+        return this;
+    }
+
+    public MyDate plusSeconds(long sec) {
+        time += sec * ONE_SECOND;
         return this;
     }
 

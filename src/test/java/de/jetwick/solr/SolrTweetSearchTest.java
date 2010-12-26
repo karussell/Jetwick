@@ -281,7 +281,6 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
 
     @Test
     public void testFindDuplicates() throws SolrServerException {
-
         twSearch.update(new SolrTweet(1L, "wikileaks is not a wtf", new SolrUser("userA")), false);
         twSearch.update(new SolrTweet(2L, "news about wikileaks", new SolrUser("userB")), false);
 
@@ -299,6 +298,19 @@ public class SolrTweetSearchTest extends MyAbstractSolrTestCase {
         map.put(10L, tw);
         twSearch.findDuplicates(map);
         assertEquals("should find tweets 3 and 4", 2, tw.getDuplicates().size());
+    }
+
+    @Test
+    public void testSpamDuplicates() throws SolrServerException {
+        MyDate dt = new MyDate();
+        SolrTweet tw1 = new SolrTweet(1L, "2488334. Increase your twitter followers now! Buy Twitter Followers", new SolrUser("userA")).setCreatedAt(dt.plusMinutes(1).toDate());
+        SolrTweet tw2 = new SolrTweet(2L, "349366. Increase your twitter followers now! Buy Twitter Followers", new SolrUser("userB")).setCreatedAt(dt.plusMinutes(1).toDate());
+        SolrTweet tw3 = new SolrTweet(31L, "2040312. Increase your twitter followers now! Buy Twitter Followers", new SolrUser("userC")).setCreatedAt(dt.plusMinutes(1).toDate());
+        twSearch.update(Arrays.asList(tw1, tw2, tw3), new Date(0));
+
+        assertEquals(0, tw1.getDuplicates().size());
+        assertEquals(1, tw2.getDuplicates().size());
+        assertEquals(2, tw3.getDuplicates().size());
     }
 
     @Test

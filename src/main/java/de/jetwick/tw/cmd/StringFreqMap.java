@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw.cmd;
 
 import de.jetwick.util.Helper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +32,7 @@ import java.util.Set;
 public class StringFreqMap extends LinkedHashMap<String, Integer> {
 
     private static final long serialVersionUID = 1L;
+
     public StringFreqMap() {
     }
 
@@ -75,35 +74,41 @@ public class StringFreqMap extends LinkedHashMap<String, Integer> {
 //        return res;
 //    }
     public int andSize(Map<String, Integer> other) {
-        Set<String> iterSet;
-        Set<String> otherSet;
+        Set<Entry<String, Integer>> iterSet;
+        Map<String, Integer> otherMap;
         if (size() > other.size()) {
-            iterSet = other.keySet();
-            otherSet = keySet();
+            iterSet = other.entrySet();
+            otherMap = this;
         } else {
-            iterSet = this.keySet();
-            otherSet = other.keySet();
+            iterSet = this.entrySet();
+            otherMap = other;
         }
 
         int counter = 0;
-        for (String iterStr : iterSet) {
-            if (otherSet.contains(iterStr))
-                counter++;
+        for (Entry<String, Integer> iterEntry : iterSet) {
+            if (otherMap.containsKey(iterEntry.getKey()))
+                counter += iterEntry.getValue();
         }
         return counter;
     }
 
     public int orSize(Map<String, Integer> map) {
-        return or(map).size();
+        int counter = 0;
+        for (Entry<String, Integer> e : or(map).entrySet()) {
+            counter += e.getValue();
+        }
+        return counter;
     }
 
     /**
      * Returns unsorted merge of all strings
      */
-    public Set<String> or(Map<String, Integer> map) {
-        Set<String> res = new LinkedHashSet<String>(keySet());
-        for (String str : map.keySet()) {
-            res.add(str);
+    Map<String, Integer> or(Map<String, Integer> otherMap) {
+        Map<String, Integer> res = new LinkedHashMap<String, Integer>(this);
+        for (Entry<String, Integer> entry : otherMap.entrySet()) {
+            Integer oldInt = res.put(entry.getKey(), entry.getValue());
+            if (oldInt != null)
+                res.put(entry.getKey(), Math.max(oldInt, entry.getValue()));
         }
 
         return res;
