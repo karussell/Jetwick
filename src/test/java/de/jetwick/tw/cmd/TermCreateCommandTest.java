@@ -262,10 +262,10 @@ public class TermCreateCommandTest {
         StringFreqMap lFreq = new StringFreqMap();
         new TermCreateCommand().checkSpamInExistingTweets(tw1, tFreq, lFreq);
         // without tw1
-        assertEquals(6, (int) lFreq.get(TweetDetector.EN));
+        assertEquals(9, (int) lFreq.get(TweetDetector.EN));
         assertEquals(1, (int) lFreq.get(TweetDetector.DE));
 
-        assertEquals(4, (int) tw1.getLanguages().get(TweetDetector.EN));
+        assertEquals(6, (int) tw1.getLanguages().get(TweetDetector.EN));
 
         // without tw1
         assertEquals(2, (int) tFreq.get("desert"));
