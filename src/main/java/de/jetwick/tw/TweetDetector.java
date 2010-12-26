@@ -42,6 +42,7 @@ public class TweetDetector {
     public static final String EN = "en";
     public static final String RU = "ru";
     public static final String SP = "sp";
+    public static final String FR = "fr";
     private Collection<SolrTweet> tweets;
     private int termMaxCount = 6;
     private StringFreqMap languages = new StringFreqMap();

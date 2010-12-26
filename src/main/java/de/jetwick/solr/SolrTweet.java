@@ -497,6 +497,9 @@ public class SolrTweet implements Serializable {
         importFrom(NOISE_WORDS, TweetDetector.RU);
         importFrom(NOISE_WORDS, TweetDetector.SP);
 
+        // hmmh lang detection does not really work for this
+//        importFrom(NOISE_WORDS, TweetDetector.FR);
+
         addFrom(NOISE_WORDS, TweetDetector.UNKNOWN_LANG, NOISE_WORDS_UNSORTED);
 
         // indifferent

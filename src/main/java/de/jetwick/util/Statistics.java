@@ -15,6 +15,8 @@
  */
 package de.jetwick.util;
 
+import com.google.api.translate.Language;
+import com.google.api.translate.Translate;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -22,7 +24,6 @@ import com.google.inject.Provider;
 import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
-import de.jetwick.data.AdEntry;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.UserDao;
 import de.jetwick.data.YTag;
@@ -41,7 +42,6 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -199,7 +199,11 @@ public class Statistics {
 
             argStr = map.get("readStopAndClear");
             if (argStr != null)
-                readStopwords(SolrTweet.class.getResourceAsStream("noise_words_sp.txt"));
+                readStopwords(SolrTweet.class.getResourceAsStream("noise_words_fr.txt"));//noise_words_fr.txt, lang_det_sp.txt
+
+            argStr = map.get("translate");
+            if (argStr != null)
+                translate(Language.SPANISH);
 
             argStr = map.get("importTags");
             if (argStr != null)
@@ -337,6 +341,43 @@ public class Statistics {
         }
 
         for (String str : set) {
+            System.out.println(str);
+        }
+    }
+
+    public void translate(Language lang) throws Exception {
+        List<String> list = Helper.readFile(Helper.createBuffReader(SolrTweet.class.getResourceAsStream("lang_det_en.txt")));
+        Set<String> res = new TreeSet<String>();
+        Set<String> cache = new LinkedHashSet<String>();
+        int charCounter = 0;
+        Translate.setHttpReferrer("http://jetwick.com");
+        for (String str : list) {
+            if (str.isEmpty() || str.startsWith("//"))
+                continue;
+
+            str = str.toLowerCase().trim();
+            charCounter += str.length();
+            cache.add(str);
+            if (charCounter > 1500) {
+                try {
+                    String gTranslated = Translate.execute(cache.toString(), Language.ENGLISH, lang);
+                    for (String tmp : gTranslated.split(",")) {                        
+                        tmp = tmp.toLowerCase().trim().replaceAll("\\[", "").replaceAll("\\]", "");
+                        res.add(tmp);
+                    }
+//                    System.out.println(tmp);
+                } catch (Exception ex) {
+                    logger.error("Cannot translate " + cache.size() + " lines", ex);
+                }
+
+                charCounter = 0;
+                cache.clear();
+            }
+        }
+
+        System.out.println("=======================\n\n");
+
+        for (String str : res) {
             System.out.println(str);
         }
     }
