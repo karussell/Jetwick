@@ -164,7 +164,7 @@ public class Jetwot {
 
     public Collection<SolrTweet> search() {
         SolrQuery query = new SolrQuery(). // should be not too old
-                addFilterQuery(FILTER_ENTRY_LATEST_DT).
+                addFilterQuery(DATE + ":[NOW/HOURS-6HOURS TO *]").
                 // should be high quality
                 addFilterQuery(QUALITY + ":[90 TO *]").
                 // should be the first tweet with this content
