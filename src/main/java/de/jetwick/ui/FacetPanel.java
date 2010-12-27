@@ -92,6 +92,7 @@ public class FacetPanel extends Panel {
         tr.put(langKey + ":" + RU, "Pусский");
         tr.put(langKey + ":" + SP, "Español");
         tr.put(langKey + ":" + FR, "Français");
+        tr.put(langKey + ":" + PT, "Português");
 
         tagView = new ListView("filterNames", normalFacetFields) {
 

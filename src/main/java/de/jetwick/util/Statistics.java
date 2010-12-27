@@ -199,11 +199,11 @@ public class Statistics {
 
             argStr = map.get("readStopAndClear");
             if (argStr != null)
-                readStopwords(SolrTweet.class.getResourceAsStream("noise_words_fr.txt"));//noise_words_fr.txt, lang_det_sp.txt
+                readStopwords(SolrTweet.class.getResourceAsStream("noise_words_pt.txt"));//noise_words_fr.txt, lang_det_sp.txt
 
             argStr = map.get("translate");
             if (argStr != null)
-                translate(Language.SPANISH);
+                translate(Language.PORTUGUESE);
 
             argStr = map.get("importTags");
             if (argStr != null)

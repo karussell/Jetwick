@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.Logger;
 import twitter4j.Tweet;
 
 /**
@@ -499,6 +498,7 @@ public class SolrTweet implements Serializable {
         importFrom(LANG_DET_WORDS, TweetDetector.RU);
         importFrom(LANG_DET_WORDS, TweetDetector.SP);
         importFrom(LANG_DET_WORDS, TweetDetector.FR);
+        importFrom(LANG_DET_WORDS, TweetDetector.PT);
 
         // fill collection for noise word determination
         importNoiseFrom(NOISE_WORDS, TweetDetector.DE);
@@ -507,6 +507,7 @@ public class SolrTweet implements Serializable {
         importNoiseFrom(NOISE_WORDS, TweetDetector.RU);
         importNoiseFrom(NOISE_WORDS, TweetDetector.SP);
         importNoiseFrom(NOISE_WORDS, TweetDetector.FR);
+        importNoiseFrom(NOISE_WORDS, TweetDetector.PT);
 
         int delta = LANG_DET_WORDS.size();
         for (Entry<String, Set<String>> noiseTerms : NOISE_WORDS.entrySet()) {
