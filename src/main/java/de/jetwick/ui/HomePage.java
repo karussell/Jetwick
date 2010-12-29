@@ -129,9 +129,11 @@ public class HomePage extends WebPage {
     private void initSession() {
         try {
             getMySession().init((WebRequest) getRequest(), uindexProvider.get());
-            String msg = getMySession().getSessionTimeoutMessage();
+            String msg = getMySession().getSessionTimeOutMessage();
+
             if (!msg.isEmpty())
-                info(msg);
+                warn(msg);
+
         } catch (Exception ex) {
             logger.error("Error on twitter4j init.", ex);
             error("Couldn't login. Please file report to http://twitter.com/jetwick " + new Date());
@@ -205,7 +207,7 @@ public class HomePage extends WebPage {
 
             // avoid slow queries for *:* query and filter against latest tweets
             if (queryStr.isEmpty() && q.getFilterQueries() == null) {
-                logger.info("[stats] q=''");
+                logger.info(addIP("[stats] q=''"));
                 q.addFilterQuery(SolrTweetSearch.DATE_TAG + SolrTweetSearch.FILTER_ENTRY_LATEST_DT);
             }
         }
@@ -251,6 +253,7 @@ public class HomePage extends WebPage {
     }
 
     public void init(SolrQuery query, final int page, boolean twitterFallback) {
+        setStatelessHint(true);
         feedbackPanel = new FeedbackPanel("feedback");
         add(feedbackPanel.setOutputMarkupId(true));
         add(new Label("title", new Model() {
@@ -355,7 +358,7 @@ public class HomePage extends WebPage {
                     if (user != null) {
                         SolrQuery query = new SolrQuery().setFacet(true).setRows(0);
                         TweetQuery.updateSavedSearchFacets(query, user.getSavedSearches());
-                        logger.info("Start updateSSCounts getTweetSearch");
+//                        logger.info("Start updateSSCounts getTweetSearch");
                         update(getTweetSearch().search(query));
                         if (target != null)
                             target.addComponent(ssPanel);
@@ -597,7 +600,7 @@ public class HomePage extends WebPage {
      * from footer which changes the page
      */
     public void doOldSearch(int page) {
-        logger.info("[stats] change old search. page:" + page + " IP=" + remoteHost);
+        logger.info(addIP("[stats] change old search. page:" + page));
         doSearch(lastQuery, page, false);
     }
 
@@ -651,7 +654,7 @@ public class HomePage extends WebPage {
         try {
             rsp = getTweetSearch().search(users, query);
             totalHits = rsp.getResults().getNumFound();
-            logger.info("[stats] " + totalHits + " hits for: " + query.toString() + " IP=" + remoteHost);
+            logger.info(addIP("[stats] " + totalHits + " hits for: " + query.toString()));
         } catch (Exception ex) {
             logger.error("Error while searching " + query.toString() + ": " + ex.getMessage());
         }
@@ -667,7 +670,7 @@ public class HomePage extends WebPage {
             if (queryString.isEmpty()) {
                 if (userName.isEmpty()) {
                     // something is wrong with our index because q='' and u='' should give us all docs!
-                    logger.error("[stats] 0 results for q='' using news!");
+                    logger.error(addIP("[stats] 0 results for q='' using news!"));
                     queryString = "news";
                     startBGThread = false;
                 } else
@@ -736,12 +739,22 @@ public class HomePage extends WebPage {
         navigationPanel.setHits(totalHits);
         navigationPanel.setHitsPerPage(hitsPerPage);
         navigationPanel.updateVisibility();
-        logger.info("Finished Constructing UI");
+        logger.info(addIP("Finished Constructing UI."));
     }
 
     public QueueThread queueTweets(Collection<SolrTweet> tweets,
             String qs, String userName) {
         return grabber.init(tweets, qs, userName).setTweetsCount(TWEETS_IF_HIT).
                 setTwitterSearch(getTwitterSearch()).queueTweetPackage();
+    }
+
+    String addIP(String str) {
+        String q = "";
+        if (getWebRequestCycle() != null)
+            q = getWebRequestCycle().getWebRequest().getParameter("q");
+
+        return str + " IP=" + remoteHost
+                + " session=" + getWebRequestCycle().getSession().getId()
+                + " q=" + q;
     }
 }

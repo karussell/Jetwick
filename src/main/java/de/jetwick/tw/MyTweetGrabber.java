@@ -122,7 +122,8 @@ public class MyTweetGrabber implements Serializable {
                             logger.warn("Couldn't query twitter: " + queryStr + " " + ex.getLocalizedMessage());
                         }
                     }
-                }
+                } else
+                    name = "filledTweets:" + tweets.size();
 
                 try {
                     if (tweets != null && tweets.size() > 0 && !name.isEmpty())

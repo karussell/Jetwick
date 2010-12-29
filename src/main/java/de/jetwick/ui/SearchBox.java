@@ -28,6 +28,7 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.StatelessForm;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -48,7 +49,7 @@ public class SearchBox extends Panel {
     public SearchBox(String id) {
         super(id);
 
-        final Form form = new Form("searchform") {
+        final Form form = new StatelessForm("searchform") {
 
             @Override
             public void onSubmit() {
@@ -62,6 +63,7 @@ public class SearchBox extends Panel {
                 setResponsePage(getApplication().getHomePage(), params);
             }
         };
+
         form.setMarkupId("queryform");
         add(form);
 

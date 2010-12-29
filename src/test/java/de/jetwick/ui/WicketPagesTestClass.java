@@ -63,22 +63,10 @@ public class WicketPagesTestClass {
 
             @Override
             public void installSolrModule() {
-                // TODO provide mock searcher
-                SolrUserSearchTest sst = new SolrUserSearchTest();
-                try {
-                    sst.setUp();
-                } catch (Exception ex) {
-                    throw new UnsupportedOperationException("Cannot setup user search", ex);
-                }
-                bind(SolrUserSearch.class).toInstance(sst.getUserSearch());
+                // TODO provide mock searcher                
+                bind(SolrUserSearch.class).toInstance(createSolrUserSearch());
 
-                SolrTweetSearchTest stst = new SolrTweetSearchTest();
-                try {
-                    stst.setUp();
-                } catch (Exception ex) {
-                    throw new UnsupportedOperationException("Cannot setup tweet search", ex);
-                }
-                bind(SolrTweetSearch.class).toInstance(stst.getTweetSearch());
+                bind(SolrTweetSearch.class).toInstance(createSolrTweetSearch());
             }
 
             @Override
@@ -101,12 +89,32 @@ public class WicketPagesTestClass {
         };
     }
 
+    protected SolrUserSearch createSolrUserSearch() {
+        SolrUserSearchTest sst = new SolrUserSearchTest();
+        try {
+            sst.setUp();
+            return sst.getUserSearch();
+        } catch (Exception ex) {
+            throw new UnsupportedOperationException("Cannot setup user search", ex);
+        }
+    }
+
+    protected SolrTweetSearch createSolrTweetSearch() {
+        SolrTweetSearchTest stst = new SolrTweetSearchTest();
+        try {
+            stst.setUp();
+            return stst.getTweetSearch();
+        } catch (Exception ex) {
+            throw new UnsupportedOperationException("Cannot setup tweet search", ex);
+        }
+    }
+
     protected TwitterSearch createTwitterSearch() {
         return new TwitterSearch() {
 
             @Override
             public int getRateLimit() {
-                    return 100;
+                return 100;
             }
 
             @Override

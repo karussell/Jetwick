@@ -349,6 +349,9 @@
                         <scanTarget>target/classes/</scanTarget>
                     </scanTargets>
                     <scanIntervalSeconds>1</scanIntervalSeconds>
+                    <!--
+                    <webDefaultXml>src/main/resources/webdefault.xml</webDefaultXml>
+                    -->
                 </configuration>
             </plugin>
             <!-- we need a more recent liquibase version!

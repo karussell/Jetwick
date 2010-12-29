@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.WebPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,10 +28,20 @@ public class SessionTimeout extends WebPage {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public SessionTimeout() {
-        logger.info("Session timeout!");
-        ((MySession) getSession()).setSessionTimedout(true);
-        setRedirect(true);
-        setResponsePage(HomePage.class);
+    public SessionTimeout(final PageParameters oldParams) {
+        PageParameters newParams = new PageParameters();
+        if (oldParams != null) {
+            if (oldParams.getString("q") != null)
+                newParams.add("q", oldParams.getString("q"));
+            if (oldParams.getString("u") != null)
+                newParams.add("u", oldParams.getString("u"));
+        }
+
+        ((MySession) getSession()).setSessionTimedOut(true);
+        logger.info("session timed out. old params: " + oldParams + " new params:" + newParams
+                + " IP=" + getWebRequestCycle().getWebRequest().getHttpServletRequest().getRemoteHost()
+                + " session=" + getWebRequestCycle().getSession().getId()
+                + " cookie=" + getWebRequestCycle().getWebRequest().getCookie("jetwick JSESSIONID"));
+        setResponsePage(HomePage.class, newParams);
     }
 }
