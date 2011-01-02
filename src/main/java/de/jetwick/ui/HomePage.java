@@ -98,7 +98,6 @@ public class HomePage extends WebPage {
     }
 
     public HomePage(final PageParameters parameters) {
-        initSession();
         String callback = parameters.getString("callback");
         if ("true".equals(callback)) {
             try {
@@ -117,8 +116,10 @@ public class HomePage extends WebPage {
             // avoid showing the url parameters (e.g. refresh would let it failure!)
             setRedirect(true);
             setResponsePage(HomePage.class);
-        } else
+        } else {
+            initSession();
             init(createQuery(parameters), 0, true);
+        }
     }
 
     public HomePage(SolrQuery query, int page, boolean twitterFallback) {
