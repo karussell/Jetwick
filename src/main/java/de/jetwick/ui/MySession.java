@@ -35,6 +35,14 @@ import twitter4j.http.AccessToken;
 public class MySession extends WebSession {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    /**
+     * twitter4j saves state. so it is a bit complicated.
+     * twitterSearch is always a new instance with the same twitter4j reference.
+     * BUT we need to replace the twitter4j instance for every logged in user via
+     * TwitterSearch.setTwitter4JInstance to get the correct user name etc
+     *
+     * @see DefaultModule
+     */
     private TwitterSearch twitterSearch;
     private SolrUser user = null;
     private boolean twitterSearchInitialized = false;
