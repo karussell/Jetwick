@@ -162,6 +162,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         doc.addField(DATE, tw.getCreatedAt());
         doc.addField(UPDATE_DT, tw.getUpdatedAt());
         doc.addField(IS_RT, tw.isRetweet());
+        doc.addField("type", tw.getType());
 
         if (tw.getLocation() == null)
             doc.addField("loc", tw.getFromUser().getLocation());

@@ -84,7 +84,7 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
             }
         }
 
-        // language detection
+        // language detection from tw.getLanguages()
         tw.setLanguage(detectLanguage(tw, otherLangs));
         return tw;
     }

@@ -77,6 +77,7 @@ public class SolrTweet implements Serializable {
     private int reply;
     private String qualDebug;
     private int qualReductions = 0;
+    private String type;
 //    private Collection<Long> textSignature;
     private Collection<Long> duplicates = new LinkedHashSet<Long>();
 
@@ -173,16 +174,14 @@ public class SolrTweet implements Serializable {
         this.textTerms = textTerms;
     }
 
-//    public Collection<Long> getTextSignature() {
-//        return textSignature;
-//    }
-//
-//    public void addTextSignature(long signature) {
-//        if (textSignature == null)
-//            textSignature = new ArrayList<Long>();
-//
-//        this.textSignature.add(signature);
-//    }
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public long getInReplyTwitterId() {
         return inReplyTwitterId;
     }
@@ -512,7 +511,7 @@ public class SolrTweet implements Serializable {
         int delta = LANG_DET_WORDS.size();
         for (Entry<String, Set<String>> noiseTerms : NOISE_WORDS.entrySet()) {
             addFrom(LANG_DET_WORDS, noiseTerms);
-        }        
+        }
         //System.out.println("added " + (LANG_DET_WORDS.size() - delta) + " terms to lang detection from noise terms");
 
         addFrom(NOISE_WORDS, TweetDetector.UNKNOWN_LANG, NOISE_WORDS_UNSORTED);
