@@ -26,6 +26,7 @@ import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.solr.SolrUserSearchTest;
 import de.jetwick.solr.TweetQuery;
+import de.jetwick.tw.queue.TweetPackage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +51,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
     private SolrTweetSearchTest tweetSearchTester = new SolrTweetSearchTest();
     @Inject
     private TagDao tagDao;
-    
+
     @Override
     @Before
     public void setUp() throws Exception {
@@ -69,7 +71,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
     @Test
     public void testProduceTweets() throws InterruptedException, Exception {
         final Map<Thread, Throwable> exceptionMap = new HashMap<Thread, Throwable>();
-        Thread.UncaughtExceptionHandler handler = createExceptionMapHandler(exceptionMap);
+        Thread.UncaughtExceptionHandler excHandler = createExceptionMapHandler(exceptionMap);
 
         // fill DB with default tags
         tagDao.addAll(Arrays.asList("java"));
@@ -113,21 +115,31 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
             }
         }.setConsumer(cred.getConsumerKey(), cred.getConsumerSecret());
         tws.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
-        
+
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
-        tweetProducer.setUncaughtExceptionHandler(handler);        
+        tweetProducer.setUncaughtExceptionHandler(excHandler);
         tweetProducer.setTwitterSearch(tws);
         tweetProducer.setUserSearch(userSearch);
         tweetProducer.start();
 
+        tweetProducer.join(3000);
+
+        TweetUrlResolver twUrlResolver = getInstance(TweetUrlResolver.class);
+        twUrlResolver.setResolveThreads(1);
+        twUrlResolver.setReadingQueue(tweetProducer.getQueue());
+        twUrlResolver.setUncaughtExceptionHandler(excHandler);
+        twUrlResolver.setTest(false);
+        twUrlResolver.start();
+
+        BlockingQueue<TweetPackage> queue2 = twUrlResolver.getResultQueue();
         TweetConsumer tweetConsumer = getInstance(TweetConsumer.class);
-        tweetConsumer.setUncaughtExceptionHandler(handler);
-        tweetConsumer.setReadingQueue(tweetProducer.getQueue());
+        tweetConsumer.setUncaughtExceptionHandler(excHandler);
+        tweetConsumer.setReadingQueue(queue2);
         tweetConsumer.setTweetBatchSize(1);
         tweetConsumer.setTweetSearch(tweetSearch);
         tweetConsumer.start();
 
-        tweetProducer.join(3000);
+        twUrlResolver.join(1000);
         tweetConsumer.interrupt();
         checkExceptions(exceptionMap);
 

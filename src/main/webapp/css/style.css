@@ -34,17 +34,19 @@ body, p {
 }
 
 .feedback ul {
-    margin: 15px;
+    margin: 0px 12px 5px 15px;
     padding: 0px;
 }
 
-.feedbackPanelINFO, .feedbackPanelERROR {
+.feedbackPanelINFO, .feedbackPanelERROR, .feedbackPanelWARNING {
     list-style: none;
-    padding: 5px 75px 5px 75px;
+    padding: 5px 0px 5px 0px;
+    text-align: center;
 }
 
 .feedbackPanelERROR { background-color: #ffb6b6; }
 .feedbackPanelINFO { background-color: #ffffd6; }
+.feedbackPanelWARNING { background-color: #ffd791; }
 
 .left-column {
     float: left;
@@ -92,7 +94,7 @@ body, p {
 }
 
 .external-refs-right {     
-    padding: 0px 10px 11px 0px;
+    padding: 0px 10px 23px 0px;
     margin: 0px
 }
 
@@ -285,7 +287,7 @@ url("../img/bottom-line.png")
 }
 
 #main {
-    width: 1100px;
+    width: 1050px;
     margin-left: auto;
     margin-right: auto;
 }

@@ -91,8 +91,8 @@ public class SavedSearch implements Serializable {
 
     public String calcFacetQuery() {
         //sort => remove
-        //q=>  tw:(Apache AND Lucene) OR dest_title_t:(xy AND xy)
-        //fq=> user:(timetabling)
+        //q    =>  tw:(Apache AND Lucene) OR dest_title_t:(xy AND xy)
+        //fq   => user:(timetabling)
 
         // in tweet index we are using dismax so transform into OR query
         String qStr = "";

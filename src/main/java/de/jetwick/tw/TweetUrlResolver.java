@@ -15,6 +15,7 @@
  */
 package de.jetwick.tw;
 
+import com.google.inject.Inject;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.tw.queue.AbstractTweetPackage;
@@ -46,6 +47,9 @@ public class TweetUrlResolver extends MyThread {
     private BlockingQueue<TweetPackage> packages;
     private BlockingQueue<TweetPackage> resultPackages = new LinkedBlockingQueue<TweetPackage>();
     private int maxFill = 1000;
+    @Inject
+    // if no inject then use empty list:
+    private UrlTitleCleaner urlCleaner = new UrlTitleCleaner();
 
     public TweetUrlResolver() {
         super("tweet-urlresolver");
@@ -72,12 +76,16 @@ public class TweetUrlResolver extends MyThread {
     }
 
     public UrlExtractor createExtractor() {
-        return new UrlExtractor().setResolveTimeout(resolveTimeout);
+        return new UrlExtractor().setCleaner(urlCleaner).setResolveTimeout(resolveTimeout);
     }
 
     public TweetUrlResolver setReadingQueue(BlockingQueue<TweetPackage> tweetPackages) {
         packages = tweetPackages;
         return this;
+    }
+
+    public BlockingQueue<TweetPackage> getResultQueue() {
+        return resultPackages;
     }
     private AtomicLong allTweets = new AtomicLong(0);
 
@@ -91,43 +99,52 @@ public class TweetUrlResolver extends MyThread {
 
                 @Override
                 public Object call() throws Exception {
-                    while (true) {
-                        TweetPackage pkg = packages.poll();
-                        if (pkg == null) {
-                            if (!myWait(1))
-                                return null;
-
-                            continue;
-                        }
-
-                        // log not too often
-                        if (tmp == 0 || tmp == 1)
-                            logger.info("sentTweets:" + allTweets.get());
-
-                        for (SolrTweet tw : pkg.getTweets()) {
-                            allTweets.addAndGet(1);
-                            UrlExtractor extractor = createExtractor();
-                            for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
-                                if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
-                                    continue;
-
-                                tw.addUrlEntry(ue);
-                            }
-                        }
-                        resultPackages.add(pkg);
-                        int count = 0;
+                    try {
                         while (true) {
-                            count = AbstractTweetPackage.calcNumberOfTweets(resultPackages);
-                            if (count < maxFill)
-                                break;
+                            TweetPackage pkg = packages.poll();
+                            if (pkg == null) {
+                                // log not too often
+                                if (tmp == 0 || tmp == 1)
+                                    logger.info("urlResolver: no tweet packages in queue");
+                                
+                                if (!myWait(10))
+                                    return null;
 
+                                continue;
+                            }
+
+                            for (SolrTweet tw : pkg.getTweets()) {
+                                allTweets.addAndGet(1);
+                                UrlExtractor extractor = createExtractor();
+                                for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
+                                    if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
+                                        continue;
+
+                                    tw.addUrlEntry(ue);
+                                }
+                            }
+                            resultPackages.add(pkg);
                             // log not too often
                             if (tmp == 0 || tmp == 1)
-                                logger.info("... WAITING! " + count + " are too many tweets from url resolving!");
-                            if (!myWait(20))
-                                return null;
-                        }
-                    } // while
+                                logger.info("sentTweets:" + allTweets.get());
+
+                            int count = 0;
+                            while (true) {
+                                count = AbstractTweetPackage.calcNumberOfTweets(resultPackages);
+                                if (count < maxFill)
+                                    break;
+
+                                // log not too often
+                                if (tmp == 0 || tmp == 1)
+                                    logger.info("... WAITING! " + count + " are too many tweets from url resolving!");
+                                if (!myWait(20))
+                                    return null;
+                            }
+                        } // while
+                    } catch (Exception ex) {
+                        logger.error("one url resolver died", ex);
+                    }
+                    return null;
                 } // call
             });
         }
@@ -136,109 +153,10 @@ public class TweetUrlResolver extends MyThread {
                 getService().invokeAll(workerCollection, 100, TimeUnit.MILLISECONDS);
             else
                 getService().invokeAll(workerCollection);
+
+            logger.info("FINISHED " + getName());
         } catch (InterruptedException ex) {
             logger.info(getName() + " was interrupted:" + ex.getMessage());
         }
     }
-
-    public BlockingQueue<TweetPackage> getResultQueue() {
-        return resultPackages;
-    }
-    /**
-     * Resolve the detected urls for the specified tweets.
-     * @param tweets where the tweets come from
-     * @param outTweets where the new tweets (with the new text) will be saved
-     * @param threadCount how many threads to use
-     */
-//    public void resolveUrls(final BlockingQueue<SolrTweet> tweets,
-//            final BlockingQueue<SolrTweet> outTweets, int threadCount) {
-//        int maxThreads = Math.min(threadCount, tweets.size() / 5 + 1);
-//        Collection<Callable<Object>> coll = new ArrayList<Callable<Object>>(maxThreads);
-//        for (int i = 0; i < maxThreads; i++) {
-//            coll.add(new Callable() {
-//
-//                @Override
-//                public Object call() throws Exception {
-//                    while (true) {
-//                        SolrTweet tmpTw = tweets.poll();
-//                        if (tmpTw == null)
-//                            break;
-//
-//                        UrlExtractor extractor = createExtractor();
-//                        for (UrlEntry ue : extractor.setText(tmpTw.getText()).run().getUrlEntries()) {
-//                            if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
-//                                continue;
-//
-//                            tmpTw.addUrlEntry(ue);
-//                        }
-//                        outTweets.add(tmpTw);
-//                    }
-//                    return null;
-//                }
-//            });
-//        }
-//        // this will block the current thread
-//        //getService().invokeAll(coll, 2L, TimeUnit.MINUTES);
-//
-//        startResolve(coll);
-//        try {
-//            finishResolve();
-//        } catch (InterruptedException ex) {
-//            Thread.currentThread().interrupt();
-//        }
-//    }
-//
-//    long remainingNanos;
-//    long lastTime;
-//
-//    public void startResolve(Collection<Callable<Object>> callables) {
-//        lastTime = System.nanoTime();
-//        remainingNanos = TimeUnit.MINUTES.toNanos(2);
-//        futures.clear();
-//        for (Callable<Object> t : callables) {
-//            futures.add(new FutureTask<Object>(t));
-//        }
-//        // Interleave time checks and calls to execute in case
-//        // executor doesn't have any/much parallelism.
-//        Iterator<Future<Object>> it = futures.iterator();
-//        while (it.hasNext()) {
-//            getService().execute((Runnable) (it.next()));
-//            long now = System.nanoTime();
-//            remainingNanos -= now - lastTime;
-//            lastTime = now;
-//            if (remainingNanos <= 0)
-//                return;
-//        }
-//    }
-//
-//    public void finishResolve() throws InterruptedException {
-//        boolean done = false;
-//        try {
-//            for (Future<Object> f : futures) {
-//                if (!f.isDone()) {
-//                    if (remainingNanos <= 0)
-//                        return;
-//                    try {
-//                        f.get(remainingNanos, TimeUnit.NANOSECONDS);
-//                    } catch (CancellationException ignore) {
-//                    } catch (ExecutionException ignore) {
-//                    } catch (TimeoutException toe) {
-//                        return;
-//                    }
-//                    long now = System.nanoTime();
-//                    remainingNanos -= now - lastTime;
-//                    lastTime = now;
-//                }
-//            }
-//            done = true;
-//            return;
-//        } finally {
-//            if (!done)
-//                for (Future<Object> f : futures) {
-//                    f.cancel(true);
-//                }
-//
-//            futures.clear();
-//        }
-//    }
 }

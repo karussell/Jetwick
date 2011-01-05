@@ -249,6 +249,8 @@
            explanation
            http://osdir.com/ml/solr-user.lucene.apache.org/2009-06/msg00783.html
          -->
+
+         <!-- TODO reduce to 900, 900, 500 looks ok-->
         <filterCache class="solr.FastLRUCache" size="1000" initialSize="1000" autowarmCount="${filterCache.autowarm:1000}"/>
 
         <!-- queryResultCache caches results of searches - ordered lists of
@@ -256,22 +258,20 @@
          of documents requested.
          avoid autowarming to speedup indexing because hits == 0 !!??
          -->
-        <queryResultCache class="solr.LRUCache" size="100" initialSize="100" autowarmCount="0"/>
+        <queryResultCache class="solr.LRUCache" size="200" initialSize="200" autowarmCount="${queryResultCache.autowarm:0}"/>
 
         <!-- documentCache caches Lucene Document objects (the stored fields for each document).
        Since Lucene internal document ids are transient, this cache will not be autowarmed.  -->
-        <documentCache class="solr.FastLRUCache" size="1000" initialSize="1000" autowarmCount="0"/>
+        <documentCache class="solr.FastLRUCache" size="1000" initialSize="1000" autowarmCount="${documentCache.autowarm:0}"/>
 
         <!-- Cache used to hold field values that are quickly accessible
          by document id.  The fieldValueCache is created by default
-         even if not configured here.
-      <fieldValueCache
-        class="solr.FastLRUCache"
-        size="512"
-        autowarmCount="128"
-        showItems="32"
-      />
-    -->
+         even if not configured here. -->
+
+        <!-- TODO enable this - caching looks good with it
+        <fieldValueCache class="solr.FastLRUCache" size="500" autowarmCount="${fieldValueCache.autowarm:0}" showItems="32"/>
+        -->
+
         <!-- If true, stored fields that are not requested will be loaded lazily.
       This can result in a significant speed improvement if the usual case is to
       not load all stored fields, especially if the skipped fields are large
@@ -302,7 +302,7 @@
         <!-- QuerySenderListener takes an array of NamedList and executes a
              local query request for each NamedList in sequence. -->
         <listener event="newSearcher" class="solr.QuerySenderListener">
-            <arr name="queries">                                
+            <arr name="queries">
                 <lst> <str name="q">twitter</str><str name="start">0</str><str name="rows">15</str></lst>
                 <lst><str name="q">news</str></lst>
                 <lst>
@@ -332,7 +332,7 @@
          requests or to gain autowarming data from. -->
         <listener event="firstSearcher" class="solr.QuerySenderListener">
             <arr name="queries">
-                <lst><str name="start">0</str><str name="rows">15</str></lst>                
+                <lst><str name="start">0</str><str name="rows">15</str></lst>
                 <lst><str name="q">twitter</str><str name="start">0</str><str name="rows">15</str></lst>
                 <lst><str name="q">news</str><str name="sort">retw_i desc</str></lst>
                 <lst>
@@ -464,7 +464,7 @@
         <lst name="defaults">
             <str name="echoParams">explicit</str>
             <!--
-       <int name="rows">10</int>    
+       <int name="rows">10</int>
        <str name="fl">*</str>
        <str name="version">2.1</str>
         -->
@@ -578,7 +578,7 @@
     -->
 
     <requestHandler name="/replication" class="solr.ReplicationHandler" enable="${replication.master:false}" >
-        <lst name="master">            
+        <lst name="master">
             <str name="replicateAfter">optimize</str>
             <str name="confFiles">solrconfig.xml,schema.xml,spellings.txt,stopwords.txt,synonyms.txt,protwords.txt</str>
         </lst>

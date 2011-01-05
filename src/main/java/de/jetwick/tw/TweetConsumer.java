@@ -65,9 +65,10 @@ public class TweetConsumer extends MyThread {
             if (tweetPackages.isEmpty()) {
                 // TODO instead of a 'fixed' waiting               
                 // use beforeThread.getCondition().await + signalAll
-                if (!myWait(1))
+                if (!myWait(5))
                     break;
 
+                logger.info("Consumer: no tweetpackage in queue");
                 continue;
             }
 
@@ -82,7 +83,7 @@ public class TweetConsumer extends MyThread {
 
             lastFeed = System.currentTimeMillis();
             sw1 = new StopWatch(" ");
-            sw1.start();
+            sw1.start();            
             Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
             sw1.stop();
             String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();
@@ -120,8 +121,8 @@ public class TweetConsumer extends MyThread {
                 break;
         }
 
-        try {
-            Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
+        try {            
+            Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());            
             allTweets += tweetSet.size();
             indexedTweets += res.size();
             float tweetsPerSec = indexedTweets / ((System.currentTimeMillis() - start) / 1000.0f);

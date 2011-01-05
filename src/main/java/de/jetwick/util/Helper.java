@@ -40,6 +40,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -85,15 +86,18 @@ public class Helper {
     public static final String JURL = "";
     public static final String UTF8 = "UTF8";
     private static final String localDateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.000'Z'";
-    private static final SimpleDateFormat sFormat = new SimpleDateFormat(localDateTimeFormatString);
     private static final String simpleDateString = "HH:mm yyyy-MM-dd";
-    private static final SimpleDateFormat simpleFormat = new SimpleDateFormat(simpleDateString);
 
-    static {
-        sFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        simpleFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-//        System.out.println(Arrays.asList(TimeZone.getAvailableIDs()));
-//        System.out.println(sFormat.getTimeZone().getDisplayName());
+    public static DateFormat createLocalFormat() {
+        DateFormat df = new SimpleDateFormat(localDateTimeFormatString);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df;
+    }
+
+    public static DateFormat createSimpleFormat() {
+        DateFormat df = new SimpleDateFormat(simpleDateString);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df;
     }
 
     public static BufferedReader createBuffReader(File file) throws FileNotFoundException, UnsupportedEncodingException {
@@ -183,17 +187,17 @@ public class Helper {
         return appHome + c + str;
     }
 
-    public static String toLocalDateTime(Date date) {
-        return sFormat.format(date);
+    public static String toSimpleDateTime(Date date) {
+        return createSimpleFormat().format(date);
     }
 
-    public static String toSimpleDateTime(Date date) {
-        return simpleFormat.format(date);
+    public static String toLocalDateTime(Date date) {
+        return createLocalFormat().format(date);
     }
 
     public static Date toDate(String createdAt) {
         try {
-            return sFormat.parse(createdAt);
+            return createLocalFormat().parse(createdAt);
         } catch (ParseException ex) {
             throw new RuntimeException(ex);
         }
@@ -511,7 +515,7 @@ public class Helper {
             hConn.setConnectTimeout(timeout);
             hConn.setReadTimeout(timeout);
             // default length of bufferedinputstream is 8k
-            byte[] arr = new byte[8192];
+            byte[] arr = new byte[4096];
             BufferedInputStream in = new BufferedInputStream(hConn.getInputStream(), arr.length);
             in.read(arr);
             return getUrlInfosFromText(arr);
@@ -747,7 +751,7 @@ public class Helper {
 
         long val = 0;
         for (int i = signature.length - 1; i >= 0; i--) {
-            val  = val << 8;            
+            val = val << 8;
             val |= signature[i];
         }
 

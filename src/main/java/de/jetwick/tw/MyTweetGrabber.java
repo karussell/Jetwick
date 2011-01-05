@@ -99,8 +99,8 @@ public class MyTweetGrabber implements Serializable {
                         try {
                             if (!isSearchDoneInLastMinutes("user:" + userName)) {
 //                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
-                                name = "grab user:" + userName;
                                 tweets = new LinkedBlockingQueue<SolrTweet>();
+                                name = "grab user:" + userName;
                                 tweets.addAll(tweetSearch.getTweets(new SolrUser(userName), new ArrayList<SolrUser>(), tweetCount));
                                 logger.info("add " + tweets.size() + " tweets from user search: " + userName);
                             }
@@ -112,8 +112,8 @@ public class MyTweetGrabber implements Serializable {
                         try {
                             if (!isSearchDoneInLastMinutes(queryStr)) {
 //                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
-                                name = "grab query:" + queryStr;
                                 tweets = new LinkedBlockingQueue<SolrTweet>();
+                                name = "grab query:" + queryStr;
                                 tweetSearch.search(queryStr, tweets, tweetCount, 0);
                                 logger.info("added " + tweets.size() + " tweets via twitter search: " + queryStr);
                             }
@@ -122,10 +122,11 @@ public class MyTweetGrabber implements Serializable {
                             logger.warn("Couldn't query twitter: " + queryStr + " " + ex.getLocalizedMessage());
                         }
                     }
-                }
+                } else
+                    name = "filledTweets:" + tweets.size();
 
                 try {
-                    if (tweets != null && tweets.size() > 0)
+                    if (tweets != null && tweets.size() > 0 && !name.isEmpty())
                         rmiClient.get().init().send(new TweetPackageList(name).init(idCounter.addAndGet(1), tweets));
                 } catch (Exception ex) {
                     logger.warn("Error while sending tweets to queue server" + ex.getMessage());

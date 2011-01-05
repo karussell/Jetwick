@@ -42,6 +42,8 @@ public class TweetDetector {
     public static final String EN = "en";
     public static final String RU = "ru";
     public static final String SP = "sp";
+    public static final String FR = "fr";
+    public static final String PT = "pt";
     private Collection<SolrTweet> tweets;
     private int termMaxCount = 6;
     private StringFreqMap languages = new StringFreqMap();
@@ -167,17 +169,15 @@ public class TweetDetector {
         String tmpTerms[] = text.split("\\s");
         int counter = 0;
         for (String term : tmpTerms) {
-//            term = term.trim();
             counter++;
             if (term.length() < 2 || term.length() > 70 || term.startsWith("@"))
                 continue;
 
-            Set<String> langs = SolrTweet.NOISE_WORDS.get(term);
-            if (langMap != null && langs != null) {
+            Set<String> detectedLangs = SolrTweet.LANG_DET_WORDS.get(term);
+            if (langMap != null && detectedLangs != null) {
                 // skip the last term for language detection
                 if (counter < tmpTerms.length) {
-                    for (String lang : langs) {
-
+                    for (String lang : detectedLangs) {
                         if (lang.equals(TweetDetector.NUM)
                                 || lang.equals(TweetDetector.SINGLE)
                                 || lang.equals(TweetDetector.MISC_LANG))
@@ -188,11 +188,10 @@ public class TweetDetector {
                             langMap.put(lang, integ + 1);
                     }
                 }
-
-                continue;
             }
 
-            if (termMap != null) {
+            Set<String> noiseWordLangs = SolrTweet.NOISE_WORDS.get(term);
+            if (termMap != null && noiseWordLangs == null) {
                 Integer integ = termMap.put(term, 1);
                 if (integ != null)
                     termMap.put(term, integ + 1);

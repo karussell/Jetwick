@@ -262,8 +262,8 @@ public class ResultsPanel extends Panel {
             }
 
             @Override
-            public void onFindSimilarClick(SolrTweet tweet) {
-                ResultsPanel.this.onFindSimilar(tweet);
+            public void onFindSimilarClick(SolrTweet tweet, AjaxRequestTarget target) {
+                ResultsPanel.this.onFindSimilar(tweet, target);
             }
 
             @Override
@@ -309,7 +309,7 @@ public class ResultsPanel extends Panel {
     public void onUserClick(String userName, String query) {
     }
 
-    public void onFindSimilar(SolrTweet tweet) {
+    public void onFindSimilar(SolrTweet tweet, AjaxRequestTarget target) {
     }
 
     public void onSortClicked(AjaxRequestTarget target, String sortStr) {

@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import twitter4j.Tweet;
 
@@ -76,6 +77,7 @@ public class SolrTweet implements Serializable {
     private int reply;
     private String qualDebug;
     private int qualReductions = 0;
+    private String type;
 //    private Collection<Long> textSignature;
     private Collection<Long> duplicates = new LinkedHashSet<Long>();
 
@@ -172,16 +174,13 @@ public class SolrTweet implements Serializable {
         this.textTerms = textTerms;
     }
 
-//    public Collection<Long> getTextSignature() {
-//        return textSignature;
-//    }
-//
-//    public void addTextSignature(long signature) {
-//        if (textSignature == null)
-//            textSignature = new ArrayList<Long>();
-//
-//        this.textSignature.add(signature);
-//    }
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 
     public long getInReplyTwitterId() {
         return inReplyTwitterId;
@@ -413,6 +412,7 @@ public class SolrTweet implements Serializable {
         return twitterId + " " + createdAt + " " + text;
     }
     public static final Map<String, Set<String>> NOISE_WORDS = new LinkedHashMap<String, Set<String>>();
+    public static final Map<String, Set<String>> LANG_DET_WORDS = new LinkedHashMap<String, Set<String>>();
     public static final Set<String> NOISE_WORDS_SINGLE = new LinkedHashSet<String>(Arrays.asList(new String[]{
                 "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
             }));
@@ -490,12 +490,29 @@ public class SolrTweet implements Serializable {
             }));
 
     static {
-        // languages
-        importFrom(NOISE_WORDS, TweetDetector.DE);
-        importFrom(NOISE_WORDS, TweetDetector.EN);
-        importFrom(NOISE_WORDS, TweetDetector.NL);
-        importFrom(NOISE_WORDS, TweetDetector.RU);
-        importFrom(NOISE_WORDS, TweetDetector.SP);
+        // fill collection for language detection
+        importFrom(LANG_DET_WORDS, TweetDetector.DE);
+        importFrom(LANG_DET_WORDS, TweetDetector.EN);
+        importFrom(LANG_DET_WORDS, TweetDetector.NL);
+        importFrom(LANG_DET_WORDS, TweetDetector.RU);
+        importFrom(LANG_DET_WORDS, TweetDetector.SP);
+        importFrom(LANG_DET_WORDS, TweetDetector.FR);
+        importFrom(LANG_DET_WORDS, TweetDetector.PT);
+
+        // fill collection for noise word determination
+        importNoiseFrom(NOISE_WORDS, TweetDetector.DE);
+        importNoiseFrom(NOISE_WORDS, TweetDetector.EN);
+        importNoiseFrom(NOISE_WORDS, TweetDetector.NL);
+        importNoiseFrom(NOISE_WORDS, TweetDetector.RU);
+        importNoiseFrom(NOISE_WORDS, TweetDetector.SP);
+        importNoiseFrom(NOISE_WORDS, TweetDetector.FR);
+        importNoiseFrom(NOISE_WORDS, TweetDetector.PT);
+
+        int delta = LANG_DET_WORDS.size();
+        for (Entry<String, Set<String>> noiseTerms : NOISE_WORDS.entrySet()) {
+            addFrom(LANG_DET_WORDS, noiseTerms);
+        }
+        //System.out.println("added " + (LANG_DET_WORDS.size() - delta) + " terms to lang detection from noise terms");
 
         addFrom(NOISE_WORDS, TweetDetector.UNKNOWN_LANG, NOISE_WORDS_UNSORTED);
 
@@ -505,9 +522,18 @@ public class SolrTweet implements Serializable {
         addFrom(NOISE_WORDS, TweetDetector.NUM, NOISE_WORDS_NUM);
     }
 
-    public static void importFrom(Map<String, Set<String>> words, String lang) {
+    public static void importNoiseFrom(Map<String, Set<String>> words, String lang) {
         try {
             List<String> list = Helper.readFile(Helper.createBuffReader(SolrTweet.class.getResourceAsStream("noise_words_" + lang + ".txt")));
+            addFrom(words, lang, list);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static void importFrom(Map<String, Set<String>> words, String lang) {
+        try {
+            List<String> list = Helper.readFile(Helper.createBuffReader(SolrTweet.class.getResourceAsStream("lang_det_" + lang + ".txt")));
             addFrom(words, lang, list);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -527,6 +553,20 @@ public class SolrTweet implements Serializable {
             langs.add(lang);
             words.put(str, langs);
         }
+    }
+
+    public static void addFrom(Map<String, Set<String>> words, Entry<String, Set<String>> entry) {
+        String str = entry.getKey();
+        if (str.isEmpty() || str.startsWith("//"))
+            return;
+
+        str = str.trim().toLowerCase();
+        Set<String> langs = words.get(str);
+        if (langs == null)
+            langs = new LinkedHashSet<String>();
+
+        langs.addAll(entry.getValue());
+        words.put(str, langs);
     }
 
     /**

@@ -17,7 +17,9 @@ package de.jetwick.ui;
 
 import de.jetwick.config.Configuration;
 import de.jetwick.rmi.RMIClient;
+import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
@@ -25,14 +27,16 @@ import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.util.tester.FormTester;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 import twitter4j.TwitterException;
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -45,6 +49,7 @@ public class HomePageTest extends WicketPagesTestClass {
     private List<SolrTweet> returnUserTweets;
     private List<SolrTweet> returnSearchTweets;
     private TweetPackage sentTweets;
+    private SolrTweetSearch ownSolrTweetSearch;
 
     @Before
     @Override
@@ -75,9 +80,16 @@ public class HomePageTest extends WicketPagesTestClass {
 
         tester.clickLink("searchbox:searchform:homelink");
         tester.assertNoErrorMessage();
+    }
 
-        tester.startPage(new HomePage(new SolrQuery("timetabling"), 0, false));
+    @Test
+    public void testNormalSearch() throws Exception {
+        ownSolrTweetSearch = mock(SolrTweetSearch.class);
+        setUp();
+        SolrQuery query = new SolrQuery("timetabling");
+        tester.startPage(new HomePage(query, 0, false));
         tester.assertNoErrorMessage();
+        verify(ownSolrTweetSearch).search(new LinkedHashSet<SolrUser>(), query);
     }
 
     @Test
@@ -145,6 +157,20 @@ public class HomePageTest extends WicketPagesTestClass {
         assertNull(page.getQueueThread());
         assertEquals("", uString);
         assertEquals("", qString);
+    }
+
+    @Test
+    public void testWithDate() throws InterruptedException {
+        HomePage page = getInstance(HomePage.class);
+        PageParameters pp = new PageParameters();
+        pp.put("until", "2011-02-01");
+        SolrQuery q = page.createQuery(pp);
+        assertEquals("dt:[2011-02-01T00:00:00Z TO *]", JetwickQuery.getFirstFilterQuery(q, "dt"));
+
+        pp = new PageParameters();
+        pp.put("until", "2011-02-01T00:00:00Z");
+        q = page.createQuery(pp);
+        assertEquals("dt:[2011-02-01T00:00:00Z TO *]", JetwickQuery.getFirstFilterQuery(q, "dt"));
     }
 
     @Test
@@ -236,5 +262,13 @@ public class HomePageTest extends WicketPagesTestClass {
                 sentTweets = tweets;
             }
         };
+    }
+
+    @Override
+    protected SolrTweetSearch createSolrTweetSearch() {
+        if (ownSolrTweetSearch == null)
+            return super.createSolrTweetSearch();
+
+        return ownSolrTweetSearch;
     }
 }

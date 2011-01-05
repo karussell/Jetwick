@@ -26,11 +26,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
-import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -167,11 +167,11 @@ public class OneTweet extends Panel {
         if (tweet.getReplyCount() == tweet.getRetweetCount())
             replyLink.setVisible(false);
 
-        add(new Link("similarLink") {
+        add(new AjaxFallbackLink("similarLink") {
 
             @Override
-            public void onClick() {
-                onFindSimilarClick(tweet);
+            public void onClick(AjaxRequestTarget target) {
+                onFindSimilarClick(tweet, target);
             }
         });
 
@@ -205,8 +205,8 @@ public class OneTweet extends Panel {
                     }
 
                     @Override
-                    public void onFindSimilarClick(SolrTweet tweet) {
-                        OneTweet.this.onFindSimilarClick(tweet);
+                    public void onFindSimilarClick(SolrTweet tweet, AjaxRequestTarget target) {
+                        OneTweet.this.onFindSimilarClick(tweet, target);
                     }
 
                     @Override
@@ -258,6 +258,6 @@ public class OneTweet extends Panel {
     public void onUserClick(String screenName) {
     }
 
-    public void onFindSimilarClick(SolrTweet tweet) {
+    public void onFindSimilarClick(SolrTweet tweet, AjaxRequestTarget target) {
     }
 }

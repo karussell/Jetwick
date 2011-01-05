@@ -15,7 +15,6 @@
  */
 package de.jetwick.ui;
 
-import com.google.inject.Inject;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.TwitterSearch;
@@ -36,26 +35,33 @@ import twitter4j.http.AccessToken;
 public class MySession extends WebSession {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    @Inject
+    /**
+     * twitter4j saves state. so it is a bit complicated.
+     * twitterSearch is always a new instance with the same twitter4j reference.
+     * BUT we need to replace the twitter4j instance for every logged in user via
+     * TwitterSearch.setTwitter4JInstance to get the correct user name etc
+     *
+     * @see DefaultModule
+     */
     private TwitterSearch twitterSearch;
     private SolrUser user = null;
     private boolean twitterSearchInitialized = false;
-    private boolean sessionTimedout = false;
+    private boolean sessionTimedOut = false;
 
     public MySession(Request request) {
         super(request);
     }
 
-    public void setSessionTimedout(boolean sessionTimedout) {
-        this.sessionTimedout = sessionTimedout;
+    public void setSessionTimedOut(boolean sessionTimedout) {
+        this.sessionTimedOut = sessionTimedout;
     }
 
-    public String getSessionTimeoutMessage() {
+    public String getSessionTimeOutMessage() {
         String str = "";
-        if (sessionTimedout)
-            str = "Jetwick was in sleepmode. Please try again.";
+        if (sessionTimedOut)
+            str = "You have been inactivate a while. Please try again.";
 
-        sessionTimedout = false;
+        sessionTimedOut = false;
         return str;
     }
 
@@ -80,7 +86,7 @@ public class MySession extends WebSession {
                 if (user != null)
                     logger.info("Found cookie for user:" + getUser().getScreenName());
             } else
-                logger.info("No cookie found");
+                logger.info("No cookie found. IP=" + request.getHttpServletRequest().getRemoteHost());
         }
     }
 

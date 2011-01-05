@@ -162,6 +162,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         doc.addField(DATE, tw.getCreatedAt());
         doc.addField(UPDATE_DT, tw.getUpdatedAt());
         doc.addField(IS_RT, tw.isRetweet());
+        doc.addField("type", tw.getType());
 
         if (tw.getLocation() == null)
             doc.addField("loc", tw.getFromUser().getLocation());
@@ -186,7 +187,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 doc.addField("url_pos_" + counter + "_s", urlEntry.getIndex() + "," + urlEntry.getLastIndex());
                 doc.addField("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
                 doc.addField("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
-                doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
+
+                // hashCode because if urls have some title but different url
+                doc.addField("dest_title_" + counter + "_s", "_" + Math.abs(urlEntry.getResolvedUrl().hashCode()) + "_" + urlEntry.getResolvedTitle());
+//                doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
+
                 if (counter >= 3)
                     break;
             }
@@ -270,6 +275,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
         for (int counter = 0; counter < urls.length; counter++) {
             String str = (String) doc.getFieldValue("dest_title_" + (counter + 1) + "_s");
+            if(str.startsWith("_")) {
+                int index2 = str.indexOf("_", 1);
+                if(index2 > 1)
+                    str = str.substring(index2 + 1);
+            }
             urls[counter].setResolvedTitle(str);
         }
         return urls;
@@ -550,34 +560,20 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
         TermCreateCommand termCommand = new TermCreateCommand();
 
-        double MM_BORDER = 0.7;
-        double JACC_BORDER = 0.6;
+        double JACC_BORDER = 0.7;
         for (SolrTweet currentTweet : tweets.values()) {
             if (currentTweet.isRetweet())
                 continue;
 
-            termCommand.calcTermsWithoutNoise(currentTweet);
-            List textTerms = currentTweet.getTextTerms().getSortedTermLimited(6);
+            SolrQuery q = new TweetQuery(false).createSimilarQuery(currentTweet).
+                    addFilterQuery(FILTER_ENTRY_LATEST_DT);
 
-            if (textTerms.size() < 3)
+            if (currentTweet.getTextTerms().size() < 3)
                 continue;
 
-            SolrQuery q = new TweetQuery(false).createSimilarQuery(currentTweet, textTerms).
-                    addFilterQuery(FILTER_ENTRY_LATEST_DT).setRows(10);
-            // force dismax and specify required matching terms
-            q.set("qf", TWEET_TEXT);
-            q.set("defType", "dismax");
-            // TODO can we use solr settings instead?
-            int mmTweets = (int) Math.round(textTerms.size() * MM_BORDER);
-            // maximal 6 terms
-            mmTweets = Math.min(6, mmTweets);
-            // minimal 4 terms
-            mmTweets = Math.max(4, mmTweets);
-            q.set("mm", "" + mmTweets);
-
             int dups = 0;
-            // find dups in index
             try {
+                // find dups in index
                 for (SolrTweet simTweet : collectTweets(search(q))) {
                     if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
                         continue;

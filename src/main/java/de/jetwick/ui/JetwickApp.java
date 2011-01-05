@@ -26,7 +26,15 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
+import de.jetwick.tw.TwitterSearch;
 import org.apache.wicket.Application;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.protocol.http.PageExpiredException;
+import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
+import org.apache.wicket.request.IRequestCycleProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Application object for your web application. If you want to run this application without deploying, run the Start class.
@@ -35,6 +43,7 @@ import org.apache.wicket.Application;
  */
 public class JetwickApp extends WebApplication {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private Configuration cfg;
     private Injector injector;
 
@@ -117,8 +126,14 @@ public class JetwickApp extends WebApplication {
 
     @Override
     public Session newSession(Request request, Response response) {
-        Session session = new MySession(request);
-        getGuiceInjector().inject(session);
+        MySession session = new MySession(request);
+//        logger.info(" session id:" + session.getId());
+        session.setTwitterSearch(injector.getInstance(TwitterSearch.class));
+//        getGuiceInjector().inject(session);
+        
+        WebRequest webRequest = ((WebRequest) request);
+        logger.info("created new session! IP=" + webRequest.getHttpServletRequest().getRemoteHost() + " session:" + session.getId());
+        
         return session;
 
     }
@@ -147,4 +162,8 @@ public class JetwickApp extends WebApplication {
 //            }
 //        };
 //    }
+
+    
+    // https://issues.apache.org/jira/browse/WICKET-3081
+    // http://www.mail-archive.com/users@wicket.apache.org/msg38015.html
 }

@@ -51,18 +51,18 @@ public class StringFreqMapTest {
         map.set("a", 2).set("c", 10).set("b", 20).set("d", 1).set("e", -1);
         StringFreqMap map2 = new StringFreqMap();
         map2.set("a", 2).set("f", 10);
-        assertEquals(1, map2.andSize(map));
+        assertEquals(2, map2.andSize(map));
 //        assertEquals("a", map2.and(map).iterator().next());
     }
 
     @Test
     public void testOr() {
         StringFreqMap map = new StringFreqMap();
-        map.set("a", 2).set("c", 10).set("b", 20).set("d", 1).set("e", -1);
+        map.set("a", 2).set("c", 10).set("b", 20).set("d", 1).set("e", 2);
         StringFreqMap map2 = new StringFreqMap();
         map2.set("a", 2).set("f", 11);
-        assertEquals(6, map2.orSize(map));
-        assertTrue(map2.or(map).contains("f"));
+        assertEquals(46, map2.orSize(map));
+        assertTrue(map2.or(map).containsKey("f"));
     }
 
     @Test
