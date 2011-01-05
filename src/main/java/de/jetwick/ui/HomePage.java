@@ -29,6 +29,7 @@ import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
+import de.jetwick.util.Helper;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -186,7 +187,7 @@ public class HomePage extends WebPage {
                     idStr = idStr.substring(index + 1);
 
                 q = JetwickQuery.createIdQuery(Long.parseLong(idStr));
-            } catch (Exception ex) {
+            } catch (Exception ignore) {
             }
         }
 
@@ -197,20 +198,28 @@ public class HomePage extends WebPage {
                 q = getTweetSearch().createFindOriginQuery(lastQuery, originStr, 3);
             }
         }
+        String queryStr = parameters.getString("q");
+        if (queryStr == null)
+            queryStr = "";
 
         String userName = null;
         if (q == null) {
-            String queryStr = parameters.getString("q");
-            if (queryStr == null)
-                queryStr = "";
             userName = parameters.getString("u");
             q = new TweetQuery(queryStr).addUserFilter(userName);
+        }
 
-            // avoid slow queries for *:* query and filter against latest tweets
-            if (queryStr.isEmpty() && q.getFilterQueries() == null) {
-                logger.info(addIP("[stats] q=''"));
-                q.addFilterQuery(SolrTweetSearch.DATE_TAG + SolrTweetSearch.FILTER_ENTRY_LATEST_DT);
-            }
+        String fromDateStr = parameters.getString("until");
+        if (fromDateStr != null) {
+            if (!fromDateStr.contains("T"))
+                fromDateStr += "T00:00:00Z";
+
+            q.addFilterQuery(SolrTweetSearch.DATE + ":[" + fromDateStr + " TO *]");
+        }
+
+        // avoid slow queries for *:* query and filter against latest tweets
+        if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
+            logger.info(addIP("[stats] q=''"));
+            q.addFilterQuery(SolrTweetSearch.DATE_TAG + SolrTweetSearch.FILTER_ENTRY_LATEST_DT);
         }
 
         String sort = parameters.getString("sort");
