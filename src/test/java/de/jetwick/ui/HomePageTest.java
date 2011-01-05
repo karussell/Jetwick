@@ -17,6 +17,7 @@ package de.jetwick.ui;
 
 import de.jetwick.config.Configuration;
 import de.jetwick.rmi.RMIClient;
+import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
@@ -29,6 +30,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.util.tester.FormTester;
 import org.junit.Before;
 import org.junit.Test;
@@ -155,6 +157,20 @@ public class HomePageTest extends WicketPagesTestClass {
         assertNull(page.getQueueThread());
         assertEquals("", uString);
         assertEquals("", qString);
+    }
+
+    @Test
+    public void testWithDate() throws InterruptedException {
+        HomePage page = getInstance(HomePage.class);
+        PageParameters pp = new PageParameters();
+        pp.put("until", "2011-02-01");
+        SolrQuery q = page.createQuery(pp);
+        assertEquals("dt:[2011-02-01T00:00:00Z TO *]", JetwickQuery.getFirstFilterQuery(q, "dt"));
+
+        pp = new PageParameters();
+        pp.put("until", "2011-02-01T00:00:00Z");
+        q = page.createQuery(pp);
+        assertEquals("dt:[2011-02-01T00:00:00Z TO *]", JetwickQuery.getFirstFilterQuery(q, "dt"));
     }
 
     @Test
