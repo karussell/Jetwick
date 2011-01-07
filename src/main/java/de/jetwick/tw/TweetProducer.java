@@ -119,7 +119,7 @@ public class TweetProducer extends MyThread {
                     }
 
                     float waitInSeconds = 0.1f;
-                    try {                        
+                    try {
                         long maxId = 0;
                         LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
                         if (tag.isHomeTimeline()) {
@@ -129,7 +129,7 @@ public class TweetProducer extends MyThread {
                             maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
 
                         int hits = tmp.size();
-                        tag.setLastId(maxId);                        
+                        tag.setLastId(maxId);
                         feededTweets += hits;
                         float tweetsPerSec = feededTweets / ((System.currentTimeMillis() - start) / 1000.0f);
                         logger.info("tweets/sec:" + tweetsPerSec + " \tqueue= " + count + " \t + "
@@ -142,7 +142,7 @@ public class TweetProducer extends MyThread {
                             updateTagInTA(tag, hits);
                         }
                     } catch (TwitterException ex) {
-                        logger.warn("Couldn't finish search for tag " + tag, ex);
+                        logger.warn("Couldn't finish search for tag '" + tag + "': " + ex.getMessage());
                         if (ex.exceededRateLimitation())
                             waitInSeconds = ex.getRetryAfter();
                     } catch (StaleObjectStateException ex) {
