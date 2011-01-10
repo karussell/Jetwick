@@ -15,6 +15,7 @@
  */
 package de.jetwick.solr;
 
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
 import java.util.Collection;
@@ -35,7 +36,7 @@ public class SavedSearch implements Serializable {
     public SavedSearch(long id, SolrQuery query) {
         this.id = id;
         this.query = query.getCopy();
-        JetwickQuery.removeFilterQueries(this.query, SolrTweetSearch.DATE);
+        JetwickQuery.removeFilterQueries(this.query, ElasticTweetSearch.DATE);
         JetwickQuery.removeFacets(this.query);
     }
 
@@ -117,9 +118,9 @@ public class SavedSearch implements Serializable {
             int counter = 0;
             for (String fq : query.getFilterQueries()) {
                 // apply only lastQueryDate
-                if (fq.startsWith(SolrTweetSearch.DATE + ":"))
+                if (fq.startsWith(ElasticTweetSearch.DATE + ":"))
                     continue;
-                if (fq.startsWith(SolrTweetSearch.FIRST_URL_TITLE + ":"))
+                if (fq.startsWith(ElasticTweetSearch.FIRST_URL_TITLE + ":"))
                     continue;
 
                 if (counter == 0)
@@ -136,7 +137,7 @@ public class SavedSearch implements Serializable {
     }
 
     private String getLastQueryDateFilter() {
-        return SolrTweetSearch.DATE + ":[" + Helper.toLocalDateTime(lastQueryDate) + " TO *]";
+        return ElasticTweetSearch.DATE + ":[" + Helper.toLocalDateTime(lastQueryDate) + " TO *]";
     }
 
     @Override

@@ -26,6 +26,14 @@
         <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <licenses>
+        <license>
+            <name>Apache 2</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
 
     <dependencies>
         <dependency>
@@ -44,11 +52,12 @@
             <artifactId>solr-solrj</artifactId>
             <version>${solr.version}</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-core</artifactId>
             <version>${solr.version}</version>
-            <!-- https://issues.apache.org/jira/browse/SOLR-1950 -->
+            - https://issues.apache.org/jira/browse/SOLR-1950 -
             <exclusions>
                 <exclusion>
                     <groupId>woodstox</groupId>
@@ -57,38 +66,22 @@
                 <exclusion>
                     <groupId>org.apache.geronimo.specs</groupId>
                     <artifactId>geronimo-stax-api_1.0_spec</artifactId>
-                </exclusion>
-                <!--
-                <exclusion>
-                    <groupId>org.apache.velocity.tools</groupId>
-                    <artifactId>velocity-tools</artifactId>
-                </exclusion>-->
+                </exclusion>              
             </exclusions>
-        </dependency>
-
-        <!-- for solr tests -> JettySolrRunner ! -->
-        <!--
-        <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty</artifactId>
-            <version>${jetty.version}</version>
-            <scope>test</scope>
         </dependency>
         -->
 
-        <!-- required dep for elastic search -->
-        <!--
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>0.13.1</version>
-        </dependency>        
+            <version>0.14.1</version>
+        </dependency>
+        <!-- required dep for elastic search -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-analyzers</artifactId>
             <version>3.0.3</version>
         </dependency>
-        -->
 
         <dependency>
             <groupId>org.apache.wicket</groupId>

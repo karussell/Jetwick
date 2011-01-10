@@ -15,15 +15,15 @@
  */
 package de.jetwick.bot;
 
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -62,15 +62,15 @@ public class JetwotTest {
                     }
                 };
 
-                tweetSearch = new SolrTweetSearch() {
+                tweetSearch = new ElasticTweetSearch() {
 
                     @Override
-                    public QueryResponse search(SolrQuery query) throws SolrServerException {
+                    public SearchResponse search(SolrQuery query) throws SolrServerException {
                         return null;
                     }
 
                     @Override
-                    public List<SolrTweet> collectTweets(QueryResponse rsp) {
+                    public List<SolrTweet> collectTweets(SearchResponse rsp) {
                         return todoTweets;
                     }
                 };

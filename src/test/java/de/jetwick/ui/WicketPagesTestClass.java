@@ -19,12 +19,12 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
+import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticTweetSearchTest;
+import de.jetwick.es.ElasticUserSearch;
+import de.jetwick.es.ElasticUserSearchTest;
 import de.jetwick.rmi.RMIClient;
-import de.jetwick.solr.SolrTweetSearch;
-import de.jetwick.solr.SolrTweetSearchTest;
 import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.SolrUserSearch;
-import de.jetwick.solr.SolrUserSearchTest;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
@@ -64,9 +64,9 @@ public class WicketPagesTestClass {
             @Override
             public void installSolrModule() {
                 // TODO provide mock searcher                
-                bind(SolrUserSearch.class).toInstance(createSolrUserSearch());
+                bind(ElasticUserSearch.class).toInstance(createSolrUserSearch());
 
-                bind(SolrTweetSearch.class).toInstance(createSolrTweetSearch());
+                bind(ElasticTweetSearch.class).toInstance(createSolrTweetSearch());
             }
 
             @Override
@@ -89,8 +89,8 @@ public class WicketPagesTestClass {
         };
     }
 
-    protected SolrUserSearch createSolrUserSearch() {
-        SolrUserSearchTest sst = new SolrUserSearchTest();
+    protected ElasticUserSearch createSolrUserSearch() {
+        ElasticUserSearchTest sst = new ElasticUserSearchTest();
         try {
             sst.setUp();
             return sst.getUserSearch();
@@ -99,8 +99,8 @@ public class WicketPagesTestClass {
         }
     }
 
-    protected SolrTweetSearch createSolrTweetSearch() {
-        SolrTweetSearchTest stst = new SolrTweetSearchTest();
+    protected ElasticTweetSearch createSolrTweetSearch() {
+        ElasticTweetSearchTest stst = new ElasticTweetSearchTest();
         try {
             stst.setUp();
             return stst.getTweetSearch();

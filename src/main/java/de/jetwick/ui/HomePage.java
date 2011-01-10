@@ -19,17 +19,16 @@ import de.jetwick.tw.MyTweetGrabber;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import de.jetwick.data.UrlEntry;
+import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
-import de.jetwick.util.Helper;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebPage;
@@ -49,6 +47,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
+import org.elasticsearch.action.search.SearchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
@@ -76,9 +75,9 @@ public class HomePage extends WebPage {
     private WikipediaLazyLoadPanel wikiPanel;
     private UrlTrendPanel urlTrends;
     @Inject
-    private Provider<SolrTweetSearch> twindexProvider;
+    private Provider<ElasticTweetSearch> twindexProvider;
     @Inject
-    private Provider<SolrUserSearch> uindexProvider;
+    private Provider<ElasticUserSearch> uindexProvider;
     @Inject
     private MyTweetGrabber grabber;
     private JSDateFilter dateFilter;
@@ -157,7 +156,7 @@ public class HomePage extends WebPage {
         response.setHeader("Cache-Control", "no-cache, max-age=0,must-revalidate, no-store");
     }
 
-    public SolrTweetSearch getTweetSearch() {
+    public ElasticTweetSearch getTweetSearch() {
         return twindexProvider.get();
     }
 
@@ -213,27 +212,29 @@ public class HomePage extends WebPage {
             if (!fromDateStr.contains("T"))
                 fromDateStr += "T00:00:00Z";
 
-            q.addFilterQuery(SolrTweetSearch.DATE + ":[" + fromDateStr + " TO *]");
+            q.addFilterQuery(ElasticTweetSearch.DATE + ":[" + fromDateStr + " TO *]");
         }
 
         // avoid slow queries for *:* query and filter against latest tweets
         if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
-            logger.info(addIP("[stats] q=''"));
-            q.addFilterQuery(SolrTweetSearch.DATE_TAG + SolrTweetSearch.FILTER_ENTRY_LATEST_DT);
+            logger.info(addIP("[stats] q=''"));  
+            // TODO ES
+//            q.addFilterQuery(ElasticTweetSearch.DATE_TAG).addFilterQuery(ElasticTweetSearch.FILTER_ENTRY_LATEST_DT);
         }
 
         String sort = parameters.getString("sort");
         if ("retweets".equals(sort))
-            JetwickQuery.setSort(q, SolrTweetSearch.RT_COUNT + " desc");
+            JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");
         else if ("latest".equals(sort))
-            JetwickQuery.setSort(q, SolrTweetSearch.DATE + " desc");
+            JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");
         else if ("oldest".equals(sort))
-            JetwickQuery.setSort(q, SolrTweetSearch.DATE + " asc");
+            JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " asc");
 
         if (userName == null) {
-            q.addFilterQuery(SolrTweetSearch.FILTER_NO_SPAM);
-            q.addFilterQuery(SolrTweetSearch.FILTER_NO_DUPS);
-            q.addFilterQuery(SolrTweetSearch.FILTER_IS_NOT_RT);
+            // TODO ES
+//            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
+//            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
+//            q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);
         }
 
         return getTweetSearch().attachHighlighting(q);
@@ -301,9 +302,9 @@ public class HomePage extends WebPage {
                     q = new TweetQuery();
 
                 if (name == null) {
-                    JetwickQuery.applyFacetChange(q, SolrTweetSearch.FIRST_URL_TITLE, false);
+                    JetwickQuery.applyFacetChange(q, ElasticTweetSearch.FIRST_URL_TITLE, false);
                 } else
-                    q.addFilterQuery(SolrTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
+                    q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
 
                 doSearch(q, 0, true);
                 updateAfterAjax(target, false);
@@ -315,7 +316,7 @@ public class HomePage extends WebPage {
                     return;
 
                 SolrQuery q = new TweetQuery();
-                q.addFilterQuery(SolrTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
+                q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
                 try {
                     List<SolrTweet> tweets = getTweetSearch().collectTweets(getTweetSearch().search(q.setRows(1)));
                     if (tweets.size() > 0 && tweets.get(0).getUrlEntries().size() > 0) {
@@ -453,7 +454,7 @@ public class HomePage extends WebPage {
             @Override
             protected void onSelectionChange(AjaxRequestTarget target, String newValue) {
                 SolrQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
-                JetwickQuery.applyFacetChange(tmpQ, SolrTweetSearch.DATE, true);
+                JetwickQuery.applyFacetChange(tmpQ, ElasticTweetSearch.DATE, true);
                 doSearch(tmpQ, 0, false, true);
                 updateAfterAjax(target, false);
             }
@@ -653,17 +654,18 @@ public class HomePage extends WebPage {
             lastQuery = query;
 
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
-        getTweetSearch().attachPagability(query, page, hitsPerPage);
+        // TODO ES
+//        getTweetSearch().attachPagability(query, page, hitsPerPage);
 
         if (getMySession().hasLoggedIn())
             TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
 
         long start = System.currentTimeMillis();
         long totalHits = 0;
-        QueryResponse rsp = null;
+        SearchResponse rsp = null;
         try {
             rsp = getTweetSearch().search(users, query);
-            totalHits = rsp.getResults().getNumFound();
+            totalHits = rsp.getHits().getTotalHits();
             logger.info(addIP("[stats] " + totalHits + " hits for: " + query.toString()));
         } catch (Exception ex) {
             logger.error("Error while searching " + query.toString() + ": " + ex.getMessage());

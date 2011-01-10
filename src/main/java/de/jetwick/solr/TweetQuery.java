@@ -21,7 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
-import static de.jetwick.solr.SolrTweetSearch.*;
+import static de.jetwick.es.ElasticTweetSearch.*;
 
 /**
  *
@@ -46,12 +46,13 @@ public class TweetQuery extends JetwickQuery {
     }
 
     public static SolrQuery attachFacetibility(SolrQuery q) {
-        q.setFacet(true).
+        q.setFacet(true);
+        // TODO ES
                 // now date faceting of dt field:
-                set("facet.date", "{!ex=dt}" + DATE).
-                set("facet.date.start", DATE_START).
-                set("facet.date.end", "NOW/DAY+1DAY").
-                set("facet.date.gap", "+1DAY");
+//                set("facet.date", "{!ex=dt}" + DATE).
+//                set("facet.date.start", DATE_START).
+//                set("facet.date.end", "NOW/DAY+1DAY").
+//                set("facet.date.gap", "+1DAY");
 
         q.setFacetSort("count").
                 //show also empty facets to offer a more 'static' UI
@@ -67,25 +68,27 @@ public class TweetQuery extends JetwickQuery {
                 set("f.tag.facet.mincount", 2).
                 set("f.tag.facet.limit", 20);
 
-        // latest
-        q.addFacetQuery(FILTER_ENTRY_LATEST_DT);
-        // archive
-        q.addFacetQuery(FILTER_ENTRY_OLD_DT);
+        // TODO ES
+//        // latest
+//        q.addFacetQuery(FILTER_ENTRY_LATEST_DT);
+//        // archive
+//        q.addFacetQuery(FILTER_ENTRY_OLD_DT);
 
         q.addFacetQuery(RT_COUNT + ":[5 TO *]");
         q.addFacetQuery(RT_COUNT + ":[20 TO *]");
         q.addFacetQuery(RT_COUNT + ":[50 TO *]");
 
-        q.addFacetQuery(FILTER_NO_DUPS);
-        q.addFacetQuery(FILTER_ONLY_DUPS);
-
-        // spam
-        q.addFacetQuery(FILTER_SPAM);
-        q.addFacetQuery(FILTER_NO_SPAM);
-
-        // links
-        q.addFacetQuery(FILTER_URL_ENTRY);
-        q.addFacetQuery(FILTER_NO_URL_ENTRY);
+        // TODO ES
+//        q.addFacetQuery(FILTER_NO_DUPS);
+//        q.addFacetQuery(FILTER_ONLY_DUPS);
+//
+//        // spam
+//        q.addFacetQuery(FILTER_SPAM);
+//        q.addFacetQuery(FILTER_NO_SPAM);
+//
+//        // links
+//        q.addFacetQuery(FILTER_URL_ENTRY);
+//        q.addFacetQuery(FILTER_NO_URL_ENTRY);
 
         return q;
     }

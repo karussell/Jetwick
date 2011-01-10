@@ -13,20 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.es;
 
-import java.util.Set;
+import de.jetwick.es.ElasticUserSearch;
+import de.jetwick.es.ElasticNode;
+import java.io.File;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.elasticsearch.indices.IndexMissingException;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import de.jetwick.solr.SavedSearch;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.UserQuery;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-//import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -34,35 +45,43 @@ import static org.junit.Assert.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SolrUserSearchTest
-//extends MyAbstractSolrTestCase 
-{
+public class ElasticUserSearchTest {
 
-    private SolrUserSearch userSearch;
+    private static ElasticNode node = new ElasticNode();
+    private static ElasticUserSearch userSearch;
+    private Logger logger = LoggerFactory.getLogger(getClass());
 
-    public SolrUserSearch getUserSearch() {
+    public ElasticUserSearch getUserSearch() {
         return userSearch;
     }
 
-//    @Override
-//    public String getSolrHome() {
-//        return "uindex";
-//    }
-//
-//    @Before
-//    @Override
-//    public void setUp() throws Exception {
-//        super.setUp();
-//        EmbeddedSolrServer server = new EmbeddedSolrServer(h.getCoreContainer(), h.getCore().getName());
-//        userSearch = new SolrUserSearch(server);
-//    }
-//
-//    @After
-//    @Override
-//    public void tearDown() throws Exception {
-//        super.tearDown();
-//    }
+    @BeforeClass
+    public static void beforeClass() {
+        File file = new File("/tmp/es");
+        file.delete();
+        file.mkdir();
+        node.start("/tmp/es", "es/config");
+        userSearch = new ElasticUserSearch(node.client());        
+    }
 
+    @AfterClass
+    public static void afterClass() {
+        node.stop();
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        try {
+            userSearch.deleteAll();
+        } catch (IndexMissingException ex) {
+            logger.info(ex.getMessage());
+        }
+    }
+
+    @After
+    public void tearDown() {
+    }    
+    
     @Test
     public void testDelete() throws Exception {
         SolrUser user = new SolrUser("karsten");
@@ -292,17 +311,17 @@ public class SolrUserSearchTest
         Map<String, Integer> langs = new HashMap<String, Integer>();
         langs.put("en", 100);
         langs.put("de", 100);
-        assertEquals(2, SolrUserSearch.filterLanguages(langs).size());
+        assertEquals(2, ElasticUserSearch.filterLanguages(langs).size());
 
         langs = new HashMap<String, Integer>();
         langs.put("en", 100);
         langs.put("de", 3);
-        assertEquals(1, SolrUserSearch.filterLanguages(langs).size());
+        assertEquals(1, ElasticUserSearch.filterLanguages(langs).size());
 
         langs = new HashMap<String, Integer>();
         langs.put("en", 100);
         langs.put("de", 4);
-        assertEquals(2, SolrUserSearch.filterLanguages(langs).size());
+        assertEquals(2, ElasticUserSearch.filterLanguages(langs).size());
     }
 
     @Test
@@ -322,7 +341,7 @@ public class SolrUserSearchTest
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
     }
-    
+
 //    @Test
 //    public void testGetLastQuery() throws Exception {
 //        SolrUser user = new SolrUser("karsten");

@@ -85,7 +85,7 @@ public class Helper {
     public static final String TURL = "http://twitter.com";
     public static final String JURL = "";
     public static final String UTF8 = "UTF8";
-    private static final String localDateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.000'Z'";
+    private static final String localDateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.S'Z'";
     private static final String simpleDateString = "HH:mm yyyy-MM-dd";
 
     public static DateFormat createLocalFormat() {
@@ -201,6 +201,12 @@ public class Helper {
         } catch (ParseException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public static Date toDateNoNPE(String string) {
+        if (string == null)
+            return null;
+        return toDate(string);
     }
 
     public static String stripOutLuceneHighlighting(String str) {
@@ -567,6 +573,9 @@ public class Helper {
     }
 
     public static String readInputStream(InputStream is) throws IOException {
+        if(is == null)
+            throw new IllegalArgumentException("stream mustn't be null!");
+        
         BufferedReader bufReader = new BufferedReader(new InputStreamReader(is, "UTF8"));
         StringBuilder sb = new StringBuilder();
         String line;

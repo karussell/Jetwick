@@ -15,11 +15,11 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.config.Configuration;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
@@ -49,7 +49,7 @@ public class HomePageTest extends WicketPagesTestClass {
     private List<SolrTweet> returnUserTweets;
     private List<SolrTweet> returnSearchTweets;
     private TweetPackage sentTweets;
-    private SolrTweetSearch ownSolrTweetSearch;
+    private ElasticTweetSearch ownSolrTweetSearch;
 
     @Before
     @Override
@@ -84,7 +84,7 @@ public class HomePageTest extends WicketPagesTestClass {
 
     @Test
     public void testNormalSearch() throws Exception {
-        ownSolrTweetSearch = mock(SolrTweetSearch.class);
+        ownSolrTweetSearch = mock(ElasticTweetSearch.class);
         setUp();
         SolrQuery query = new SolrQuery("timetabling");
         tester.startPage(new HomePage(query, 0, false));
@@ -265,7 +265,7 @@ public class HomePageTest extends WicketPagesTestClass {
     }
 
     @Override
-    protected SolrTweetSearch createSolrTweetSearch() {
+    protected ElasticTweetSearch createSolrTweetSearch() {
         if (ownSolrTweetSearch == null)
             return super.createSolrTweetSearch();
 

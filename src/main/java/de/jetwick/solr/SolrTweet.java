@@ -77,7 +77,6 @@ public class SolrTweet implements Serializable {
     private int reply;
     private String qualDebug;
     private int qualReductions = 0;
-    private String type;
 //    private Collection<Long> textSignature;
     private Collection<Long> duplicates = new LinkedHashSet<Long>();
 
@@ -172,14 +171,6 @@ public class SolrTweet implements Serializable {
 
     public void setTextTerms(StringFreqMap textTerms) {
         this.textTerms = textTerms;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public long getInReplyTwitterId() {
@@ -320,7 +311,7 @@ public class SolrTweet implements Serializable {
         this.daemon = daemon;
         return this;
     }
-
+    
     /**
      * If a tweet is added to the system and it is a retweet but no original
      * tweet can be found a daemon tweet will be created to reflect this

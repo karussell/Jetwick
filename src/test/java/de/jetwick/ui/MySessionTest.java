@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.TwitterSearch;
@@ -43,8 +44,8 @@ public class MySessionTest extends WicketPagesTestClass {
         super.setUp();
     }
 
-    SolrUserSearch newMockUserSearch(SolrUser user) {
-        SolrUserSearch s = mock(SolrUserSearch.class);
+    ElasticUserSearch newMockUserSearch(SolrUser user) {
+        ElasticUserSearch s = mock(ElasticUserSearch.class);
         when(s.findByTwitterToken("normalToken")).thenReturn(user);
         return s;
     }
@@ -88,7 +89,7 @@ public class MySessionTest extends WicketPagesTestClass {
 
         WebResponse resp = mock(WebResponse.class);
         SolrUser user = new SolrUser("testuser");
-        SolrUserSearch uSearch = newMockUserSearch(user);
+        ElasticUserSearch uSearch = newMockUserSearch(user);
         session.setTwitterSearch(ts);
         Cookie cookie = session.setTwitterSearch(new AccessToken("normalToken", "tSec"), uSearch, resp);
         verify(uSearch).save(user, true);

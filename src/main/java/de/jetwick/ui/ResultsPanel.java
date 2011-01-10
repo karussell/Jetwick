@@ -16,9 +16,9 @@
 package de.jetwick.ui;
 
 import com.google.api.translate.Language;
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.ui.util.LabeledLink;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
@@ -158,9 +158,9 @@ public class ResultsPanel extends Panel {
 
         add(translateAllLink);
         add(createSortLink("sortRelevance", ""));
-        add(createSortLink("sortRetweets", SolrTweetSearch.RT_COUNT + " desc"));
-        add(createSortLink("sortLatest", SolrTweetSearch.DATE + " desc"));
-        add(createSortLink("sortOldest", SolrTweetSearch.DATE + " asc"));
+        add(createSortLink("sortRetweets", ElasticTweetSearch.RT_COUNT + " desc"));
+        add(createSortLink("sortLatest", ElasticTweetSearch.DATE + " desc"));
+        add(createSortLink("sortOldest", ElasticTweetSearch.DATE + " asc"));
 
         userView = new ListView("users", users) {
 

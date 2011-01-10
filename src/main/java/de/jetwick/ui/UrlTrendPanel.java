@@ -15,7 +15,7 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.SolrTweetSearch;
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.ui.util.LabeledLink;
 import de.jetwick.util.Helper;
 import de.jetwick.util.MapEntry;
@@ -25,7 +25,6 @@ import java.util.Map.Entry;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.behavior.AttributeAppender;
@@ -38,6 +37,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.elasticsearch.action.search.SearchResponse;
 
 /**
  *
@@ -136,7 +136,7 @@ public class UrlTrendPanel extends Panel {
     protected void onDirectUrlClick(AjaxRequestTarget target, String name) {
     }
 
-    public void update(QueryResponse rsp, SolrQuery query) {
+    public void update(SearchResponse rsp, SolrQuery query) {
         cssString = "";
         counter = 0;
         filter.clear();
@@ -146,23 +146,24 @@ public class UrlTrendPanel extends Panel {
         if (rsp != null) {
             if (query.getFilterQueries() != null)
                 for (String str : query.getFilterQueries()) {
-                    if (str.startsWith(SolrTweetSearch.FIRST_URL_TITLE + ":"))
+                    if (str.startsWith(ElasticTweetSearch.FIRST_URL_TITLE + ":"))
                         filter.set(0, true);
                 }
 
-            List<FacetField> facetFields = rsp.getFacetFields();
-            if (facetFields != null)
-                for (FacetField ff : facetFields) {
-                    if (SolrTweetSearch.FIRST_URL_TITLE.equals(ff.getName()) && ff.getValues() != null) {
-                        for (Count cnt : ff.getValues()) {
-                            String str = cnt.getName();
-                            // although we avoid indexing empty title -> its save to do it again ;-)
-                            if (!str.isEmpty())
-                                urls.add(new MapEntry<String, Long>(str, cnt.getCount()));
-                        }
-                        break;
-                    }
-                }
+            // TODO ES
+//            List<FacetField> facetFields = rsp.getFacetFields();
+//            if (facetFields != null)
+//                for (FacetField ff : facetFields) {
+//                    if (ElasticTweetSearch.FIRST_URL_TITLE.equals(ff.getName()) && ff.getValues() != null) {
+//                        for (Count cnt : ff.getValues()) {
+//                            String str = cnt.getName();
+//                            // although we avoid indexing empty title -> its save to do it again ;-)
+//                            if (!str.isEmpty())
+//                                urls.add(new MapEntry<String, Long>(str, cnt.getCount()));
+//                        }
+//                        break;
+//                    }
+//                }
         }
         setVisible(urls.size() > 0);
     }

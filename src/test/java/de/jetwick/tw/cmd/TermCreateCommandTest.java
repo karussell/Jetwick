@@ -17,7 +17,6 @@ package de.jetwick.tw.cmd;
 
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.FakeUrlExtractor;

@@ -15,16 +15,16 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticUserSearch;
+import de.jetwick.es.ElasticTweetSearchTest;
+import de.jetwick.es.ElasticUserSearchTest;
 import com.google.inject.Inject;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.TagDao;
 import de.jetwick.hib.HibTestClass;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
-import de.jetwick.solr.SolrTweetSearchTest;
 import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.SolrUserSearch;
-import de.jetwick.solr.SolrUserSearchTest;
 import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.queue.TweetPackage;
 import java.util.ArrayList;
@@ -47,8 +47,8 @@ import static org.junit.Assert.*;
 public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
     // TODO later: @Inject SolrUserSearch solr;
-    private SolrUserSearchTest userSearchTester = new SolrUserSearchTest();
-    private SolrTweetSearchTest tweetSearchTester = new SolrTweetSearchTest();
+    private ElasticUserSearchTest userSearchTester = new ElasticUserSearchTest();
+    private ElasticTweetSearchTest tweetSearchTester = new ElasticTweetSearchTest();
     @Inject
     private TagDao tagDao;
 
@@ -56,6 +56,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
     @Before
     public void setUp() throws Exception {
         super.setUp();
+        // TODO call beforeClass instead!!        
         userSearchTester.setUp();
         tweetSearchTester.setUp();
     }
@@ -81,10 +82,10 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
         // already existing tweets must not harm
 //        tweetDao.save(new YTweet(3L, "duplicate tweet"));
-        SolrTweetSearch tweetSearch = tweetSearchTester.getTweetSearch();
-        SolrUserSearch userSearch = userSearchTester.getUserSearch();
+        ElasticTweetSearch tweetSearch = tweetSearchTester.getTweetSearch();
+        ElasticUserSearch userSearch = userSearchTester.getUserSearch();
         tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));
-        tweetSearch.commit();
+        tweetSearch.refresh();
 
         Credits cred = new Configuration().getTwitterSearchCredits();
         TwitterSearch tws = new TwitterSearch() {

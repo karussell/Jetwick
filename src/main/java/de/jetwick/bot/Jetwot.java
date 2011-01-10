@@ -20,10 +20,10 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
-import static de.jetwick.solr.SolrTweetSearch.*;
+import static de.jetwick.es.ElasticTweetSearch.*;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.cmd.TermCreateCommand;
@@ -73,7 +73,7 @@ public class Jetwot {
         new Jetwot().setMinRT(minRT).start(-1, interval);
     }
     private static Logger logger = LoggerFactory.getLogger(Jetwot.class);
-    protected SolrTweetSearch tweetSearch;
+    protected ElasticTweetSearch tweetSearch;
     protected TwitterSearch tw4j;
     private int minRT = 25;
     private MaxBoundSet<SolrTweet> tweetCache = new MaxBoundSet<SolrTweet>(50, 100).setMaxAge(3 * 24 * 3600 * 1000L);
@@ -85,7 +85,7 @@ public class Jetwot {
         Credits credits = cfg.getJetwotCredits();
         Module module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
-        tweetSearch = injector.getInstance(SolrTweetSearch.class);
+        tweetSearch = injector.getInstance(ElasticTweetSearch.class);
         tw4j = new TwitterSearch().setConsumer(credits.getConsumerKey(), credits.getConsumerSecret());
         tw4j.setTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
 

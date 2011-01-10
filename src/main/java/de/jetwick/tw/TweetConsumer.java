@@ -17,7 +17,7 @@ package de.jetwick.tw;
 
 import com.google.inject.Inject;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.MyDate;
@@ -51,7 +51,7 @@ public class TweetConsumer extends MyThread {
     private long lastOptimizeTime = System.currentTimeMillis();
     private StopWatch sw1;
     @Inject
-    protected SolrTweetSearch tweetSearch;
+    protected ElasticTweetSearch tweetSearch;
     private int removeDays = 8;
 
     public TweetConsumer() {
@@ -121,7 +121,7 @@ public class TweetConsumer extends MyThread {
                 break;
         }
 
-        try {            
+        try {                        
             Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());            
             allTweets += tweetSet.size();
             indexedTweets += res.size();
@@ -138,7 +138,7 @@ public class TweetConsumer extends MyThread {
         }
     }
 
-    public void setTweetSearch(SolrTweetSearch tweetSearch) {
+    public void setTweetSearch(ElasticTweetSearch tweetSearch) {
         this.tweetSearch = tweetSearch;
     }
 

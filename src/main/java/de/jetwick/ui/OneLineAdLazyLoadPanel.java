@@ -17,8 +17,8 @@ package de.jetwick.ui;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import java.util.Collection;
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.ajax.markup.html.AjaxLazyLoadPanel;
@@ -36,7 +36,7 @@ public class OneLineAdLazyLoadPanel extends AjaxLazyLoadPanel {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private String searchQuery;
     @Inject
-    private Provider<SolrTweetSearch> adsProvider;
+    private Provider<ElasticTweetSearch> adsProvider;
 
     public OneLineAdLazyLoadPanel(String id) {
         super(id);
@@ -73,7 +73,7 @@ public class OneLineAdLazyLoadPanel extends AjaxLazyLoadPanel {
         this.searchQuery = searchQuery;
     }
 
-    public void setAdsProvider(Provider<SolrTweetSearch> adsProvider) {
+    public void setAdsProvider(Provider<ElasticTweetSearch> adsProvider) {
         this.adsProvider = adsProvider;
     }
 }

@@ -15,11 +15,11 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.es.ElasticUserSearch;
 import com.google.inject.Inject;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
 import de.jetwick.hib.HibTestClass;
-import de.jetwick.solr.SolrUserSearch;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Queue;
@@ -69,7 +69,7 @@ public class TweetProducerTest extends HibTestClass {
     public void testInitTagsNoException() throws SolrServerException {
         TweetProducer twProd = getInstance(TweetProducer.class);
         twProd.updateTagInTA(new YTag("test"), 6);
-        SolrUserSearch uSearch = mock(SolrUserSearch.class);
+        ElasticUserSearch uSearch = mock(ElasticUserSearch.class);
         when(uSearch.getQueryTerms()).thenReturn(Arrays.asList("Test"));
         twProd.setUserSearch(uSearch);
         Collection<YTag> tags = twProd.initTags();

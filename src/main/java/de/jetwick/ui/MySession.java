@@ -15,6 +15,8 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.config.DefaultModule;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.TwitterSearch;
@@ -77,7 +79,7 @@ public class MySession extends WebSession {
         this.twitterSearch = twitterSearch;
     }
 
-    public void init(WebRequest request, SolrUserSearch uSearch) {
+    public void init(WebRequest request, ElasticUserSearch uSearch) {
         if (!twitterSearchInitialized) {
             twitterSearchInitialized = true;
             Cookie cookie = request.getCookie(TwitterSearch.COOKIE);
@@ -106,7 +108,7 @@ public class MySession extends WebSession {
     /**
      * Use only if specified ts is already initialized
      */
-    public Cookie setTwitterSearch(AccessToken token, SolrUserSearch uSearch, WebResponse response) {
+    public Cookie setTwitterSearch(AccessToken token, ElasticUserSearch uSearch, WebResponse response) {
         twitterSearch.setTwitter4JInstance(token.getToken(), token.getTokenSecret());
         twitterSearchInitialized = true;
         try {
@@ -155,7 +157,7 @@ public class MySession extends WebSession {
         }
     }
 
-    public void logout(SolrUserSearch uSearch, WebResponse response) {
+    public void logout(ElasticUserSearch uSearch, WebResponse response) {
         response.clearCookie(new Cookie(TwitterSearch.COOKIE, ""));
 
         SolrUser tmpUser = getUser();

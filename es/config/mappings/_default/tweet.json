@@ -1,0 +1,12 @@
+{
+    "tweet" : {
+        "properties" : {
+            "inreply_l" : { "type" : "long", "null_value" : -1},
+            "loc" : { "type" : "string", "index" : "not_analyzed"},
+            "tag" : { "type" : "string", "index" : "not_analyzed"},
+            "iconUrl" : { "type" : "string", "index" : "not_analyzed"},
+            "lang" : { "type" : "string", "index" : "not_analyzed"},
+            "dest_title_1_s" : { "type" : "string", "index" : "not_analyzed"}
+        }
+    }
+}

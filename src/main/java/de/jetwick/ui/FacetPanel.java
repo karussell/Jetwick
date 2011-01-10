@@ -15,12 +15,12 @@
  */
 package de.jetwick.ui;
 
+import org.elasticsearch.action.search.SearchResponse;
 import de.jetwick.ui.util.FacetHelper;
 import de.jetwick.ui.util.LabeledLink;
 
 import de.jetwick.util.MapEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,7 +30,6 @@ import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
@@ -41,7 +40,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import static de.jetwick.tw.TweetDetector.*;
-import static de.jetwick.solr.SolrTweetSearch.*;
+import static de.jetwick.es.ElasticTweetSearch.*;
 
 /**
  *
@@ -61,29 +60,31 @@ public class FacetPanel extends Panel {
 
         // No Massive Tweeter
         tr.put("loc", "Location");
-        tr.put("-" + USER, "Spam");
         tr.put(dtKey, "Date");
         tr.put(langKey, "Language");
         tr.put(IS_RT, "Content");
         tr.put(IS_RT + ":true", "retweet");
         tr.put(IS_RT + ":false", "original");
 
-        tr.put(DUP_COUNT, "Duplicates");
-        tr.put(FILTER_NO_DUPS, "without");
-        tr.put(FILTER_ONLY_DUPS, "only duplicated");
+        // TODO ES
+//        tr.put(DUP_COUNT, "Duplicates");
+//        tr.put(FILTER_NO_DUPS, "without");
+//        tr.put(FILTER_ONLY_DUPS, "only duplicated");
 
-        tr.put(URL_COUNT, "Links");
-        tr.put(FILTER_URL_ENTRY, "with");
-        tr.put(FILTER_NO_URL_ENTRY, "without");
+        // TODO ES
+//        tr.put(URL_COUNT, "Links");
+//        tr.put(FILTER_URL_ENTRY, "with");
+//        tr.put(FILTER_NO_URL_ENTRY, "without");
 
         tr.put(RT_COUNT, "Retweets");
         tr.put(RT_COUNT + ":[5 TO *]", "5 and more");
         tr.put(RT_COUNT + ":[20 TO *]", "20 and more");
         tr.put(RT_COUNT + ":[50 TO *]", "50 and more");
 
-        tr.put(QUALITY, "Spam");
-        tr.put(FILTER_NO_SPAM, "without");
-        tr.put(FILTER_SPAM, "Only Spam");
+        // TODO ES
+//        tr.put(QUALITY, "Spam");
+//        tr.put(FILTER_NO_SPAM, "without");
+//        tr.put(FILTER_SPAM, "Only Spam");
 
         tr.put(langKey + ":" + UNKNOWN_LANG, "Other");
         tr.put(langKey + ":" + DE, "Deutsch");
@@ -163,20 +164,12 @@ public class FacetPanel extends Panel {
         return null;
     }
 
-    public void update(QueryResponse rsp, SolrQuery query) {
+    public void update(SearchResponse rsp, SolrQuery query) {
         normalFacetFields.clear();
         if (rsp != null) {
-            long numFound = rsp.getResults().getNumFound();
+            long numFound = rsp.getHits().getTotalHits();
             for (Entry<String, List<FacetHelper>> entry : createFacetsFields(rsp)) {
-                if (entry != null) {
-                    if (USER.equals(entry.getKey())) {
-                        Entry e = computeSpamExcludeLink(entry.getValue(), numFound);
-                        if (e == null)
-                            continue;
-                        else
-                            entry = e;
-                    }
-
+                if (entry != null) {                   
                     normalFacetFields.add(entry);
                 }
             }
@@ -186,27 +179,7 @@ public class FacetPanel extends Panel {
             for (String f : query.getFilterQueries()) {
                 alreadyFiltered.add(f);
             }
-    }
-
-    public Entry<String, List<FacetHelper>> computeSpamExcludeLink(List<FacetHelper> list, long numFound) {
-        if (list.size() == 0)
-            return null;
-        long startCount = list.get(0).count / 2;
-        String users = "";
-        long diff = 0;
-        for (FacetHelper fh : list) {
-            if (fh.count <= startCount)
-                break;
-
-            users += fh.value + " ";
-            diff += fh.count;
-        }
-        if (users.isEmpty())
-            return null;
-        users = "(" + users.trim() + ")";
-        return new MapEntry<String, List<FacetHelper>>("-" + USER,
-                Arrays.asList(new FacetHelper("-" + USER, users, "No Mass Tweeters", numFound - diff)));
-    }
+    }   
 
     public void onFacetChange(AjaxRequestTarget target, String filter, boolean selected) {
     }
@@ -226,7 +199,7 @@ public class FacetPanel extends Panel {
     /**
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
-    public List<Entry<String, List<FacetHelper>>> createFacetsFields(QueryResponse rsp) {
+    public List<Entry<String, List<FacetHelper>>> createFacetsFields(SearchResponse rsp) {
         final int MAX_VAL = 6;
         Map<String, Integer> filterToIndex = new LinkedHashMap<String, Integer>() {
 
@@ -249,57 +222,58 @@ public class FacetPanel extends Panel {
         Integer count = null;
 
         if (rsp != null) {
-            List<FacetField> facetFields = rsp.getFacetFields();
-            if (facetFields != null)
-                for (FacetField ff : facetFields) {
-                    integ = filterToIndex.get(ff.getName());
-                    if (integ != null && ff.getValues() != null) {
-                        List<FacetHelper> list = new ArrayList<FacetHelper>();
-                        String key = ff.getName();
-                        for (Count cnt : ff.getValues()) {
-                            // exclude smaller zero?
-                            list.add(new FacetHelper(key, "\"" + cnt.getName() + "\"",
-                                    translate(cnt.getAsFilterQuery()), cnt.getCount()));
-                        }
-                        ret.set(integ, new MapEntry(ff.getName(), list));
-                    }
-                }
-
-            facetQueries = rsp.getFacetQuery();
-            if (facetQueries != null)
-                for (Entry<String, Integer> entry : facetQueries.entrySet()) {
-                    if (entry == null)
-                        continue;
-
-                    int firstIndex = entry.getKey().indexOf(":");
-                    if (firstIndex < 0)
-                        continue;
-
-                    String key = entry.getKey().substring(0, firstIndex);
-                    if (dtKey.equals(key))
-                        continue;
-
-                    String val = entry.getKey().substring(firstIndex + 1);
-
-                    // exclude smaller zero?
-                    count = entry.getValue();
-                    if (count == null)
-                        count = 0;
-
-                    Integer index = filterToIndex.get(key);
-                    if (index == null)
-                        continue;
-
-                    Entry<String, List<FacetHelper>> facetEntry = ret.get(index);
-                    List<FacetHelper> list;
-                    if (facetEntry == null) {
-                        facetEntry = new MapEntry(key, new ArrayList<FacetHelper>());
-                        ret.set(index, facetEntry);
-                    }
-
-                    list = facetEntry.getValue();
-                    list.add(new FacetHelper(key, val, translate(entry.getKey()), count));
-                }
+            // TODO ES
+//            List<FacetField> facetFields = rsp.getFacetFields();
+//            if (facetFields != null)
+//                for (FacetField ff : facetFields) {
+//                    integ = filterToIndex.get(ff.getName());
+//                    if (integ != null && ff.getValues() != null) {
+//                        List<FacetHelper> list = new ArrayList<FacetHelper>();
+//                        String key = ff.getName();
+//                        for (Count cnt : ff.getValues()) {
+//                            // exclude smaller zero?
+//                            list.add(new FacetHelper(key, "\"" + cnt.getName() + "\"",
+//                                    translate(cnt.getAsFilterQuery()), cnt.getCount()));
+//                        }
+//                        ret.set(integ, new MapEntry(ff.getName(), list));
+//                    }
+//                }
+//
+//            facetQueries = rsp.getFacetQuery();
+//            if (facetQueries != null)
+//                for (Entry<String, Integer> entry : facetQueries.entrySet()) {
+//                    if (entry == null)
+//                        continue;
+//
+//                    int firstIndex = entry.getKey().indexOf(":");
+//                    if (firstIndex < 0)
+//                        continue;
+//
+//                    String key = entry.getKey().substring(0, firstIndex);
+//                    if (dtKey.equals(key))
+//                        continue;
+//
+//                    String val = entry.getKey().substring(firstIndex + 1);
+//
+//                    // exclude smaller zero?
+//                    count = entry.getValue();
+//                    if (count == null)
+//                        count = 0;
+//
+//                    Integer index = filterToIndex.get(key);
+//                    if (index == null)
+//                        continue;
+//
+//                    Entry<String, List<FacetHelper>> facetEntry = ret.get(index);
+//                    List<FacetHelper> list;
+//                    if (facetEntry == null) {
+//                        facetEntry = new MapEntry(key, new ArrayList<FacetHelper>());
+//                        ret.set(index, facetEntry);
+//                    }
+//
+//                    list = facetEntry.getValue();
+//                    list.add(new FacetHelper(key, val, translate(entry.getKey()), count));
+//                }
         }
         return ret;
     }

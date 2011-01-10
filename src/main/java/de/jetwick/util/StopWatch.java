@@ -30,12 +30,6 @@ public class StopWatch {
         this.name = name;
     }
 
-    public StopWatch clear() {
-        lastTime = 0;
-        time = 0;
-        return this;
-    }
-
     public StopWatch setName(String name) {
         this.name = name;
         return this;

@@ -5,7 +5,9 @@ deploy*.sh
 *.log
 search/
 solandra/
-data/
+es/data/
+es/work/
+es/logs/
 target/
 adindex/data/
 adindex/data.bak/

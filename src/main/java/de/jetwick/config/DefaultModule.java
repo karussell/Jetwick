@@ -17,9 +17,9 @@ package de.jetwick.config;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
+import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
-import de.jetwick.solr.SolrTweetSearch;
-import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.UrlTitleCleaner;
@@ -59,11 +59,12 @@ public class DefaultModule extends AbstractModule {
 
     public void installSolrModule() {
         bind(Configuration.class).toInstance(config);
-        SolrTweetSearch tweetSearch = new SolrTweetSearch(config);
-        bind(SolrTweetSearch.class).toInstance(tweetSearch);
+        // TODO config
+        ElasticTweetSearch tweetSearch = new ElasticTweetSearch(config);
+        bind(ElasticTweetSearch.class).toInstance(tweetSearch);
 
-        SolrUserSearch userSearch = new SolrUserSearch(config);
-        bind(SolrUserSearch.class).toInstance(userSearch);
+        ElasticUserSearch userSearch = new ElasticUserSearch(config);
+        bind(ElasticUserSearch.class).toInstance(userSearch);
     }
 
     public void installRMIModule() {

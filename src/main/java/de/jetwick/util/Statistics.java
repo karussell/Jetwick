@@ -28,9 +28,9 @@ import de.jetwick.data.TagDao;
 import de.jetwick.data.UserDao;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.hib.HibernateUtil;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.StringCleaner;
@@ -70,7 +70,7 @@ public class Statistics {
         new Statistics().start(map);
     }
     @Inject
-    private SolrTweetSearch tweetSearch;
+    private ElasticTweetSearch tweetSearch;
     @Inject
     private TagDao tagDao;
     @Inject
@@ -104,7 +104,7 @@ public class Statistics {
 
             List<SolrUser> list = new ArrayList<SolrUser>();
             long ret = tweetSearch.search(list, new TweetQuery(argStr)).
-                    getResults().getNumFound();
+                    getHits().getTotalHits();
             logger.info("Found: " + ret + " users. Returned: " + list.size());
             print(list);
             return;
@@ -168,7 +168,7 @@ public class Statistics {
                     removeUserList = new LinkedHashSet<String>(Arrays.asList(argStr.split(",")));
 
                 tweetSearch.deleteUsers(removeUserList);
-                tweetSearch.commit();
+                tweetSearch.refresh();
                 logger.info("RESTART tweet collector! Deleted: " + removeUserList);
             }
 
@@ -235,8 +235,9 @@ public class Statistics {
 //            sout("");
         }
         StringBuilder sb = new StringBuilder();
-        tweetSearch.getInfo(sb);
-        sout(sb);
+        // TODO ES
+//        tweetSearch.getInfo(sb);
+//        sout(sb);
         sout("\n====== DB ======\n");
         sb = new StringBuilder();
         userDao.getInfo(sb);

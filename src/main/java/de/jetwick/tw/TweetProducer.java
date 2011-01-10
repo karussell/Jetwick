@@ -20,13 +20,13 @@ import com.wideplay.warp.persist.Transactional;
 import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.Helper;
-import de.jetwick.util.StopWatch;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class TweetProducer extends MyThread {
     private BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
     private TwitterSearch twSearch;
-    private SolrUserSearch userSearch;
+    private ElasticUserSearch userSearch;
     @Inject
     private WorkManager manager;
     private int maxFill = 2000;
@@ -209,7 +209,7 @@ public class TweetProducer extends MyThread {
         return tags;
     }
 
-    public void setUserSearch(SolrUserSearch userSearch) {
+    public void setUserSearch(ElasticUserSearch userSearch) {
         this.userSearch = userSearch;
     }
 }

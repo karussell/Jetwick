@@ -39,6 +39,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.time.Duration;
+import org.elasticsearch.action.search.SearchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,35 +167,36 @@ public class SavedSearchPanel extends Panel {
     /**
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
-    public List<FacetHelper> createFacetsFields(QueryResponse rsp) {
+    public List<FacetHelper> createFacetsFields(SearchResponse rsp) {
         List<FacetHelper> list = new ArrayList<FacetHelper>();
         Map<String, Integer> facetQueries = null;
         Integer count = null;
 
         if (rsp != null) {
-            facetQueries = rsp.getFacetQuery();
-            if (facetQueries != null)
-                for (Entry<String, Integer> entry : facetQueries.entrySet()) {
-                    if (entry == null)
-                        continue;
-
-                    int firstIndex = entry.getKey().indexOf(SAVED_SEARCHES + ":");
-                    if (firstIndex < 0)
-                        continue;
-
-                    long val = -1;
-                    try {
-                        val = Long.parseLong(entry.getKey().substring(firstIndex + SAVED_SEARCHES.length() + 1));
-                    } catch (Exception ex) {
-                    }
-
-                    // do not exclude smaller zero
-                    count = entry.getValue();
-                    if (count == null)
-                        count = 0;
-
-                    list.add(new FacetHelper<Long>(SAVED_SEARCHES, val, translate(val), count));
-                }
+            //TODO ES
+//            facetQueries = rsp.getFacetQuery();
+//            if (facetQueries != null)
+//                for (Entry<String, Integer> entry : facetQueries.entrySet()) {
+//                    if (entry == null)
+//                        continue;
+//
+//                    int firstIndex = entry.getKey().indexOf(SAVED_SEARCHES + ":");
+//                    if (firstIndex < 0)
+//                        continue;
+//
+//                    long val = -1;
+//                    try {
+//                        val = Long.parseLong(entry.getKey().substring(firstIndex + SAVED_SEARCHES.length() + 1));
+//                    } catch (Exception ex) {
+//                    }
+//
+//                    // do not exclude smaller zero
+//                    count = entry.getValue();
+//                    if (count == null)
+//                        count = 0;
+//
+//                    list.add(new FacetHelper<Long>(SAVED_SEARCHES, val, translate(val), count));
+//                }
         }
         return list;
     }
@@ -216,7 +218,7 @@ public class SavedSearchPanel extends Panel {
     public void updateSSCounts(AjaxRequestTarget target) {
     }
 
-    public void update(QueryResponse rsp) {
+    public void update(SearchResponse rsp) {
         savedSearches.clear();
         if (rsp != null) {
             for (FacetHelper helper : createFacetsFields(rsp)) {

@@ -22,9 +22,9 @@ import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.data.TagDao;
+import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
-import de.jetwick.solr.SolrTweetSearch;
-import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import java.util.Arrays;
 import java.util.List;
@@ -68,8 +68,8 @@ public class TweetCollector {
         Module module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
         TwitterSearch tws = injector.getInstance(TwitterSearch.class);
-        SolrTweetSearch tweetSearch = injector.getInstance(SolrTweetSearch.class);
-        SolrUserSearch userSearch = injector.getInstance(SolrUserSearch.class);
+        ElasticTweetSearch tweetSearch = injector.getInstance(ElasticTweetSearch.class);
+        ElasticUserSearch userSearch = injector.getInstance(ElasticUserSearch.class);
         Configuration cfg = injector.getInstance(Configuration.class);
 
         // add at least the default tags      

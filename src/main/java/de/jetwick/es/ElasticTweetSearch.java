@@ -1,26 +1,39 @@
-/**
- * Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/*
+ *  Copyright 2010 Peter Karich jetwick_@_pannous_._info
+ * 
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ * 
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.es;
 
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import java.util.HashMap;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.client.transport.TransportClient;
 import de.jetwick.config.Configuration;
-import de.jetwick.tw.Extractor;
-import de.jetwick.util.Helper;
 import de.jetwick.data.UrlEntry;
+import de.jetwick.solr.JetwickQuery;
+import de.jetwick.solr.SolrTweet;
+import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.TweetQuery;
+import de.jetwick.tw.Extractor;
 import de.jetwick.tw.cmd.SerialCommandExecutor;
 import de.jetwick.tw.cmd.TermCreateCommand;
+import de.jetwick.util.Helper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,115 +47,233 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.FacetField.Count;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.SolrInputDocument;
+import org.elasticsearch.action.WriteConsistencyLevel;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.count.CountResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
+import org.elasticsearch.action.get.GetField;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.action.index.IndexRequestBuilder;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
+import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
- * Querying + Indexing using the SolrJ interface which uses HTTP queries under the hood:
- * http://wiki.apache.org/solr/Solrj
  *
- * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
+ * @author Peter Karich, jetwick_@_pannous_._info
  */
-public class SolrTweetSearch extends SolrAbstractSearch {
+public class ElasticTweetSearch {
 
     public static final String TWEET_TEXT = "tw";
     public static final String DATE = "dt";
-    public static final String DATE_TAG = "{!tag=" + DATE + "}";
-    public static final String IS_RT = "crt_b";
-    public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String RT_COUNT = "retw_i";
-    public static final String DUP_COUNT = "dups_i";
-    public static final String FILTER_NO_DUPS = DUP_COUNT + ":[* TO 0]";
-    public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO *]";
-    public static final String USER = "user";
-    public static final String FILTER_KEY_USER = USER + ":";
+    public static final String IS_RT = "crt_b";
     public static final String UPDATE_DT = "update_dt";
-    public static final String INREPLY_ID = "inreply_l";
-    public static final String DATE_START = "NOW/DAY-6DAYS";
-    public static final String FILTER_VALUE_LATEST_DT = "[NOW/HOURS-8HOURS TO *]";
-    public static final String FILTER_ENTRY_LATEST_DT = DATE + ":" + FILTER_VALUE_LATEST_DT;
-    public static final String FILTER_VALUE_OLD_DT = "[* TO " + DATE_START + "]";
-    public static final String FILTER_ENTRY_OLD_DT = DATE + ":" + FILTER_VALUE_OLD_DT;
-    public static final String URL_COUNT = "url_i";
-    public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";
-    public static final String FILTER_NO_URL_ENTRY = URL_COUNT + ":0";
-    public static final String QUALITY = "quality_i";
-    public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
-    public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
     public static final String TAG = "tag";
+    public static final String INREPLY_ID = "inreply_l";
+    public static final String QUALITY = "quality_i";
+    public static final String DUP_COUNT = "dups_i";
+    public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
-    private Logger logger = LoggerFactory.getLogger(getClass());
+    // TODO is this necessary?
     protected static final int MAX_TWEETS_PER_REQ = 100;
+    private String indexName = "twindex";
+    private String indexType = "tweet";
+    private Logger logger = LoggerFactory.getLogger(getClass());
+    private Client client;
 
-    /* for elastic search */
-    protected SolrTweetSearch() {
+    public ElasticTweetSearch() {
     }
 
-    public SolrTweetSearch(String url) {
-        createServer(url, null, null, false);
+    public ElasticTweetSearch(Configuration config) {
+        this(config.getTweetSearchUrl(), config.getTweetSearchLogin(), config.getTweetSearchPassword());
     }
 
-    public SolrTweetSearch(Configuration config) {
-        createServer(config.getTweetSearchUrl(), config.getTweetSearchLogin(), config.getTweetSearchPassword(), config.getTweetStreamingServer());
+    public ElasticTweetSearch(String url, String login, String pw) {
+        logger.info("url:" + url);
+        Settings s = ImmutableSettings.settingsBuilder().put("cluster.name", ElasticNode.CLUSTER).build();
+        TransportClient tmp = new TransportClient(s);
+        tmp.addTransportAddress(new InetSocketTransportAddress(url, 9300));
+        client = tmp;
     }
 
-    public SolrTweetSearch(String url, String login, String pw, boolean streaming) {
-        createServer(url, login, pw, streaming);
+    /**
+     *  for testing: will create index every time ..
+     */
+    public ElasticTweetSearch(Client client) {
+        this.client = client;
+        createIndex(indexName);
     }
 
-    public SolrTweetSearch(SolrServer server) {
-        setServer(server);
+    public void info() {
+        NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
+        for (String n : rsp.getNodesMap().keySet()) {
+            System.out.println(n);
+        }
+    }
+
+    public Map<String, Map<String, SearchHitField>> findByTerm(String term) {
+        // search type: http://www.elasticsearch.com/docs/elasticsearch/rest_api/search/search_type/
+        SearchResponse response = client.prepareSearch(indexName).
+                setSearchType(SearchType.QUERY_AND_FETCH).
+                setQuery(termQuery(TWEET_TEXT, term)).
+                setFrom(0).setSize(15).setExplain(true).
+                execute().
+                actionGet();
+        return collectResults(response);
+    }
+
+    public Map<String, Map<String, SearchHitField>> collectResults(SearchResponse response) {
+        Map<String, Map<String, SearchHitField>> res = new LinkedHashMap<String, Map<String, SearchHitField>>();
+        System.out.println("total hits:" + response.getHits().totalHits() + " failed shards:" + response.getFailedShards());
+        for (SearchHit hit : response.getHits().hits()) {
+            res.put(hit.getId(), hit.fields());
+        }
+        return res;
+    }
+
+    public Map<String, GetField> findById(String id) {
+        GetResponse response = client.prepareGet(indexName, indexType, id).
+                execute().
+                actionGet();
+        return response.getFields();
+    }
+
+    public long countAll() {
+        CountResponse response = client.prepareCount(indexName).
+                setQuery(termQuery("name", "testValue")).
+                execute().
+                actionGet();
+        return response.getCount();
+    }
+
+    public void createSampleDocs() {
+        // TODO improve via
+//        client.prepareBulk().add(irb);
+
+        final Random rand = new Random();
+        for (int i = 0; i < 1000; i++) {
+            Map<String, Object> map = new LinkedHashMap<String, Object>();
+            map.put("name", "name1");// + rand.nextInt(100));
+
+            try {
+                feedDoc("" + i, map);
+            } catch (Exception ex) {
+                logger.error("cannot create doc", ex);
+                break;
+            }
+        }
+    }
+
+    public void feedDoc(String id, Map<String, Object> values) throws IOException {
+        // TODO setOperationThreaded(false) is slow but how to wait for thread after request
+
+        IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, id).
+                setSource(values);
+        irb.execute().actionGet();
+
+    }
+
+    public void feedDoc(String twitterId, XContentBuilder b) throws IOException {
+//        String indexName = new SimpleDateFormat("yyyyMMdd").format(tw.getCreatedAt());
+
+        IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, twitterId).
+                setConsistencyLevel(WriteConsistencyLevel.DEFAULT).
+                setSource(b);
+        irb.execute().actionGet();
+    }
+
+    public void admin() {
+        client.admin().indices().prepareOptimize(indexName);
+//        client.admin().cluster().nodesInfo(infoRequest);
+    }
+
+    public void deleteById(String id) {
+        DeleteResponse response = client.prepareDelete(indexName, indexType, id).
+                execute().
+                actionGet();
+    }
+
+    public void deleteByQuery(String field, String value) {
+        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(indexName).
+                setQuery(termQuery(field, value)).
+                execute().
+                actionGet();
     }
 
     public void deleteUsers(Collection<String> users) {
-        if (users.size() == 0)
+        if (users.isEmpty())
             return;
 
         try {
             for (String u : users) {
-                server.deleteByQuery("user:" + u.toLowerCase());
+                deleteByQuery("user", u.toLowerCase());
             }
 
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public void delete(String twitterId) {
-        try {
-            server.deleteById(Arrays.asList(twitterId));
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
 
     public void delete(Collection<SolrTweet> tws) {
-        if (tws.size() == 0)
+        if (tws.isEmpty())
             return;
 
         try {
-            List<String> idList = new ArrayList<String>();
             for (SolrTweet tw : tws) {
-                idList.add(Long.toString(tw.getTwitterId()));
+                deleteById(Long.toString(tw.getTwitterId()));
             }
-            server.deleteById(idList);
+
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    public SolrInputDocument createDoc(SolrTweet tw) throws IOException {
+    void deleteAll() throws IOException {
+        //client.prepareIndex().setOpType(OpType.)
+        //there is an index delete operation
+        // http://www.elasticsearch.com/docs/elasticsearch/rest_api/admin/indices/delete_index/
+
+        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(indexName).
+                setQuery(QueryBuilders.matchAllQuery()).
+                execute().
+                actionGet();
+        refresh();
+    }
+
+    SearchResponse query(SolrQuery query) {
+        SearchRequestBuilder srb = client.prepareSearch(indexName);
+        Solr2Elastic.createElasticQuery(query, srb);
+        SearchResponse response = srb.execute().actionGet();
+        return response;
+    }
+
+    XContentBuilder createMatchAll() throws IOException {
+        XContentBuilder b = jsonBuilder();
+        return b.startObject().startObject("query").startObject("match_all").endObject().endObject().endObject();
+    }
+
+    public XContentBuilder createDoc(SolrTweet tw) throws IOException {
         if (tw.getFromUser() == null) {
             // this came from UpdateResult.addNewTweet(tweet1); UpdateResult.addRemovedTweet(tweet1) at the same time
             // but should be fixed via if (!removedTweets.contains(tweet)) newTweets.add(tweet);
@@ -154,29 +285,28 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         if (tw.isDaemon())
             return null;
 
-        SolrInputDocument doc = new SolrInputDocument();
-        doc.addField("id", tw.getTwitterId());
-        doc.addField(TWEET_TEXT, tw.getText());
-        doc.addField("tw_i", tw.getText().length());
+        XContentBuilder b = jsonBuilder().startObject();
+        b.field(TWEET_TEXT, tw.getText());
+        b.field("tw_i", tw.getText().length());
         // TODO reduce to minute-precision
-        doc.addField(DATE, tw.getCreatedAt());
-        doc.addField(UPDATE_DT, tw.getUpdatedAt());
-        doc.addField(IS_RT, tw.isRetweet());
-        doc.addField("type", tw.getType());
+        b.field(DATE, tw.getCreatedAt());
+        if (tw.getUpdatedAt() != null)
+            b.field(UPDATE_DT, tw.getUpdatedAt());
+        b.field(IS_RT, tw.isRetweet());
 
         if (tw.getLocation() == null)
-            doc.addField("loc", tw.getFromUser().getLocation());
+            b.field("loc", tw.getFromUser().getLocation());
         else
-            doc.addField("loc", tw.getLocation());
+            b.field("loc", tw.getLocation());
 
         if (!SolrTweet.isDefaultInReplyId(tw.getInReplyTwitterId()))
-            doc.addField(INREPLY_ID, tw.getInReplyTwitterId());
+            b.field(INREPLY_ID, tw.getInReplyTwitterId());
 
-        doc.addField("user", tw.getFromUser().getScreenName());
-        doc.addField("iconUrl", tw.getFromUser().getProfileImageUrl());
+        b.field("user", tw.getFromUser().getScreenName());
+        b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
 
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
-            doc.addField(TAG, entry.getKey());
+            b.field(TAG, entry.getKey());
         }
 
         int counter = 0;
@@ -184,71 +314,72 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             if (!urlEntry.getResolvedTitle().isEmpty()
                     && !urlEntry.getResolvedUrl().isEmpty()) {
                 counter++;
-                doc.addField("url_pos_" + counter + "_s", urlEntry.getIndex() + "," + urlEntry.getLastIndex());
-                doc.addField("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
-                doc.addField("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
-
-                // hashCode because if urls have some title but different url
-                doc.addField("dest_title_" + counter + "_s", "_" + Math.abs(urlEntry.getResolvedUrl().hashCode()) + "_" + urlEntry.getResolvedTitle());
-//                doc.addField("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
-
+                b.field("url_pos_" + counter + "_s", urlEntry.getIndex() + "," + urlEntry.getLastIndex());
+                b.field("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
+                b.field("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
+                b.field("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
                 if (counter >= 3)
                     break;
             }
         }
 
-        doc.addField("url_i", counter);
-        doc.addField("lang", tw.getLanguage());
-        doc.addField("quality_i", tw.getQuality());
-//        doc.addField("qual_debug_s", tw.getQualDebug());
-        doc.addField("repl_i", tw.getReplyCount());
-        doc.addField(RT_COUNT, tw.getRetweetCount());
-        doc.addField(DUP_COUNT, tw.getDuplicates().size());
-        doc.addField(DUP_COUNT + "_s", tw.getDuplicates().toString());
+        b.field("url_i", counter);
+        b.field("lang", tw.getLanguage());
+        b.field("quality_i", tw.getQuality());
+        b.field("repl_i", tw.getReplyCount());
+        b.field(RT_COUNT, tw.getRetweetCount());
 
-        return doc;
+        b.endObject();
+        return b;
     }
 
-    public SolrTweet readDoc(final SolrDocument doc, Map<String, Map<String, List<String>>> hlt) {
-        String name = (String) doc.getFieldValue("user");
+    public SolrTweet readDoc(final SearchHit doc) {
+        // if we use in mapping: "_source" : {"enabled" : false}
+        // we need to include all fields in query to use doc.getFields() 
+        // instead of doc.getSource()
+        Map<String, Object> map = doc.getSource();
+        String name = (String) map.get("user");
         SolrUser user = new SolrUser(name);
-        user.setLocation((String) doc.getFieldValue("loc"));
-        user.setProfileImageUrl((String) doc.getFieldValue("iconUrl"));
+        user.setLocation((String) map.get("loc"));
+        user.setProfileImageUrl((String) map.get("iconUrl"));
 
-        long id = (Long) doc.getFieldValue("id");
-        String text = (String) doc.getFieldValue(TWEET_TEXT);
+        long id = Long.parseLong(doc.getId());
+        String text = (String) map.get(TWEET_TEXT);
         SolrTweet tw = new SolrTweet(id, text, user);
 
-        tw.setCreatedAt((Date) doc.getFieldValue(DATE));
-        tw.setUpdatedAt((Date) doc.getFieldValue(UPDATE_DT));
-        int rt = ((Number) doc.getFieldValue(RT_COUNT)).intValue();
-        int rp = ((Number) doc.getFieldValue("repl_i")).intValue();
+        tw.setCreatedAt(Helper.toDateNoNPE((String) map.get(DATE)));
+        tw.setUpdatedAt(Helper.toDateNoNPE((String) map.get(UPDATE_DT)));
+        int rt = ((Number) map.get(RT_COUNT)).intValue();
+        int rp = ((Number) map.get("repl_i")).intValue();
         tw.setRt(rt);
         tw.setReply(rp);
 
-        if (doc.getFieldValue("quality_i") != null)
-            tw.setQuality(((Number) doc.getFieldValue("quality_i")).intValue());
+        if (map.get("quality_i") != null)
+            tw.setQuality(((Number) map.get("quality_i")).intValue());
 
-        Long replyId = (Long) doc.getFieldValue(INREPLY_ID);
-        if (replyId != null)
+//        System.out.println("now "+map.get(INREPLY_ID) + " " + doc.field(INREPLY_ID));
+
+        if (map.get(INREPLY_ID) != null) {
+//            Long replyId = (Long) doc.field(INREPLY_ID).getValue();
+
+            long replyId = ((Number) map.get(INREPLY_ID)).longValue();
             tw.setInReplyTwitterId(replyId);
+        }
 
         tw.setUrlEntries(Arrays.asList(parseUrlEntries(doc)));
         return tw;
     }
 
-    public UrlEntry[] parseUrlEntries(SolrDocument doc) {
+    public UrlEntry[] parseUrlEntries(SearchHit doc) {
+        Map<String, Object> map = doc.getSource();
+
         int urlCount = 0;
         try {
-            urlCount = ((Number) doc.getFieldValue("url_i")).intValue();
+            urlCount = ((Number) map.get("url_i")).intValue();
         } catch (Exception ex) {
         }
 
         if (urlCount == 0)
-            return new UrlEntry[0];
-
-        //for backward compatibility
-        if (doc.getFieldValue("url_pos_1_s") == null)
             return new UrlEntry[0];
 
         UrlEntry urls[] = new UrlEntry[urlCount];
@@ -257,29 +388,24 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) doc.getFieldValue("url_pos_" + (counter + 1) + "_s");
+            String str = (String) map.get("url_pos_" + (counter + 1) + "_s");
             String strs[] = (str).split(",");
             urls[counter].setIndex(Integer.parseInt(strs[0]));
             urls[counter].setLastIndex(Integer.parseInt(strs[1]));
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) doc.getFieldValue("dest_url_" + (counter + 1) + "_s");
+            String str = (String) map.get("dest_url_" + (counter + 1) + "_s");
             urls[counter].setResolvedUrl(str);
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) doc.getFieldValue("dest_domain_" + (counter + 1) + "_s");
+            String str = (String) map.get("dest_domain_" + (counter + 1) + "_s");
             urls[counter].setResolvedDomain(str);
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) doc.getFieldValue("dest_title_" + (counter + 1) + "_s");
-            if(str.startsWith("_")) {
-                int index2 = str.indexOf("_", 1);
-                if(index2 > 1)
-                    str = str.substring(index2 + 1);
-            }
+            String str = (String) map.get("dest_title_" + (counter + 1) + "_s");
             urls[counter].setResolvedTitle(str);
         }
         return urls;
@@ -323,8 +449,8 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 q.addFacetQuery(facQ);
             }
 
-            QueryResponse rsp = search(q);
-            long results = rsp.getResults().getNumFound();
+            SearchResponse rsp = search(q);
+            long results = rsp.getHits().getTotalHits();
             if (results == 0)
                 return new JetwickQuery(tag);
 
@@ -333,13 +459,15 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
             int counter = 0;
             for (Entry<String, Integer> entry : orderedFQ.entrySet()) {
-                Integer integ = rsp.getFacetQuery().get(entry.getKey());
-                counter += integ;
-                if (counter >= minResults) {
-                    if (entry.getValue() > 0)
-                        resQuery.addFilterQuery(RT_COUNT + ":[" + entry.getValue() + " TO *]");
-                    break;
-                }
+                // TODO NOW
+                // getFacetQuery().get(entry.getKey())
+//                Integer integ = rsp.getFacets().facet(entry.getKey());
+//                counter += integ;
+//                if (counter >= minResults) {
+//                    if (entry.getValue() > 0)
+//                        resQuery.addFilterQuery(RT_COUNT + ":[" + entry.getValue() + " TO *]");
+//                    break;
+//                }
             }
 
             return TweetQuery.attachFacetibility(resQuery);
@@ -369,19 +497,17 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         return user;
     }
 
-    @Override
-    public QueryResponse search(SolrQuery query) throws SolrServerException {
+    public SearchResponse search(SolrQuery query) throws SolrServerException {
         return search(new ArrayList(), query);
     }
 
-    public QueryResponse search(Collection<SolrUser> users, SolrQuery query) throws SolrServerException {
-        QueryResponse rsp = server.query(query);
-        SolrDocumentList docs = rsp.getResults();
-        Map<String, Map<String, List<String>>> hlt = rsp.getHighlighting();
+    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) throws SolrServerException {
+        SearchResponse rsp = query(query);
+        SearchHit[] docs = rsp.getHits().getHits();
         Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
-
-        for (SolrDocument sd : docs) {
-            SolrUser u = readDoc(sd, hlt).getFromUser();
+//        System.out.println("docs:" + docs.length);
+        for (SearchHit sd : docs) {
+            SolrUser u = readDoc(sd).getFromUser();
             SolrUser uOld = usersMap.get(u.getScreenName());
             if (uOld == null)
                 usersMap.put(u.getScreenName(), u);
@@ -395,25 +521,23 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
     public Collection<SolrTweet> searchReplies(long id, boolean retweet) {
         try {
-            //"*:*"
-            SolrQuery sq = new SolrQuery().addFilterQuery("crt_b:" + retweet).addFilterQuery("inreply_l:" + id);
-            QueryResponse rsp = server.query(sq);
+            SolrQuery sq = new SolrQuery().addFilterQuery("crt_b:" + retweet).addFilterQuery(INREPLY_ID + ":" + id);
+            SearchResponse rsp = query(sq);
             return collectTweets(rsp);
         } catch (Exception ex) {
+            logger.error("Error while searchReplies", ex);
             return Collections.EMPTY_SET;
         }
     }
 
-    void update(SolrTweet tweet, boolean commit) {
+    void update(SolrTweet tweet, boolean refresh) {
         try {
-            SolrInputDocument doc = createDoc(tweet);
-            if (doc != null)
-                server.add(doc);
-            if (commit) {
-                // 'waitFlush' means wait until the data from this commit is completely written to disk
-                // 'waitSearcher' means wait until Solr has completely finished loading up the new index from what it wrote to disk.
-                server.commit(true, true);
-            }
+            XContentBuilder b = createDoc(tweet);
+            if (b != null)
+                feedDoc(Long.toString(tweet.getTwitterId()), b);
+
+            if (refresh)
+                refresh();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -447,17 +571,16 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                     counts++;
                     idStr.append("id:");
                     idStr.append(tw.getTwitterId());
-                    idStr.append(" ");
+                    idStr.append(" OR ");
                 }
 
-                // get existing tweets and users
-                // "*:*"
+                // get existing tweets and users                
                 SolrQuery query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counts);
-                QueryResponse rsp = search(query);
-                SolrDocumentList docs = rsp.getResults();
+                SearchResponse rsp = search(query);
+                SearchHits docs = rsp.getHits();
 
-                for (SolrDocument sd : docs) {
-                    SolrTweet tw = readDoc(sd, null);
+                for (SearchHit sd : docs) {
+                    SolrTweet tw = readDoc(sd);
                     existingTweets.put(tw.getTwitterId(), tw);
                     SolrUser u = tw.getFromUser();
                     SolrUser uOld = usersMap.get(u.getScreenName());
@@ -494,7 +617,6 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             updateTweets.addAll(twMap.values());
             updateTweets.addAll(findReplies(twMap));
             updateTweets.addAll(findRetweets(twMap, usersMap));
-            updateTweets.addAll(findDuplicates(twMap));
 
             // add the additionally fetched tweets to the user but do not add to updateTweets
             // this is a bit expensive ~30-40sec for every update call on a large index!
@@ -505,11 +627,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             // We are not receiving the deleted tweets! but do we need to
             // update the tweets where this deleted tweet was a retweet?
             // No. Because "userA: text" and "userB: RT @usera: text" now the second tweet is always AFTER the first!
-            UpdateResponse ursp = server.deleteByQuery("-" + UPDATE_DT + ":[* TO *] AND "
-                    + DATE + ":[* TO " + Helper.toLocalDateTime(removeUntil) + "/DAY]");
+            deleteByQuery(UPDATE_DT, "-([* TO *] AND "
+                    + DATE + ":[* TO " + Helper.toLocalDateTime(removeUntil) + "/DAY])");
 
-            UpdateResponse crsp = server.commit();
-//            logger.info("[solr] time deleted: " + ursp.getElapsedTime() / 1000.0f + " commited:" + crsp.getElapsedTime() / 1000.0f);
+            refresh();
+
             return updateTweets;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -521,7 +643,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             tweets = new SerialCommandExecutor(tweets).add(
                     new TermCreateCommand()).execute();
             for (SolrTweet tw : tweets) {
-                server.add(createDoc(tw));
+                feedDoc(Long.toString(tw.getTwitterId()), createDoc(tw));
             }
         } catch (Exception e) {
             logger.warn("Exception while updating. Error message: " + e.getMessage());
@@ -533,19 +655,20 @@ public class SolrTweetSearch extends SolrAbstractSearch {
      * more efficient
      */
     public void fetchMoreTweets(Map<Long, SolrTweet> tweets, final Map<String, SolrUser> userMap) {
+
         for (SolrUser us : userMap.values()) {
+
             // guarantee 5 tweets to be in the cache
             if (us.getOwnTweets().size() > 4)
                 continue;
 
-            //  fetch 10 tweets if less than 5 tweets are in the cache
-            // "*:*"
+            //  fetch 10 tweets if less than 5 tweets are in the cache            
             SolrQuery query = new SolrQuery().addFilterQuery("user:" + us.getScreenName()).setRows(10);
             try {
-                QueryResponse rsp = search(query);
-                SolrDocumentList docs = rsp.getResults();
-                for (SolrDocument sd : docs) {
-                    SolrTweet tw = readDoc(sd, null);
+                SearchResponse rsp = search(query);
+                SearchHits docs = rsp.getHits();
+                for (SearchHit sd : docs) {
+                    SolrTweet tw = readDoc(sd);
                     SolrTweet twOld = tweets.get(tw.getTwitterId());
                     if (twOld == null)
                         us.addOwnTweet(tw);
@@ -554,61 +677,6 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 throw new RuntimeException(ex);
             }
         }
-    }
-
-    public Collection<SolrTweet> findDuplicates(Map<Long, SolrTweet> tweets) {
-        final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
-        TermCreateCommand termCommand = new TermCreateCommand();
-
-        double JACC_BORDER = 0.7;
-        for (SolrTweet currentTweet : tweets.values()) {
-            if (currentTweet.isRetweet())
-                continue;
-
-            SolrQuery q = new TweetQuery(false).createSimilarQuery(currentTweet).
-                    addFilterQuery(FILTER_ENTRY_LATEST_DT);
-
-            if (currentTweet.getTextTerms().size() < 3)
-                continue;
-
-            int dups = 0;
-            try {
-                // find dups in index
-                for (SolrTweet simTweet : collectTweets(search(q))) {
-                    if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
-                        continue;
-
-                    termCommand.calcTermsWithoutNoise(simTweet);
-                    if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
-                            >= JACC_BORDER) {
-                        currentTweet.addDuplicate(simTweet.getTwitterId());
-                        dups++;
-                    }
-                }
-            } catch (SolrServerException ex) {
-                logger.warn("Coudn't trigger duplicat search for " + currentTweet + " " + ex.getMessage());
-            }
-
-            // find dups in tweets map
-            for (SolrTweet simTweet : tweets.values()) {
-                if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()) || simTweet.isRetweet())
-                    continue;
-
-                if (currentTweet.getCreatedAt().getTime() < simTweet.getCreatedAt().getTime())
-                    continue;
-
-                termCommand.calcTermsWithoutNoise(simTweet);
-                if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
-                        >= JACC_BORDER) {
-                    currentTweet.addDuplicate(simTweet.getTwitterId());
-                    dups++;
-                }
-            }
-
-//            tw.setDuplicates(dups);
-        }
-
-        return updatedTweets;
     }
 
     /**
@@ -661,6 +729,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         for (SolrTweet tw : tweets.values()) {
             if (tw.isRetweet())
                 extractor.setTweet(tw).run();
+
         }
 
         return updatedTweets;
@@ -674,7 +743,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             // connect retweets to tweets only searchTweetsDays old
 
             try {
-                QueryResponse qrsp = server.query(new SolrQuery("\"" + tw.extractRTText() + "\"").addFilterQuery("user:" + toUserStr).setRows(10));
+                SearchResponse qrsp = query(new SolrQuery("\"" + tw.extractRTText() + "\"").addFilterQuery("user:" + toUserStr).setRows(10));
                 List<SolrTweet> existingTw = collectTweets(qrsp);
 
                 for (SolrTweet tmp : existingTw) {
@@ -751,13 +820,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
         try {
             // get tweets which replies our existing tweets
-            // INREPLY_ID:"tweets[i].id"
-            // "*:*"
+            // INREPLY_ID:"tweets[i].id"            
             SolrQuery query = new SolrQuery().addFilterQuery(replyIdStr.toString()).setRows(origTweets.size());
             findRepliesForOriginalTweets(query, origTweets, updatedTweets);
 
-            // get original tweets where we have replies
-            // "*:*"
+            // get original tweets where we have replies            
             query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counter);
             selectOriginalTweetsWithReplies(query, origTweets.values(), updatedTweets);
         } catch (Exception ex) {
@@ -769,11 +836,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             Collection<SolrTweet> updatedTweets) throws SolrServerException {
 
         Map<Long, SolrTweet> replyMap = new LinkedHashMap<Long, SolrTweet>();
-        QueryResponse rsp = server.query(query);
-        SolrDocumentList docs = rsp.getResults();
+        SearchResponse rsp = query(query);
+        SearchHits docs = rsp.getHits();
 
-        for (SolrDocument sd : docs) {
-            SolrTweet tw = readDoc(sd, null);
+        for (SearchHit sd : docs) {
+            SolrTweet tw = readDoc(sd);
             replyMap.put(tw.getTwitterId(), tw);
         }
 
@@ -791,11 +858,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     protected void selectOriginalTweetsWithReplies(SolrQuery query, Collection<SolrTweet> tweets,
             Collection<SolrTweet> updatedTweets) throws SolrServerException {
 
-        QueryResponse rsp = server.query(query);
-        SolrDocumentList docs = rsp.getResults();
+        SearchResponse rsp = query(query);
+        SearchHits docs = rsp.getHits();
         Map<Long, SolrTweet> origMap = new LinkedHashMap<Long, SolrTweet>();
-        for (SolrDocument sd : docs) {
-            SolrTweet tw = readDoc(sd, null);
+        for (SearchHit sd : docs) {
+            SolrTweet tw = readDoc(sd);
             origMap.put(tw.getTwitterId(), tw);
         }
 
@@ -816,12 +883,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
             return false;
 
         try {
-            // ensure that reply.user has not already a tweet in orig.replies
-            // "*:*"
+            // ensure that reply.user has not already a tweet in orig.replies            
             SolrQuery q = new SolrQuery().addFilterQuery(INREPLY_ID + ":" + orig.getTwitterId()).
                     addFilterQuery("-id:" + reply.getTwitterId()).
                     addFilterQuery("user:" + reply.getFromUser().getScreenName());
-            if (server.query(q).getResults().getNumFound() > 0)
+            if (query(q).getHits().getTotalHits() > 0)
                 return false;
 
             orig.addReply(reply);
@@ -832,12 +898,12 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         }
     }
 
-    public List<SolrTweet> collectTweets(QueryResponse rsp) {
-        SolrDocumentList docs = rsp.getResults();
+    public List<SolrTweet> collectTweets(SearchResponse rsp) {
+        SearchHits docs = rsp.getHits();
         List<SolrTweet> list = new ArrayList<SolrTweet>();
 
-        for (SolrDocument sd : docs) {
-            list.add(readDoc(sd, null));
+        for (SearchHit sd : docs) {
+            list.add(readDoc(sd));
         }
 
         return list;
@@ -847,11 +913,11 @@ public class SolrTweetSearch extends SolrAbstractSearch {
         try {
             // set rows to 2 to check uniqueness
             SolrQuery sq = JetwickQuery.createIdQuery(twitterId);
-            QueryResponse rsp = search(sq);
+            SearchResponse rsp = search(sq);
             List<SolrTweet> list = collectTweets(rsp);
             if (list.size() > 1)
                 throw new IllegalStateException("Not only one document found for twitter id:" + twitterId + " . " + list.size());
-            if (list.size() == 0)
+            if (list.isEmpty())
                 return null;
 
             return list.get(0);
@@ -891,6 +957,7 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
             return res;
         } catch (Exception ex) {
+            logger.error("Error while getUserChoices:" + input + " " + lastQ, ex);
             return Collections.emptyList();
         }
     }
@@ -926,29 +993,31 @@ public class SolrTweetSearch extends SolrAbstractSearch {
 
             lastQ.setRows(0);
             lastQ.set("f.tag.facet.limit", 15);
-            QueryResponse rsp = search(lastQ);
+            SearchResponse rsp = search(lastQ);
             logger.info(lastQ.toString());
             Set<String> res = new TreeSet<String>();
-            if (rsp.getFacetField(TAG) != null && rsp.getFacetField(TAG).getValues() != null) {
-                for (Count cnt : rsp.getFacetField(TAG).getValues()) {
-                    String lowerSugg = cnt.getName().toLowerCase();
-                    if (existingTerms.contains(lowerSugg))
-                        continue;
-
-                    if (lowerSugg.startsWith(secPart)) {
-                        if (firstPart.isEmpty())
-                            res.add(cnt.getName());
-                        else
-                            res.add(firstPart + " " + cnt.getName());
-                    }
-
-                    if (res.size() > 9)
-                        break;
-                }
-            }
+//            if (rsp.facets().facet(TAG) != null && rsp.facets().getFacets().get(TAG) != null) {
+                //TODO NOW
+//                for (Count cnt : rsp.getFacetField(TAG).getValues()) {
+//                    String lowerSugg = cnt.getName().toLowerCase();
+//                    if (existingTerms.contains(lowerSugg))
+//                        continue;
+//
+//                    if (lowerSugg.startsWith(secPart)) {
+//                        if (firstPart.isEmpty())
+//                            res.add(cnt.getName());
+//                        else
+//                            res.add(firstPart + " " + cnt.getName());
+//                    }
+//
+//                    if (res.size() > 9)
+//                        break;
+//                }
+//            }
 
             return res;
         } catch (Exception ex) {
+            logger.error("Error while getQueryChoices:" + input + " " + lastQ, ex);
             return Collections.emptyList();
         }
     }
@@ -956,24 +1025,14 @@ public class SolrTweetSearch extends SolrAbstractSearch {
     SolrUser findByUserName(String uName) {
         try {
             List<SolrUser> list = new ArrayList<SolrUser>();
-            // get all tweets of the user so set rows large ...
-            // "*:*"
+            // get all tweets of the user so set rows large ...            
             search(list, new SolrQuery().addFilterQuery("user:" + uName.toLowerCase()).setRows(10));
 
-            if (list.size() == 0)
+            if (list.isEmpty())
                 return null;
 
             return list.get(0);
         } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    long countAll() {
-        try {
-            // "*:*"
-            return server.query(new SolrQuery()).getResults().getNumFound();
-        } catch (SolrServerException ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -1021,5 +1080,89 @@ public class SolrTweetSearch extends SolrAbstractSearch {
                 res.add(u.getOwnTweets().iterator().next());
         }
         return res;
+    }
+
+    public Collection<SolrTweet> findDuplicates(Map<Long, SolrTweet> tweets) {
+        final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
+        TermCreateCommand termCommand = new TermCreateCommand();
+
+        double JACC_BORDER = 0.7;
+        for (SolrTweet currentTweet : tweets.values()) {
+            if (currentTweet.isRetweet())
+                continue;
+
+            SolrQuery q = new TweetQuery(false).createSimilarQuery(currentTweet);
+            // TODO
+//                    addFilterQuery(FILTER_ENTRY_LATEST_DT);
+
+            if (currentTweet.getTextTerms().size() < 3)
+                continue;
+
+            int dups = 0;
+            try {
+                // find dups in index
+                for (SolrTweet simTweet : collectTweets(search(q))) {
+                    if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
+                        continue;
+
+                    termCommand.calcTermsWithoutNoise(simTweet);
+                    if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
+                            >= JACC_BORDER) {
+                        currentTweet.addDuplicate(simTweet.getTwitterId());
+                        dups++;
+                    }
+                }
+            } catch (SolrServerException ex) {
+                logger.warn("Coudn't trigger duplicat search for " + currentTweet + " " + ex.getMessage());
+            }
+
+            // find dups in tweets map
+            for (SolrTweet simTweet : tweets.values()) {
+                if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()) || simTweet.isRetweet())
+                    continue;
+
+                if (currentTweet.getCreatedAt().getTime() < simTweet.getCreatedAt().getTime())
+                    continue;
+
+                termCommand.calcTermsWithoutNoise(simTweet);
+                if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
+                        >= JACC_BORDER) {
+                    currentTweet.addDuplicate(simTweet.getTwitterId());
+                    dups++;
+                }
+            }
+
+//            tw.setDuplicates(dups);
+        }
+
+        return updatedTweets;
+    }
+
+    void setTermMinFrequency(int i) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    public UpdateResponse optimize(int optimizeToSegmentsAfterUpdate) {
+        client.admin().indices().optimize(new OptimizeRequest(indexName).maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    private void createIndex(String indexName) {
+        // no need for the following because of _default mapping under config
+        // String fileAsString = Helper.readInputStream(getClass().getResourceAsStream("tweet.json"));
+        // new CreateIndexRequest(indexName)/*.mapping(indexType, fileAsString)*/
+
+        CreateIndexResponse rsp = client.admin().indices().
+                create(new CreateIndexRequest(indexName)).
+                actionGet();
+        //rsp.acknowledged();
+
+        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
+    }
+
+    public void refresh() {
+        RefreshResponse rsp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
+
+        //assertEquals(1, rsp.getFailedShards());
     }
 }

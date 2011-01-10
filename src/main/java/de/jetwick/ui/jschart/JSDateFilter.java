@@ -16,16 +16,12 @@
 
 package de.jetwick.ui.jschart;
 
-import de.jetwick.solr.SolrTweetSearch;
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.ui.util.FacetHelper;
 import de.jetwick.ui.util.LabeledLink;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.solr.client.solrj.response.FacetField;
-import org.apache.solr.client.solrj.response.FacetField.Count;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.behavior.AttributeAppender;
@@ -35,6 +31,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.elasticsearch.action.search.SearchResponse;
 
 /**
  *
@@ -43,7 +40,7 @@ import org.apache.wicket.model.Model;
 public class JSDateFilter extends Panel {
 
     private List<FacetHelper> facetList = new ArrayList<FacetHelper>();
-    private String dtKey = SolrTweetSearch.DATE;
+    private String dtKey = ElasticTweetSearch.DATE;
     private final float MAX_HEIGHT_IN_PX = 50.0f;
     private long max = 1;
     private long totalHits = 0;
@@ -129,48 +126,49 @@ public class JSDateFilter extends Panel {
         return name;
     }
 
-    public void update(QueryResponse rsp) {
+    public void update(SearchResponse rsp) {
         facetList.clear();
         if (rsp == null)
             return;
 
-        totalHits = rsp.getResults().getNumFound();
+        totalHits = rsp.getHits().getTotalHits();
         Integer count;
         Map<String, Integer> facetQueries = null;
-        if (rsp != null) {
-            facetQueries = rsp.getFacetQuery();
-
-            // exclude smaller zero?
-            count = getFacetQueryCount(facetQueries, SolrTweetSearch.FILTER_ENTRY_LATEST_DT);
-            if (count == null)
-                count = 0;
-            facetList.add(new FacetHelper(dtKey, SolrTweetSearch.FILTER_VALUE_LATEST_DT, "last 8h", count));
-
-            List<FacetField> dateFacets = rsp.getFacetDates();
-            if (dateFacets != null) {
-                for (FacetField ff : dateFacets) {
-                    if (ff.getValues() != null && dtKey.equals(ff.getName())) {
-                        Collections.reverse(ff.getValues());
-                        for (Count cnt : ff.getValues()) {
-                            String name = cnt.getName();
-                            String display = "";
-                            String filter = "[" + cnt.getName() + " TO " + cnt.getName() + "/DAY" + ff.getGap() + "]";
-                            // ignore year and time
-                            int index = name.indexOf("T");
-                            if (index > 0)
-                                display = name.substring(5, index);
-
-                            facetList.add(new FacetHelper(dtKey, filter, display, cnt.getCount()));
-                        }
-                    }
-                }
-            }
-        }
-
-        count = getFacetQueryCount(facetQueries, SolrTweetSearch.FILTER_ENTRY_OLD_DT);
-        if (count == null)
-            count = 0;
-        facetList.add(new FacetHelper(dtKey, SolrTweetSearch.FILTER_VALUE_OLD_DT, "older", count));
+        // TODO ES
+//        if (rsp != null) {
+//            facetQueries = rsp.getFacetQuery();
+//
+//            // exclude smaller zero?
+//            count = getFacetQueryCount(facetQueries, ElasticTweetSearch.FILTER_ENTRY_LATEST_DT);
+//            if (count == null)
+//                count = 0;
+//            facetList.add(new FacetHelper(dtKey, ElasticTweetSearch.FILTER_VALUE_LATEST_DT, "last 8h", count));
+//
+//            List<FacetField> dateFacets = rsp.getFacetDates();
+//            if (dateFacets != null) {
+//                for (FacetField ff : dateFacets) {
+//                    if (ff.getValues() != null && dtKey.equals(ff.getName())) {
+//                        Collections.reverse(ff.getValues());
+//                        for (Count cnt : ff.getValues()) {
+//                            String name = cnt.getName();
+//                            String display = "";
+//                            String filter = "[" + cnt.getName() + " TO " + cnt.getName() + "/DAY" + ff.getGap() + "]";
+//                            // ignore year and time
+//                            int index = name.indexOf("T");
+//                            if (index > 0)
+//                                display = name.substring(5, index);
+//
+//                            facetList.add(new FacetHelper(dtKey, filter, display, cnt.getCount()));
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        count = getFacetQueryCount(facetQueries, ElasticTweetSearch.FILTER_ENTRY_OLD_DT);
+//        if (count == null)
+//            count = 0;
+//        facetList.add(new FacetHelper(dtKey, ElasticTweetSearch.FILTER_VALUE_OLD_DT, "older", count));
 
         max = 1;
         for (FacetHelper h : facetList) {
