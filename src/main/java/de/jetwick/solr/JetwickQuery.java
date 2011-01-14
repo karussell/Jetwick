@@ -85,7 +85,7 @@ public class JetwickQuery extends SolrQuery {
         return attachFacetibility();
     }
 
-    public JetwickQuery attachFacetibility() {
+    public JetwickQuery attachFacetibility() {        
         return this;
     }
 

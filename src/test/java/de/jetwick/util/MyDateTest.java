@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 import java.util.Date;
@@ -36,5 +35,12 @@ public class MyDateTest {
         long old = date.toDays();
         assertEquals(old + 1, new MyDate(date).plusDays(1).toDays());
         assertEquals(old - 1, new MyDate(date).minusDays(1).toDays());
+    }
+
+    @Test
+    public void testRound() {
+        assertEquals(3660 * 1000, new MyDate(61 * MyDate.ONE_MINUTE).getTime());
+        assertEquals(3600 * 1000, new MyDate(61 * MyDate.ONE_MINUTE).castToHours().getTime());
+        assertEquals(3600 * 1000, new MyDate((60 + 59) * MyDate.ONE_MINUTE).castToHours().getTime());
     }
 }

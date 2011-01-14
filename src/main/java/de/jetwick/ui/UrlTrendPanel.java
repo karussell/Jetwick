@@ -38,6 +38,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 
 /**
  *
@@ -150,20 +151,14 @@ public class UrlTrendPanel extends Panel {
                         filter.set(0, true);
                 }
 
-            // TODO ES
-//            List<FacetField> facetFields = rsp.getFacetFields();
-//            if (facetFields != null)
-//                for (FacetField ff : facetFields) {
-//                    if (ElasticTweetSearch.FIRST_URL_TITLE.equals(ff.getName()) && ff.getValues() != null) {
-//                        for (Count cnt : ff.getValues()) {
-//                            String str = cnt.getName();
-//                            // although we avoid indexing empty title -> its save to do it again ;-)
-//                            if (!str.isEmpty())
-//                                urls.add(new MapEntry<String, Long>(str, cnt.getCount()));
-//                        }
-//                        break;
-//                    }
-//                }
+            TermsFacet tf = (TermsFacet) rsp.getFacets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
+            if (tf != null)
+                for (TermsFacet.Entry e : tf.entries()) {
+                    String str = e.getTerm();
+                    // although we avoid indexing empty title -> its save to do it again ;-)
+                    if (!str.isEmpty())
+                        urls.add(new MapEntry<String, Long>(str, (long) e.count()));
+                }
         }
         setVisible(urls.size() > 0);
     }

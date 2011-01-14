@@ -151,8 +151,8 @@ public class ElasticNode {
         //                local(true).
         }
         
-        node = nBuilder.build().start();        
-        logger.info("Started Node. Home folder is: " + homeDir.getAbsolutePath());
+        node = nBuilder.build().start();                
+        logger.info("Started Node. Home folder is: " + homeDir.getAbsolutePath());        
         return this;
     }
 

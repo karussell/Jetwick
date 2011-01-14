@@ -609,6 +609,11 @@ public class TwitterSearch implements Serializable {
                     @Override
                     public void onException(Exception ex) {
                     }
+
+                    @Override
+                    public void onScrubGeo(int userId, long upToStatusId) {
+                        throw new UnsupportedOperationException("Not supported yet.");
+                    }
                 }).getInstance(twitter.getAuthorization());
 
 //        stream.sample();

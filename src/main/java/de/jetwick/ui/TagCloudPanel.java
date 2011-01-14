@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import de.jetwick.es.ElasticTweetSearch;
@@ -27,8 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.response.FacetField;
-import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
@@ -37,6 +34,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 
 /**
  *
@@ -104,29 +102,23 @@ public class TagCloudPanel extends Panel {
             terms.addAll(Arrays.asList(query.getQuery().split(" ")));
 
         if (rsp != null) {
-            // TODO ES
-//            List<FacetField> facetFields = rsp.getFacetFields();
-//            if (facetFields != null)
-//                for (FacetField ff : facetFields) {
-//                    if (ElasticTweetSearch.TAG.equals(ff.getName()) && ff.getValues() != null) {
-//                        max = 0;
-//                        Map<String, Long> tmp = new TreeMap<String, Long>();
-//                        for (Count cnt : ff.getValues()) {
-//                            if (terms.contains(cnt.getName()))
-//                                continue;
-//
-//                            if (cnt.getCount() > max)
-//                                max = cnt.getCount();
-//
-//                            tmp.put(cnt.getName(), cnt.getCount());
-//                        }
-//
-//                        for (Entry<String, Long> entry : tmp.entrySet()) {
-//                            tags.add(new MapEntry<String, Long>(entry.getKey(), entry.getValue()));
-//                        }
-//                        break;
-//                    }
-//                }
+            TermsFacet tf = (TermsFacet) rsp.facets().facet(ElasticTweetSearch.TAG);
+            if (tf != null)
+                max = 0;
+            Map<String, Long> tmp = new TreeMap<String, Long>();
+            for (TermsFacet.Entry e : tf.entries()) {
+                if (terms.contains(e.getTerm()))
+                    continue;
+
+                if (e.getCount() > max)
+                    max = e.getCount();
+
+                tmp.put(e.getTerm(), (long) e.getCount());
+            }
+
+            for (Entry<String, Long> entry : tmp.entrySet()) {
+                tags.add(new MapEntry<String, Long>(entry.getKey(), entry.getValue()));
+            }
         }
 
         setVisible(tags.size() > 0);

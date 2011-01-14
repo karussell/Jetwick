@@ -59,6 +59,9 @@ public class Twitter4JUser implements User {
     private int listedCount;
     private boolean followRequestSent;
     private transient RateLimitStatus rateLimitStatus = null;
+    private boolean translator = false;
+    private boolean showAllInlineMedia = true;
+    private boolean profileUseBackgroundImage = true;
 
     public Twitter4JUser(String screenName) {
         this.screenName = screenName;
@@ -247,5 +250,20 @@ public class Twitter4JUser implements User {
     @Override
     public RateLimitStatus getRateLimitStatus() {
         return rateLimitStatus;
+    }
+
+    @Override
+    public boolean isProfileUseBackgroundImage() {
+        return profileUseBackgroundImage;
+    }
+
+    @Override
+    public boolean isShowAllInlineMedia() {
+        return showAllInlineMedia;
+    }
+
+    @Override
+    public boolean isTranslator() {        
+        return translator;
     }
 }

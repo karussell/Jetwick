@@ -86,6 +86,9 @@ public class MyTweetGrabber implements Serializable {
 
             @Override
             public void run() {
+                if(tweetSearch == null)
+                    return;
+                
                 int rl = tweetSearch.getRateLimit();
                 if (rl <= TwitterSearch.LIMIT) {
                     doAbort(new RuntimeException("Couldn't process query (TwitterSearch+Index)."

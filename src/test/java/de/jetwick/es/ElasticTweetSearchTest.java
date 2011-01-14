@@ -39,6 +39,7 @@ import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -73,6 +74,10 @@ public class ElasticTweetSearchTest {
 
     @Before
     public void setUp() throws Exception {
+        // necessary if only one method is executed:
+        twSearch.waitForYellow();
+        
+        // start with a fresh index:
         twSearch.deleteAll();
     }
 
@@ -685,21 +690,19 @@ public class ElasticTweetSearchTest {
     }
 
     @Test
-    public void testTags() throws SolrServerException {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "Beitrag des @WDR zum Thema #Atomkraft: "
-                + "Investitionsruinen im Wert von 360 Milliarden Euro."
-                + "Milliardengrab Atomkraft http://www.wdr.de/themen/wirtschaft/wirtschafts... #atom", "micha_koester"),
-                createTweet(2L, "Morgenlektüre: Öko-Aktivist Sweeney über Uranabbau - "
-                + "\"Der Castor beginnt in Australien\" @tazonline http://ow.ly/2zWS9 #atom #gruene", "micha_koester"),
-                createTweet(3L, "third tweet", "micha_koester")));
-
-        SearchResponse rsp = twSearch.search(new TweetQuery("#atom"));
-        //TODO NOW
-//        assertEquals(1, rsp.facets().facet("tag").getValues().size());
+    public void testFacets() throws SolrServerException {
+        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "Beitrag atom. atom again", "userA"),
+                createTweet(2L, "atom gruene", "userA"),
+                createTweet(3L, "third tweet", "userA")));
+                
+        SearchResponse rsp = twSearch.search(new TweetQuery());
+        assertEquals(3, rsp.hits().getTotalHits());                
+        // only the second tweet will contain a tag with atom!
+        assertEquals(1, ((TermsFacet)rsp.facets().facet("tag")).getEntries().size());
 
         rsp = twSearch.search(new SolrQuery().addFilterQuery("tag:atom"));
         assertEquals(2, twSearch.collectTweets(rsp).size());
-    }
+    }    
 
     @Test
     public void testReadUrlEntries() throws IOException {

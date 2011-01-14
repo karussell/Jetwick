@@ -15,7 +15,7 @@
  */
 package de.jetwick.es;
 
-import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.search.facet.filter.FilterFacet;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -82,6 +82,7 @@ public class ElasticTweetSearch {
 
     public static final String TWEET_TEXT = "tw";
     public static final String DATE = "dt";
+    public static final String DATE_FACET = "datefacet";    
     public static final String RT_COUNT = "retw_i";
     public static final String IS_RT = "crt_b";
     public static final String UPDATE_DT = "update_dt";
@@ -93,6 +94,7 @@ public class ElasticTweetSearch {
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     // TODO is this necessary?
     protected static final int MAX_TWEETS_PER_REQ = 100;
+    
     private String indexName = "twindex";
     private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
@@ -106,11 +108,11 @@ public class ElasticTweetSearch {
     }
 
     public ElasticTweetSearch(String url, String login, String pw) {
-        logger.info("url:" + url);
         Settings s = ImmutableSettings.settingsBuilder().put("cluster.name", ElasticNode.CLUSTER).build();
         TransportClient tmp = new TransportClient(s);
         tmp.addTransportAddress(new InetSocketTransportAddress(url, 9300));
         client = tmp;
+        info();
     }
 
     /**
@@ -119,34 +121,16 @@ public class ElasticTweetSearch {
     public ElasticTweetSearch(Client client) {
         this.client = client;
         createIndex(indexName);
+        info();
     }
 
     public void info() {
         NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
         for (String n : rsp.getNodesMap().keySet()) {
-            System.out.println(n);
+            logger.info("active node:"+n);
         }
     }
 
-//    public Map<String, Map<String, SearchHitField>> findByTerm(String term) {
-//        // search type: http://www.elasticsearch.com/docs/elasticsearch/rest_api/search/search_type/
-//        SearchResponse response = client.prepareSearch(indexName).
-//                setSearchType(SearchType.QUERY_AND_FETCH).
-//                setQuery(termQuery(TWEET_TEXT, term)).
-//                setFrom(0).setSize(15).setExplain(true).
-//                execute().
-//                actionGet();
-//        return collectResults(response);
-//    }
-//
-//    public Map<String, Map<String, SearchHitField>> collectResults(SearchResponse response) {
-//        Map<String, Map<String, SearchHitField>> res = new LinkedHashMap<String, Map<String, SearchHitField>>();
-//        System.out.println("total hits:" + response.getHits().totalHits() + " failed shards:" + response.getFailedShards());
-//        for (SearchHit hit : response.getHits().hits()) {
-//            res.put(hit.getId(), hit.fields());
-//        }
-//        return res;
-//    }
     public long countAll() {
         CountResponse response = client.prepareCount(indexName).
                 setQuery(QueryBuilders.matchAllQuery()).
@@ -421,17 +405,15 @@ public class ElasticTweetSearch {
             resQuery.addFilterQuery(IS_RT + ":\"false\"");
             TweetQuery.setSort(resQuery, "dt asc");
 
-            int counter = 0;
+            long counter = 0;
             for (Entry<String, Integer> entry : orderedFQ.entrySet()) {
-                // TODO NOW
-                // getFacetQuery().get(entry.getKey())
-//                Integer integ = rsp.getFacets().facet(entry.getKey());
-//                counter += integ;
-//                if (counter >= minResults) {
-//                    if (entry.getValue() > 0)
-//                        resQuery.addFilterQuery(RT_COUNT + ":[" + entry.getValue() + " TO *]");
-//                    break;
-//                }
+                FilterFacet ff = rsp.getFacets().facet(entry.getKey());
+                counter += ff.count();
+                if (counter >= minResults) {
+                    if (entry.getValue() > 0)
+                        resQuery.addFilterQuery(RT_COUNT + ":[" + entry.getValue() + " TO *]");
+                    break;
+                }
             }
 
             return TweetQuery.attachFacetibility(resQuery);
@@ -594,8 +576,8 @@ public class ElasticTweetSearch {
             deleteByQuery(UPDATE_DT, "-([* TO *] AND "
                     + DATE + ":[* TO " + Helper.toLocalDateTime(removeUntil) + "/DAY])");
 
+            // force visibility for next call of update
             refresh();
-
             return updateTweets;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -762,7 +744,7 @@ public class ElasticTweetSearch {
                 replyIdStr.append(INREPLY_ID);
                 replyIdStr.append(":");
                 replyIdStr.append(tw.getTwitterId());
-                replyIdStr.append(" ");
+                replyIdStr.append(" OR ");
             }
 
             if (SolrTweet.isDefaultInReplyId(tw.getInReplyTwitterId()))
@@ -778,21 +760,25 @@ public class ElasticTweetSearch {
                 counter++;
                 idStr.append("id:");
                 idStr.append(tw.getInReplyTwitterId());
-                idStr.append(" ");
+                idStr.append(" OR ");
             }
         }
 
         try {
             // get tweets which replies our existing tweets
             // INREPLY_ID:"tweets[i].id"            
-            SolrQuery query = new SolrQuery().addFilterQuery(replyIdStr.toString()).setRows(origTweets.size());
-            findRepliesForOriginalTweets(query, origTweets, updatedTweets);
+            if(replyIdStr.length() > 0) {
+                SolrQuery query = new SolrQuery().addFilterQuery(replyIdStr.toString()).setRows(origTweets.size());
+                findRepliesForOriginalTweets(query, origTweets, updatedTweets);
+            }
 
             // get original tweets where we have replies            
-            query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counter);
-            selectOriginalTweetsWithReplies(query, origTweets.values(), updatedTweets);
+            if (idStr.length() > 0) {
+                SolrQuery query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counter);
+                selectOriginalTweetsWithReplies(query, origTweets.values(), updatedTweets);
+            }
         } catch (Exception ex) {
-            logger.error("couldn't find replies in a batch", ex.getMessage());
+            logger.error("couldn't find replies in a batch query", ex);
         }
     }
 
@@ -877,7 +863,7 @@ public class ElasticTweetSearch {
         try {
             GetResponse rsp = client.prepareGet(indexName, indexType, "" + twitterId).
                     execute().actionGet();
-            return readDoc(rsp.getSource(), rsp.getId());            
+            return readDoc(rsp.getSource(), rsp.getId());
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -1107,14 +1093,20 @@ public class ElasticTweetSearch {
     private void createIndex(String indexName) {
         // no need for the following because of _default mapping under config
         // String fileAsString = Helper.readInputStream(getClass().getResourceAsStream("tweet.json"));
-        // new CreateIndexRequest(indexName)/*.mapping(indexType, fileAsString)*/
+        // new CreateIndexRequest(indexName).mapping(indexType, fileAsString)
 
+        // make sure node is up to create the index otherwise we get: blocked by: [1/not recovered from gateway];
+        ping();
         CreateIndexResponse rsp = client.admin().indices().
                 create(new CreateIndexRequest(indexName)).
                 actionGet();
-        //rsp.acknowledged();
+        waitForYellow();
+    }
 
-        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
+    void ping() {
+        client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
+        // hmmh here we need indexName again ... but in createIndex it does not exist when calling ping ...
+//        client.admin().cluster().ping(new SinglePingRequest()).actionGet();
     }
 
     public void refresh() {
@@ -1126,5 +1118,9 @@ public class ElasticTweetSearch {
     public ElasticTweetSearch attachPagability(SolrQuery query, int page, int hitsPerPage) {
         query.setStart(page * hitsPerPage).setRows(hitsPerPage);
         return this;
+    }
+
+    void waitForYellow() {
+        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
     }
 }

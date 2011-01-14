@@ -46,10 +46,9 @@ public class TweetQuery extends JetwickQuery {
     }
 
     public static SolrQuery attachFacetibility(SolrQuery q) {
-        q.setFacet(true);
-        // TODO ES
+        q.setFacet(true).
                 // now date faceting of dt field:
-//                set("facet.date", "{!ex=dt}" + DATE).
+                set("facet.date", DATE);
 //                set("facet.date.start", DATE_START).
 //                set("facet.date.end", "NOW/DAY+1DAY").
 //                set("facet.date.gap", "+1DAY");

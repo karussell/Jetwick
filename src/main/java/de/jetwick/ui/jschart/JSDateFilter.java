@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui.jschart;
 
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.ui.util.FacetHelper;
 import de.jetwick.ui.util.LabeledLink;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -32,6 +32,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.facet.range.RangeFacet;
 
 /**
  *
@@ -89,7 +90,7 @@ public class JSDateFilter extends Panel {
                 AttributeAppender app = new AttributeAppender("title", new Model(entry.count + " tweets"), " ");
                 bar.add(app).add(new AttributeAppender("style", new Model("height:" + (int) (zoomer * entry.count) + "px"), " "));
                 final boolean selected = isAlreadyFiltered(entry.getFilter());
-                Link link = new /*Indicating*/AjaxFallbackLink("itemLink") {
+                Link link = new /*Indicating*/ AjaxFallbackLink("itemLink") {
 
                     @Override
                     public void onClick(AjaxRequestTarget target) {
@@ -131,45 +132,29 @@ public class JSDateFilter extends Panel {
         if (rsp == null)
             return;
 
-        totalHits = rsp.getHits().getTotalHits();
-        Integer count;
-        Map<String, Integer> facetQueries = null;
-        // TODO ES
-//        if (rsp != null) {
-//            facetQueries = rsp.getFacetQuery();
-//
-//            // exclude smaller zero?
-//            count = getFacetQueryCount(facetQueries, ElasticTweetSearch.FILTER_ENTRY_LATEST_DT);
-//            if (count == null)
-//                count = 0;
-//            facetList.add(new FacetHelper(dtKey, ElasticTweetSearch.FILTER_VALUE_LATEST_DT, "last 8h", count));
-//
-//            List<FacetField> dateFacets = rsp.getFacetDates();
-//            if (dateFacets != null) {
-//                for (FacetField ff : dateFacets) {
-//                    if (ff.getValues() != null && dtKey.equals(ff.getName())) {
-//                        Collections.reverse(ff.getValues());
-//                        for (Count cnt : ff.getValues()) {
-//                            String name = cnt.getName();
-//                            String display = "";
-//                            String filter = "[" + cnt.getName() + " TO " + cnt.getName() + "/DAY" + ff.getGap() + "]";
-//                            // ignore year and time
-//                            int index = name.indexOf("T");
-//                            if (index > 0)
-//                                display = name.substring(5, index);
-//
-//                            facetList.add(new FacetHelper(dtKey, filter, display, cnt.getCount()));
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        count = getFacetQueryCount(facetQueries, ElasticTweetSearch.FILTER_ENTRY_OLD_DT);
-//        if (count == null)
-//            count = 0;
-//        facetList.add(new FacetHelper(dtKey, ElasticTweetSearch.FILTER_VALUE_OLD_DT, "older", count));
-
+        totalHits = rsp.getHits().getTotalHits();        
+        if (rsp != null) {
+            RangeFacet rf = rsp.facets().facet(ElasticTweetSearch.DATE_FACET);
+            if (rf != null) {                
+                for (RangeFacet.Entry e : rf.entries()) {                    
+                    String display = "";
+                    String filter = "[" + e.getFromAsString() + " TO " + e.getToAsString() + "]";
+                    
+                    // ignore year and time
+                    int index = e.getToAsString().indexOf("T");
+                    if (index > 0)
+                        display = e.getToAsString().substring(5, index);
+                    
+                    if(e.fromAsString().contains("-Infinity")) {                        
+                        display = "older";
+                    } else if(e.toAsString().contains("Infinity")) {
+                        display = "last 8h";
+                    }
+//                    System.out.println(filter + " " + e.getCount());
+                    facetList.add(new FacetHelper(dtKey, filter, display, e.getCount()));
+                }
+            }
+        }
         max = 1;
         for (FacetHelper h : facetList) {
             if (h.count > max)

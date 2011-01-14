@@ -75,7 +75,12 @@ public class DefaultModule extends AbstractModule {
         final Credits cred = config.getTwitterSearchCredits();
         final TwitterSearch ts = new TwitterSearch().setConsumer(
                 cred.getConsumerKey(), cred.getConsumerSecret());
-        ts.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
+
+        try {
+            ts.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
+        } catch (Exception ex) {
+            logger.error("Cannot create twitter4j instance! But start nevertheless ...", ex);
+        }
 
         bind(TwitterSearch.class).toProvider(new Provider<TwitterSearch>() {
 

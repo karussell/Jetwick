@@ -25,10 +25,10 @@ import java.util.Date;
 public class MyDate implements Cloneable {
 
     private long time;
-    public static long ONE_SECOND = 1000L;
-    public static long ONE_MINUTE = 60 * ONE_SECOND;
-    public static long ONE_HOUR = 60 * ONE_MINUTE;
-    public static long ONE_DAY = 24 * ONE_HOUR;
+    public static final long ONE_SECOND = 1000L;
+    public static final long ONE_MINUTE = 60 * ONE_SECOND;
+    public static final long ONE_HOUR = 60 * ONE_MINUTE;
+    public static final long ONE_DAY = 24 * ONE_HOUR;
 
     public MyDate() {
         this(new Date());
@@ -50,11 +50,6 @@ public class MyDate implements Cloneable {
         return time;
     }
 
-    public MyDate plusDays(int days) {
-        time += days * ONE_DAY;
-        return this;
-    }
-
     public MyDate plusMillis(long ms) {
         time += ms;
         return this;
@@ -65,21 +60,45 @@ public class MyDate implements Cloneable {
         return this;
     }
 
-    public MyDate minusDays(int days) {
-        return plusDays(-days);
+    public MyDate plusMinutes(int minutes) {
+        time += minutes * ONE_MINUTE;
+        return this;
+    }
+
+    public MyDate plusHours(int hours) {
+        time += hours * ONE_HOUR;
+        return this;
+    }
+
+    public MyDate plusDays(int days) {
+        time += days * ONE_DAY;
+        return this;
     }
 
     public MyDate minusMinutes(int minutes) {
         return plusMinutes(-minutes);
     }
 
-    public MyDate plusMinutes(int minutes) {
-        time += minutes * ONE_MINUTE;
-        return this;
+    public MyDate minusHours(int hours) {
+        return plusHours(-hours);
+    }
+
+    public MyDate minusDays(int days) {
+        return plusDays(-days);
     }
 
     public MyDate minus(MyDate date) {
         time -= date.getTime();
+        return this;
+    }
+    
+    public MyDate castToHours() {
+        time = (time / ONE_HOUR) * ONE_HOUR;
+        return this;
+    }
+    
+    public MyDate castToDay() {
+        time = (time / ONE_DAY) * ONE_DAY;
         return this;
     }
 
@@ -90,7 +109,7 @@ public class MyDate implements Cloneable {
     public Date toDate() {
         return new Date(time);
     }
-
+    
     @Override
     public MyDate clone() {
         return new MyDate(this);
@@ -99,5 +118,5 @@ public class MyDate implements Cloneable {
     @Override
     public String toString() {
         return new Date(time).toString();
-    }
+    }   
 }
