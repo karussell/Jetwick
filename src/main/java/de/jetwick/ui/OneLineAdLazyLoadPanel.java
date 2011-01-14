@@ -59,7 +59,7 @@ public class OneLineAdLazyLoadPanel extends AjaxLazyLoadPanel {
         try {
             ads = adsProvider.get().searchAds(searchQuery);
         } catch (Exception ex) {
-            logger.error("Couldn't query adindex!" + ex.getMessage());
+            logger.error("Couldn't query index to get ads!" + ex.getMessage());
         }
 
         if (ads != null && ads.size() > 0)

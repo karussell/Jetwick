@@ -369,7 +369,7 @@ public class ResultsPanel extends Panel {
         hitsPerPage = hits;
     }
 
-    public void setSort(String sortString) {
+    public void setSort(String sortString) {        
         if (sortString == null)
             sort = "";
         else

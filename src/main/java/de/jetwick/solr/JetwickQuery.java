@@ -62,7 +62,10 @@ public class JetwickQuery extends SolrQuery {
     }
 
     public static SolrQuery setSort(SolrQuery resQuery, String sortParam) {
-        resQuery.set("sort", sortParam);
+        if(sortParam == null || sortParam.isEmpty())
+            resQuery.remove("sort");
+        else
+            resQuery.set("sort", sortParam);
         return resQuery;
     }
 

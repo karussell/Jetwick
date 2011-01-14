@@ -8,6 +8,7 @@ solandra/
 es/data/
 es/work/
 es/logs/
+es/jetwickcluster
 target/
 adindex/data/
 adindex/data.bak/

@@ -16,7 +16,6 @@
 package de.jetwick.es;
 
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import java.util.HashMap;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
@@ -100,8 +99,8 @@ public class ElasticTweetSearch {
     private String indexName = "twindex";
     private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
-    private Client client;
-
+    private Client client;        
+  
     public ElasticTweetSearch() {
     }
 
@@ -828,7 +827,7 @@ public class ElasticTweetSearch {
             query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counter);
             selectOriginalTweetsWithReplies(query, origTweets.values(), updatedTweets);
         } catch (Exception ex) {
-            logger.error("couldn't find replies in batch:" + ex.getMessage());
+            logger.error("couldn't find replies in a batch", ex.getMessage());
         }
     }
 
@@ -1157,12 +1156,17 @@ public class ElasticTweetSearch {
                 actionGet();
         //rsp.acknowledged();
 
-        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
+        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();                
     }
 
     public void refresh() {
         RefreshResponse rsp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
 
         //assertEquals(1, rsp.getFailedShards());
+    }
+
+    public ElasticTweetSearch attachPagability(SolrQuery query, int page, int hitsPerPage) {
+        query.setStart(page * hitsPerPage).setRows(hitsPerPage);
+        return this;
     }
 }

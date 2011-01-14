@@ -45,15 +45,15 @@ public class WikipediaLazyLoadPanel extends AjaxLazyLoadPanel {
 
     @Override
     public Component getLazyLoadComponent(String markupId) {
-        WikipediaPanel adPanel = new WikipediaPanel(markupId);
+        WikipediaPanel wikiPanel = new WikipediaPanel(markupId);
 
         try {
-            adPanel.update(searchQuery, lang);
+            wikiPanel.update(searchQuery, lang);
         } catch (Exception ex) {
-            logger.error("Couldn't query adindex!", ex);
+            logger.error("Couldn't query wikipedia!", ex);
         }
 
-        return adPanel;
+        return wikiPanel;
     }
 
     public void setParams(String searchQuery, String language) {

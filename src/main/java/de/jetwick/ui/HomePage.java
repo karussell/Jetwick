@@ -654,8 +654,8 @@ public class HomePage extends WebPage {
             lastQuery = query;
 
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
-        // TODO ES
-//        getTweetSearch().attachPagability(query, page, hitsPerPage);
+        
+        getTweetSearch().attachPagability(query, page, hitsPerPage);
 
         if (getMySession().hasLoggedIn())
             TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());

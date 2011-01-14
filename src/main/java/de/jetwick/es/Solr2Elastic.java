@@ -36,21 +36,21 @@ import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
 public class Solr2Elastic {
 
     public static void createElasticQuery(SolrQuery query, SearchRequestBuilder srb) {
-        // TODO simulating dismax with fields tw, user and title
-        Integer rows = query.getRows();
+        // TODO use dis_max with fields tw, user and title
+        Integer rows  = query.getRows();
+
         if (rows == null)
             rows = 10;
-
+        
         Integer start = query.getStart();
         if (start == null)
             start = 0;
-
-        //TODO performance: turn off explain?
-        srb.setSearchType(SearchType.QUERY_AND_FETCH).
-                setFrom(start).setSize(rows).setExplain(true);
+        
+        srb.setSearchType(SearchType.QUERY_THEN_FETCH).//QUERY_AND_FETCH would return too many results
+                setFrom(start).setSize(rows);//.setExplain(true);
 
         if (query.getSortFields() != null) {
-            for (String str : query.getSortFields()) {
+            for (String str : query.getSortFields()) {                
                 String sortSplitted[] = str.split(" ");
                 if ("asc".equals(sortSplitted[1]))
                     srb.addSort(sortSplitted[0], SortOrder.ASC);

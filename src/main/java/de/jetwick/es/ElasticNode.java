@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
@@ -47,7 +48,13 @@ public class ElasticNode {
     public static final String CLUSTER = "jetwickcluster";
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        new ElasticNode().start("es");
+        ElasticNode node = new ElasticNode().start("es");
+        boolean createIndex = false;
+        if (createIndex) {
+            System.out.println("created index: twindex");
+            new ElasticTweetSearch(node.client());
+        }
+        
         Thread.currentThread().join();
     }
 
@@ -106,35 +113,40 @@ public class ElasticNode {
     }
     private Node node;
 
-    public void start(String dataHome) {
-        start(dataHome, dataHome + "/config");
+    public ElasticNode start(String dataHome) {
+        return start(dataHome, dataHome + "/config");
     }
 
-    public void start(String home, String conf) {
+    public ElasticNode start(String home, String conf) {
         // see
         // http://www.elasticsearch.com/docs/elasticsearch/setup/installation/
         // http://www.elasticsearch.com/docs/elasticsearch/setup/dirlayout/
-        System.setProperty("es.path.home", home);
+        File homeDir = new File(home);        
+        System.setProperty("es.path.home", homeDir.getAbsolutePath());
         System.setProperty("es.path.conf", conf);
 
         node = nodeBuilder().
                 clusterName(CLUSTER).
-//                local(true).
+                //                local(true).
                 settings(ImmutableSettings.settingsBuilder().
                 put("network.host", "127.0.0.1").
-//                put("network.bindHost", "127.0.0.0").
-//                put("network.publishHost", "127.0.0.0").
+                //                put("network.bindHost", "127.0.0.0").
+                //                put("network.publishHost", "127.0.0.0").
                 put("number_of_shards", 3).
-                put("number_of_replicas", 1).                
-                put("gateway.type", "none").
+                put("number_of_replicas", 1).
+                // default is local
+                // none means no data after node restart!
                 // does not work when transportclient connects:
 //                put("gateway.type", "fs").
-//                put("gateway.fs.location", "/home/peterk/.jetwick/es").
+//                put("gateway.fs.location", homeDir.getAbsolutePath()).
                 build()).
                 build().
                 start();
 
-        logger.info("Started Node. Home folder is: " + home);
+        // TODO use put("gateway.type", "none") for unit tests
+        
+        logger.info("Started Node. Home folder is: " + homeDir.getAbsolutePath());
+        return this;
     }
 
     public void stop() {
