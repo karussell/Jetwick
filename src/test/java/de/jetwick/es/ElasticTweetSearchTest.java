@@ -62,7 +62,7 @@ public class ElasticTweetSearchTest {
         File file = new File("/tmp/es");
         file.delete();
         file.mkdir();
-        node.start("/tmp/es", "es/config");
+        node.start(file.getAbsolutePath(), "es/config", true);
         twSearch = new ElasticTweetSearch(node.client());
     }
 

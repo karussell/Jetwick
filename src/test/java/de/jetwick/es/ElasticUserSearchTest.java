@@ -60,7 +60,7 @@ public class ElasticUserSearchTest {
         File file = new File("/tmp/es");
         file.delete();
         file.mkdir();
-        node.start("/tmp/es", "es/config");
+        node.start("/tmp/es", "es/config", true);
         userSearch = new ElasticUserSearch(node.client());        
     }
 

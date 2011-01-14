@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -46,7 +47,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -63,15 +63,12 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
-import org.elasticsearch.action.get.GetField;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
@@ -99,8 +96,8 @@ public class ElasticTweetSearch {
     private String indexName = "twindex";
     private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
-    private Client client;        
-  
+    private Client client;
+
     public ElasticTweetSearch() {
     }
 
@@ -131,62 +128,33 @@ public class ElasticTweetSearch {
         }
     }
 
-    public Map<String, Map<String, SearchHitField>> findByTerm(String term) {
-        // search type: http://www.elasticsearch.com/docs/elasticsearch/rest_api/search/search_type/
-        SearchResponse response = client.prepareSearch(indexName).
-                setSearchType(SearchType.QUERY_AND_FETCH).
-                setQuery(termQuery(TWEET_TEXT, term)).
-                setFrom(0).setSize(15).setExplain(true).
-                execute().
-                actionGet();
-        return collectResults(response);
-    }
-
-    public Map<String, Map<String, SearchHitField>> collectResults(SearchResponse response) {
-        Map<String, Map<String, SearchHitField>> res = new LinkedHashMap<String, Map<String, SearchHitField>>();
-        System.out.println("total hits:" + response.getHits().totalHits() + " failed shards:" + response.getFailedShards());
-        for (SearchHit hit : response.getHits().hits()) {
-            res.put(hit.getId(), hit.fields());
-        }
-        return res;
-    }
-
-    public Map<String, GetField> findById(String id) {
-        GetResponse response = client.prepareGet(indexName, indexType, id).
-                execute().
-                actionGet();
-        return response.getFields();
-    }
-
+//    public Map<String, Map<String, SearchHitField>> findByTerm(String term) {
+//        // search type: http://www.elasticsearch.com/docs/elasticsearch/rest_api/search/search_type/
+//        SearchResponse response = client.prepareSearch(indexName).
+//                setSearchType(SearchType.QUERY_AND_FETCH).
+//                setQuery(termQuery(TWEET_TEXT, term)).
+//                setFrom(0).setSize(15).setExplain(true).
+//                execute().
+//                actionGet();
+//        return collectResults(response);
+//    }
+//
+//    public Map<String, Map<String, SearchHitField>> collectResults(SearchResponse response) {
+//        Map<String, Map<String, SearchHitField>> res = new LinkedHashMap<String, Map<String, SearchHitField>>();
+//        System.out.println("total hits:" + response.getHits().totalHits() + " failed shards:" + response.getFailedShards());
+//        for (SearchHit hit : response.getHits().hits()) {
+//            res.put(hit.getId(), hit.fields());
+//        }
+//        return res;
+//    }
     public long countAll() {
         CountResponse response = client.prepareCount(indexName).
-                setQuery(termQuery("name", "testValue")).
-                execute().
-                actionGet();
+                setQuery(QueryBuilders.matchAllQuery()).
+                execute().actionGet();
         return response.getCount();
     }
 
-    public void createSampleDocs() {
-        // TODO improve via
-//        client.prepareBulk().add(irb);
-
-        final Random rand = new Random();
-        for (int i = 0; i < 1000; i++) {
-            Map<String, Object> map = new LinkedHashMap<String, Object>();
-            map.put("name", "name1");// + rand.nextInt(100));
-
-            try {
-                feedDoc("" + i, map);
-            } catch (Exception ex) {
-                logger.error("cannot create doc", ex);
-                break;
-            }
-        }
-    }
-
     public void feedDoc(String id, Map<String, Object> values) throws IOException {
-        // TODO setOperationThreaded(false) is slow but how to wait for thread after request
-
         IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, id).
                 setSource(values);
         irb.execute().actionGet();
@@ -195,7 +163,6 @@ public class ElasticTweetSearch {
 
     public void feedDoc(String twitterId, XContentBuilder b) throws IOException {
 //        String indexName = new SimpleDateFormat("yyyyMMdd").format(tw.getCreatedAt());
-
         IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, twitterId).
                 setConsistencyLevel(WriteConsistencyLevel.DEFAULT).
                 setSource(b);
@@ -332,49 +299,47 @@ public class ElasticTweetSearch {
         return b;
     }
 
-    public SolrTweet readDoc(final SearchHit doc) {
+    public SolrTweet readDoc(Map<String, Object> source, String idAsStr) {
         // if we use in mapping: "_source" : {"enabled" : false}
         // we need to include all fields in query to use doc.getFields() 
         // instead of doc.getSource()
-        Map<String, Object> map = doc.getSource();
-        String name = (String) map.get("user");
-        SolrUser user = new SolrUser(name);
-        user.setLocation((String) map.get("loc"));
-        user.setProfileImageUrl((String) map.get("iconUrl"));
 
-        long id = Long.parseLong(doc.getId());
-        String text = (String) map.get(TWEET_TEXT);
+        String name = (String) source.get("user");
+        SolrUser user = new SolrUser(name);
+        user.setLocation((String) source.get("loc"));
+        user.setProfileImageUrl((String) source.get("iconUrl"));
+
+        long id = Long.parseLong(idAsStr);
+        String text = (String) source.get(TWEET_TEXT);
         SolrTweet tw = new SolrTweet(id, text, user);
 
-        tw.setCreatedAt(Helper.toDateNoNPE((String) map.get(DATE)));
-        tw.setUpdatedAt(Helper.toDateNoNPE((String) map.get(UPDATE_DT)));
-        int rt = ((Number) map.get(RT_COUNT)).intValue();
-        int rp = ((Number) map.get("repl_i")).intValue();
+        tw.setCreatedAt(Helper.toDateNoNPE((String) source.get(DATE)));
+        tw.setUpdatedAt(Helper.toDateNoNPE((String) source.get(UPDATE_DT)));
+        int rt = ((Number) source.get(RT_COUNT)).intValue();
+        int rp = ((Number) source.get("repl_i")).intValue();
         tw.setRt(rt);
         tw.setReply(rp);
 
-        if (map.get("quality_i") != null)
-            tw.setQuality(((Number) map.get("quality_i")).intValue());
+        if (source.get("quality_i") != null)
+            tw.setQuality(((Number) source.get("quality_i")).intValue());
 
 //        System.out.println("now "+map.get(INREPLY_ID) + " " + doc.field(INREPLY_ID));
 
-        if (map.get(INREPLY_ID) != null) {
+        if (source.get(INREPLY_ID) != null) {
 //            Long replyId = (Long) doc.field(INREPLY_ID).getValue();
 
-            long replyId = ((Number) map.get(INREPLY_ID)).longValue();
+            long replyId = ((Number) source.get(INREPLY_ID)).longValue();
             tw.setInReplyTwitterId(replyId);
         }
 
-        tw.setUrlEntries(Arrays.asList(parseUrlEntries(doc)));
+        tw.setUrlEntries(Arrays.asList(parseUrlEntries(source)));
         return tw;
     }
 
-    public UrlEntry[] parseUrlEntries(SearchHit doc) {
-        Map<String, Object> map = doc.getSource();
-
+    public UrlEntry[] parseUrlEntries(Map<String, Object> source) {
         int urlCount = 0;
         try {
-            urlCount = ((Number) map.get("url_i")).intValue();
+            urlCount = ((Number) source.get("url_i")).intValue();
         } catch (Exception ex) {
         }
 
@@ -387,24 +352,24 @@ public class ElasticTweetSearch {
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) map.get("url_pos_" + (counter + 1) + "_s");
+            String str = (String) source.get("url_pos_" + (counter + 1) + "_s");
             String strs[] = (str).split(",");
             urls[counter].setIndex(Integer.parseInt(strs[0]));
             urls[counter].setLastIndex(Integer.parseInt(strs[1]));
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) map.get("dest_url_" + (counter + 1) + "_s");
+            String str = (String) source.get("dest_url_" + (counter + 1) + "_s");
             urls[counter].setResolvedUrl(str);
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) map.get("dest_domain_" + (counter + 1) + "_s");
+            String str = (String) source.get("dest_domain_" + (counter + 1) + "_s");
             urls[counter].setResolvedDomain(str);
         }
 
         for (int counter = 0; counter < urls.length; counter++) {
-            String str = (String) map.get("dest_title_" + (counter + 1) + "_s");
+            String str = (String) source.get("dest_title_" + (counter + 1) + "_s");
             urls[counter].setResolvedTitle(str);
         }
         return urls;
@@ -506,7 +471,7 @@ public class ElasticTweetSearch {
         Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
 //        System.out.println("docs:" + docs.length);
         for (SearchHit sd : docs) {
-            SolrUser u = readDoc(sd).getFromUser();
+            SolrUser u = readDoc(sd.getSource(), sd.getId()).getFromUser();
             SolrUser uOld = usersMap.get(u.getScreenName());
             if (uOld == null)
                 usersMap.put(u.getScreenName(), u);
@@ -579,7 +544,7 @@ public class ElasticTweetSearch {
                 SearchHits docs = rsp.getHits();
 
                 for (SearchHit sd : docs) {
-                    SolrTweet tw = readDoc(sd);
+                    SolrTweet tw = readDoc(sd.getSource(), sd.getId());
                     existingTweets.put(tw.getTwitterId(), tw);
                     SolrUser u = tw.getFromUser();
                     SolrUser uOld = usersMap.get(u.getScreenName());
@@ -667,7 +632,7 @@ public class ElasticTweetSearch {
                 SearchResponse rsp = search(query);
                 SearchHits docs = rsp.getHits();
                 for (SearchHit sd : docs) {
-                    SolrTweet tw = readDoc(sd);
+                    SolrTweet tw = readDoc(sd.getSource(), sd.getId());
                     SolrTweet twOld = tweets.get(tw.getTwitterId());
                     if (twOld == null)
                         us.addOwnTweet(tw);
@@ -839,7 +804,7 @@ public class ElasticTweetSearch {
         SearchHits docs = rsp.getHits();
 
         for (SearchHit sd : docs) {
-            SolrTweet tw = readDoc(sd);
+            SolrTweet tw = readDoc(sd.getSource(), sd.getId());
             replyMap.put(tw.getTwitterId(), tw);
         }
 
@@ -861,7 +826,7 @@ public class ElasticTweetSearch {
         SearchHits docs = rsp.getHits();
         Map<Long, SolrTweet> origMap = new LinkedHashMap<Long, SolrTweet>();
         for (SearchHit sd : docs) {
-            SolrTweet tw = readDoc(sd);
+            SolrTweet tw = readDoc(sd.getSource(), sd.getId());
             origMap.put(tw.getTwitterId(), tw);
         }
 
@@ -902,7 +867,7 @@ public class ElasticTweetSearch {
         List<SolrTweet> list = new ArrayList<SolrTweet>();
 
         for (SearchHit sd : docs) {
-            list.add(readDoc(sd));
+            list.add(readDoc(sd.getSource(), sd.getId()));
         }
 
         return list;
@@ -910,16 +875,9 @@ public class ElasticTweetSearch {
 
     public SolrTweet findByTwitterId(Long twitterId) {
         try {
-            // set rows to 2 to check uniqueness
-            SolrQuery sq = JetwickQuery.createIdQuery(twitterId);
-            SearchResponse rsp = search(sq);
-            List<SolrTweet> list = collectTweets(rsp);
-            if (list.size() > 1)
-                throw new IllegalStateException("Not only one document found for twitter id:" + twitterId + " . " + list.size());
-            if (list.isEmpty())
-                return null;
-
-            return list.get(0);
+            GetResponse rsp = client.prepareGet(indexName, indexType, "" + twitterId).
+                    execute().actionGet();
+            return readDoc(rsp.getSource(), rsp.getId());            
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -996,7 +954,7 @@ public class ElasticTweetSearch {
             logger.info(lastQ.toString());
             Set<String> res = new TreeSet<String>();
 //            if (rsp.facets().facet(TAG) != null && rsp.facets().getFacets().get(TAG) != null) {
-                //TODO NOW
+            //TODO NOW
 //                for (Count cnt : rsp.getFacetField(TAG).getValues()) {
 //                    String lowerSugg = cnt.getName().toLowerCase();
 //                    if (existingTerms.contains(lowerSugg))
@@ -1156,7 +1114,7 @@ public class ElasticTweetSearch {
                 actionGet();
         //rsp.acknowledged();
 
-        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();                
+        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
     }
 
     public void refresh() {

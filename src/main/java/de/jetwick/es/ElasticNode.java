@@ -15,6 +15,8 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,10 +116,10 @@ public class ElasticNode {
     private Node node;
 
     public ElasticNode start(String dataHome) {
-        return start(dataHome, dataHome + "/config");
+        return start(dataHome, dataHome + "/config", false);
     }
 
-    public ElasticNode start(String home, String conf) {
+    public ElasticNode start(String home, String conf, boolean testing) {
         // see
         // http://www.elasticsearch.com/docs/elasticsearch/setup/installation/
         // http://www.elasticsearch.com/docs/elasticsearch/setup/dirlayout/
@@ -125,26 +127,31 @@ public class ElasticNode {
         System.setProperty("es.path.home", homeDir.getAbsolutePath());
         System.setProperty("es.path.conf", conf);
 
-        node = nodeBuilder().
-                clusterName(CLUSTER).
-                //                local(true).
-                settings(ImmutableSettings.settingsBuilder().
+        Builder settings = ImmutableSettings.settingsBuilder().
                 put("network.host", "127.0.0.1").
                 //                put("network.bindHost", "127.0.0.0").
                 //                put("network.publishHost", "127.0.0.0").
                 put("number_of_shards", 3).
-                put("number_of_replicas", 1).
+                put("number_of_replicas", 1);
+        
+        if(testing) {
+            settings.put("gateway.type", "none");
                 // default is local
                 // none means no data after node restart!
                 // does not work when transportclient connects:
 //                put("gateway.type", "fs").
 //                put("gateway.fs.location", homeDir.getAbsolutePath()).
-                build()).
-                build().
-                start();
-
-        // TODO use put("gateway.type", "none") for unit tests
+        }
         
+        settings.build();        
+        NodeBuilder nBuilder = nodeBuilder().settings(settings);        
+        if(!testing) {
+            nBuilder.clusterName(CLUSTER);
+        } else {
+        //                local(true).
+        }
+        
+        node = nBuilder.build().start();        
         logger.info("Started Node. Home folder is: " + homeDir.getAbsolutePath());
         return this;
     }

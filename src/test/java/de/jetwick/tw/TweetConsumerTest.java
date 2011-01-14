@@ -15,10 +15,9 @@
  */
 package de.jetwick.tw;
 
-import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.JetwickTestClass;
 import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrTweetSearchTest;
+import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;

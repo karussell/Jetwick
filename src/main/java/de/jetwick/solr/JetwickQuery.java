@@ -15,7 +15,6 @@
  */
 package de.jetwick.solr;
 
-import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.util.Helper;
 import org.apache.solr.client.solrj.SolrQuery;
 
@@ -67,8 +66,11 @@ public class JetwickQuery extends SolrQuery {
         else
             resQuery.set("sort", sortParam);
         return resQuery;
-    }
+    }   
 
+    /**
+     * @deprecated use ElasticTweetSearch.findByTwitterId
+     */
     public static SolrQuery createIdQuery(long id) {
         return new SolrQuery().addFilterQuery("id:" + id).setRows(2);
     }
