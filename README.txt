@@ -12,8 +12,8 @@ I developed jetwick to get a better twitter search.
 
 I was and I am using twitter as a bookmarking service and needed to search my account often.
 With twitter this is a pain - with jetwick it's just a click.
-Also I wanted to know about which topics a user tweets about.
-And then I wanted to sort a search against retweets to be able to stay days away
+Then I don't like to see similar tweets again and again.
+And I wanted to sort a search against retweets to be able to stay days away
 from twitter and get the most important news about a special topic when I come back
 (e.g. from holidays).
 

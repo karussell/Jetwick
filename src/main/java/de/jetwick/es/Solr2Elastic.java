@@ -136,7 +136,6 @@ public class Solr2Elastic {
         String key = strs[0];
         String val = strs[1];
         
-        System.out.println("solr2es:"+key + ":"+val);
         if (val.contains(" OR ")) {
             String fqs[] = fq.split(" OR ");
 
@@ -199,8 +198,6 @@ public class Solr2Elastic {
                     rfb.lt(to).includeUpper(true); // lte(Object) is missing
             }
             
-            System.out.println("from:" + from + " to:" + to);
-
             if (from == null && to == null)
                 return FilterBuilders.existsFilter(val);
 
