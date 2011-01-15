@@ -83,7 +83,7 @@ public class TweetConsumer extends MyThread {
 
             lastFeed = System.currentTimeMillis();
             sw1 = new StopWatch(" ");
-            sw1.start();            
+            sw1.start();
             Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
             sw1.stop();
             String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();
@@ -121,21 +121,27 @@ public class TweetConsumer extends MyThread {
                 break;
         }
 
-        try {                        
-            Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());            
-            allTweets += tweetSet.size();
-            indexedTweets += res.size();
-            float tweetsPerSec = indexedTweets / ((System.currentTimeMillis() - start) / 1000.0f);
-            String str = "receivedTweets:" + allTweets + " indexedTweets:" + indexedTweets + " tweets/s:" + tweetsPerSec + " indexed: ";
-            for (TweetPackage pkg : donePackages) {
-                str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
+        for (int trial = 1; trial <= 3; trial++) {
+            try {
+                Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
+                allTweets += tweetSet.size();
+                indexedTweets += res.size();
+                float tweetsPerSec = indexedTweets / ((System.currentTimeMillis() - start) / 1000.0f);
+                String str = "receivedTweets:" + allTweets + " indexedTweets:" + indexedTweets + " tweets/s:" + tweetsPerSec + " indexed: ";
+                for (TweetPackage pkg : donePackages) {
+                    str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
+                }
+                logger.info(str);
+                return res;
+            } catch (Exception ex) {
+                logger.error("trial " + trial + ". couldn't update "
+                        + tweetSet.size() + " tweets: " + ex.getMessage()
+                        + " ... now wait and try again");
+                myWait(5);
             }
-            logger.info(str);
-            return res;
-        } catch (Exception ex) {
-            logger.error("Couldn't update " + tweetSet.size() + " tweets.", ex);
-            return Collections.EMPTY_LIST;
         }
+
+        return Collections.EMPTY_LIST;
     }
 
     public void setTweetSearch(ElasticTweetSearch tweetSearch) {
