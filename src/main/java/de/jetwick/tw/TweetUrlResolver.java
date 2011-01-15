@@ -60,6 +60,14 @@ public class TweetUrlResolver extends MyThread {
         return this;
     }
 
+    public void setMaxFill(int maxFill) {
+        this.maxFill = maxFill;
+    }        
+
+    public void setUrlCleaner(UrlTitleCleaner urlCleaner) {
+        this.urlCleaner = urlCleaner;
+    }
+    
     public void setResolveTimeout(int resolveTimeout) {
         this.resolveTimeout = resolveTimeout;
     }
@@ -158,5 +166,5 @@ public class TweetUrlResolver extends MyThread {
         } catch (InterruptedException ex) {
             logger.info(getName() + " was interrupted:" + ex.getMessage());
         }
-    }
+    }   
 }

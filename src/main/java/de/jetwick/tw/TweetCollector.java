@@ -105,7 +105,8 @@ public class TweetCollector {
         twUrlResolver.setResolveTimeout(cfg.getTweetResolveUrlTimeout());
         twUrlResolver.setUncaughtExceptionHandler(excHandler);
         twUrlResolver.setTest(false);
-        //twUrlResolver.setUrlTitleCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
+        twProducer.setMaxFill(2 * tweetsPerBatch);        
+        twUrlResolver.setUrlCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
 
         // reading queue2
         BlockingQueue<TweetPackage> queue2 = twUrlResolver.getResultQueue();
