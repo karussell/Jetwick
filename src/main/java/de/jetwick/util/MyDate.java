@@ -119,4 +119,8 @@ public class MyDate implements Cloneable {
     public String toString() {
         return new Date(time).toString();
     }   
+    
+    public String toLocalString() {
+        return Helper.toLocalDateTime(new Date(time));
+    }
 }

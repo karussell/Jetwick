@@ -168,8 +168,8 @@ public class ElasticTweetSearchTest {
         assertEquals("peter2", twSearch.search("java").iterator().next().getScreenName());
         assertEquals(2, twSearch.search("javascript").size());
         Iterator<SolrUser> iter = twSearch.search("javascript").iterator();
-        assertEquals("peter1", iter.next().getScreenName());
         assertEquals("peter3", iter.next().getScreenName());
+        assertEquals("peter1", iter.next().getScreenName());
     }
 
     @Test
@@ -635,7 +635,6 @@ public class ElasticTweetSearchTest {
 
     @Test
     public void testQueryChoices() throws SolrServerException {
-        twSearch.setTermMinFrequency(0);
         twSearch.privateUpdate(Arrays.asList(createTweet(1L, "obama obama", "usera"),
                 createTweet(2L, "bluest obama obama", "usera"),
                 createTweet(3L, "bluest bluest obama", "usera"),
@@ -645,7 +644,6 @@ public class ElasticTweetSearchTest {
 
         Collection<String> coll = twSearch.getQueryChoices(null, "obama");
         assertEquals(0, coll.size());
-//        assertTrue(coll.contains("obama"));
 
         coll = twSearch.getQueryChoices(null, "obama ");
         assertEquals(1, coll.size());
@@ -654,7 +652,6 @@ public class ElasticTweetSearchTest {
 
     @Test
     public void testQueryChoicesWithoutDateRestrictions() throws SolrServerException {
-        twSearch.setTermMinFrequency(0);
         twSearch.privateUpdate(Arrays.asList(createTweet(new MyDate().minusDays(1).minusMinutes(3), "obama obama", "usera"),
                 createTweet(new MyDate().minusDays(1).minusMinutes(2), "bluest obama obama", "usera"),
                 createTweet(new MyDate().minusDays(1).minusMinutes(1), "bluest bluest obama", "usera"),

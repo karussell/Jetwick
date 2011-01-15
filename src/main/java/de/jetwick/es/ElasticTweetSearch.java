@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.filter.FilterFacet;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -69,6 +70,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
@@ -82,7 +84,7 @@ public class ElasticTweetSearch {
 
     public static final String TWEET_TEXT = "tw";
     public static final String DATE = "dt";
-    public static final String DATE_FACET = "datefacet";    
+    public static final String DATE_FACET = "datefacet";
     public static final String RT_COUNT = "retw_i";
     public static final String IS_RT = "crt_b";
     public static final String UPDATE_DT = "update_dt";
@@ -94,7 +96,6 @@ public class ElasticTweetSearch {
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     // TODO is this necessary?
     protected static final int MAX_TWEETS_PER_REQ = 100;
-    
     private String indexName = "twindex";
     private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
@@ -127,7 +128,7 @@ public class ElasticTweetSearch {
     public void info() {
         NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
         for (String n : rsp.getNodesMap().keySet()) {
-            logger.info("active node:"+n);
+            logger.info("active node:" + n);
         }
     }
 
@@ -136,13 +137,6 @@ public class ElasticTweetSearch {
                 setQuery(QueryBuilders.matchAllQuery()).
                 execute().actionGet();
         return response.getCount();
-    }
-
-    public void feedDoc(String id, Map<String, Object> values) throws IOException {
-        IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, id).
-                setSource(values);
-        irb.execute().actionGet();
-
     }
 
     public void feedDoc(String twitterId, XContentBuilder b) throws IOException {
@@ -268,6 +262,10 @@ public class ElasticTweetSearch {
                 b.field("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
                 b.field("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
                 b.field("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
+                // index this field with a tokenizer ...
+                if (counter == 1)
+                    b.field("dest_title_t", urlEntry.getResolvedTitle());
+
                 if (counter >= 3)
                     break;
             }
@@ -767,7 +765,7 @@ public class ElasticTweetSearch {
         try {
             // get tweets which replies our existing tweets
             // INREPLY_ID:"tweets[i].id"            
-            if(replyIdStr.length() > 0) {
+            if (replyIdStr.length() > 0) {
                 SolrQuery query = new SolrQuery().addFilterQuery(replyIdStr.toString()).setRows(origTweets.size());
                 findRepliesForOriginalTweets(query, origTweets, updatedTweets);
             }
@@ -939,24 +937,24 @@ public class ElasticTweetSearch {
             SearchResponse rsp = search(lastQ);
             logger.info(lastQ.toString());
             Set<String> res = new TreeSet<String>();
-//            if (rsp.facets().facet(TAG) != null && rsp.facets().getFacets().get(TAG) != null) {
-            //TODO NOW
-//                for (Count cnt : rsp.getFacetField(TAG).getValues()) {
-//                    String lowerSugg = cnt.getName().toLowerCase();
-//                    if (existingTerms.contains(lowerSugg))
-//                        continue;
-//
-//                    if (lowerSugg.startsWith(secPart)) {
-//                        if (firstPart.isEmpty())
-//                            res.add(cnt.getName());
-//                        else
-//                            res.add(firstPart + " " + cnt.getName());
-//                    }
-//
-//                    if (res.size() > 9)
-//                        break;
-//                }
-//            }
+            TermsFacet tf = rsp.facets().facet(TAG);
+            if (tf != null) {
+                for (TermsFacet.Entry cnt : tf.entries()) {
+                    String lowerSugg = cnt.getTerm().toLowerCase();
+                    if (existingTerms.contains(lowerSugg))
+                        continue;
+
+                    if (lowerSugg.startsWith(secPart)) {
+                        if (firstPart.isEmpty())
+                            res.add(cnt.getTerm());
+                        else
+                            res.add(firstPart + " " + cnt.getTerm());
+                    }
+
+                    if (res.size() > 9)
+                        break;
+                }
+            }
 
             return res;
         } catch (Exception ex) {
@@ -1010,11 +1008,14 @@ public class ElasticTweetSearch {
             return Collections.EMPTY_LIST;
 
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
+        MyDate now = new MyDate();
+        // NOW/DAY-3DAYS
+        MyDate from = new MyDate().castToDay().minusDays(2);
         search(users, new SolrQuery(query).addFilterQuery("tw:#jetwick").
                 //                addFilterQuery(RT_COUNT + ":[1 TO *]").
                 addFilterQuery(QUALITY + ":[90 TO 100]").
                 addFilterQuery(IS_RT + ":false").
-                addFilterQuery(DATE + ":[NOW/DAY-3DAYS TO NOW]").
+                addFilterQuery(DATE + ":[" + from.toLocalString() + " TO " + now.toLocalString() + "]").
                 setSortField(RT_COUNT, SolrQuery.ORDER.desc));
 
         Set<SolrTweet> res = new LinkedHashSet<SolrTweet>();
@@ -1079,10 +1080,6 @@ public class ElasticTweetSearch {
         }
 
         return updatedTweets;
-    }
-
-    void setTermMinFrequency(int i) {
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public UpdateResponse optimize(int optimizeToSegmentsAfterUpdate) {

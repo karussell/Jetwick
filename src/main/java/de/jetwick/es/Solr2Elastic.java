@@ -67,8 +67,14 @@ public class Solr2Elastic {
         XContentQueryBuilder qb;
         if (query.getQuery() == null || query.getQuery().isEmpty())
             qb = QueryBuilders.matchAllQuery();
-        else
-            qb = termQuery(ElasticTweetSearch.TWEET_TEXT, query.getQuery());
+        else {
+            // fields can also contain patterns like so name.* to match more fields
+            qb = QueryBuilders.queryString(query.getQuery()).
+                    field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
+                    allowLeadingWildcard(false).analyzer("myanalyzer").useDisMax(true);            
+            
+            qb = customScoreQuery(qb).script("queryboost").lang("mvel");
+        }
 
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;
@@ -181,7 +187,7 @@ public class Solr2Elastic {
                 } catch(NumberFormatException ex) {
                     from = Helper.toDate(val.substring(0, index1));                    
                 }
-                rfb.from(from);
+                rfb.from(from).includeLower(true);
             }
 
             if (!val.endsWith("*") && !val.endsWith("Infinity")) {
@@ -193,7 +199,7 @@ public class Solr2Elastic {
                 }
 
                 if (from != null)
-                    rfb.to(to);
+                    rfb.to(to).includeUpper(true);
                 else
                     rfb.lt(to).includeUpper(true); // lte(Object) is missing
             }
