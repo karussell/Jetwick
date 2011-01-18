@@ -668,7 +668,7 @@ public class HomePage extends WebPage {
             totalHits = rsp.getHits().getTotalHits();
             logger.info(addIP("[stats] " + totalHits + " hits for: " + query.toString()));
         } catch (Exception ex) {
-            logger.error("Error while searching " + query.toString() + ": " + ex.getMessage());
+            logger.error("Error while searching " + query.toString(), ex);
         }
 
         resultsPanel.clear();

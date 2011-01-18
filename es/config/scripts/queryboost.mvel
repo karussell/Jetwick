@@ -1,33 +1,20 @@
-//http://wiki.apache.org/solr/FunctionQuery
 boost = 1;
 
+//http://wiki.apache.org/solr/FunctionQuery
 //map(tw_i,0,30,0,2)
-tweetLength = doc['tw_i'].value;
-if(tweetLength <= 30)
-    boost = 0;
-else
-    boost = 2;
+//tweetLength = doc['tw_i'].value;
+//if(tweetLength <= 30)
+//    boost *= 0;
+//else
+//    boost *= 2;
 
-//map(retw_i,10,1e10,10)^5
-retweets = doc['retw_i'].value;
-if(retweets <= 10)
-    boost *= retweets;
-else if(retweets <= 100)
-    boost *= 10;    
-else
-    // extreme tweets should be boosted extreme
-    boost *= retweets / 5;
+boost *= doc['retw_i'].value <= 100 ? doc['retw_i'].value : 100;
 
-//recip(ms(NOW/HOUR,dt),10.0e-9,2,1)^400         
-//recip(x,m,a,b) implementing a/(m*x+b)
-date = doc['dt'].value;
-diff = (time - date) / 1000.0 / 3600.0
-//boost *= 2 /(10.0e-9 * diff + 1);
-//boost *= 400;
+//date = doc['dt'].value;
+//boost *= 100 /(10.0e-8 * (mynow - date) + 1);
 
-//map(quality_i,0,65,0,1)^30         
-quality = doc['quality_i'].value;
-if(tweetLength <= 65)
-    boost = 0;
-else
-    boost *= 30;
+//quality = doc['quality_i'].value;
+//if(quality <= 65)
+//    boost = 0;
+//else
+//    boost *= 30;

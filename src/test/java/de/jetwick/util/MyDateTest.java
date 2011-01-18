@@ -40,7 +40,7 @@ public class MyDateTest {
     @Test
     public void testRound() {
         assertEquals(3660 * 1000, new MyDate(61 * MyDate.ONE_MINUTE).getTime());
-        assertEquals(3600 * 1000, new MyDate(61 * MyDate.ONE_MINUTE).castToHours().getTime());
-        assertEquals(3600 * 1000, new MyDate((60 + 59) * MyDate.ONE_MINUTE).castToHours().getTime());
+        assertEquals(3600 * 1000, new MyDate(61 * MyDate.ONE_MINUTE).castToHour().getTime());
+        assertEquals(3600 * 1000, new MyDate((60 + 59) * MyDate.ONE_MINUTE).castToHour().getTime());
     }
 }

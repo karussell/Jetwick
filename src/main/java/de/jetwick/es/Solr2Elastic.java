@@ -71,10 +71,15 @@ public class Solr2Elastic {
             // fields can also contain patterns like so name.* to match more fields
             qb = QueryBuilders.queryString(query.getQuery()).
                     field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
-                    allowLeadingWildcard(false).analyzer("myanalyzer").useDisMax(true);            
-            
-            qb = customScoreQuery(qb).script("queryboost").lang("mvel");
+                    allowLeadingWildcard(false).analyzer("myanalyzer").useDisMax(true);
         }
+
+        // takes too long :/
+//        qb = customScoreQuery(qb).script("queryboost").lang("mvel").param("mynow", new Date().getTime());
+        
+//        long time = new MyDate().castToHour().getTime();
+//        qb = customScoreQuery(qb).script("_score * 100 /(10.0e-8 * (" + time + " - doc['dt'].value) + 1);").lang("python");
+//        qb = customScoreQuery(qb).script("_score * 100 /(10.0e-8 * (" + time + " - doc['dt'].value) + 1);").lang("mvel");
 
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;
@@ -107,23 +112,23 @@ public class Solr2Elastic {
             // too much work to convert the generic case with all the date math
             // so cheat for our case:
             String name = ElasticTweetSearch.DATE_FACET;
-            RangeFacetBuilder rfb = FacetBuilders.rangeFacet(name).field(ElasticTweetSearch.DATE);            
-            
+            RangeFacetBuilder rfb = FacetBuilders.rangeFacet(name).field(ElasticTweetSearch.DATE);
+
             MyDate date = new MyDate();
-            
+
             // latest
-            rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHours().toDate()));            
-            
+            rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate()));
+
             for (int i = 0; i < 6; i++) {
                 // from must be smaller than to!
                 MyDate tmp = date.clone();
                 rfb.addRange(Helper.toLocalDateTime(date.minusDays(1).castToDay().toDate()),
                         Helper.toLocalDateTime(tmp.toDate()));
             }
-            
+
             // oldest
             rfb.addUnboundedFrom(Helper.toLocalDateTime(date.toDate()));
-            
+
             srb.addFacet(rfb);
         }
 
@@ -134,14 +139,14 @@ public class Solr2Elastic {
         return "df_" + field;
     }
 
-    public static XContentFilterBuilder filterQuery2Builder(String fq) {        
+    public static XContentFilterBuilder filterQuery2Builder(String fq) {
         // skip local parameter!
         fq = removeLocalParams(fq);
-        
+
         String strs[] = fq.split(":", 2);
         String key = strs[0];
         String val = strs[1];
-        
+
         if (val.contains(" OR ")) {
             String fqs[] = fq.split(" OR ");
 
@@ -181,11 +186,11 @@ public class Solr2Elastic {
             Object from = null;
             Object to = null;
             //+-Infinity comes from ES
-            if (!val.startsWith("*") && !val.startsWith("-Infinity")) { 
+            if (!val.startsWith("*") && !val.startsWith("-Infinity")) {
                 try {
-                    from = Integer.parseInt(val.substring(0, index1));                    
-                } catch(NumberFormatException ex) {
-                    from = Helper.toDate(val.substring(0, index1));                    
+                    from = Integer.parseInt(val.substring(0, index1));
+                } catch (NumberFormatException ex) {
+                    from = Helper.toDate(val.substring(0, index1));
                 }
                 rfb.from(from).includeLower(true);
             }
@@ -194,7 +199,7 @@ public class Solr2Elastic {
                 String tmp = val.substring(index1 + " TO ".length());
                 try {
                     to = Integer.parseInt(tmp);
-                } catch(NumberFormatException ex) {
+                } catch (NumberFormatException ex) {
                     to = Helper.toDate(tmp);
                 }
 
@@ -203,7 +208,7 @@ public class Solr2Elastic {
                 else
                     rfb.lt(to).includeUpper(true); // lte(Object) is missing
             }
-            
+
             if (from == null && to == null)
                 return FilterBuilders.existsFilter(val);
 
@@ -235,12 +240,12 @@ public class Solr2Elastic {
     }
 
     private static String removeLocalParams(String val) {
-        if(val.startsWith("{")) {
+        if (val.startsWith("{")) {
             int index = val.indexOf("}");
-            if(index > 0)
-                val = val.substring(index + 1);            
-        }            
-        
+            if (index > 0)
+                val = val.substring(index + 1);
+        }
+
         return val;
     }
 }

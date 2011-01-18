@@ -77,7 +77,8 @@ import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
- *
+ * Provides search functionality via elasticsearch.
+ * 
  * @author Peter Karich, jetwick_@_pannous_._info
  */
 public class ElasticTweetSearch {
@@ -449,8 +450,8 @@ public class ElasticTweetSearch {
         SearchResponse rsp = query(query);
         SearchHit[] docs = rsp.getHits().getHits();
         Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
-//        System.out.println("docs:" + docs.length);
         for (SearchHit sd : docs) {
+//            System.out.println(sd.getExplanation().toString());
             SolrUser u = readDoc(sd.getSource(), sd.getId()).getFromUser();
             SolrUser uOld = usersMap.get(u.getScreenName());
             if (uOld == null)

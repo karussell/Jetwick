@@ -92,8 +92,13 @@ public class MyDate implements Cloneable {
         return this;
     }
     
-    public MyDate castToHours() {
+    public MyDate castToHour() {
         time = (time / ONE_HOUR) * ONE_HOUR;
+        return this;
+    }
+    
+    public MyDate castToMinute() {
+        time = (time / ONE_MINUTE) * ONE_MINUTE;
         return this;
     }
     
