@@ -21,6 +21,8 @@
 
         <dn.version>2.0.4</dn.version>
         <hibernate.version>3.5.1-Final</hibernate.version>
+        <es.version>0.14.1</es.version>        
+        <lucene.version>3.0.3</lucene.version>        
         <liquibase.version>1.9.4</liquibase.version>
         <liquibase.plugin.version>1.9.5.0</liquibase.plugin.version>
         <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
@@ -74,14 +76,53 @@
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>0.14.1</version>
+<!--            <version>${es.version}</version>-->
+            <version>0.15.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch-lang-javascript</artifactId>
+            <version>${es.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch-lang-groovy</artifactId>
+            <version>${es.version}</version>
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch-lang-python</artifactId>
+            <version>${es.version}</version>
+        </dependency>            
+        -->
+        
         <!-- required dep for elastic search -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-analyzers</artifactId>
-            <version>3.0.3</version>
+            <version>${lucene.version}</version>
+        </dependency>        
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-highlighter</artifactId>
+            <version>${lucene.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-fast-vector-highlighter</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-snowball</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queries</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>        
 
         <dependency>
             <groupId>org.apache.wicket</groupId>
@@ -419,6 +460,13 @@
             <name>Sonatype Releases Repository</name>
             <url>http://oss.sonatype.org/content/repositories/releases/</url>
         </repository>
+        
+        <repository>
+            <id>elasticsearch</id>
+            <name>ElasticSearch Repo for jython jar</name>
+            <url>http://elasticsearch.googlecode.com/svn/maven</url>
+        </repository>
+        
 
     </repositories>
 </project>
