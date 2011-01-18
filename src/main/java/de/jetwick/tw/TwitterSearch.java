@@ -728,4 +728,8 @@ public class TwitterSearch implements Serializable {
 
         return "";
     }
+
+    public boolean isInitialized() {
+        return twitter != null;
+    }
 }

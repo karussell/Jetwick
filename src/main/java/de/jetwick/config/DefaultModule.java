@@ -21,6 +21,8 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.tw.Credits;
+import de.jetwick.tw.TweetProducer;
+import de.jetwick.tw.TweetProducerOffline;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.UrlTitleCleaner;
 import de.jetwick.util.MaxBoundSet;
@@ -38,6 +40,7 @@ public class DefaultModule extends AbstractModule {
     @Override
     protected void configure() {
         logger.info(config.toString());
+        installTweetProducer();
         installLastSearches();
         installTwitterModule();
         installSolrModule();
@@ -79,7 +82,7 @@ public class DefaultModule extends AbstractModule {
         try {
             ts.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
         } catch (Exception ex) {
-            logger.error("Cannot create twitter4j instance! But start nevertheless ...", ex);
+            logger.error("Cannot create twitter4j instance!\n######### TWITTER4J ERROR: But start jetwick nevertheless! Error:" + ex);
         }
 
         bind(TwitterSearch.class).toProvider(new Provider<TwitterSearch>() {
@@ -106,5 +109,9 @@ public class DefaultModule extends AbstractModule {
         } catch (Exception ex) {
             logger.error("error while reading url-title-file:" + config.getUrlTitleAvoidList() + " " + ex.getMessage());
         }
+    }
+
+    private void installTweetProducer() {
+        bind(TweetProducer.class).to(TweetProducerOffline.class);
     }
 }

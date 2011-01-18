@@ -77,9 +77,9 @@ public class Solr2Elastic {
         // takes too long :/
 //        qb = customScoreQuery(qb).script("queryboost").lang("mvel").param("mynow", new Date().getTime());
         
-//        long time = new MyDate().castToHour().getTime();
+        long time = new MyDate().castToHour().getTime();
 //        qb = customScoreQuery(qb).script("_score * 100 /(10.0e-8 * (" + time + " - doc['dt'].value) + 1);").lang("python");
-//        qb = customScoreQuery(qb).script("_score * 100 /(10.0e-8 * (" + time + " - doc['dt'].value) + 1);").lang("mvel");
+        qb = customScoreQuery(qb).script("_score * 100 /(10.0e-8 * (" + time + " - doc['dt'].value) + 1);").lang("mvel");
 
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;

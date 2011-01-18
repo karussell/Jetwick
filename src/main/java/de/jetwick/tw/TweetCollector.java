@@ -89,8 +89,7 @@ public class TweetCollector {
         int tweetsPerBatch = cfg.getTweetsPerBatch();
         twProducer.setMaxFill(2 * tweetsPerBatch);
         twProducer.setTwitterSearch(tws);
-        twProducer.setUserSearch(userSearch);
-        twProducer.setUncaughtExceptionHandler(excHandler);
+        twProducer.setUserSearch(userSearch);        
 
         BlockingQueue<TweetPackage> queue1 = twProducer.getQueue();
         // feeding queue1 from UI
@@ -122,9 +121,11 @@ public class TweetCollector {
         rmiServerThread.start();
         twConsumer.start();
         twUrlResolver.start();
-        twProducer.start();
+        Thread twProducerThread = new Thread(twProducer, "tweet-producer");
+        twProducerThread.setUncaughtExceptionHandler(excHandler);
+        twProducerThread.start();
 
-        twProducer.join();
+        twProducerThread.join();
         twConsumer.interrupt();
         twUrlResolver.interrupt();
         rmiServerThread.interrupt();

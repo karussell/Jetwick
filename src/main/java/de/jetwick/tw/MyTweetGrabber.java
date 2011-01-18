@@ -86,7 +86,7 @@ public class MyTweetGrabber implements Serializable {
 
             @Override
             public void run() {
-                if(tweetSearch == null)
+                if(!tweetSearch.isInitialized())
                     return;
                 
                 int rl = tweetSearch.getRateLimit();

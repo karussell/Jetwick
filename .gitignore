@@ -9,6 +9,7 @@ es/data/
 es/work/
 es/logs/
 es/jetwickcluster
+esOld/
 target/
 adindex/data/
 adindex/data.bak/

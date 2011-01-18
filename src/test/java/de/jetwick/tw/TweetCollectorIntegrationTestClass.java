@@ -118,12 +118,13 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         tws.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
 
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
-        tweetProducer.setUncaughtExceptionHandler(excHandler);
         tweetProducer.setTwitterSearch(tws);
         tweetProducer.setUserSearch(userSearch);
-        tweetProducer.start();
+        Thread tweetProducerThread = new Thread(tweetProducer);
+        tweetProducerThread.setUncaughtExceptionHandler(excHandler);
+        tweetProducerThread.start();
 
-        tweetProducer.join(3000);
+        tweetProducerThread.join(3000);
 
         TweetUrlResolver twUrlResolver = getInstance(TweetUrlResolver.class);
         twUrlResolver.setResolveThreads(1);

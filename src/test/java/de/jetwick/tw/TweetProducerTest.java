@@ -60,14 +60,14 @@ public class TweetProducerTest extends HibTestClass {
     @Test
     public void testUpdateAndInitTag() {
         // make sure that updateTag is in a transaction
-        TweetProducer twProd = getInstance(TweetProducer.class);
+        TweetProducerOnline twProd = new TweetProducerOnline();
         twProd.updateTagInTA(new YTag("test"), 6);
         assertTrue(tagDao.findByName("test").getQueryInterval() < 10 * YTag.DEFAULT_Q_I);
     }
 
     @Test
     public void testInitTagsNoException() throws SolrServerException {
-        TweetProducer twProd = getInstance(TweetProducer.class);
+        TweetProducerOnline twProd = new TweetProducerOnline();
         twProd.updateTagInTA(new YTag("test"), 6);
         ElasticUserSearch uSearch = mock(ElasticUserSearch.class);
         when(uSearch.getQueryTerms()).thenReturn(Arrays.asList("Test"));
