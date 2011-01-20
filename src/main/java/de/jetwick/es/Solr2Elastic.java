@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import java.util.Date;
 import de.jetwick.util.Helper;
 import de.jetwick.util.MyDate;
 import java.util.ArrayList;
@@ -137,11 +136,7 @@ public class Solr2Elastic {
 
         srb.setQuery(qb);
     }
-
-    public static String getDateFacetName(String field) {
-        return "df_" + field;
-    }
-
+    
     public static XContentFilterBuilder filterQuery2Builder(String fq) {
         // skip local parameter!
         fq = removeLocalParams(fq);
@@ -216,6 +211,8 @@ public class Solr2Elastic {
                 return FilterBuilders.existsFilter(val);
 
             return rfb;
+        } else if(key.startsWith("-")) {
+            return FilterBuilders.notFilter(FilterBuilders.termFilter(key.substring(1), getTermValue(val)));
         } else
             return FilterBuilders.termFilter(key, getTermValue(val));
     }

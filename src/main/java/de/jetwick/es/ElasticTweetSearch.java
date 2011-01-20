@@ -95,6 +95,7 @@ public class ElasticTweetSearch {
     public static final String DUP_COUNT = "dups_i";
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
+    public static final String FILTER_KEY_USER = "user:";
     private String indexName = "twindex";
     private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
@@ -592,6 +593,7 @@ public class ElasticTweetSearch {
             updateTweets.addAll(twMap.values());
             updateTweets.addAll(findReplies(twMap));
             updateTweets.addAll(findRetweets(twMap, usersMap));
+            updateTweets.addAll(findDuplicates(twMap));
 
             // add the additionally fetched tweets to the user but do not add to updateTweets
             // this is a bit expensive ~30-40sec for every update call on a large index!
@@ -760,7 +762,7 @@ public class ElasticTweetSearch {
         int counter = 0;
         StringBuilder idStr = new StringBuilder();
         StringBuilder replyIdStr = new StringBuilder();
-        for (int i = 0; iter.hasNext(); i++) {
+        while(iter.hasNext()) {
             SolrTweet tw = iter.next();
             SolrTweet tmp = replyIdToTweetMap.get(tw.getTwitterId());
             if (tmp != null) {
@@ -793,7 +795,7 @@ public class ElasticTweetSearch {
         }
 
         try {
-            // get tweets which replies our existing tweets
+            // get tweets which replies our input tweets
             // INREPLY_ID:"tweets[i].id"            
             if (replyIdStr.length() > 0) {
                 SolrQuery query = new SolrQuery().addFilterQuery(replyIdStr.toString()).setRows(origTweets.size());
@@ -861,7 +863,7 @@ public class ElasticTweetSearch {
             return false;
 
         try {
-            // ensure that reply.user has not already a tweet in orig.replies            
+            // ensure that reply.user has not already a tweet in orig.replies   
             SolrQuery q = new SolrQuery().addFilterQuery(INREPLY_ID + ":" + orig.getTwitterId()).
                     addFilterQuery("-id:" + reply.getTwitterId()).
                     addFilterQuery("user:" + reply.getFromUser().getScreenName());
@@ -871,7 +873,7 @@ public class ElasticTweetSearch {
             orig.addReply(reply);
             return true;
         } catch (Exception ex) {
-            logger.error("couldn't addReply:" + ex.getMessage());
+            logger.error("couldn't add reply to:" + orig, ex);
             return false;
         }
     }
@@ -965,7 +967,6 @@ public class ElasticTweetSearch {
             lastQ.setRows(0);
             lastQ.set("f.tag.facet.limit", 15);
             SearchResponse rsp = search(lastQ);
-            logger.info(lastQ.toString());
             Set<String> res = new TreeSet<String>();
             TermsFacet tf = rsp.facets().facet(TAG);
             if (tf != null) {
@@ -1142,9 +1143,5 @@ public class ElasticTweetSearch {
 
     void waitForYellow() {
         client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
-    }
-
-    private static String createLatestDateFilter() {
-        return DATE + ":[" + new MyDate().minusHours(8).castToHour().getTime() + " TO *]";
     }
 }

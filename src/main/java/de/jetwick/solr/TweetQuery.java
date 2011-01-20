@@ -110,7 +110,6 @@ public class TweetQuery extends JetwickQuery {
 
     public TweetQuery createSimilarQuery(SolrTweet tweet) {
         new TermCreateCommand().calcTermsWithoutNoise(tweet);
-        // getSortedTermLimited was 6
         return createSimilarQuery(tweet.getTextTerms().getSortedTermLimited(8));
     }
 

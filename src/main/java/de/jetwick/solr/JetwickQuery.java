@@ -15,6 +15,7 @@
  */
 package de.jetwick.solr;
 
+import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.util.Helper;
 import org.apache.solr.client.solrj.SolrQuery;
 
@@ -95,21 +96,19 @@ public class JetwickQuery extends SolrQuery {
             if (userName.contains(" "))
                 userName = "\"" + userName + "\"";
 
-            // TODO ES
-//            addFilterQuery(ElasticTweetSearch.FILTER_KEY_USER + userName);
+            addFilterQuery(ElasticTweetSearch.FILTER_KEY_USER + userName);
         }
         return this;
     }
 
     public static String getUserFilter(SolrQuery q) {
         String fq[] = q.getFilterQueries();
-        // TODO ES
-//        if (fq != null) {
-//            for (String str : fq) {
-//                if (str.startsWith(ElasticTweetSearch.FILTER_KEY_USER))
-//                    return str;
-//            }
-//        }
+        if (fq != null) {
+            for (String str : fq) {
+                if (str.startsWith(ElasticTweetSearch.FILTER_KEY_USER))
+                    return str;
+            }
+        }
         return null;
     }
 
@@ -122,17 +121,16 @@ public class JetwickQuery extends SolrQuery {
     }
 
     public static String extractUserName(SolrQuery query) {
-        // TODO ES
-//        String tmp = ElasticTweetSearch.FILTER_KEY_USER;
-//        if (query.getFilterQueries() != null)
-//            for (String f : query.getFilterQueries()) {
-//                if (f.startsWith(tmp)) {
-//                    tmp = f.substring(tmp.length()).trim();
-//                    if (tmp.length() > 1 && tmp.startsWith("\"") && tmp.endsWith("\""))
-//                        tmp = tmp.substring(1, tmp.length() - 1);
-//                    return trimUserName(tmp);
-//                }
-//            }
+        String tmp = ElasticTweetSearch.FILTER_KEY_USER;
+        if (query.getFilterQueries() != null)
+            for (String f : query.getFilterQueries()) {
+                if (f.startsWith(tmp)) {
+                    tmp = f.substring(tmp.length()).trim();
+                    if (tmp.length() > 1 && tmp.startsWith("\"") && tmp.endsWith("\""))
+                        tmp = tmp.substring(1, tmp.length() - 1);
+                    return trimUserName(tmp);
+                }
+            }
 
         return "";
     }

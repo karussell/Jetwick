@@ -326,7 +326,7 @@ public class ElasticTweetSearchTest {
     }
 
     @Test
-    public void testNewUpdate() {
+    public void testBatchUpdate() {
         List<SolrTweet> list = new ArrayList<SolrTweet>();
 
         list.add(createTweet(1L, "text", "usera"));
@@ -366,6 +366,7 @@ public class ElasticTweetSearchTest {
         SolrTweet twC = twSearch.findByTwitterId(3L);
         assertEquals(1, twC.getReplyCount());
 
+        // A should have C as reply
         SolrTweet twA = twSearch.findByTwitterId(1L);
         assertEquals(1, twA.getReplyCount());
 
