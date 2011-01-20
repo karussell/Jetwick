@@ -53,7 +53,10 @@ public class TweetConsumer extends MyThread {
     @Inject
     protected ElasticTweetSearch tweetSearch;
     private int removeDays = 8;
-
+    private long allTweets = 0;
+    private long indexedTweets = 0;
+    private long start = -1;
+    
     public TweetConsumer() {
         super("tweet-consumer");
     }
@@ -64,14 +67,17 @@ public class TweetConsumer extends MyThread {
         while (!isInterrupted()) {
             if (tweetPackages.isEmpty()) {
                 // TODO instead of a 'fixed' waiting               
-                // use beforeThread.getCondition().await + signalAll
-                if (!myWait(5))
-                    break;
-
+                // use beforeThread.getCondition().await + signalAll                
                 logger.info("Consumer: no tweetpackage in queue");
+                
+                if (!myWait(5))
+                    break;                
                 continue;
             }
 
+            if(start < 0)
+                start = System.currentTimeMillis();
+            
             // make sure we really use the commit batch size
             // because solr doesn't want too frequent commits
             int count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
@@ -86,7 +92,7 @@ public class TweetConsumer extends MyThread {
             sw1.start();
             Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
             sw1.stop();
-            String str = "[solr] " + sw1.toString() + "\t updateCount=" + res.size();
+            String str = "[es] " + sw1.toString() + "\t updateCount=" + res.size();
 
             long time = System.currentTimeMillis();
             if (optimizeInterval > 0)
@@ -96,16 +102,13 @@ public class TweetConsumer extends MyThread {
                 if (optimizeInterval > 0 && time - lastOptimizeTime >= optimizeInterval) {
                     lastOptimizeTime = time;
                     UpdateResponse orsp = tweetSearch.optimize(optimizeToSegmentsAfterUpdate);
-                    logger.info("[solr] optimized: " + orsp.getElapsedTime() / 1000.0f
+                    logger.info("[es] optimized: " + orsp.getElapsedTime() / 1000.0f
                             + " to segments:" + optimizeToSegmentsAfterUpdate);
                 }
             }
         }
         logger.info(getName() + " finished");
     }
-    private long allTweets = 0;
-    private long indexedTweets = 0;
-    private long start = System.currentTimeMillis();
 
     public Collection<SolrTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
         Collection<TweetPackage> donePackages = new ArrayList<TweetPackage>();
@@ -120,8 +123,10 @@ public class TweetConsumer extends MyThread {
             if (tweetSet.size() > batch)
                 break;
         }
+        
+        int maxTrials = 1;
 
-        for (int trial = 1; trial <= 3; trial++) {
+        for (int trial = 1; trial <= maxTrials; trial++) {
             try {
                 Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
                 allTweets += tweetSet.size();
@@ -135,8 +140,10 @@ public class TweetConsumer extends MyThread {
                 return res;
             } catch (Exception ex) {
                 logger.error("trial " + trial + ". couldn't update "
-                        + tweetSet.size() + " tweets: " + ex.getMessage()
-                        + " ... now wait and try again");
+                        + tweetSet.size() + " tweets. now wait and try again", ex);
+                if(trial == maxTrials)
+                    break;
+                
                 myWait(5);
             }
         }

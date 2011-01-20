@@ -96,7 +96,8 @@ public class ElasticTweetSearch {
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     public static final String FILTER_KEY_USER = "user:";
-    private String indexName = "twindex";
+//    private String indexName = "twindex";
+    private String indexName = "twindexreal";
     private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
     private Client client;
@@ -242,10 +243,10 @@ public class ElasticTweetSearch {
 
         XContentBuilder b = jsonBuilder().startObject();
         b.field(TWEET_TEXT, tw.getText());
-        b.field("tw_i", tw.getText().length());
-        // TODO reduce to minute-precision
+        b.field("tw_i", tw.getText().length());  
+        b.field(UPDATE_DT, tw.getUpdatedAt());
         b.field(DATE, tw.getCreatedAt());
-        b.field(IS_RT, tw.isRetweet());
+        b.field(IS_RT, tw.isRetweet());        
 
         if (tw.getLocation() == null)
             b.field("loc", tw.getFromUser().getLocation());
@@ -256,6 +257,10 @@ public class ElasticTweetSearch {
             b.field(INREPLY_ID, tw.getInReplyTwitterId());
 
         b.field("user", tw.getFromUser().getScreenName());
+        b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
+        
+        // TODO
+        //b.field("relevancy", 1.0);
 
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
             b.field(TAG, entry.getKey());
@@ -546,7 +551,7 @@ public class ElasticTweetSearch {
             // we can add max ~150 tweets per request (otherwise the webcontainer won't handle the long request)
             for (SolrTweet tw : tmpTweets) {
                 counts++;
-                idStr.append("id:");
+                idStr.append("_id:");
                 idStr.append(tw.getTwitterId());
                 idStr.append(" OR ");
             }
@@ -623,7 +628,7 @@ public class ElasticTweetSearch {
                 feedDoc(Long.toString(tw.getTwitterId()), createDoc(tw));
             }
         } catch (Exception e) {
-            logger.warn("Exception while updating. Error message: " + e.getMessage());
+            logger.error("Exception while updating.", e);
         }
     }
 
@@ -632,9 +637,7 @@ public class ElasticTweetSearch {
      * more efficient
      */
     public void fetchMoreTweets(Map<Long, SolrTweet> tweets, final Map<String, SolrUser> userMap) {
-
         for (SolrUser us : userMap.values()) {
-
             // guarantee 5 tweets to be in the cache
             if (us.getOwnTweets().size() > 4)
                 continue;
@@ -788,7 +791,7 @@ public class ElasticTweetSearch {
                 }
             } else {
                 counter++;
-                idStr.append("id:");
+                idStr.append("_id:");
                 idStr.append(tw.getInReplyTwitterId());
                 idStr.append(" OR ");
             }
@@ -865,7 +868,7 @@ public class ElasticTweetSearch {
         try {
             // ensure that reply.user has not already a tweet in orig.replies   
             SolrQuery q = new SolrQuery().addFilterQuery(INREPLY_ID + ":" + orig.getTwitterId()).
-                    addFilterQuery("-id:" + reply.getTwitterId()).
+                    addFilterQuery("-_id:" + reply.getTwitterId()).
                     addFilterQuery("user:" + reply.getFromUser().getScreenName());
             if (queryOldSolr(q).getHits().getTotalHits() > 0)
                 return false;
@@ -1071,17 +1074,22 @@ public class ElasticTweetSearch {
                 continue;
 
             int dups = 0;
-            // find dups in index
-            for (SolrTweet simTweet : collectTweets(search(reqBuilder))) {
-                if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
-                    continue;
+            
+            try {
+                // find dups in index
+                for (SolrTweet simTweet : collectTweets(search(reqBuilder))) {
+                    if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
+                        continue;
 
-                termCommand.calcTermsWithoutNoise(simTweet);
-                if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
-                        >= JACC_BORDER) {
-                    currentTweet.addDuplicate(simTweet.getTwitterId());
-                    dups++;
+                    termCommand.calcTermsWithoutNoise(simTweet);
+                    if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
+                            >= JACC_BORDER) {
+                        currentTweet.addDuplicate(simTweet.getTwitterId());
+                        dups++;
+                    }
                 }
+            } catch(Exception ex) {
+                logger.error("Error while findDuplicate query execution", ex);
             }
 
             // find dups in tweets map

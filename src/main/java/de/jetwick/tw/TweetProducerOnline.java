@@ -45,7 +45,7 @@ import twitter4j.TwitterException;
  * 
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetProducerOnline extends MyThread implements Runnable {
+public class TweetProducerOnline extends MyThread implements TweetProducer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Lock lock = new ReentrantLock();
@@ -139,7 +139,7 @@ public class TweetProducerOnline extends MyThread implements Runnable {
                             updateTagInTA(tag, hits);
                         }
                     } catch (TwitterException ex) {
-                        logger.warn("Couldn't finish search for tag '" + tag + "': " + ex.getMessage());
+                        logger.warn("Couldn't finish search for tag '" + tag.getTerm() + "': " + ex.getMessage());
                         if (ex.exceededRateLimitation())
                             waitInSeconds = ex.getRetryAfter();
                     } catch (StaleObjectStateException ex) {

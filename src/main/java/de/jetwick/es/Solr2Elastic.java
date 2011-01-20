@@ -68,15 +68,15 @@ public class Solr2Elastic {
             qb = QueryBuilders.matchAllQuery();
         else {
             // fields can also contain patterns like so name.* to match more fields
-            qb = QueryBuilders.queryString(query.getQuery()).
+            qb = QueryBuilders.queryString(cleanupQuery(query.getQuery())).
                     field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
                     allowLeadingWildcard(false).analyzer("myanalyzer").useDisMax(true);
         }
 
         long time = new MyDate().castToHour().getTime();
         qb = customScoreQuery(qb).script("var boost = _score;"
-//                + "if(doc['tw_i'].value <= 30) boost *= 0.1;"
-//                + "if(doc['quality_i'].value <= 65) boost *= 0.1;"
+                //                + "if(doc['tw_i'].value <= 30) boost *= 0.1;"
+                //                + "if(doc['quality_i'].value <= 65) boost *= 0.1;"
                 + "var retweet = doc['retw_i'].value;"
                 + "var scale = 10000;"// time vs. retweet -> what should be more important? +0.1 because boost should end up to be 0 for 0 retweets
                 + "if(retweet <= 100) boost *= 0.1 + retweet / scale; else boost *= 0.1 + 100 / scale;"
@@ -136,7 +136,7 @@ public class Solr2Elastic {
 
         srb.setQuery(qb);
     }
-    
+
     public static XContentFilterBuilder filterQuery2Builder(String fq) {
         // skip local parameter!
         fq = removeLocalParams(fq);
@@ -211,7 +211,7 @@ public class Solr2Elastic {
                 return FilterBuilders.existsFilter(val);
 
             return rfb;
-        } else if(key.startsWith("-")) {
+        } else if (key.startsWith("-")) {
             return FilterBuilders.notFilter(FilterBuilders.termFilter(key.substring(1), getTermValue(val)));
         } else
             return FilterBuilders.termFilter(key, getTermValue(val));
@@ -236,6 +236,9 @@ public class Solr2Elastic {
 //                    }
             }
         }
+        if (newVal instanceof String)
+            newVal = cleanupQuery((String) newVal);
+
         return newVal;
     }
 
@@ -247,5 +250,21 @@ public class Solr2Elastic {
         }
 
         return val;
+    }
+
+    public static String cleanupQuery(String str) {
+        // copied from ClientUtils.escapeQueryChars        
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);            
+            if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
+                    || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
+                    || c == '*' || c == '?' || c == '|' || c == '&' || c == ';'
+                    || Character.isWhitespace(c)) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 }

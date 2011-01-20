@@ -73,7 +73,7 @@ public class TweetESQuery {
         // TODO minimal match
 //        set("mm", "" + mmTweets);
 
-        qb = QueryBuilders.queryString(sb.toString()).
+        qb = QueryBuilders.queryString(Solr2Elastic.cleanupQuery(sb.toString())).
                 field(ElasticTweetSearch.TWEET_TEXT);
 
         qb = QueryBuilders.filteredQuery(qb, FilterBuilders.termsFilter(ElasticTweetSearch.IS_RT, "false"));

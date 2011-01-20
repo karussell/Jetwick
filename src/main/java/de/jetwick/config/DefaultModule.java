@@ -22,7 +22,7 @@ import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TweetProducer;
-import de.jetwick.tw.TweetProducerOffline;
+import de.jetwick.tw.TweetProducerOnline;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.UrlTitleCleaner;
 import de.jetwick.util.MaxBoundSet;
@@ -112,6 +112,7 @@ public class DefaultModule extends AbstractModule {
     }
 
     private void installTweetProducer() {
-        bind(TweetProducer.class).to(TweetProducerOffline.class);
+//        bind(TweetProducer.class).to(TweetProducerOffline.class);
+        bind(TweetProducer.class).to(TweetProducerOnline.class);
     }
 }

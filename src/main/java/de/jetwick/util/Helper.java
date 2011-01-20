@@ -64,7 +64,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.util.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -662,10 +661,6 @@ public class Helper {
      */
     public static void enableUserAgentOverwrite() {
         System.setProperty("http.agent", "");
-    }
-
-    public static String escapeLuceneQuery(String str) {
-        return ClientUtils.escapeQueryChars(str);
     }
 
     public static String translate(String txt, Language fromLanguage, Language toLanguage) throws Exception {

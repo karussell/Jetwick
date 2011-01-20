@@ -52,9 +52,9 @@ public class ElasticNode {
     public static void main(String[] args) throws IOException, InterruptedException {
         ElasticNode node = new ElasticNode().start("es");
         boolean createIndex = false;
-        if (createIndex) {
-            System.out.println("created index: twindex");
+        if (createIndex) {            
             new ElasticTweetSearch(node.client());
+            System.out.println("created index: twindex");
         }
         
         Thread.currentThread().join();
