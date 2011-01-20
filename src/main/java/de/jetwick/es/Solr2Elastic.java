@@ -204,7 +204,7 @@ public class Solr2Elastic {
                 if (from != null)
                     rfb.to(to).includeUpper(true);
                 else
-                    rfb.lt(to).includeUpper(true); // lte(Object) is missing
+                    rfb.lte(to);
             }
 
             if (from == null && to == null)

@@ -52,6 +52,7 @@ public class ElasticNode {
     public static void main(String[] args) throws IOException, InterruptedException {
         ElasticNode node = new ElasticNode().start("es");
         boolean createIndex = false;
+        // TODO check dynamically if index exists if not then create
         if (createIndex) {            
             new ElasticTweetSearch(node.client());
             System.out.println("created index: twindex");

@@ -1,5 +1,6 @@
 {    
     "index" : {
+        "refresh_interval" : "2s",        
         "analysis" : {
             "analyzer" : {                
                 "myanalyzer" : {                            
