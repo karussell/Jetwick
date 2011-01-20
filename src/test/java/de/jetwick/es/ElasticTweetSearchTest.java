@@ -76,7 +76,7 @@ public class ElasticTweetSearchTest {
     public void setUp() throws Exception {
         // necessary if only one method is executed:
         twSearch.waitForYellow();
-        
+
         // start with a fresh index:
         twSearch.deleteAll();
     }
@@ -94,7 +94,7 @@ public class ElasticTweetSearchTest {
         SolrTweet tw2 = new SolrTweet(2L, "java is cool and stable!", otherUser);
         twSearch.update(tw1, false);
         twSearch.update(tw2, true);
-        
+
         assertEquals(1, twSearch.search("test").size());
         assertEquals(1, twSearch.search("java").size());
     }
@@ -107,7 +107,7 @@ public class ElasticTweetSearchTest {
         assertEquals(1, twSearch.search("#java").size());
 
         twSearch.deleteAll();
-        
+
         assertEquals(0, twSearch.search("java").size());
         assertEquals(0, twSearch.search("#java").size());
         twSearch.update(createTweet(1L, "is cool and stable! java", "peter2"));
@@ -168,8 +168,8 @@ public class ElasticTweetSearchTest {
         assertEquals("peter2", twSearch.search("java").iterator().next().getScreenName());
         assertEquals(2, twSearch.search("javascript").size());
         Iterator<SolrUser> iter = twSearch.search("javascript").iterator();
-        assertEquals("peter3", iter.next().getScreenName());
         assertEquals("peter1", iter.next().getScreenName());
+        assertEquals("peter3", iter.next().getScreenName());
     }
 
     @Test
@@ -691,15 +691,15 @@ public class ElasticTweetSearchTest {
         twSearch.privateUpdate(Arrays.asList(createTweet(1L, "Beitrag atom. atom again", "userA"),
                 createTweet(2L, "atom gruene", "userA"),
                 createTweet(3L, "third tweet", "userA")));
-                
+
         SearchResponse rsp = twSearch.search(new TweetQuery());
-        assertEquals(3, rsp.hits().getTotalHits());                
+        assertEquals(3, rsp.hits().getTotalHits());
         // only the second tweet will contain a tag with atom!
-        assertEquals(1, ((TermsFacet)rsp.facets().facet("tag")).getEntries().size());
+        assertEquals(1, ((TermsFacet) rsp.facets().facet("tag")).getEntries().size());
 
         rsp = twSearch.search(new SolrQuery().addFilterQuery("tag:atom"));
         assertEquals(2, twSearch.collectTweets(rsp).size());
-    }    
+    }
 
     @Test
     public void testReadUrlEntries() throws IOException {

@@ -74,12 +74,15 @@ public class Solr2Elastic {
                     allowLeadingWildcard(false).analyzer("myanalyzer").useDisMax(true);
         }
 
-        // takes too long :/
-//        qb = customScoreQuery(qb).script("queryboost").lang("mvel").param("mynow", new Date().getTime());
-        
         long time = new MyDate().castToHour().getTime();
-//        qb = customScoreQuery(qb).script("_score * 100 /(10.0e-8 * (" + time + " - doc['dt'].value) + 1);").lang("python");
-        qb = customScoreQuery(qb).script("_score * 100 /(10.0e-8 * (" + time + " - doc['dt'].value) + 1);").lang("mvel");
+        qb = customScoreQuery(qb).script("var boost = _score;"
+//                + "if(doc['tw_i'].value <= 30) boost *= 0.1;"
+//                + "if(doc['quality_i'].value <= 65) boost *= 0.1;"
+                + "var retweet = doc['retw_i'].value;"
+                + "var scale = 10000;"// time vs. retweet -> what should be more important? +0.1 because boost should end up to be 0 for 0 retweets
+                + "if(retweet <= 100) boost *= 0.1 + retweet / scale; else boost *= 0.1 + 100 / scale;"
+                + "boost / (3.6e-9 * (mynow - doc['dt'].value) + 1);").
+                lang("js").param("mynow", time);
 
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;

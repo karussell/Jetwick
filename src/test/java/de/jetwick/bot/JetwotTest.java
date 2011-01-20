@@ -65,7 +65,7 @@ public class JetwotTest {
                 tweetSearch = new ElasticTweetSearch() {
 
                     @Override
-                    public SearchResponse search(SolrQuery query) throws SolrServerException {
+                    public SearchResponse search(SolrQuery query) {
                         return null;
                     }
 

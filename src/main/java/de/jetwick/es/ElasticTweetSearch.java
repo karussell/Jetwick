@@ -95,8 +95,6 @@ public class ElasticTweetSearch {
     public static final String DUP_COUNT = "dups_i";
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
-    // TODO is this necessary?
-    protected static final int MAX_TWEETS_PER_REQ = 100;
     private String indexName = "twindex";
     private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
@@ -206,11 +204,22 @@ public class ElasticTweetSearch {
         refresh();
     }
 
-    SearchResponse query(SolrQuery query) {
+    /**
+     * @deprecated use new ElasticSearch requestBuilder to pass into the query method
+     */
+    SearchResponse queryOldSolr(SolrQuery query) {
         SearchRequestBuilder srb = client.prepareSearch(indexName);
         Solr2Elastic.createElasticQuery(query, srb);
         SearchResponse response = srb.execute().actionGet();
         return response;
+    }
+
+    TweetESQuery createQuery() {
+        return new TweetESQuery(client.prepareSearch(indexName));
+    }
+
+    SearchResponse query(TweetESQuery query) {
+        return query.getRequestBuilder().execute().actionGet();
     }
 
     XContentBuilder createMatchAll() throws IOException {
@@ -235,8 +244,6 @@ public class ElasticTweetSearch {
         b.field("tw_i", tw.getText().length());
         // TODO reduce to minute-precision
         b.field(DATE, tw.getCreatedAt());
-        if (tw.getUpdatedAt() != null)
-            b.field(UPDATE_DT, tw.getUpdatedAt());
         b.field(IS_RT, tw.isRetweet());
 
         if (tw.getLocation() == null)
@@ -248,7 +255,6 @@ public class ElasticTweetSearch {
             b.field(INREPLY_ID, tw.getInReplyTwitterId());
 
         b.field("user", tw.getFromUser().getScreenName());
-        b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
 
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
             b.field(TAG, entry.getKey());
@@ -442,12 +448,40 @@ public class ElasticTweetSearch {
         return user;
     }
 
-    public SearchResponse search(SolrQuery query) throws SolrServerException {
+    /**
+     * @deprecated use new ElasticSearch requestBuilder to pass into search method
+     */
+    public SearchResponse search(SolrQuery query) {
         return search(new ArrayList(), query);
     }
 
-    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) throws SolrServerException {
-        SearchResponse rsp = query(query);
+    /**
+     * @deprecated use new ElasticSearch requestBuilder to pass into search method
+     */
+    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) {
+        SearchResponse rsp = queryOldSolr(query);
+        SearchHit[] docs = rsp.getHits().getHits();
+        Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
+        for (SearchHit sd : docs) {
+//            System.out.println(sd.getExplanation().toString());
+            SolrUser u = readDoc(sd.getSource(), sd.getId()).getFromUser();
+            SolrUser uOld = usersMap.get(u.getScreenName());
+            if (uOld == null)
+                usersMap.put(u.getScreenName(), u);
+            else
+                uOld.addOwnTweet(u.getOwnTweets().iterator().next());
+        }
+
+        users.addAll(usersMap.values());
+        return rsp;
+    }
+
+    public SearchResponse search(TweetESQuery request) {
+        return search(new ArrayList(), request);
+    }
+
+    public SearchResponse search(Collection<SolrUser> users, TweetESQuery request) {
+        SearchResponse rsp = query(request);
         SearchHit[] docs = rsp.getHits().getHits();
         Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
         for (SearchHit sd : docs) {
@@ -467,7 +501,7 @@ public class ElasticTweetSearch {
     public Collection<SolrTweet> searchReplies(long id, boolean retweet) {
         try {
             SolrQuery sq = new SolrQuery().addFilterQuery("crt_b:" + retweet).addFilterQuery(INREPLY_ID + ":" + id);
-            SearchResponse rsp = query(sq);
+            SearchResponse rsp = queryOldSolr(sq);
             return collectTweets(rsp);
         } catch (Exception ex) {
             logger.error("Error while searchReplies", ex);
@@ -506,34 +540,30 @@ public class ElasticTweetSearch {
             Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
             Map<Long, SolrTweet> existingTweets = new LinkedHashMap<Long, SolrTweet>();
 
-            Iterator<SolrTweet> iter = tmpTweets.iterator();
-            while (iter.hasNext()) {
-                StringBuilder idStr = new StringBuilder();
-                int counts = 0;
-                // we can add max ~150 tweets per request (otherwise the webcontainer won't handle the long request)
-                for (int i = 0; i < MAX_TWEETS_PER_REQ && iter.hasNext(); i++) {
-                    SolrTweet tw = iter.next();
-                    counts++;
-                    idStr.append("id:");
-                    idStr.append(tw.getTwitterId());
-                    idStr.append(" OR ");
-                }
+            StringBuilder idStr = new StringBuilder();
+            int counts = 0;
+            // we can add max ~150 tweets per request (otherwise the webcontainer won't handle the long request)
+            for (SolrTweet tw : tmpTweets) {
+                counts++;
+                idStr.append("id:");
+                idStr.append(tw.getTwitterId());
+                idStr.append(" OR ");
+            }
 
-                // get existing tweets and users                
-                SolrQuery query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counts);
-                SearchResponse rsp = search(query);
-                SearchHits docs = rsp.getHits();
+            // get existing tweets and users                
+            SolrQuery query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counts);
+            SearchResponse rsp = search(query);
+            SearchHits docs = rsp.getHits();
 
-                for (SearchHit sd : docs) {
-                    SolrTweet tw = readDoc(sd.getSource(), sd.getId());
-                    existingTweets.put(tw.getTwitterId(), tw);
-                    SolrUser u = tw.getFromUser();
-                    SolrUser uOld = usersMap.get(u.getScreenName());
-                    if (uOld == null)
-                        usersMap.put(u.getScreenName(), u);
-                    else
-                        uOld.addOwnTweet(u.getOwnTweets().iterator().next());
-                }
+            for (SearchHit sd : docs) {
+                SolrTweet tw = readDoc(sd.getSource(), sd.getId());
+                existingTweets.put(tw.getTwitterId(), tw);
+                SolrUser u = tw.getFromUser();
+                SolrUser uOld = usersMap.get(u.getScreenName());
+                if (uOld == null)
+                    usersMap.put(u.getScreenName(), u);
+                else
+                    uOld.addOwnTweet(u.getOwnTweets().iterator().next());
             }
 
             Map<Long, SolrTweet> twMap = new LinkedHashMap<Long, SolrTweet>();
@@ -688,7 +718,7 @@ public class ElasticTweetSearch {
             // connect retweets to tweets only searchTweetsDays old
 
             try {
-                SearchResponse qrsp = query(new SolrQuery("\"" + tw.extractRTText() + "\"").addFilterQuery("user:" + toUserStr).setRows(10));
+                SearchResponse qrsp = queryOldSolr(new SolrQuery("\"" + tw.extractRTText() + "\"").addFilterQuery("user:" + toUserStr).setRows(10));
                 List<SolrTweet> existingTw = collectTweets(qrsp);
 
                 for (SolrTweet tmp : existingTw) {
@@ -720,9 +750,8 @@ public class ElasticTweetSearch {
         }
 
         Iterator<SolrTweet> iter = tweets.values().iterator();
-        while (iter.hasNext()) {
-            findRepliesInBatch(iter, tweets, replyMap, updatedTweets);
-        }
+        findRepliesInBatch(iter, tweets, replyMap, updatedTweets);
+
         return updatedTweets;
     }
 
@@ -731,7 +760,7 @@ public class ElasticTweetSearch {
         int counter = 0;
         StringBuilder idStr = new StringBuilder();
         StringBuilder replyIdStr = new StringBuilder();
-        for (int i = 0; i < MAX_TWEETS_PER_REQ && iter.hasNext(); i++) {
+        for (int i = 0; iter.hasNext(); i++) {
             SolrTweet tw = iter.next();
             SolrTweet tmp = replyIdToTweetMap.get(tw.getTwitterId());
             if (tmp != null) {
@@ -785,7 +814,7 @@ public class ElasticTweetSearch {
             Collection<SolrTweet> updatedTweets) throws SolrServerException {
 
         Map<Long, SolrTweet> replyMap = new LinkedHashMap<Long, SolrTweet>();
-        SearchResponse rsp = query(query);
+        SearchResponse rsp = queryOldSolr(query);
         SearchHits docs = rsp.getHits();
 
         for (SearchHit sd : docs) {
@@ -807,7 +836,7 @@ public class ElasticTweetSearch {
     protected void selectOriginalTweetsWithReplies(SolrQuery query, Collection<SolrTweet> tweets,
             Collection<SolrTweet> updatedTweets) throws SolrServerException {
 
-        SearchResponse rsp = query(query);
+        SearchResponse rsp = queryOldSolr(query);
         SearchHits docs = rsp.getHits();
         Map<Long, SolrTweet> origMap = new LinkedHashMap<Long, SolrTweet>();
         for (SearchHit sd : docs) {
@@ -836,7 +865,7 @@ public class ElasticTweetSearch {
             SolrQuery q = new SolrQuery().addFilterQuery(INREPLY_ID + ":" + orig.getTwitterId()).
                     addFilterQuery("-id:" + reply.getTwitterId()).
                     addFilterQuery("user:" + reply.getFromUser().getScreenName());
-            if (query(q).getHits().getTotalHits() > 0)
+            if (queryOldSolr(q).getHits().getTotalHits() > 0)
                 return false;
 
             orig.addReply(reply);
@@ -1036,29 +1065,22 @@ public class ElasticTweetSearch {
             if (currentTweet.isRetweet())
                 continue;
 
-            SolrQuery q = new TweetQuery(false).createSimilarQuery(currentTweet);
-            // TODO
-//                    addFilterQuery(FILTER_ENTRY_LATEST_DT);
-
+            TweetESQuery reqBuilder = createQuery().createSimilarQuery(currentTweet).addLatestDateFilter(12);
             if (currentTweet.getTextTerms().size() < 3)
                 continue;
 
             int dups = 0;
-            try {
-                // find dups in index
-                for (SolrTweet simTweet : collectTweets(search(q))) {
-                    if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
-                        continue;
+            // find dups in index
+            for (SolrTweet simTweet : collectTweets(search(reqBuilder))) {
+                if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
+                    continue;
 
-                    termCommand.calcTermsWithoutNoise(simTweet);
-                    if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
-                            >= JACC_BORDER) {
-                        currentTweet.addDuplicate(simTweet.getTwitterId());
-                        dups++;
-                    }
+                termCommand.calcTermsWithoutNoise(simTweet);
+                if (TermCreateCommand.calcJaccardIndex(currentTweet.getTextTerms(), simTweet.getTextTerms())
+                        >= JACC_BORDER) {
+                    currentTweet.addDuplicate(simTweet.getTwitterId());
+                    dups++;
                 }
-            } catch (SolrServerException ex) {
-                logger.warn("Coudn't trigger duplicat search for " + currentTweet + " " + ex.getMessage());
             }
 
             // find dups in tweets map
@@ -1120,5 +1142,9 @@ public class ElasticTweetSearch {
 
     void waitForYellow() {
         client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
+    }
+
+    private static String createLatestDateFilter() {
+        return DATE + ":[" + new MyDate().minusHours(8).castToHour().getTime() + " TO *]";
     }
 }

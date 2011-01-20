@@ -71,19 +71,23 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
             }
 
             LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
-            SolrUser user = new SolrUser("user " + counter);
-            int PER_PKG = 200;
-            for (int i = 0; i < PER_PKG; i++) {
-                // make id random because otherwise all tweets will be overwritten 
-                // and not added for a new collector start
-                SolrTweet tw = new SolrTweet(Math.abs(rand.nextLong()), 
-                        counter * PER_PKG + i + " test " + createRandomWord(3) + " " + createRandomWord(4), 
-                        user);
-                int retweet = (int) Math.round(Math.abs(rand.nextGaussian() * 10));
-                tw.setRt(retweet);
-                int repliesNoRetweet = (int) Math.round(Math.abs(rand.nextGaussian() * 2));
-                tw.setReply(retweet + repliesNoRetweet);
-                tmp.add(tw);
+            int TWEETS_PER_USER = 5;
+            int USER_PER_PKG = 40;
+            for (int userCounter = 0; userCounter < USER_PER_PKG; userCounter++) {
+                SolrUser user = new SolrUser("user " + userCounter * USER_PER_PKG + counter);
+
+                for (int i = 0; i < TWEETS_PER_USER; i++) {
+                    // make id random because otherwise all tweets will be overwritten 
+                    // and not added for a new collector start
+                    SolrTweet tw = new SolrTweet(Math.abs(rand.nextLong()),
+                            createRandomWord(3) + " " + createRandomWord(4),
+                            user);
+                    int retweet = (int) Math.round(Math.abs(rand.nextGaussian() * 10));
+                    tw.setRt(retweet);
+                    int repliesNoRetweet = (int) Math.round(Math.abs(rand.nextGaussian() * 2));
+                    tw.setReply(retweet + repliesNoRetweet);
+                    tmp.add(tw);
+                }
             }
 
             tweetPackages.add(new TweetPackageList("fake:" + counter).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
