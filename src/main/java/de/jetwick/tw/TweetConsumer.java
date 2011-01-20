@@ -49,14 +49,14 @@ public class TweetConsumer extends MyThread {
     private long optimizeInterval = -1;
     // optimize should not happen directly after start of tweet consumer / collector!
     private long lastOptimizeTime = System.currentTimeMillis();
-    private StopWatch sw1;
+    private StopWatch longTime;
+    private StopWatch currentTime;
     @Inject
     protected ElasticTweetSearch tweetSearch;
     private int removeDays = 8;
-    private long allTweets = 0;
+    private long receivedTweets = 0;
     private long indexedTweets = 0;
-    private long start = -1;
-    
+
     public TweetConsumer() {
         super("tweet-consumer");
     }
@@ -69,15 +69,15 @@ public class TweetConsumer extends MyThread {
                 // TODO instead of a 'fixed' waiting               
                 // use beforeThread.getCondition().await + signalAll                
                 logger.info("Consumer: no tweetpackage in queue");
-                
+
                 if (!myWait(5))
-                    break;                
+                    break;
                 continue;
             }
 
-            if(start < 0)
-                start = System.currentTimeMillis();
-            
+            if (longTime == null)
+                longTime = new StopWatch("alltime");
+
             // make sure we really use the commit batch size
             // because solr doesn't want too frequent commits
             int count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
@@ -88,15 +88,21 @@ public class TweetConsumer extends MyThread {
                 continue;
 
             lastFeed = System.currentTimeMillis();
-            sw1 = new StopWatch(" ");
-            sw1.start();
+            currentTime = new StopWatch("");
+            longTime.start();
+            currentTime.start();
             Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
-            sw1.stop();
-            String str = "[es] " + sw1.toString() + "\t updateCount=" + res.size();
+            currentTime.stop();
+            longTime.stop();
+            indexedTweets += res.size();
+            float tweetsPerSec = indexedTweets / (longTime.getTime() / 1000.0f);
+            String str = "[es] " + currentTime.toString() + "\t tweets/s:" + tweetsPerSec
+                    + "\t curr indexedTw:" + res.size() + " all indexedTw:" + indexedTweets + "\t all receivedTw:" + receivedTweets ;
 
             long time = System.currentTimeMillis();
             if (optimizeInterval > 0)
                 str += "; next optimize in: " + (optimizeInterval - (time - lastOptimizeTime)) / 3600f / 1000f + "h ";
+
             logger.info(str);
             if (optimizeToSegmentsAfterUpdate > 0) {
                 if (optimizeInterval > 0 && time - lastOptimizeTime >= optimizeInterval) {
@@ -123,16 +129,14 @@ public class TweetConsumer extends MyThread {
             if (tweetSet.size() > batch)
                 break;
         }
-        
+
         int maxTrials = 1;
 
         for (int trial = 1; trial <= maxTrials; trial++) {
             try {
                 Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
-                allTweets += tweetSet.size();
-                indexedTweets += res.size();
-                float tweetsPerSec = indexedTweets / ((System.currentTimeMillis() - start) / 1000.0f);
-                String str = "receivedTweets:" + allTweets + " indexedTweets:" + indexedTweets + " tweets/s:" + tweetsPerSec + " indexed: ";
+                receivedTweets += tweetSet.size();
+                String str = "[es] indexed:";
                 for (TweetPackage pkg : donePackages) {
                     str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
                 }
@@ -141,9 +145,9 @@ public class TweetConsumer extends MyThread {
             } catch (Exception ex) {
                 logger.error("trial " + trial + ". couldn't update "
                         + tweetSet.size() + " tweets. now wait and try again", ex);
-                if(trial == maxTrials)
+                if (trial == maxTrials)
                     break;
-                
+
                 myWait(5);
             }
         }

@@ -48,12 +48,19 @@ public class StopWatch {
         return this;
     }
 
+    /**
+     * @return the delta time in milliseconds
+     */
     public long getTime() {
         return time;
     }
 
     @Override
     public String toString() {
-        return name + " time:" + time / 1000f;
+        String str = "";
+        if(!name.isEmpty())
+            str += name + " ";
+        
+        return str + "time:" + time / 1000f;
     }
 }
