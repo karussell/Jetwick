@@ -54,16 +54,10 @@ public class TweetESQuery {
 
     private TweetESQuery createSimilarQuery(Collection<Entry<String, Integer>> terms) {
         Set<String> set = new LinkedHashSet<String>();
-
+        String[] termsArray =  new String[terms.size()];
+        int counter = 0;
         for (Entry<String, Integer> entry : terms) {
-            set.add(entry.getKey());
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (String str : set) {
-            sb.append(Solr2Elastic.cleanupQuery(str));
-            // do not escape the whitespace:
-            sb.append(" ");
+            termsArray[counter++] = Solr2Elastic.cleanupQuery(entry.getKey());
         }
 
         int mmTweets = (int) Math.round(terms.size() * MM_BORDER);
@@ -71,11 +65,8 @@ public class TweetESQuery {
         mmTweets = Math.min(6, mmTweets);
         // minimal 4 terms
         mmTweets = Math.max(4, mmTweets);
-        // TODO minimal match
-//        set("mm", "" + mmTweets);
-        
-        qb = QueryBuilders.queryString(sb.toString()).
-                field(ElasticTweetSearch.TWEET_TEXT);
+        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, termsArray).minimumMatch(mmTweets);
+//        qb = QueryBuilders.queryString(sb.toString()).field(ElasticTweetSearch.TWEET_TEXT);
 
         qb = QueryBuilders.filteredQuery(qb, FilterBuilders.termsFilter(ElasticTweetSearch.IS_RT, "false"));
         qb = new DisMaxQueryBuilder().add(qb);
