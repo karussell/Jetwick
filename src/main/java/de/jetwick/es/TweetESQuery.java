@@ -61,7 +61,8 @@ public class TweetESQuery {
 
         StringBuilder sb = new StringBuilder();
         for (String str : set) {
-            sb.append(str);
+            sb.append(Solr2Elastic.cleanupQuery(str));
+            // do not escape the whitespace:
             sb.append(" ");
         }
 
@@ -72,8 +73,8 @@ public class TweetESQuery {
         mmTweets = Math.max(4, mmTweets);
         // TODO minimal match
 //        set("mm", "" + mmTweets);
-
-        qb = QueryBuilders.queryString(Solr2Elastic.cleanupQuery(sb.toString())).
+        
+        qb = QueryBuilders.queryString(sb.toString()).
                 field(ElasticTweetSearch.TWEET_TEXT);
 
         qb = QueryBuilders.filteredQuery(qb, FilterBuilders.termsFilter(ElasticTweetSearch.IS_RT, "false"));
