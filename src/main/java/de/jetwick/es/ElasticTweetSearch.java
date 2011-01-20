@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.index.query.xcontent.NotFilterBuilder;
 import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.filter.FilterFacet;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -69,6 +70,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.xcontent.FilterBuilders;
+import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
@@ -162,6 +165,17 @@ public class ElasticTweetSearch {
     public void deleteByQuery(String field, String value) {
         DeleteByQueryResponse response2 = client.prepareDeleteByQuery(indexName).
                 setQuery(termQuery(field, value)).
+                execute().
+                actionGet();
+    }
+    
+    public void deleteUntil(Date removeUntil) {        
+        NotFilterBuilder f1 = FilterBuilders.notFilter(FilterBuilders.existsFilter(UPDATE_DT));
+        RangeFilterBuilder rfb = FilterBuilders.rangeFilter(DATE);
+        rfb.lte(new MyDate(removeUntil.getTime()).castToDay().toDate()).cache(true);                
+        
+        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(indexName).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.andFilter(f1, rfb))).
                 execute().
                 actionGet();
     }
@@ -609,8 +623,7 @@ public class ElasticTweetSearch {
             // We are not receiving the deleted tweets! but do we need to
             // update the tweets where this deleted tweet was a retweet?
             // No. Because "userA: text" and "userB: RT @usera: text" now the second tweet is always AFTER the first!
-            deleteByQuery(UPDATE_DT, "-([* TO *] AND "
-                    + DATE + ":[* TO " + Helper.toLocalDateTime(removeUntil) + "/DAY])");
+            deleteUntil(removeUntil);
 
             // force visibility for next call of update
             refresh();
