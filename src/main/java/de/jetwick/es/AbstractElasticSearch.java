@@ -75,7 +75,7 @@ public abstract class AbstractElasticSearch {
     public boolean indexExists(String indexName) {
         // make sure node is up to create the index otherwise we get: blocked by: [1/not recovered from gateway];
         // waitForYellow();
-        
+
 //        Map map = client.admin().cluster().health(new ClusterHealthRequest(indexName)).actionGet().getIndices();
         Map map = client.admin().cluster().prepareState().execute().actionGet().getState().getMetaData().getIndices();
 //        System.out.println("Index info:" + map);
@@ -90,17 +90,23 @@ public abstract class AbstractElasticSearch {
 //        waitForYellow();
     }
 
+    public void saveCreateIndex() {
+        if (!indexExists(getIndexName())) {
+            logger.info("Try to create index: " + getIndexName());
+            createIndex(getIndexName());
+            logger.info("Created index: " + getIndexName());
+        } else
+            logger.info("Index " + getIndexName() + " already exists");
+    }
+
 //    void ping() {
 //        waitForYellow();
-        
 //        client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
 //        System.out.println("health:"+client.admin().cluster().health(new ClusterHealthRequest(getIndexName())).actionGet().getStatus().name());
-        
-        // hmmh here we need indexName again ... but in createIndex it does not exist when calling ping ...
+    // hmmh here we need indexName again ... but in createIndex it does not exist when calling ping ...
 //        client.admin().cluster().ping(new SinglePingRequest(getIndexName(), getIndexType(), "1")).actionGet();
 //    }
-
-    void waitForYellow() {        
+    void waitForYellow() {
         client.admin().cluster().health(new ClusterHealthRequest(getIndexName()).waitForYellowStatus()).actionGet();
     }
 

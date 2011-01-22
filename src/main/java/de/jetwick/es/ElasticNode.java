@@ -53,13 +53,11 @@ public class ElasticNode {
         ElasticNode node = new ElasticNode().start("es");
         node.waitForYellow();
 
-        ElasticTweetSearch search = new ElasticTweetSearch(node.client());
-        if (!search.indexExists(search.getIndexName())) {
-            logger.info("Try to create index: " + search.getIndexName());
-            search.createIndex(search.getIndexName());
-            logger.info("Created index: " + search.getIndexName());
-        } else
-            logger.info("Index " + search.getIndexName() + " already exists");
+        ElasticTweetSearch twSearch = new ElasticTweetSearch(node.client());
+        twSearch.saveCreateIndex();
+        
+        ElasticUserSearch uSearch = new ElasticUserSearch(node.client());
+        uSearch.saveCreateIndex();
 
         Thread.currentThread().join();
     }
@@ -187,11 +185,11 @@ public class ElasticNode {
      */
     public void waitForYellow() {
         node.client().admin().cluster().health(new ClusterHealthRequest("twindex").waitForYellowStatus()).actionGet();
-        logger.info("Waited for node to be ready. Now status is 'yellow'!");
+        logger.info("Now node status is 'yellow'!");
     }
     
     public void waitForOneActiveShard() {
         node.client().admin().cluster().health(new ClusterHealthRequest("twindex").waitForActiveShards(1)).actionGet();
-        logger.info("Waited for node to be ready. Now at least one shard is active!");
+        logger.info("Now node has at least one active shard!");
     }
 }
