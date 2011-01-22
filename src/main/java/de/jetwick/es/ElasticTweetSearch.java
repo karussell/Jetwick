@@ -544,15 +544,23 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             tweets = new SerialCommandExecutor(tweets).add(
                     new TermCreateCommand()).execute();
             
-            // now using bulk API instead of feeding each doc separate with feedDoc
-            BulkRequestBuilder brb = client.prepareBulk();
-            for (SolrTweet tw : tweets) {
-                String id = Long.toString(tw.getTwitterId());
-                XContentBuilder source = createDoc(tw);
-                brb.add(Requests.indexRequest(getIndexName()).type(getIndexType()).id(id).source(source));
+            boolean bulk = true;
+            if(bulk) {                
+                // now using bulk API instead of feeding each doc separate with feedDoc
+                BulkRequestBuilder brb = client.prepareBulk();
+                for (SolrTweet tw : tweets) {
+                    String id = Long.toString(tw.getTwitterId());
+                    XContentBuilder source = createDoc(tw);
+                    brb.add(Requests.indexRequest(getIndexName()).type(getIndexType()).id(id).source(source));
+                }            
+                if (brb.numberOfActions() > 0)
+                    brb.execute().actionGet();
+            } else {
+                for (SolrTweet tw : tweets) {
+                    String id = Long.toString(tw.getTwitterId());
+                    feedDoc(id, createDoc(tw));
+                }
             }            
-            if (brb.numberOfActions() > 0)
-                brb.execute().actionGet();
         } catch (Exception e) {
             logger.error("Exception while updating.", e);
         }
