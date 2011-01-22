@@ -15,7 +15,7 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.es.Solr2Elastic;
+import de.jetwick.es.Solr2ElasticTweet;
 import org.elasticsearch.index.query.xcontent.TermFilterBuilder;
 import java.io.IOException;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -41,28 +41,28 @@ public class Solr2ElasticTest {
     public void testFilterQuery2Builder() throws IOException {
         // how to test???
 
-        XContentFilterBuilder builder = Solr2Elastic.filterQuery2Builder("field:[1 TO 2]");
+        XContentFilterBuilder builder = new Solr2ElasticTweet().filterQuery2Builder("field:[1 TO 2]");
         assertEquals(1, 1);
-        builder = Solr2Elastic.filterQuery2Builder("field:[1 TO *]");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[1 TO *]");
         assertTrue(builder instanceof RangeFilterBuilder);
         assertEquals(c("{'range':{'field':{'from':1,'to':null,'include_lower':true,'include_upper':true}}}"), toString(builder));
         
-        builder = Solr2Elastic.filterQuery2Builder("field:[* TO *]");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[* TO *]");
         assertTrue(builder instanceof ExistsFilterBuilder);        
         
-        builder = Solr2Elastic.filterQuery2Builder("field:[* TO 2]");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[* TO 2]");
         assertTrue(builder instanceof RangeFilterBuilder);
         assertEquals(c("{'range':{'field':{'from':null,'to':2,'include_lower':true,'include_upper':true}}}"), toString(builder));
 
-        builder = Solr2Elastic.filterQuery2Builder("field:test");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:test");
         assertTrue(builder instanceof TermFilterBuilder);
         assertEquals(c("{'term':{'field':'test'}}"), toString(builder));
 
-        builder = Solr2Elastic.filterQuery2Builder("field:\"test\"");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:\"test\"");
         assertTrue(builder instanceof TermFilterBuilder);
         assertEquals(c("{'term':{'field':'test'}}"), toString(builder));
 
-        builder = Solr2Elastic.filterQuery2Builder("field:1 OR field:2");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:1 OR field:2");
         assertTrue(builder instanceof TermsFilterBuilder);
         assertEquals(c("{'terms':{'field':[1,2]}}"), toString(builder));
     }

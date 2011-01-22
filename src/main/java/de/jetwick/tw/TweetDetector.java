@@ -84,38 +84,6 @@ public class TweetDetector {
         return str;
     }
 
-//    public List<String> filterLanguages(int langMinFrequency) {
-//        if (languages.size() == 0)
-//            return Collections.EMPTY_LIST;
-//
-//        List<String> res = new ArrayList<String>();
-//        int max = 0;
-//        for (Entry<String, Integer> entry : Helper.sort(languages.entrySet())) {
-//            // the first result is the maximal
-//            if (max < entry.getValue())
-//                max = entry.getValue();
-//
-//            // skip the rest if less than ~3% of the first result
-//            if (entry.getValue() <= max / 30f)
-//                break;
-//
-//            if (languages.size() > 1 && UNKNOWN_LANG.equals(entry.getKey()))
-//                // at least one known language is included so continue
-//                continue;
-//
-//            if (langMinFrequency >= 0 && entry.getValue() < langMinFrequency)
-//                continue;
-//
-//            res.add(entry.getKey());
-//        }
-//
-//        return res;
-//    }
-//    public Collection<Entry<String, Integer>> detectTerms(SolrTweet tweet) {
-//        Map<String, Integer> termMap = new LinkedHashMap<String, Integer>();
-//        oneTweet(termMap, null, tweet);
-//        return termMap.entrySet();
-//    }
     public List<Entry<String, Integer>> getSortedTerms() {
         return terms.getSortedTermLimited(termMaxCount);
     }

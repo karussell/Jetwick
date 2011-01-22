@@ -33,7 +33,6 @@ import de.jetwick.hib.HibernateUtil;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
-import de.jetwick.tw.StringCleaner;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -120,33 +119,6 @@ public class Statistics {
         WorkManager workManager = wmProvider.get();
         workManager.beginWork();
         try {
-            argStr = map.get("getInfo");
-//            if (argStr != null) {
-//                List<YUser> users = new ArrayList<YUser>();
-//                // get tweets for user
-//                for (String userName : argStr.split(",")) {
-//                    userName = userName.trim().toLowerCase();
-//                    users.add(new YUser(userName));
-//                    List<? extends Tweet> tweets = twitSearch.getTweets(userName);
-//                    int counter = 0;
-//                    for (Tweet tw : tweets) {
-//                        counter++;
-//                        if (counter > 10)
-//                            break;
-//
-//                        System.out.println(tw);
-//                        System.out.println(" lang:" + tw.getIsoLanguageCode()
-//                                + " geo:" + tw.getGeoLocation() + " " + tw.getLocation()
-//                                + "\n");
-//                    }
-//                }
-//
-//                twitSearch.updateUserInfo(users);
-//                for (YUser u : users) {
-//                    System.out.println(u.getLang() + " " + u.getLocation());
-//                }
-//            }
-
             argStr = map.get("deleteEmptyUsers");
             if (argStr != null) {
                 System.out.println("try to delete " + userDao.countEmptyUsers() + " empty users!");
@@ -157,20 +129,20 @@ public class Statistics {
                 }
             }
 
-            argStr = map.get("deleteUsers");
-            if (argStr != null) {
-                Set<String> removeUserList;
-                if (argStr.equals("true")) {
-                    logger.info("Now deleting from user black list!");
-                    StringCleaner cleaner = new StringCleaner(config.getUserBlacklist());
-                    removeUserList = cleaner.getBlacklist();
-                } else
-                    removeUserList = new LinkedHashSet<String>(Arrays.asList(argStr.split(",")));
-
-                tweetSearch.deleteUsers(removeUserList);
-                tweetSearch.refresh();
-                logger.info("RESTART tweet collector! Deleted: " + removeUserList);
-            }
+//            argStr = map.get("deleteUsers");
+//            if (argStr != null) {
+//                Set<String> removeUserList;
+//                if (argStr.equals("true")) {
+//                    logger.info("Now deleting from user black list!");
+//                    StringCleaner cleaner = new StringCleaner(config.getUserBlacklist());
+//                    removeUserList = cleaner.getBlacklist();
+//                } else
+//                    removeUserList = new LinkedHashSet<String>(Arrays.asList(argStr.split(",")));
+//
+//                tweetSearch.deleteUsers(removeUserList);
+//                tweetSearch.refresh();
+//                logger.info("RESTART tweet collector! Deleted: " + removeUserList);
+//            }
 
             argStr = map.get("printUsersFromDB");
             if (argStr != null) {
@@ -299,32 +271,6 @@ public class Statistics {
         writer.close();
     }
 
-//    public void getUserInfo(String argStr) {
-//        try {
-//            final BufferedWriter writer = Helper.createBuffWriter(new File("out.txt"));
-//            logger.info("Start retrieving followers from user '" + argStr + "'");
-//            twitSearch.getFollowers(argStr, new AnyExecutor<YUser>() {
-//
-//                int counter = 0;
-//
-//                @Override
-//                public YUser execute(YUser user) {
-//                    try {
-//                        logger.info(counter++ + " " + user.toString());
-//                        writer.write(user.getScreenName() + "\t" + user.getRealName() + "\t" + user.getLocation() + "\n");
-//                        // make sure that we save it (e.g. if exception occured)
-//                        writer.flush();
-//                        return user;
-//                    } catch (Exception ex) {
-//                        throw new RuntimeException(ex);
-//                    }
-//                }
-//            });
-//            writer.close();
-//        } catch (Exception ex) {
-//            throw new RuntimeException(ex);
-//        }
-//    }
     public void readStopwords(InputStream is) throws Exception {
         List<String> list = Helper.readFile(Helper.createBuffReader(is));
         Set<String> set = new TreeSet<String>();

@@ -237,7 +237,7 @@ public class HomePage extends WebPage {
 //            q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);
         }
 
-        return getTweetSearch().attachHighlighting(q);
+        return q;
     }
 
     public void updateAfterAjax(AjaxRequestTarget target, boolean updateSearchBox) {

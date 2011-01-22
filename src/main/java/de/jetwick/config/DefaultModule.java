@@ -63,6 +63,7 @@ public class DefaultModule extends AbstractModule {
     public void installSearchModule() {
         bind(Configuration.class).toInstance(config);        
         ElasticTweetSearch tweetSearch = new ElasticTweetSearch(config);
+        tweetSearch.nodeInfo();
         bind(ElasticTweetSearch.class).toInstance(tweetSearch);
 
         ElasticUserSearch userSearch = new ElasticUserSearch(config);

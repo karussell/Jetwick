@@ -15,12 +15,8 @@
  */
 package de.jetwick.es;
 
-import java.io.File;
-import org.junit.After;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
@@ -36,7 +32,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.lucene.util.Version;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -49,41 +44,19 @@ import static org.junit.Assert.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class ElasticTweetSearchTest {
+public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
-    private static ElasticNode node = new ElasticNode();
+//    private Logger logger = LoggerFactory.getLogger(getClass());
     private static ElasticTweetSearch twSearch;
-    private Logger logger = LoggerFactory.getLogger(getClass());
 
     public ElasticTweetSearch getTweetSearch() {
         return twSearch;
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        File file = new File("/tmp/es");
-        file.delete();
-        file.mkdir();
-        node.start(file.getAbsolutePath(), "es/config", true);
-        twSearch = new ElasticTweetSearch(node.client());
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        node.stop();
-    }
-
     @Before
-    public void setUp() throws Exception {
-        // necessary if only one method is executed:
-        twSearch.waitForYellow();
-
-        // start with a fresh index:
-        twSearch.deleteAll();
-    }
-
-    @After
-    public void tearDown() {
+    public void setUp() throws Exception {        
+        twSearch = new ElasticTweetSearch(getClient());        
+        super.setUp(twSearch);        
     }
 
     @Test
@@ -232,28 +205,6 @@ public class ElasticTweetSearchTest {
         twSearch.delete(Arrays.asList(tw2));
         twSearch.refresh();
         assertEquals(0, twSearch.search("java").size());
-    }
-
-    @Test
-    public void testDeleteUsers() throws Exception {
-        // do not throw exception
-        twSearch.deleteUsers(Collections.EMPTY_LIST);
-
-        SolrUser peter = new SolrUser("peter");
-        SolrTweet tw1 = new SolrTweet(1L, "java is cool and stable!", peter);
-
-        SolrUser karsten = new SolrUser("karsten");
-        SolrTweet tw2 = new SolrTweet(2L, "oracle is bad!", karsten);
-
-        twSearch.update(tw1, false);
-        twSearch.update(tw2, true);
-        assertEquals(1, twSearch.search("java").size());
-        assertEquals(1, twSearch.search("oracle").size());
-
-        twSearch.deleteUsers(Arrays.asList("peter"));
-        twSearch.refresh();
-        assertEquals(0, twSearch.search("java").size());
-        assertEquals(1, twSearch.search("oracle").size());
     }
 
     @Test

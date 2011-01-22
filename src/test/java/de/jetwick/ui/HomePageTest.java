@@ -83,13 +83,13 @@ public class HomePageTest extends WicketPagesTestClass {
     }
 
     @Test
-    public void testNormalSearch() throws Exception {
-        ownSolrTweetSearch = mock(ElasticTweetSearch.class);
-        setUp();
+    public void testNormalSearch() throws Exception {        
+//        setUp();
+        ElasticTweetSearch search = getInstance(ElasticTweetSearch.class);
         SolrQuery query = new SolrQuery("timetabling");
         tester.startPage(new HomePage(query, 0, false));
         tester.assertNoErrorMessage();
-        verify(ownSolrTweetSearch).search(new LinkedHashSet<SolrUser>(), query);
+        verify(search).search(new LinkedHashSet<SolrUser>(), query);
     }
 
     @Test
@@ -264,11 +264,11 @@ public class HomePageTest extends WicketPagesTestClass {
         };
     }
 
-    @Override
-    protected ElasticTweetSearch createSolrTweetSearch() {
-        if (ownSolrTweetSearch == null)
-            return super.createSolrTweetSearch();
-
-        return ownSolrTweetSearch;
-    }
+//    @Override
+//    protected ElasticTweetSearch createSolrTweetSearch() {
+//        if (ownSolrTweetSearch == null)
+//            return super.createSolrTweetSearch();
+//
+//        return ownSolrTweetSearch;
+//    }
 }

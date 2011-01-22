@@ -57,7 +57,7 @@ public class TweetESQuery {
         String[] termsArray =  new String[terms.size()];
         int counter = 0;
         for (Entry<String, Integer> entry : terms) {
-            termsArray[counter++] = Solr2Elastic.cleanupQuery(entry.getKey());
+            termsArray[counter++] = Solr2ElasticTweet.cleanupQuery(entry.getKey());
         }
 
         int mmTweets = (int) Math.round(terms.size() * MM_BORDER);

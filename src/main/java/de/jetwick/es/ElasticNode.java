@@ -46,21 +46,24 @@ import static org.elasticsearch.node.NodeBuilder.*;
  */
 public class ElasticNode {
 
-    private Logger logger = LoggerFactory.getLogger(getClass());
+    private static Logger logger = LoggerFactory.getLogger(ElasticNode.class);
     public static final String CLUSTER = "jetwickcluster";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         ElasticNode node = new ElasticNode().start("es");
-        boolean createIndex = false;
-        // TODO check dynamically if index exists if not then create
-        if (createIndex) {            
-            new ElasticTweetSearch(node.client());
-            System.out.println("created index: twindex");
-        }
-        
+        node.waitForYellow();
+
+        ElasticTweetSearch search = new ElasticTweetSearch(node.client());
+        if (!search.indexExists(search.getIndexName())) {
+            logger.info("Try to create index: " + search.getIndexName());
+            search.createIndex(search.getIndexName());
+            logger.info("Created index: " + search.getIndexName());
+        } else
+            logger.info("Index " + search.getIndexName() + " already exists");
+
         Thread.currentThread().join();
     }
-    
+
     public static void testLong(String[] args) throws IOException {
         Node node = nodeBuilder().
                 local(true).
@@ -115,6 +118,7 @@ public class ElasticNode {
         node.stop();
     }
     private Node node;
+    private boolean started = false;
 
     public ElasticNode start(String dataHome) {
         return start(dataHome, dataHome + "/config", false);
@@ -124,7 +128,7 @@ public class ElasticNode {
         // see
         // http://www.elasticsearch.com/docs/elasticsearch/setup/installation/
         // http://www.elasticsearch.com/docs/elasticsearch/setup/dirlayout/
-        File homeDir = new File(home);        
+        File homeDir = new File(home);
         System.setProperty("es.path.home", homeDir.getAbsolutePath());
         System.setProperty("es.path.conf", conf);
 
@@ -135,40 +139,59 @@ public class ElasticNode {
                 //                put("network.publishHost", "127.0.0.0").
                 put("number_of_shards", 3).
                 put("number_of_replicas", 1);
-        
-        if(testing) {
+
+        if (testing) {
             settings.put("gateway.type", "none");
-                // default is local
-                // none means no data after node restart!
-                // does not work when transportclient connects:
+            // default is local
+            // none means no data after node restart!
+            // does not work when transportclient connects:
 //                put("gateway.type", "fs").
 //                put("gateway.fs.location", homeDir.getAbsolutePath()).
         }
-        
-        settings.build();        
-        NodeBuilder nBuilder = nodeBuilder().settings(settings);        
-        if(!testing) {
+
+        settings.build();
+        NodeBuilder nBuilder = nodeBuilder().settings(settings);
+        if (!testing) {
             nBuilder.clusterName(CLUSTER);
         } else {
-        //                local(true).
+            nBuilder.local(true);
         }
-        
-        node = nBuilder.build().start();                
-        logger.info("Started Node. Home folder is: " + homeDir.getAbsolutePath());        
+
+        node = nBuilder.build().start();
+        started = true;
+        logger.info("Started Node in cluster " + CLUSTER + ". Home folder: " + homeDir.getAbsolutePath());
         return this;
     }
 
     public void stop() {
         if (node == null)
             throw new RuntimeException("Node not started");
-
+        
+        started = false;
         node.close();
     }
+
+    public boolean isStarted() {
+        return started;
+    }        
 
     public Client client() {
         if (node == null)
             throw new RuntimeException("Node not started");
 
         return node.client();
+    }
+
+    /**
+     * Warning: Can take several 10 seconds!
+     */
+    public void waitForYellow() {
+        node.client().admin().cluster().health(new ClusterHealthRequest("twindex").waitForYellowStatus()).actionGet();
+        logger.info("Waited for node to be ready. Now status is 'yellow'!");
+    }
+    
+    public void waitForOneActiveShard() {
+        node.client().admin().cluster().health(new ClusterHealthRequest("twindex").waitForActiveShards(1)).actionGet();
+        logger.info("Waited for node to be ready. Now at least one shard is active!");
     }
 }

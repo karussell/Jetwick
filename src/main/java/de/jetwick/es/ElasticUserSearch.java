@@ -15,10 +15,11 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.util.Helper;
+import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.action.search.SearchResponse;
 import de.jetwick.config.Configuration;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import java.util.Collections;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
@@ -37,58 +38,54 @@ import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class ElasticUserSearch {
+public class ElasticUserSearch extends AbstractElasticSearch {
 
-    private String indexName = "uindex";
     private Logger logger = LoggerFactory.getLogger(getClass());
-    private Client client;    
     private static final String QUERY_TERMS = "ss_qterms_mv_s";
     private static final String SCREEN_NAME = "name";
+    protected int termMinFrequency = 2;
 
-    
     public ElasticUserSearch(Configuration config) {
         this(config.getTweetSearchUrl(), config.getTweetSearchLogin(), config.getTweetSearchPassword());
     }
 
     public ElasticUserSearch(String url, String login, String pw) {
-        this(new TransportClient().addTransportAddress(new InetSocketTransportAddress(url, 9300)));
+        super(url, login, pw);
     }
 
     public ElasticUserSearch(Client client) {
-        this.client = client;
-        createIndex(indexName);
+        super(client);
     }
-    
-    
-    private void createIndex(String indexName) {
-        // TODO ES
-//        throw new UnsupportedOperationException("TODO");
+
+    @Override
+    public String getIndexName() {
+        return "uindex";
     }
-    
+
+    @Override
+    public String getIndexType() {
+        return "user";
+    }
+
     void delete(SolrUser user, boolean commit) {
         if (user.getScreenName() == null)
             throw new NullPointerException("Null " + SolrUser.SCREEN_NAME + " is not allowed! User:" + user);
 
-//        try {
-//            server.deleteById(user.getScreenName());
-//            if (commit)
-//                commit();
-//        } catch (Exception ex) {
-//            throw new RuntimeException(ex);
-//        }
+        deleteById(user.getScreenName());
+        if (commit)
+            refresh();
     }
 
     public void update(Collection<SolrUser> users) {
@@ -100,38 +97,17 @@ public class ElasticUserSearch {
      * If it is configured it will retry if one batch is failing.
      */
     public void update(Collection<SolrUser> users, int batchSize) {
-        Collection<SolrInputDocument> list = new ArrayList<SolrInputDocument>();
-        int usersProcessed = 0;
-        int exceptionCounter = 0;
-        int MAX_TIMEOUTS = 0;
-        List<SolrUser> userList = new ArrayList<SolrUser>(users);
+        Collection<XContentBuilder> list = new ArrayList<XContentBuilder>();
 
-        while (usersProcessed < users.size()) {
+        for (SolrUser user : users) {
             try {
-                list.clear();
-                for (int counter = 0;
-                        counter + usersProcessed < userList.size()
-                        && counter < batchSize; counter++) {
+                XContentBuilder doc = createDoc(user);
+                if (doc != null)
+                    list.add(doc);
 
-                    SolrInputDocument doc = createDoc(userList.get(counter + usersProcessed));
-                    if (doc != null)
-                        list.add(doc);
-                }
-
-                // TODO
-//                if (list.size() > 0)
-//                    server.add(list);
-
-                // do not get into an infinity loop
-                usersProcessed += batchSize;
-            } catch (Exception e) {
-                logger.warn("Exception while updating. users already processed: "
-                        + usersProcessed + ". Error message: " + e.getMessage());
-                if (exceptionCounter >= MAX_TIMEOUTS) {
-                    exceptionCounter = 0;
-                    usersProcessed += batchSize;
-                } else
-                    exceptionCounter++;
+                feedDoc(user.getScreenName(), doc);
+            } catch (IOException ex) {
+                logger.error("skipped user when feeding:" + user, ex);
             }
         }
     }
@@ -140,41 +116,41 @@ public class ElasticUserSearch {
         save(user, commit);
     }
 
-    public void save(SolrUser user, boolean commit) {
-        //TODO
-//        try {
-//            SolrInputDocument doc = createDoc(user);
-//            if (doc != null)
-//                server.add(doc);
-//            if (commit)
-//                commit();
-//        } catch (Exception ex) {
-//            logger.error("Couldn't save user:" + user, ex);
-//        }
+    public void save(SolrUser user, boolean refresh) {
+        try {
+            XContentBuilder b = createDoc(user);
+            if (b != null)
+                feedDoc(user.getScreenName(), b);
+
+            if (refresh)
+                refresh();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public SolrInputDocument createDoc(SolrUser user) throws IOException {
-        SolrInputDocument doc = new SolrInputDocument();
+    public XContentBuilder createDoc(SolrUser user) throws IOException {
+        XContentBuilder b = jsonBuilder().startObject();
         // make sure that if we look for a specific user this user will show up first:
-        doc.addField(SCREEN_NAME, user.getScreenName());
-        doc.addField("realName", user.getRealName());
-        doc.addField("iconUrl", user.getProfileImageUrl());
-        doc.addField("webUrl", user.getWebUrl());
-        doc.addField("bio", user.getDescription());
-        doc.addField("token_s", user.getTwitterToken());
-        doc.addField("tokenSecret_s", user.getTwitterTokenSecret());
+        b.field(SCREEN_NAME, user.getScreenName());
+        b.field("realName", user.getRealName());
+        b.field("iconUrl", user.getProfileImageUrl());
+        b.field("webUrl", user.getWebUrl());
+        b.field("bio", user.getDescription());
+        b.field("token_s", user.getTwitterToken());
+        b.field("tokenSecret_s", user.getTwitterTokenSecret());
 
-        doc.addField("createdAt_dt", user.getCreatedAt());
-        doc.addField("twCreatedAt_dt", user.getTwitterCreatedAt());
+        b.field("createdAt_dt", user.getCreatedAt());
+        b.field("twCreatedAt_dt", user.getTwitterCreatedAt());
 
         int counter = 1;
         for (SavedSearch ss : user.getSavedSearches()) {
-            doc.addField("ss_" + counter + "_query_s", ss.getCleanQuery().toString());
-            doc.addField("ss_" + counter + "_last_dt", ss.getLastQueryDate());
+            b.field("ss_" + counter + "_query_s", ss.getCleanQuery().toString());
+            b.field("ss_" + counter + "_last_dt", ss.getLastQueryDate());
 
             if (ss.getQueryTerm() != null && !ss.getQueryTerm().isEmpty()) {
                 // for tweetProducer (pick important via facets) and stats:
-                doc.addField(QUERY_TERMS, ss.getQueryTerm().toLowerCase());
+                b.field(QUERY_TERMS, ss.getQueryTerm().toLowerCase());
             }
             counter++;
         }
@@ -183,61 +159,64 @@ public class ElasticUserSearch {
         Collection<SolrTweet> tweets = user.getOwnTweets();
         if (tweets.size() > 0) {
             TweetDetector extractor = new TweetDetector(tweets);
+            List<String> tagList = new ArrayList<String>();
             for (Entry<String, Integer> entry : extractor.run().getSortedTerms()) {
-                //TODO
-//                if (entry.getValue() > termMinFrequency)
-                doc.addField("tag", entry.getKey());
+                if (entry.getValue() > termMinFrequency)
+                    tagList.add(entry.getKey());
             }
+            b.field("tag", tagList);
 
             StringFreqMap langs = new StringFreqMap();
             for (SolrTweet tw : tweets) {
                 langs.inc(tw.getLanguage(), 1);
             }
 
+            List<String> langList = new ArrayList<String>();
             for (Entry<String, Integer> lang : langs.getSorted()) {
-                doc.addField("lang", lang.getKey());
+                langList.add(lang.getKey());
             }
+            b.field("lang", langList);
         }
 
-        return doc;
+        return b;
     }
 
-    public SolrUser readDoc(final SolrDocument doc) {
-        String userName = (String) doc.getFieldValue(SCREEN_NAME);
+    public SolrUser readDoc(Map<String, Object> doc, String idAsStr) {
+        String userName = idAsStr;
         SolrUser user = new SolrUser(userName);
-        user.setRealName((String) doc.getFieldValue("realName"));
-        user.setProfileImageUrl((String) doc.getFieldValue("iconUrl"));
-        user.setWebUrl((String) doc.getFieldValue("webUrl"));
-        user.setDescription((String) doc.getFieldValue("bio"));
-        user.setTwitterToken((String) doc.getFieldValue("token_s"));
-        user.setTwitterTokenSecret((String) doc.getFieldValue("tokenSecret_s"));
+        user.setRealName((String) doc.get("realName"));
+        user.setProfileImageUrl((String) doc.get("iconUrl"));
+        user.setWebUrl((String) doc.get("webUrl"));
+        user.setDescription((String) doc.get("bio"));
+        user.setTwitterToken((String) doc.get("token_s"));
+        user.setTwitterTokenSecret((String) doc.get("tokenSecret_s"));
 
-        user.setUpdateAt((Date) doc.getFieldValue("timestamp"));
-        user.setCreatedAt((Date) doc.getFieldValue("createdAt_dt"));
-        user.setTwitterCreatedAt((Date) doc.getFieldValue("twCreatedAt_dt"));
+        user.setUpdateAt(Helper.toDateNoNPE((String) doc.get("timestamp")));
+        user.setCreatedAt(Helper.toDateNoNPE((String) doc.get("createdAt_dt")));
+        user.setTwitterCreatedAt(Helper.toDateNoNPE((String) doc.get("twCreatedAt_dt")));
 
         long counter = 1;
         while (true) {
-            String qString = (String) doc.getFieldValue("ss_" + counter + "_query_s");
+            String qString = (String) doc.get("ss_" + counter + "_query_s");
             if (qString == null)
                 // backward compatibility
                 break;
 
             SolrQuery q = JetwickQuery.parse(qString);
             SavedSearch ss = new SavedSearch(counter, q);
-            ss.setLastQueryDate((Date) doc.getFieldValue("ss_" + counter + "_last_dt"));
+            ss.setLastQueryDate(Helper.toDateNoNPE((String) doc.get("ss_" + counter + "_last_dt")));
             user.addSavedSearch(ss);
             counter++;
         }
-        // only used for facet search? doc.getFieldValue("lang");        
+        // only used for facet search? doc.get("lang");        
 
-        Collection<Object> tags = doc.getFieldValues("tag");
+        Collection<Object> tags = (Collection<Object>) doc.get("tag");
         if (tags != null)
             for (Object tag : tags) {
                 user.addTag((String) tag);
             }
 
-        Collection<Object> langs = doc.getFieldValues("lang");
+        Collection<Object> langs = (Collection<Object>) doc.get("lang");
         if (langs != null)
             for (Object lang : langs) {
                 user.addLanguage((String) lang);
@@ -301,64 +280,38 @@ public class ElasticUserSearch {
 
     // TODO facet pagination
     public Collection<String> getQueryTerms() throws SolrServerException {
-        //TODO
-//        QueryResponse rsp = server.query(new SolrQuery().setFacet(true).addFacetField(QUERY_TERMS).setFacetMinCount(1));
-//        FacetField ff = rsp.getFacetField(QUERY_TERMS);
-//        Collection<String> res = new ArrayList<String>();
-//        if (ff.getValues() != null)
-//            for (Count cnt : ff.getValues()) {
-//                if (cnt.getCount() > 0)
-//                    res.add(cnt.getName());
-//            }
-//        return res;
-        return Collections.EMPTY_LIST;
+        SearchResponse rsp = search(new SolrQuery().setFacet(true).addFacetField(QUERY_TERMS).setFacetMinCount(1));
+        TermsFacet tf = (TermsFacet) rsp.getFacets().facet(QUERY_TERMS);
+        Collection<String> res = new ArrayList<String>();
+        if (tf.entries() != null)
+            for (TermsFacet.Entry cnt : tf.entries()) {
+                if (cnt.getCount() > 0)
+                    res.add(cnt.getTerm());
+            }
+        return res;
     }
 
-//    @Override
-    public QueryResponse search(SolrQuery query) throws SolrServerException {
+    public SearchResponse search(SolrQuery query) throws SolrServerException {
         return search(new ArrayList(), query);
     }
 
-    public QueryResponse search(Collection<SolrUser> users, SolrQuery query) throws SolrServerException {
-        //TODO
-//        QueryResponse rsp = server.query(query);
-//        users.addAll(collectUsers(rsp));
-//        return rsp;
-        return null;
+    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) throws SolrServerException {
+        SearchRequestBuilder srb = client.prepareSearch(getIndexName());
+        new Solr2ElasticUser().createElasticQuery(query, srb);
+        SearchResponse response = srb.execute().actionGet();
+        users.addAll(collectUsers(response));
+        return response;
     }
 
-    public Collection<SolrUser> collectUsers(QueryResponse rsp) {
-        SolrDocumentList docs = rsp.getResults();
+    public Collection<SolrUser> collectUsers(SearchResponse rsp) {
+        SearchHit docs[] = rsp.getHits().getHits();
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
 
-        for (SolrDocument sd : docs) {
-            SolrUser u = readDoc(sd);
+        for (SearchHit sd : docs) {
+            SolrUser u = readDoc(sd.getSource(), sd.getId());
             users.add(u);
         }
         return users;
-    }
-
-//    public static boolean isMlt(SolrQuery lastQuery) {
-//        String par = lastQuery.get(MoreLikeThisParams.MLT);
-//        return par != null && par.equals("true");
-//    }
-    public boolean isMlt(SolrQuery lastQuery) {
-        String qt = lastQuery.getQueryType();
-        return qt != null && qt.contains(MoreLikeThisParams.MLT);
-    }
-
-    /** use createMltQuery + search instead */
-    @Deprecated
-    long searchMoreLikeThis(Collection<SolrUser> users, String qStr, int hitsPerPage,
-            int page, boolean testing) throws SolrServerException {
-
-        SolrQuery query = createMltQuery(qStr);
-        // TODO
-//        attachPagability(query, page, hitsPerPage);
-        if (!testing)
-            query.set(MoreLikeThisParams.MIN_TERM_FREQ, 5);
-
-        return search(users, query).getResults().getNumFound();
     }
 
     /** use createQuery + search instead */
@@ -373,25 +326,12 @@ public class ElasticUserSearch {
     @Deprecated
     long search(Collection<SolrUser> users, String qStr, int hitsPerPage, int page) throws SolrServerException {
         SolrQuery query = new UserQuery(qStr);
-        //TODO
-//        attachPagability(query, page, hitsPerPage);
-        QueryResponse rsp = search(users, query);
-        return rsp.getResults().getNumFound();
+        attachPagability(query, page, hitsPerPage);
+        SearchResponse rsp = search(users, query);
+        return rsp.getHits().totalHits();
     }
 
-    void commit() {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    void setTermMinFrequency(int i) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    static List filterLanguages(Map<String, Integer> langs) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    void deleteAll() {
-        throw new UnsupportedOperationException("Not yet implemented");
+    void setTermMinFrequency(int tmf) {
+        termMinFrequency = tmf;
     }
 }

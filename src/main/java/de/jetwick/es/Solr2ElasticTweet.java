@@ -24,6 +24,7 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.index.query.xcontent.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
@@ -37,10 +38,9 @@ import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class Solr2Elastic {
+public class Solr2ElasticTweet {
 
-    public static void createElasticQuery(SolrQuery query, SearchRequestBuilder srb) {
-        // TODO use dis_max with fields tw, user and title
+    public void createElasticQuery(SolrQuery query, SearchRequestBuilder srb) {
         Integer rows = query.getRows();
 
         if (rows == null)
@@ -63,25 +63,7 @@ public class Solr2Elastic {
             }
         }
 
-        XContentQueryBuilder qb;
-        if (query.getQuery() == null || query.getQuery().isEmpty())
-            qb = QueryBuilders.matchAllQuery();
-        else {
-            // fields can also contain patterns like so name.* to match more fields
-            qb = QueryBuilders.queryString(cleanupQuery(query.getQuery())).
-                    field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
-                    allowLeadingWildcard(false).analyzer("search_analyzer").useDisMax(true);
-        }
-
-        long time = new MyDate().castToHour().getTime();
-        qb = customScoreQuery(qb).script("var boost = _score;"
-                //                + "if(doc['tw_i'].value <= 30) boost *= 0.1;"
-                //                + "if(doc['quality_i'].value <= 65) boost *= 0.1;"
-                + "var retweet = doc['retw_i'].value;"
-                + "var scale = 10000;"// time vs. retweet -> what should be more important? +0.1 because boost should end up to be 0 for 0 retweets
-                + "if(retweet <= 100) boost *= 0.1 + retweet / scale; else boost *= 0.1 + 100 / scale;"
-                + "boost / (3.6e-9 * (mynow - doc['dt'].value) + 1);").
-                lang("js").param("mynow", time);
+        XContentQueryBuilder qb = createQuery(query.getQuery());
 
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;
@@ -137,7 +119,7 @@ public class Solr2Elastic {
         srb.setQuery(qb);
     }
 
-    public static XContentFilterBuilder filterQuery2Builder(String fq) {
+    public XContentFilterBuilder filterQuery2Builder(String fq) {
         // skip local parameter!
         fq = removeLocalParams(fq);
 
@@ -217,6 +199,29 @@ public class Solr2Elastic {
             return FilterBuilders.termFilter(key, getTermValue(val));
     }
 
+    protected XContentQueryBuilder createQuery(String queryStr) {
+        XContentQueryBuilder qb;
+        if (queryStr == null || queryStr.isEmpty())
+            qb = QueryBuilders.matchAllQuery();
+        else {
+            // fields can also contain patterns like so name.* to match more fields
+            qb = QueryBuilders.queryString(cleanupQuery(queryStr)).
+                    field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
+                    allowLeadingWildcard(false).analyzer("search_analyzer").useDisMax(true);
+        }
+
+        long time = new MyDate().castToHour().getTime();
+        return customScoreQuery(qb).script("var boost = _score;"
+                //                + "if(doc['tw_i'].value <= 30) boost *= 0.1;"
+                //                + "if(doc['quality_i'].value <= 65) boost *= 0.1;"
+                + "var retweet = doc['retw_i'].value;"
+                + "var scale = 10000;"// time vs. retweet -> what should be more important? +0.1 because boost should end up to be 0 for 0 retweets
+                + "if(retweet <= 100) boost *= 0.1 + retweet / scale; else boost *= 0.1 + 100 / scale;"
+                + "boost / (3.6e-9 * (mynow - doc['dt'].value) + 1);").
+                lang("js").param("mynow", time);
+
+    }
+
     public static Object getTermValue(String val) {
         Object newVal = val;
         if (val.startsWith("\"") && val.endsWith("\""))
@@ -256,7 +261,7 @@ public class Solr2Elastic {
         // copied from ClientUtils.escapeQueryChars        
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);            
+            char c = str.charAt(i);
             if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
                     || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
                     || c == '*' || c == '?' || c == '|' || c == '&' || c == ';'

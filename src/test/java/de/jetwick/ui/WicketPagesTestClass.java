@@ -17,22 +17,32 @@ package de.jetwick.ui;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
+import de.jetwick.data.TagDao;
+import de.jetwick.data.UserDao;
 import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.es.ElasticUserSearchTest;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.Application;
 import org.apache.wicket.guice.GuiceComponentInjector;
 import org.apache.wicket.util.tester.WicketTester;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.ShardSearchFailure;
+import org.elasticsearch.search.facet.InternalFacets;
+import org.elasticsearch.search.internal.InternalSearchHit;
+import org.elasticsearch.search.internal.InternalSearchHits;
+import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.junit.Before;
 import twitter4j.TwitterException;
+import static org.mockito.Mockito.*;
 
 public class WicketPagesTestClass {
 
@@ -57,16 +67,25 @@ public class WicketPagesTestClass {
             }
 
             @Override
-            public void installDbModule() {
-                // TODO provide mock db
+            public void installDbModule() {                
+                WorkManager db = mock(WorkManager.class);
+                bind(WorkManager.class).toInstance(db);
+                TagDao tagDao = mock(TagDao.class);
+                bind(TagDao.class).toInstance(tagDao);
+                UserDao userDao = mock(UserDao.class);
+                bind(UserDao.class).toInstance(userDao);
             }
 
             @Override
             public void installSearchModule() {
-                // TODO provide mock searcher                
-                bind(ElasticUserSearch.class).toInstance(createSolrUserSearch());
+                ElasticUserSearch userSearch = mock(ElasticUserSearch.class);
+                bind(ElasticUserSearch.class).toInstance(userSearch);
 
-                bind(ElasticTweetSearch.class).toInstance(createSolrTweetSearch());
+                ElasticTweetSearch twSearch = mock(ElasticTweetSearch.class);
+                InternalSearchResponse iRsp = new InternalSearchResponse(new InternalSearchHits(new InternalSearchHit[0], 0, 0), new InternalFacets(new ArrayList()), true);
+                when(twSearch.search(new ArrayList<SolrUser>(), new SolrQuery())).thenReturn(new SearchResponse(iRsp, "", 4, 4, 1L, new ShardSearchFailure[0]));
+                
+                bind(ElasticTweetSearch.class).toInstance(twSearch);
             }
 
             @Override
@@ -89,25 +108,25 @@ public class WicketPagesTestClass {
         };
     }
 
-    protected ElasticUserSearch createSolrUserSearch() {
-        ElasticUserSearchTest sst = new ElasticUserSearchTest();
-        try {
-            sst.setUp();
-            return sst.getUserSearch();
-        } catch (Exception ex) {
-            throw new UnsupportedOperationException("Cannot setup user search", ex);
-        }
-    }
-
-    protected ElasticTweetSearch createSolrTweetSearch() {
-        ElasticTweetSearchTest stst = new ElasticTweetSearchTest();
-        try {
-            stst.setUp();
-            return stst.getTweetSearch();
-        } catch (Exception ex) {
-            throw new UnsupportedOperationException("Cannot setup tweet search", ex);
-        }
-    }
+//    protected ElasticUserSearch createSolrUserSearch() {
+//        ElasticUserSearchTest sst = new ElasticUserSearchTest();
+//        try {
+//            sst.setUp();
+//            return sst.getUserSearch();
+//        } catch (Exception ex) {
+//            throw new UnsupportedOperationException("Cannot setup user search", ex);
+//        }
+//    }
+//
+//    protected ElasticTweetSearch createSolrTweetSearch() {
+//        ElasticTweetSearchTest stst = new ElasticTweetSearchTest();
+//        try {
+//            stst.setUp();
+//            return stst.getTweetSearch();
+//        } catch (Exception ex) {
+//            throw new UnsupportedOperationException("Cannot setup tweet search", ex);
+//        }
+//    }
 
     protected TwitterSearch createTwitterSearch() {
         return new TwitterSearch() {

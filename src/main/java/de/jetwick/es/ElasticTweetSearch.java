@@ -18,14 +18,9 @@ package de.jetwick.es;
 import org.elasticsearch.index.query.xcontent.NotFilterBuilder;
 import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.filter.FilterFacet;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.client.transport.TransportClient;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.JetwickQuery;
@@ -54,21 +49,11 @@ import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.UpdateResponse;
-import org.elasticsearch.action.WriteConsistencyLevel;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
-import org.elasticsearch.action.count.CountResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
@@ -76,7 +61,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
@@ -84,7 +68,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.*;
  * 
  * @author Peter Karich, jetwick_@_pannous_._info
  */
-public class ElasticTweetSearch {
+public class ElasticTweetSearch extends AbstractElasticSearch {
 
     public static final String TWEET_TEXT = "tw";
     public static final String DATE = "dt";
@@ -99,13 +83,9 @@ public class ElasticTweetSearch {
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     public static final String FILTER_KEY_USER = "user:";
-//    private String indexName = "twindex";
-    private String indexName = "twindexreal";
-    private String indexType = "tweet";
     private Logger logger = LoggerFactory.getLogger(getClass());
-    private Client client;
 
-    public ElasticTweetSearch() {
+    public ElasticTweetSearch() {        
     }
 
     public ElasticTweetSearch(Configuration config) {
@@ -113,85 +93,33 @@ public class ElasticTweetSearch {
     }
 
     public ElasticTweetSearch(String url, String login, String pw) {
-        Settings s = ImmutableSettings.settingsBuilder().put("cluster.name", ElasticNode.CLUSTER).build();
-        TransportClient tmp = new TransportClient(s);
-        tmp.addTransportAddress(new InetSocketTransportAddress(url, 9300));
-        client = tmp;
-        info();
+        super(url, login, pw);
     }
 
-    /**
-     *  for testing: will create index every time ..
-     */
     public ElasticTweetSearch(Client client) {
-        this.client = client;
-        createIndex(indexName);
-        info();
+        super(client);
     }
 
-    public void info() {
-        NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
-        for (String n : rsp.getNodesMap().keySet()) {
-            logger.info("active node:" + n);
-        }
+    @Override
+    public String getIndexName() {
+        //return "twindex"; //<-contains data from TweetProducerOffline
+        return "twindexreal";//<-contains real data
     }
 
-    public long countAll() {
-        CountResponse response = client.prepareCount(indexName).
-                setQuery(QueryBuilders.matchAllQuery()).
-                execute().actionGet();
-        return response.getCount();
-    }
-
-    public void feedDoc(String twitterId, XContentBuilder b) throws IOException {
-//        String indexName = new SimpleDateFormat("yyyyMMdd").format(tw.getCreatedAt());
-        IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, twitterId).
-                setConsistencyLevel(WriteConsistencyLevel.DEFAULT).               
-                setSource(b);
-        irb.execute().actionGet();
-    }
-
-    public void admin() {
-        client.admin().indices().prepareOptimize(indexName);
-//        client.admin().cluster().nodesInfo(infoRequest);
-    }
-
-    public void deleteById(String id) {
-        DeleteResponse response = client.prepareDelete(indexName, indexType, id).
-                execute().
-                actionGet();
-    }
-
-    public void deleteByQuery(String field, String value) {
-        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(indexName).
-                setQuery(termQuery(field, value)).
-                execute().
-                actionGet();
+    @Override
+    public String getIndexType() {
+        return "tweet";
     }
     
-    public void deleteUntil(Date removeUntil) {        
+    public void deleteUntil(Date removeUntil) {
         NotFilterBuilder f1 = FilterBuilders.notFilter(FilterBuilders.existsFilter(UPDATE_DT));
         RangeFilterBuilder rfb = FilterBuilders.rangeFilter(DATE);
-        rfb.lte(new MyDate(removeUntil.getTime()).castToDay().toDate()).cache(true);                
-        
-        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(indexName).
+        rfb.lte(new MyDate(removeUntil.getTime()).castToDay().toDate()).cache(true);
+
+        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(getIndexName()).
                 setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.andFilter(f1, rfb))).
                 execute().
                 actionGet();
-    }
-
-    public void deleteUsers(Collection<String> users) {
-        if (users.isEmpty())
-            return;
-
-        try {
-            for (String u : users) {
-                deleteByQuery("user", u.toLowerCase());
-            }
-
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
     }
 
     public void delete(Collection<SolrTweet> tws) {
@@ -208,30 +136,18 @@ public class ElasticTweetSearch {
         }
     }
 
-    void deleteAll() throws IOException {
-        //client.prepareIndex().setOpType(OpType.)
-        //there is an index delete operation
-        // http://www.elasticsearch.com/docs/elasticsearch/rest_api/admin/indices/delete_index/
-
-        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(indexName).
-                setQuery(QueryBuilders.matchAllQuery()).
-                execute().
-                actionGet();
-        refresh();
-    }
-
     /**
      * @deprecated use new ElasticSearch requestBuilder to pass into the query method
      */
     SearchResponse queryOldSolr(SolrQuery query) {
-        SearchRequestBuilder srb = client.prepareSearch(indexName);
-        Solr2Elastic.createElasticQuery(query, srb);
+        SearchRequestBuilder srb = client.prepareSearch(getIndexName());
+        new Solr2ElasticTweet().createElasticQuery(query, srb);
         SearchResponse response = srb.execute().actionGet();
         return response;
     }
 
     TweetESQuery createQuery() {
-        return new TweetESQuery(client.prepareSearch(indexName));
+        return new TweetESQuery(client.prepareSearch(getIndexName()));
     }
 
     SearchResponse query(TweetESQuery query) {
@@ -257,10 +173,10 @@ public class ElasticTweetSearch {
 
         XContentBuilder b = jsonBuilder().startObject();
         b.field(TWEET_TEXT, tw.getText());
-        b.field("tw_i", tw.getText().length());  
+        b.field("tw_i", tw.getText().length());
         b.field(UPDATE_DT, tw.getUpdatedAt());
         b.field(DATE, tw.getCreatedAt());
-        b.field(IS_RT, tw.isRetweet());        
+        b.field(IS_RT, tw.isRetweet());
 
         if (tw.getLocation() == null)
             b.field("loc", tw.getFromUser().getLocation());
@@ -272,7 +188,7 @@ public class ElasticTweetSearch {
 
         b.field("user", tw.getFromUser().getScreenName());
         b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
-        
+
         // TODO
         //b.field("relevancy", 1.0);
 
@@ -445,21 +361,6 @@ public class ElasticTweetSearch {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
-    }
-
-    public SolrQuery attachHighlighting(SolrQuery query) {
-//        query.setHighlight(true).
-//                addHighlightField(TWEET_TEXT).
-//                // get the whole tweet == fragment
-//                setHighlightFragsize(0).
-//                setHighlightSnippets(1).
-//                setHighlightSimplePre("<b>").
-//                setHighlightSimplePost("</b>");
-//
-//        // use the TEXT field as fallback if a snippet cannot created
-//        query. // set("hl.maxAnalyzedChars", 51200).
-//                set("hl.alternateField", TWEET_TEXT);
-        return query;
     }
 
     Collection<SolrUser> search(String str) throws SolrServerException {
@@ -778,7 +679,7 @@ public class ElasticTweetSearch {
         int counter = 0;
         StringBuilder idStr = new StringBuilder();
         StringBuilder replyIdStr = new StringBuilder();
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             SolrTweet tw = iter.next();
             SolrTweet tmp = replyIdToTweetMap.get(tw.getTwitterId());
             if (tmp != null) {
@@ -907,7 +808,7 @@ public class ElasticTweetSearch {
 
     public SolrTweet findByTwitterId(Long twitterId) {
         try {
-            GetResponse rsp = client.prepareGet(indexName, indexType, "" + twitterId).
+            GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), "" + twitterId).
                     execute().actionGet();
             return readDoc(rsp.getSource(), rsp.getId());
         } catch (Exception ex) {
@@ -1087,7 +988,7 @@ public class ElasticTweetSearch {
                 continue;
 
             int dups = 0;
-            
+
             try {
                 // find dups in index
                 for (SolrTweet simTweet : collectTweets(search(reqBuilder))) {
@@ -1101,7 +1002,7 @@ public class ElasticTweetSearch {
                         dups++;
                     }
                 }
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 logger.error("Error while findDuplicate query execution", ex);
             }
 
@@ -1128,41 +1029,7 @@ public class ElasticTweetSearch {
     }
 
     public UpdateResponse optimize(int optimizeToSegmentsAfterUpdate) {
-        client.admin().indices().optimize(new OptimizeRequest(indexName).maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
+        client.admin().indices().optimize(new OptimizeRequest(getIndexName()).maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
         throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    private void createIndex(String indexName) {
-        // no need for the following because of _default mapping under config
-        // String fileAsString = Helper.readInputStream(getClass().getResourceAsStream("tweet.json"));
-        // new CreateIndexRequest(indexName).mapping(indexType, fileAsString)
-
-        // make sure node is up to create the index otherwise we get: blocked by: [1/not recovered from gateway];
-        ping();
-        CreateIndexResponse rsp = client.admin().indices().
-                create(new CreateIndexRequest(indexName)).
-                actionGet();
-        waitForYellow();
-    }
-
-    void ping() {
-        client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
-        // hmmh here we need indexName again ... but in createIndex it does not exist when calling ping ...
-//        client.admin().cluster().ping(new SinglePingRequest()).actionGet();
-    }
-
-    public void refresh() {
-        RefreshResponse rsp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
-
-        //assertEquals(1, rsp.getFailedShards());
-    }
-
-    public ElasticTweetSearch attachPagability(SolrQuery query, int page, int hitsPerPage) {
-        query.setStart(page * hitsPerPage).setRows(hitsPerPage);
-        return this;
-    }
-
-    void waitForYellow() {
-        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
     }
 }

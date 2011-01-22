@@ -22,15 +22,13 @@ import com.google.inject.Provider;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.util.Helper;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +41,7 @@ public class Util {
 
     private static Logger logger = LoggerFactory.getLogger(Util.class);
     private final String url;
-    private SolrUserSearch userSearch;
+    private ElasticUserSearch userSearch;
     private int userCounter;
 
     public static void main(String[] args) throws SolrServerException {
@@ -67,10 +65,10 @@ public class Util {
     }
 
     public void deleteAll() {
-        userSearch = new SolrUserSearch(url);
+        userSearch = new ElasticUserSearch(url, null, null);
         // why don't we need to set? query.setQueryType("simple")
         userSearch.deleteAll();
-        userSearch.commit(1);
+        userSearch.refresh();
         logger.info("Successfully finished deleteAll of " + url);
     }
 

@@ -15,14 +15,8 @@
  */
 package de.jetwick.es;
 
-import java.io.File;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.elasticsearch.indices.IndexMissingException;
-import org.junit.After;
-import org.junit.AfterClass;
+import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
@@ -34,8 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.FacetField.Count;
-import org.apache.solr.client.solrj.response.QueryResponse;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -43,43 +36,21 @@ import static org.junit.Assert.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class ElasticUserSearchTest {
+public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
-    private static ElasticNode node = new ElasticNode();
     private static ElasticUserSearch userSearch;
-    private Logger logger = LoggerFactory.getLogger(getClass());
+//    private Logger logger = LoggerFactory.getLogger(getClass());
 
     public ElasticUserSearch getUserSearch() {
         return userSearch;
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        File file = new File("/tmp/es");
-        file.delete();
-        file.mkdir();
-        node.start("/tmp/es", "es/config", true);
-        userSearch = new ElasticUserSearch(node.client());        
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        node.stop();
-    }
-
     @Before
     public void setUp() throws Exception {
-        try {
-            userSearch.deleteAll();
-        } catch (IndexMissingException ex) {
-            logger.info(ex.getMessage());
-        }
-    }
+        userSearch = new ElasticUserSearch(getClient());
+        super.setUp(userSearch);
+    }   
 
-    @After
-    public void tearDown() {
-    }    
-    
     @Test
     public void testDelete() throws Exception {
         SolrUser user = new SolrUser("karsten");
@@ -131,7 +102,7 @@ public class ElasticUserSearchTest {
         SolrUser user2 = new SolrUser("peter");
         list.add(user2);
         userSearch.update(list, 2);
-        userSearch.commit();
+        userSearch.refresh();
         assertEquals(1, userSearch.search("karsten").size());
         assertEquals(1, userSearch.search("peter").size());
 
@@ -141,7 +112,7 @@ public class ElasticUserSearchTest {
         assertEquals(0, userSearch.search("peter").size());
 
         userSearch.update(list, 1);
-        userSearch.commit();
+        userSearch.refresh();
         assertEquals(1, userSearch.search("karsten").size());
         assertEquals(1, userSearch.search("peter").size());
     }
@@ -154,54 +125,60 @@ public class ElasticUserSearchTest {
 //        assertEquals(1, list.size());
     }
 
-    @Test
-    public void testMoreLikeThis() throws Exception {
-        SolrUser karsten = new SolrUser("karsten");
-        karsten.setDescription("hooping hooping nice solr");
-        userSearch.save(karsten, false);
-
-        SolrUser pet = new SolrUser("peter");
-        pet.setDescription("hooping hooping nice solr");
-        userSearch.save(pet, false);
-
-        SolrUser joh = new SolrUser("johannes");
-        karsten.setDescription("windows rocks!");
-        userSearch.save(joh, true);
-
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
-        userSearch.searchMoreLikeThis(list, "peter", 10, 0, true);
-        assertEquals(1, list.size());
-        assertEquals(karsten, list.iterator().next());
-    }
-
-    @Test
-    public void testMltPaging() throws Exception {
-        SolrUser karsten = new SolrUser("karsten");
-        karsten.setDescription("hooping hooping; nice is solr");
-        userSearch.save(karsten, false);
-
-        SolrUser pet = new SolrUser("peter");
-        pet.setDescription("hooping hooping; solr is nice rocks; what do you need?");
-        userSearch.save(pet, false);
-
-        SolrUser joh = new SolrUser("johannes");
-        joh.setDescription("hooping hooping; solr is nice rocks; what do you need?");
-        userSearch.save(joh, true);
-
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
-        long ret = userSearch.searchMoreLikeThis(list, "peter", 2, 0, true);
-        assertEquals(2, ret);
-        assertEquals(2, list.size());
-        list.clear();
-        ret = userSearch.searchMoreLikeThis(list, "peter", 1, 0, true);
-        assertEquals(2, ret);
-        assertEquals(karsten, list.iterator().next());
-
-        list.clear();
-        ret = userSearch.searchMoreLikeThis(list, "peter", 1, 1, true);
-        assertEquals(2, ret);
-        assertEquals(joh, list.iterator().next());
-    }
+//    @Test
+//    public void testMoreLikeThis() throws Exception {
+//        SolrUser karsten = new SolrUser("karsten");
+//        karsten.setDescription("hooping hooping nice solr");
+//        userSearch.save(karsten, false);
+//
+//        SolrUser pet = new SolrUser("peter");
+//        pet.setDescription("hooping hooping nice solr");
+//        userSearch.save(pet, false);
+//
+//        SolrUser joh = new SolrUser("johannes");
+//        karsten.setDescription("windows rocks!");
+//        userSearch.save(joh, true);
+//
+//        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
+//        userSearch.searchMoreLikeThis(list, "peter", 10, 0, true);
+//        assertEquals(1, list.size());
+//        assertEquals(karsten, list.iterator().next());
+//    }
+//
+//    @Test
+//    public void testMltPaging() throws Exception {
+//        SolrUser karsten = new SolrUser("karsten");
+//        karsten.setDescription("hooping hooping; nice is solr");
+//        userSearch.save(karsten, false);
+//
+//        SolrUser pet = new SolrUser("peter");
+//        pet.setDescription("hooping hooping; solr is nice rocks; what do you need?");
+//        userSearch.save(pet, false);
+//
+//        SolrUser joh = new SolrUser("johannes");
+//        joh.setDescription("hooping hooping; solr is nice rocks; what do you need?");
+//        userSearch.save(joh, true);
+//
+//        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
+//        long ret = userSearch.searchMoreLikeThis(list, "peter", 2, 0, true);
+//        assertEquals(2, ret);
+//        assertEquals(2, list.size());
+//        list.clear();
+//        ret = userSearch.searchMoreLikeThis(list, "peter", 1, 0, true);
+//        assertEquals(2, ret);
+//        assertEquals(karsten, list.iterator().next());
+//
+//        list.clear();
+//        ret = userSearch.searchMoreLikeThis(list, "peter", 1, 1, true);
+//        assertEquals(2, ret);
+//        assertEquals(joh, list.iterator().next());
+//    }
+//
+//    @Test
+//    public void testIsMlt() {
+//        SolrQuery query = userSearch.createMltQuery("peter");
+//        assertTrue(userSearch.isMlt(query));
+//    }
 
     @Test
     public void testUnderscoreInName() throws Exception {
@@ -229,7 +206,7 @@ public class ElasticUserSearchTest {
             karsten.setDescription("hooping hooping nice solr");
             userSearch.save(karsten, false);
         }
-        userSearch.commit();
+        userSearch.refresh();
 
         Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
         assertEquals(5, userSearch.search(list, "hooping", 3, 0));
@@ -276,14 +253,15 @@ public class ElasticUserSearchTest {
         query.addFilterQuery("tag:test");
 
         Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
-        QueryResponse rsp = userSearch.search(list, query);
-        Count cnt = rsp.getFacetField("tag").getValues().get(0);
-
+        SearchResponse rsp = userSearch.search(list, query);
+        
         // found 2 docs
         assertEquals(2, list.size());
+        
+        TermsFacet.Entry cnt = ((TermsFacet) rsp.getFacets().facet("tag")).entries().get(1);        
 
         // found 2 docs which have java as tags
-        assertEquals("java", cnt.getName());
+        assertEquals("java", cnt.getTerm());
         assertEquals(2, cnt.getCount());
 
         // more filter queries
@@ -299,38 +277,14 @@ public class ElasticUserSearchTest {
     }
 
     @Test
-    public void testIsMlt() {
-        SolrQuery query = userSearch.createMltQuery("peter");
-        assertTrue(userSearch.isMlt(query));
-    }
-
-    @Test
-    public void testFilterLang() throws Exception {
-        Map<String, Integer> langs = new HashMap<String, Integer>();
-        langs.put("en", 100);
-        langs.put("de", 100);
-        assertEquals(2, ElasticUserSearch.filterLanguages(langs).size());
-
-        langs = new HashMap<String, Integer>();
-        langs.put("en", 100);
-        langs.put("de", 3);
-        assertEquals(1, ElasticUserSearch.filterLanguages(langs).size());
-
-        langs = new HashMap<String, Integer>();
-        langs.put("en", 100);
-        langs.put("de", 4);
-        assertEquals(2, ElasticUserSearch.filterLanguages(langs).size());
-    }
-
-    @Test
     public void testGetQueryTerms() throws Exception {
         SolrUser user = new SolrUser("karsten");
         user.addSavedSearch(new SavedSearch(1, new SolrQuery("peter test")));
         user.addSavedSearch(new SavedSearch(2, new SolrQuery("peter tester")));
         userSearch.save(user, false);
         user = new SolrUser("peter");
-        user.addSavedSearch(new SavedSearch(1, new SolrQuery("peter test")));
-        user.addSavedSearch(new SavedSearch(2, new SolrQuery("karsten tester")));
+        user.addSavedSearch(new SavedSearch(3, new SolrQuery("peter test")));
+        user.addSavedSearch(new SavedSearch(4, new SolrQuery("karsten tester")));
         userSearch.save(user, true);
 
         Collection<String> coll = userSearch.getQueryTerms();
@@ -338,13 +292,5 @@ public class ElasticUserSearchTest {
         assertTrue(coll.contains("peter test"));
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
-    }
-
-//    @Test
-//    public void testGetLastQuery() throws Exception {
-//        SolrUser user = new SolrUser("karsten");
-//        user.addSavedSearch(new SavedSearch(0, new SolrQuery("test")));
-//        userSearch.save(user, true);
-//        assertEquals("test", userSearch.findByScreenName("karsten").getSavedSearch(0).getQueryTerm());
-//    }
+    }    
 }

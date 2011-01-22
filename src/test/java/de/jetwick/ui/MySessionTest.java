@@ -17,7 +17,6 @@ package de.jetwick.ui;
 
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.TwitterSearch;
 import javax.servlet.http.Cookie;
 import org.apache.wicket.protocol.http.WebRequest;
