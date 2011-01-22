@@ -52,10 +52,10 @@ public class JetwickTestClass {
     public Module createModule() {
         return new DefaultModule() {
 
-            @Override
-            public void installDbModule() {
-                // explicitely disable DB
-            }
+//            @Override
+//            public void installDbModule() {
+//                // explicitely disable DB
+//            }
 
             @Override
             public void installSearchModule() {

@@ -51,7 +51,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     public ElasticTweetSearch getTweetSearch() {
         return twSearch;
-    }
+    }        
 
     @Before
     public void setUp() throws Exception {        

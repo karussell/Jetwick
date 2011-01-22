@@ -49,7 +49,6 @@ public class HomePageTest extends WicketPagesTestClass {
     private List<SolrTweet> returnUserTweets;
     private List<SolrTweet> returnSearchTweets;
     private TweetPackage sentTweets;
-    private ElasticTweetSearch ownSolrTweetSearch;
 
     @Before
     @Override

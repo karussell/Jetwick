@@ -15,6 +15,8 @@
  */
 package de.jetwick.tw;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import de.jetwick.JetwickTestClass;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.es.ElasticTweetSearchTest;
@@ -41,10 +43,19 @@ public class TweetConsumerTest extends JetwickTestClass {
     private ElasticTweetSearchTest tester = new ElasticTweetSearchTest();
     private TweetConsumer tweetConsumer;
 
+    @BeforeClass
+    public static void beforeClass() {
+        ElasticTweetSearchTest.beforeClass();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        ElasticTweetSearchTest.afterClass();
+    }
+    
     @Override
     @Before
     public void setUp() throws Exception {
-        // TODO call beforeClass instead !!
         tester.setUp();
         super.setUp();
         tweetConsumer = getInstance(TweetConsumer.class);

@@ -15,13 +15,21 @@
  */
 package de.jetwick.ui;
 
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import org.apache.lucene.search.Explanation;
+import org.elasticsearch.ElasticSearchParseException;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.xcontent.ToXContent.Params;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.search.SearchHit;
+import java.util.Collection;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
-import de.jetwick.data.TagDao;
-import de.jetwick.data.UserDao;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
@@ -36,7 +44,10 @@ import org.apache.wicket.guice.GuiceComponentInjector;
 import org.apache.wicket.util.tester.WicketTester;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
+import org.elasticsearch.search.SearchHitField;
+import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.facet.InternalFacets;
+import org.elasticsearch.search.highlight.HighlightField;
 import org.elasticsearch.search.internal.InternalSearchHit;
 import org.elasticsearch.search.internal.InternalSearchHits;
 import org.elasticsearch.search.internal.InternalSearchResponse;
@@ -66,25 +77,29 @@ public class WicketPagesTestClass {
                 bind(TwitterSearch.class).toInstance(createTwitterSearch());
             }
 
-            @Override
-            public void installDbModule() {                
-                WorkManager db = mock(WorkManager.class);
-                bind(WorkManager.class).toInstance(db);
-                TagDao tagDao = mock(TagDao.class);
-                bind(TagDao.class).toInstance(tagDao);
-                UserDao userDao = mock(UserDao.class);
-                bind(UserDao.class).toInstance(userDao);
-            }
-
+//            @Override
+//            public void installDbModule() {                
+//                WorkManager db = mock(WorkManager.class);
+//                bind(WorkManager.class).toInstance(db);
+//                TagDao tagDao = mock(TagDao.class);
+//                bind(TagDao.class).toInstance(tagDao);
+//                UserDao userDao = mock(UserDao.class);
+//                bind(UserDao.class).toInstance(userDao);
+//            }
             @Override
             public void installSearchModule() {
                 ElasticUserSearch userSearch = mock(ElasticUserSearch.class);
                 bind(ElasticUserSearch.class).toInstance(userSearch);
 
                 ElasticTweetSearch twSearch = mock(ElasticTweetSearch.class);
-                InternalSearchResponse iRsp = new InternalSearchResponse(new InternalSearchHits(new InternalSearchHit[0], 0, 0), new InternalFacets(new ArrayList()), true);
-                when(twSearch.search(new ArrayList<SolrUser>(), new SolrQuery())).thenReturn(new SearchResponse(iRsp, "", 4, 4, 1L, new ShardSearchFailure[0]));
                 
+                // mock this hit/result too!
+                //new InternalSearchHit(1, "1", "tweet", source, fields);
+                InternalSearchResponse iRsp = new InternalSearchResponse(
+                        new InternalSearchHits(new InternalSearchHit[0], 0, 0), new InternalFacets(new ArrayList()), true);
+                when(twSearch.search((Collection<SolrUser>) any(), (SolrQuery) any())).
+                        thenReturn(new SearchResponse(iRsp, "", 4, 4, 1L, new ShardSearchFailure[0]));
+
                 bind(ElasticTweetSearch.class).toInstance(twSearch);
             }
 
@@ -127,7 +142,6 @@ public class WicketPagesTestClass {
 //            throw new UnsupportedOperationException("Cannot setup tweet search", ex);
 //        }
 //    }
-
     protected TwitterSearch createTwitterSearch() {
         return new TwitterSearch() {
 
