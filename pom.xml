@@ -6,9 +6,9 @@
     <groupId>de.jetwick</groupId>
     <artifactId>jetwick</artifactId>
     <packaging>war</packaging>
-    <version>2.0</version>
+    <version>3.0</version>
     <name>Jetwick</name>
-    <description>Twitter Search 2.0</description>
+    <description>Twitter Search 3.0</description>
     <properties>
         <slf4j.version>1.6.0</slf4j.version>
         <jetty.version>6.1.24</jetty.version>        

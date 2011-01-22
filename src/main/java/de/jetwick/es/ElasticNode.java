@@ -65,8 +65,8 @@ public class ElasticNode {
         Node node = nodeBuilder().
                 local(true).
                 settings(ImmutableSettings.settingsBuilder().
-                put("number_of_shards", 3).
-                put("number_of_replicas", 1).
+                put("index.number_of_shards", 3).
+                put("index.number_of_replicas", 1).
                 put("gateway.type", "none").
                 build()).
                 build().
@@ -128,6 +128,7 @@ public class ElasticNode {
         System.setProperty("es.path.home", homeDir.getAbsolutePath());
         System.setProperty("es.path.conf", conf);
 
+        // TODO why is number of shards not accepted??
         Builder settings = ImmutableSettings.settingsBuilder().
                 put("network.host", "127.0.0.1").
                 //                put("network.bindHost", "127.0.0.0").

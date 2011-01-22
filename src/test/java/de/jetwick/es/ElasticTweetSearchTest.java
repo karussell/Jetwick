@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.lucene.util.Version;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -91,12 +92,13 @@ public class ElasticTweetSearchTest {
         SolrTweet tw1 = new SolrTweet(1L, "this is a test!", fromUser);
 
         SolrUser otherUser = new SolrUser("otherUser");
-        SolrTweet tw2 = new SolrTweet(2L, "java is cool and stable!", otherUser);
+        SolrTweet tw2 = new SolrTweet(2L, "Java is cool and stable!", otherUser);
         twSearch.update(tw1, false);
         twSearch.update(tw2, true);
-
-        assertEquals(1, twSearch.search("test").size());
+        
         assertEquals(1, twSearch.search("java").size());
+        assertEquals(1, twSearch.search("test").size());
+//        assertEquals(1, twSearch.search("java stable").size());                
     }
 
     @Test
@@ -142,14 +144,12 @@ public class ElasticTweetSearchTest {
         twSearch.update(tw5, false);
         twSearch.update(tw4, true);
 
-        assertEquals(4, twSearch.search("ibood").size());//1,2,3,4 -> missing: 5
-        assertEquals(3, twSearch.search("iBood").size());//1,3,5   -> missing: 2,4
-        assertEquals(3, twSearch.search("bood").size()); //1,3,5   -> ok
+        assertEquals(5, twSearch.search("ibood").size());//1,2,3,4,5
+        assertEquals(5, twSearch.search("iBood").size());//1,2,3,4,5
+        assertEquals(0, twSearch.search("bood").size()); //-> ok
         assertEquals(1, twSearch.search("iBood.com").size()); //1  -> ok        
-        assertEquals(0, twSearch.search("ibood.com*").size()); //   -> missing: 5
-
-        //TODO if lowercase filter factory is before worddelemiter 
-        // ibood and iBood would match 5 but then bood wouldn't match!
+        assertEquals(1, twSearch.search("ibood.com").size()); //5 -> ok
+        assertEquals(1, twSearch.search("ibood.com*").size()); //missing 5
     }
 
     @Test

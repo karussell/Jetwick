@@ -70,7 +70,7 @@ public class Solr2Elastic {
             // fields can also contain patterns like so name.* to match more fields
             qb = QueryBuilders.queryString(cleanupQuery(query.getQuery())).
                     field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
-                    allowLeadingWildcard(false).analyzer("myanalyzer").useDisMax(true);
+                    allowLeadingWildcard(false).analyzer("search_analyzer").useDisMax(true);
         }
 
         long time = new MyDate().castToHour().getTime();

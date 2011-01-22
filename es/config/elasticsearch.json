@@ -2,11 +2,21 @@
     "index" : {
         "refresh_interval" : "2s",        
         "analysis" : {
+            "//standard tokenizer removes all punctuation chars so avoid it to have # and @":"comment",
             "analyzer" : {                
-                "myanalyzer" : {                            
-                    "tokenizer" : "standard",
-                    "filter" : ["standard", "lowercase", "stop"]
-                }                                
+                "index_analyzer" : {                    
+                    "tokenizer" : "whitespace",
+                    "filter" : ["jetwickfilter", "lowercase", "stop"]
+                },
+                "search_analyzer" : {                                                    
+                    "tokenizer" : "whitespace",
+                    "filter" : ["jetwickfilter", "lowercase", "stop"]
+                }            
+            },                               
+            "filter" : {
+                "jetwickfilter": {
+                    "type" : "de.jetwick.es.JetwickFilterFactory"
+                }
             }
         }
     }

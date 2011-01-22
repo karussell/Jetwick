@@ -146,7 +146,7 @@ public class ElasticTweetSearch {
     public void feedDoc(String twitterId, XContentBuilder b) throws IOException {
 //        String indexName = new SimpleDateFormat("yyyyMMdd").format(tw.getCreatedAt());
         IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, twitterId).
-                setConsistencyLevel(WriteConsistencyLevel.DEFAULT).
+                setConsistencyLevel(WriteConsistencyLevel.DEFAULT).               
                 setSource(b);
         irb.execute().actionGet();
     }
