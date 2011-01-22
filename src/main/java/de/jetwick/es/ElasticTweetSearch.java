@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.query.xcontent.NotFilterBuilder;
 import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.filter.FilterFacet;
@@ -54,6 +55,7 @@ import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
@@ -85,7 +87,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String FILTER_KEY_USER = "user:";
     private Logger logger = LoggerFactory.getLogger(getClass());
 
-    public ElasticTweetSearch() {        
+    public ElasticTweetSearch() {
     }
 
     public ElasticTweetSearch(Configuration config) {
@@ -110,7 +112,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public String getIndexType() {
         return "tweet";
     }
-    
+
     public void deleteUntil(Date removeUntil) {
         NotFilterBuilder f1 = FilterBuilders.notFilter(FilterBuilders.existsFilter(UPDATE_DT));
         RangeFilterBuilder rfb = FilterBuilders.rangeFilter(DATE);
@@ -536,11 +538,21 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
     public void update(Collection<SolrTweet> tweets) {
         try {
+            if(tweets.isEmpty())
+                return;
+            
             tweets = new SerialCommandExecutor(tweets).add(
                     new TermCreateCommand()).execute();
+            
+            // now using bulk API instead of feeding each doc separate with feedDoc
+            BulkRequestBuilder brb = client.prepareBulk();
             for (SolrTweet tw : tweets) {
-                feedDoc(Long.toString(tw.getTwitterId()), createDoc(tw));
-            }
+                String id = Long.toString(tw.getTwitterId());
+                XContentBuilder source = createDoc(tw);
+                brb.add(Requests.indexRequest(getIndexName()).type(getIndexType()).id(id).source(source));
+            }            
+            if (brb.numberOfActions() > 0)
+                brb.execute().actionGet();
         } catch (Exception e) {
             logger.error("Exception while updating.", e);
         }
