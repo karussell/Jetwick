@@ -56,6 +56,11 @@ public class JetwickTestClass {
             public void installDbModule() {
                 // explicitely disable DB
             }
+
+            @Override
+            public void installSearchModule() {
+                // no search required
+            }                  
         };
     }
 

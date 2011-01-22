@@ -43,7 +43,7 @@ public class DefaultModule extends AbstractModule {
         installTweetProducer();
         installLastSearches();
         installTwitterModule();
-        installSolrModule();
+        installSearchModule();
         installDbPasswords();
         installDbModule();
         installRMIModule();
@@ -60,9 +60,8 @@ public class DefaultModule extends AbstractModule {
         install(new HibModule());
     }
 
-    public void installSolrModule() {
-        bind(Configuration.class).toInstance(config);
-        // TODO config
+    public void installSearchModule() {
+        bind(Configuration.class).toInstance(config);        
         ElasticTweetSearch tweetSearch = new ElasticTweetSearch(config);
         bind(ElasticTweetSearch.class).toInstance(tweetSearch);
 

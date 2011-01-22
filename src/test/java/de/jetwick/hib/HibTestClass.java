@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.hib;
 
 import com.google.inject.Module;
@@ -71,7 +70,7 @@ public class HibTestClass extends JetwickTestClass implements DbTestInterface {
 
         return config.setProperty("hibernate.connection.driver_class", "org.h2.Driver").
                 //setProperty("hibernate.connection.url", "jdbc:h2:mem:jetwickdb").
-                setProperty("hibernate.connection.url", "jdbc:h2:mem:test").                
+                setProperty("hibernate.connection.url", "jdbc:h2:mem:test").
                 setProperty("hibernate.default_schema", TEST_SCHEMA).
                 setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect").
                 setProperty("hibernate.current_session_context_class", "thread") //managed
@@ -101,6 +100,11 @@ public class HibTestClass extends JetwickTestClass implements DbTestInterface {
             @Override
             public void installDbModule() {
                 install(new HibModule(createConfig()));
+            }
+
+            @Override
+            public void installSearchModule() {
+                // no search required
             }
         };
     }

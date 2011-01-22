@@ -62,7 +62,7 @@ public class WicketPagesTestClass {
             }
 
             @Override
-            public void installSolrModule() {
+            public void installSearchModule() {
                 // TODO provide mock searcher                
                 bind(ElasticUserSearch.class).toInstance(createSolrUserSearch());
 

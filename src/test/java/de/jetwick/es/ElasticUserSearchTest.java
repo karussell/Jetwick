@@ -15,8 +15,6 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.es.ElasticNode;
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
