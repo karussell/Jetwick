@@ -90,20 +90,6 @@ public class TweetQuery extends JetwickQuery {
         return q;
     }
 
-    public static SolrQuery updateSavedSearchFacets(SolrQuery q, Collection<SavedSearch> sss) {
-        String[] facQ = q.getFacetQuery();
-        if (facQ != null)
-            for (String str : facQ) {
-                if (SavedSearch.isSavedSearch(str))
-                    q.removeFacetQuery(str);
-            }
-
-        if (sss != null)
-            for (SavedSearch ss : sss) {
-                q.addFacetQuery(ss.calcFacetQuery());
-            }
-        return q;
-    }
     private final static double MM_BORDER = 0.7;
 
     public TweetQuery createSimilarQuery(SolrTweet tweet) {

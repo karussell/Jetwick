@@ -22,13 +22,13 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.wideplay.warp.persist.WorkManager;
-import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.UserDao;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
 import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.hib.HibernateUtil;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,13 +72,13 @@ public class Statistics {
     @Inject
     private ElasticTweetSearch tweetSearch;
     @Inject
+    private ElasticUserSearch uSearch;
+    @Inject
     private TagDao tagDao;
     @Inject
     private UserDao userDao;
     @Inject
     private Provider<WorkManager> wmProvider;
-    @Inject
-    private Configuration config;
 
     public Statistics() {
         Module module = new DefaultModule();
@@ -94,6 +95,16 @@ public class Statistics {
                 HibernateUtil.recreateSchemaFromMapping();
 
             return;
+        }
+
+        argStr = map.get("optimize");
+        if (argStr != null) {
+            int segments = 1;
+            logger.info("Start optimizing for twindex");
+            OptimizeResponse rsp = tweetSearch.optimize(segments);
+            logger.info("Optimized twindex to " + segments + " segments for " + rsp.getSuccessfulShards() + "/" + rsp.getTotalShards() + " shards.\n Now uindex");
+            rsp = tweetSearch.optimize(segments);
+            logger.info("Optimized uindex  to " + segments + " segments for " + rsp.getSuccessfulShards() + "/" + rsp.getTotalShards() + " shards.");
         }
 
         argStr = map.get("listTweets");
@@ -307,7 +318,7 @@ public class Statistics {
             if (charCounter > 1500) {
                 try {
                     String gTranslated = Translate.execute(cache.toString(), Language.ENGLISH, lang);
-                    for (String tmp : gTranslated.split(",")) {                        
+                    for (String tmp : gTranslated.split(",")) {
                         tmp = tmp.toLowerCase().trim().replaceAll("\\[", "").replaceAll("\\]", "");
                         res.add(tmp);
                     }

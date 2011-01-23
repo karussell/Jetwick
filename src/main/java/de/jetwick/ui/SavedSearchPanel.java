@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.es.TweetESQuery;
 import de.jetwick.ui.util.FacetHelper;
 
 import java.util.ArrayList;
@@ -39,10 +40,11 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.util.time.Duration;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.facet.Facet;
-import org.elasticsearch.search.facet.range.RangeFacet;
+import org.elasticsearch.search.facet.query.QueryFacet;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static de.jetwick.es.TweetESQuery.*;
 
 /**
  *
@@ -54,7 +56,6 @@ public class SavedSearchPanel extends Panel {
     private Map<String, String> tr = new LinkedHashMap<String, String>();
     private List<FacetHelper<Long>> savedSearches = new ArrayList<FacetHelper<Long>>();
     private ListView savedSearchesView;
-    private String SAVED_SEARCHES = "ss";
     private boolean isInitialized = false;
 
     public SavedSearchPanel(String id) {
@@ -79,7 +80,7 @@ public class SavedSearchPanel extends Panel {
 
             @Override
             public boolean isVisible() {
-                return isInitialized && savedSearches.size() == 0;
+                return isInitialized && savedSearches.isEmpty();
             }
         };
         add(link.setOutputMarkupId(true));
@@ -170,13 +171,13 @@ public class SavedSearchPanel extends Panel {
      */
     public List<FacetHelper> createFacetsFields(SearchResponse rsp) {
         List<FacetHelper> list = new ArrayList<FacetHelper>();        
-        Integer count = null;
+        Long count = null;
 
         if (rsp != null) {
             List<Facet> facets = rsp.facets().facets();
             if (facets != null)
                 for (Facet f : facets){                    
-                    if(!(f instanceof TermsFacet)) 
+                    if(!(f instanceof QueryFacet)) 
                         continue;
                     
                     int firstIndex = f.getName().indexOf(SAVED_SEARCHES + ":");
@@ -189,13 +190,12 @@ public class SavedSearchPanel extends Panel {
                     } catch (Exception ex) {
                     }
 
-                    // TODO ES
                     // do not exclude smaller zero
-//                    count = ((RangeFacet)f).getCount();
-//                    if (count == null)
-//                        count = 0;
-//
-//                    list.add(new FacetHelper<Long>(SAVED_SEARCHES, val, translate(val), count));
+                    count = ((QueryFacet)f).count();
+                    if (count == null)
+                        count = 0L;
+
+                    list.add(new FacetHelper<Long>(SAVED_SEARCHES, val, translate(val), count));
                 }
         }
         return list;

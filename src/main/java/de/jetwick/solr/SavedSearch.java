@@ -16,6 +16,7 @@
 package de.jetwick.solr;
 
 import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.TweetESQuery;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
 import java.util.Collection;
@@ -27,8 +28,7 @@ import org.apache.solr.client.solrj.SolrQuery;
  */
 public class SavedSearch implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    private static final String SS_KEY = "{!key=ss:";
+    private static final long serialVersionUID = 1L;    
     private SolrQuery query;
     private Date lastQueryDate;
     private final long id;
@@ -38,10 +38,6 @@ public class SavedSearch implements Serializable {
         this.query = query.getCopy();
         JetwickQuery.removeFilterQueries(this.query, ElasticTweetSearch.DATE);
         JetwickQuery.removeFacets(this.query);
-    }
-
-    public static boolean isSavedSearch(String str) {
-        return str.startsWith(SS_KEY);
     }
 
     public Date getLastQueryDate() {
@@ -56,10 +52,9 @@ public class SavedSearch implements Serializable {
         return query;
     }
 
-    public SolrQuery getQuery(Collection<SavedSearch> savedSearchesColl) {
+    public SolrQuery getQuery() {
         SolrQuery tmpQ = query.getCopy();
         TweetQuery.attachFacetibility(tmpQ);
-        TweetQuery.updateSavedSearchFacets(tmpQ, savedSearchesColl);
         if (lastQueryDate != null)
             tmpQ.addFilterQuery(getLastQueryDateFilter());
         lastQueryDate = new Date();
@@ -111,7 +106,8 @@ public class SavedSearch implements Serializable {
         if (qStr.isEmpty())
             facetQuery += "*:*";
         else
-            facetQuery += "tw:(" + qStr + ") OR dest_title_t:(" + qStr + ")";
+            //facetQuery += "tw:(" + qStr + ") OR dest_title_t:(" + qStr + ")";
+            facetQuery += qStr;
 
         // recognize lang, quality and crt_b
         if (query.getFilterQueries() != null) {
@@ -133,7 +129,7 @@ public class SavedSearch implements Serializable {
         if (lastQueryDate != null)
             facetQuery += " AND " + getLastQueryDateFilter();
 
-        return SS_KEY + id + "}" + facetQuery;
+        return facetQuery;
     }
 
     private String getLastQueryDateFilter() {

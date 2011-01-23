@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import java.io.IOException;
 import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.elasticsearch.action.WriteConsistencyLevel;
@@ -23,6 +22,8 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
+import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.count.CountResponse;
@@ -151,5 +152,10 @@ public abstract class AbstractElasticSearch {
                 execute().
                 actionGet();
         refresh();
+    }
+    
+    public OptimizeResponse optimize(int optimizeToSegmentsAfterUpdate) {
+        return client.admin().indices().optimize(new OptimizeRequest(getIndexName()).
+                maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();        
     }
 }

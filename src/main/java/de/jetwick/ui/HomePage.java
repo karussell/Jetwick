@@ -337,7 +337,7 @@ public class HomePage extends WebPage {
                 SolrUser user = getMySession().getUser();
                 SavedSearch ss = user.getSavedSearch(ssId);
                 if (ss != null) {
-                    doSearch(ss.getQuery(user.getSavedSearches()), 0, true);
+                    doSearch(ss.getQuery(), 0, true);
                     uindexProvider.get().save(user, true);
                 }
                 updateSSCounts(target);
@@ -365,11 +365,8 @@ public class HomePage extends WebPage {
             public void updateSSCounts(AjaxRequestTarget target) {
                 try {
                     SolrUser user = getMySession().getUser();
-                    if (user != null) {
-                        SolrQuery query = new SolrQuery().setFacet(true).setRows(0);
-                        TweetQuery.updateSavedSearchFacets(query, user.getSavedSearches());
-//                        logger.info("Start updateSSCounts getTweetSearch");
-                        update(getTweetSearch().search(query));
+                    if (user != null) {                                                
+                        update(getTweetSearch().updateSavedSearches(user.getSavedSearches()));
                         if (target != null)
                             target.addComponent(ssPanel);
                         logger.info("Updated saved search counts for " + user.getScreenName());
@@ -656,8 +653,8 @@ public class HomePage extends WebPage {
         
         getTweetSearch().attachPagability(query, page, hitsPerPage);
 
-        if (getMySession().hasLoggedIn())
-            TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
+//        if (getMySession().hasLoggedIn())
+//            TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
 
         long start = System.currentTimeMillis();
         long totalHits = 0;

@@ -211,8 +211,8 @@ public class Solr2ElasticTweet {
 
         long time = new MyDate().castToHour().getTime();
         return customScoreQuery(qb).script("var boost = _score;"
-                //                + "if(doc['tw_i'].value <= 30) boost *= 0.1;"
-                //                + "if(doc['quality_i'].value <= 65) boost *= 0.1;"
+                + "if(doc['tw_i'].value <= 30) boost *= 0.1;"
+                + "if(doc['quality_i'].value <= 65) boost *= 0.1;"
                 + "var retweet = doc['retw_i'].value;"
                 + "var scale = 10000;"// time vs. retweet -> what should be more important? +0.1 because boost should end up to be 0 for 0 retweets
                 + "if(retweet <= 100) boost *= 0.1 + retweet / scale; else boost *= 0.1 + 100 / scale;"

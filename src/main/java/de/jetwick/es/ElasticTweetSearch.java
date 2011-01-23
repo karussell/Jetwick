@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.solr.SavedSearch;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.query.xcontent.NotFilterBuilder;
 import de.jetwick.util.MyDate;
@@ -51,6 +52,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
+import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -1057,10 +1059,9 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
 
         return updatedTweets;
-    }
-
-    public UpdateResponse optimize(int optimizeToSegmentsAfterUpdate) {
-        client.admin().indices().optimize(new OptimizeRequest(getIndexName()).maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
-        throw new UnsupportedOperationException("Not yet implemented");
+    }  
+    
+    public SearchResponse updateSavedSearches(Collection<SavedSearch> savedSearches) {        
+        return search(createQuery().createSavedSearchesQuery(savedSearches));
     }
 }

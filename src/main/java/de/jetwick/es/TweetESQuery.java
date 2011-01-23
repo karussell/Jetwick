@@ -15,13 +15,12 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.MyDate;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Map.Entry;
-import java.util.Set;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.xcontent.DisMaxQueryBuilder;
@@ -29,6 +28,7 @@ import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
+import org.elasticsearch.search.facet.FacetBuilders;
 
 /**
  *
@@ -37,6 +37,7 @@ import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 public class TweetESQuery {
 
     private final static double MM_BORDER = 0.7;
+    public final static String SAVED_SEARCHES = "ss";
     private SearchRequestBuilder builder;
     private XContentQueryBuilder qb;
 
@@ -53,7 +54,6 @@ public class TweetESQuery {
     }
 
     private TweetESQuery createSimilarQuery(Collection<Entry<String, Integer>> terms) {
-        Set<String> set = new LinkedHashSet<String>();
         String[] termsArray =  new String[terms.size()];
         int counter = 0;
         for (Entry<String, Integer> entry : terms) {
@@ -66,10 +66,19 @@ public class TweetESQuery {
         // minimal 4 terms
         mmTweets = Math.max(4, mmTweets);
         qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, termsArray).minimumMatch(mmTweets);
-//        qb = QueryBuilders.queryString(sb.toString()).field(ElasticTweetSearch.TWEET_TEXT);
 
         qb = QueryBuilders.filteredQuery(qb, FilterBuilders.termsFilter(ElasticTweetSearch.IS_RT, "false"));
         qb = new DisMaxQueryBuilder().add(qb);
+        return this;
+    }
+    
+    public TweetESQuery createSavedSearchesQuery(Collection<SavedSearch> collSS) {
+        for(SavedSearch ss : collSS) {
+            builder.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + ":" + ss.getId(), QueryBuilders.queryString(ss.calcFacetQuery())));
+        }
+        
+        builder.setFrom(0).setSize(0);                
+        qb = QueryBuilders.matchAllQuery();                
         return this;
     }
 

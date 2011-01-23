@@ -49,12 +49,12 @@ public class SavedSearchTest {
     public void testAddFacet() {
         assertEndsWith("*:*", new SavedSearch(1, new SolrQuery()).calcFacetQuery());
         assertEndsWith("*:*", new SavedSearch(1, new SolrQuery("")).calcFacetQuery());
-        assertEndsWith("tw:(peter) OR dest_title_t:(peter)", new SavedSearch(1, new SolrQuery("peter ")).calcFacetQuery());
-        assertEndsWith("tw:(peter AND pan) OR dest_title_t:(peter AND pan)", new SavedSearch(1, new SolrQuery("peter pan")).calcFacetQuery());
+        assertEndsWith("peter", new SavedSearch(1, new SolrQuery("peter ")).calcFacetQuery());
+        assertEndsWith("peter AND pan", new SavedSearch(1, new SolrQuery("peter pan")).calcFacetQuery());
 
-        assertEndsWith("(tw:(peter AND pan) OR dest_title_t:(peter AND pan)) AND test:x",
+        assertEndsWith("(peter AND pan) AND test:x",
                 new SavedSearch(1, new SolrQuery("peter pan").addFilterQuery("test:x")).calcFacetQuery());
-        assertEndsWith("(tw:(peter AND pan) OR dest_title_t:(peter AND pan)) AND test:x AND test2:y",
+        assertEndsWith("(peter AND pan) AND test:x AND test2:y",
                 new SavedSearch(1, new SolrQuery("peter pan").addFilterQuery("test:x").addFilterQuery("test2:y")).calcFacetQuery());
     }
 
@@ -62,14 +62,14 @@ public class SavedSearchTest {
     public void testLastQueryDate() {
         SolrQuery q = new SolrQuery("wicket");
         SavedSearch ss = new SavedSearch(1, q);
-        assertEndsWith("tw:(wicket) OR dest_title_t:(wicket)", ss.calcFacetQuery());
+        assertEndsWith("wicket", ss.calcFacetQuery());
 
         Date date = ss.getLastQueryDate();
         assertNull(date);
-        ss.getQuery(Collections.EMPTY_LIST);
+        ss.getQuery();
         date = ss.getLastQueryDate();
         assertNotNull(date);
-        assertEndsWith("tw:(wicket) OR dest_title_t:(wicket) AND dt:["
+        assertEndsWith("wicket AND dt:["
                 + Helper.toLocalDateTime(date) + " TO *]", ss.calcFacetQuery());
     }
 
