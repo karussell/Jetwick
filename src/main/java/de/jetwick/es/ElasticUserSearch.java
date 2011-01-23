@@ -264,8 +264,9 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     public SolrUser findByScreenName(String name) {
         try {
+            name = name.toLowerCase();
             Collection<SolrUser> res = collectUsers(search(new SolrQuery().addFilterQuery(SCREEN_NAME + ":" + name)));
-            if (res.size() == 0)
+            if (res.isEmpty())
                 return null;
             else if (res.size() == 1)
                 return res.iterator().next();

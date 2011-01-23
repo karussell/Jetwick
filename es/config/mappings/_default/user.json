@@ -2,7 +2,14 @@
     "user" : {
         "properties" : {
             "screenName" : { "type" : "string", "index" : "not_analyzed" },
-            "ss_qterms_mv_s": { "type" : "string", "index" : "not_analyzed" }
+            "ss_qterms_mv_s": { "type" : "string", "index" : "not_analyzed" },
+            "name": { "type" : "string", "index" : "not_analyzed" },
+            "tag": { "type" : "string", "index" : "not_analyzed" },        
+            "iconUrl": { "type" : "string", "index" : "not_analyzed" },        
+            "webUrl": { "type" : "string", "index" : "not_analyzed" },        
+            "token_s": { "type" : "string", "index" : "not_analyzed" },        
+            "tokenSecret_s": { "type" : "string", "index" : "not_analyzed" },        
+            "ss_*_query_s": { "type" : "string", "index" : "not_analyzed" }
         }
     }
 }

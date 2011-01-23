@@ -33,7 +33,8 @@ public class Solr2ElasticUser extends Solr2ElasticTweet {
             // fields can also contain patterns like so name.* to match more fields
             return QueryBuilders.queryString(escapeQuery(queryStr)).
                     field("name", 10).field("tag", 2).field("bio").field("realName").
-                    allowLeadingWildcard(false).analyzer("search_analyzer").useDisMax(true);
+                    allowLeadingWildcard(false).useDisMax(true);
+//            return QueryBuilders.termQuery("name", queryStr);
         }
         return qb;
     }

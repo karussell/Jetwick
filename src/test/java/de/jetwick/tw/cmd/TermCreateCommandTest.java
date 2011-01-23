@@ -15,10 +15,10 @@
  */
 package de.jetwick.tw.cmd;
 
+import de.jetwick.es.TweetESQuery;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.FakeUrlExtractor;
 import de.jetwick.tw.TweetDetector;
 import de.jetwick.util.MyDate;
@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.Test;
 
@@ -353,7 +352,7 @@ public class TermCreateCommandTest {
     @Test
     public void testFindDuplicateQuery() {
         SolrTweet tw = new SolrTweet(1L, ">‎​Dear children there is no Santa. those presents are from your parents. Love, WikiLeaks. /via @frasereC4", new SolrUser("tmp"));
-        SolrQuery q = new TweetQuery(false).createSimilarQuery(tw);
+        TweetESQuery q = new TweetESQuery().createSimilarQuery(tw);
         System.out.println(q.toString());
     }
 }

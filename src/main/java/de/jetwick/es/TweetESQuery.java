@@ -23,12 +23,15 @@ import java.util.Collection;
 import java.util.Map.Entry;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.index.query.xcontent.BoolQueryBuilder;
 import org.elasticsearch.index.query.xcontent.DisMaxQueryBuilder;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
+import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
  *
@@ -41,6 +44,8 @@ public class TweetESQuery {
     private SearchRequestBuilder builder;
     private XContentQueryBuilder qb;
 
+    public TweetESQuery() {        
+    }
     public TweetESQuery(SearchRequestBuilder builder) {
         this.builder = builder;
         builder.setSearchType(SearchType.QUERY_THEN_FETCH);//QUERY_AND_FETCH would return too many results
@@ -54,31 +59,33 @@ public class TweetESQuery {
     }
 
     private TweetESQuery createSimilarQuery(Collection<Entry<String, Integer>> terms) {
-        String[] termsArray =  new String[terms.size()];
-        int counter = 0;
+        int minMatchNumber = (int) Math.round(terms.size() * MM_BORDER);
+        // maximal 6 terms
+        minMatchNumber = Math.min(6, minMatchNumber);
+        // minimal 4 terms
+        minMatchNumber = Math.max(4, minMatchNumber);
+
+        // the following does not use the appropriate analyzer:
+//        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, termsArray).minimumMatch(minMatchNumber);
+        
+        BoolQueryBuilder bqb = QueryBuilders.boolQuery().minimumNumberShouldMatch(minMatchNumber);
         for (Entry<String, Integer> entry : terms) {
-            termsArray[counter++] = Solr2ElasticTweet.escapeQuery(entry.getKey());
+            bqb.should(QueryBuilders.queryString(ElasticTweetSearch.TWEET_TEXT + ":" + Solr2ElasticTweet.escapeQuery(entry.getKey())));
         }
 
-        int mmTweets = (int) Math.round(terms.size() * MM_BORDER);
-        // maximal 6 terms
-        mmTweets = Math.min(6, mmTweets);
-        // minimal 4 terms
-        mmTweets = Math.max(4, mmTweets);
-        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, termsArray).minimumMatch(mmTweets);
-
+        qb = bqb;        
         qb = QueryBuilders.filteredQuery(qb, FilterBuilders.termsFilter(ElasticTweetSearch.IS_RT, "false"));
-        qb = new DisMaxQueryBuilder().add(qb);
+//        qb = new DisMaxQueryBuilder().add(qb);
         return this;
     }
-    
+
     public TweetESQuery createSavedSearchesQuery(Collection<SavedSearch> collSS) {
-        for(SavedSearch ss : collSS) {
+        for (SavedSearch ss : collSS) {
             builder.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + ":" + ss.getId(), QueryBuilders.queryString(ss.calcFacetQuery())));
         }
-        
-        builder.setFrom(0).setSize(0);                
-        qb = QueryBuilders.matchAllQuery();                
+
+        builder.setFrom(0).setSize(0);
+        qb = QueryBuilders.matchAllQuery();
         return this;
     }
 
@@ -104,4 +111,15 @@ public class TweetESQuery {
 //        qb = QueryBuilders.filteredQuery(qb, FilterBuilders.notFilter(FilterBuilders.termsFilter(field, value)));
 //        return this;
 //    }
+
+    @Override
+    public String toString() {
+        try {
+            return qb.toXContent(jsonBuilder(), ToXContent.EMPTY_PARAMS).
+                    prettyPrint().
+                    string();
+        } catch (Exception ex) {
+            return "<ERROR:" + ex.getMessage() + ">";
+        }
+    }
 }

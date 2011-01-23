@@ -563,9 +563,9 @@ public class HomePage extends WebPage {
 
             @Override
             public void onFindSimilar(SolrTweet tweet, AjaxRequestTarget target) {
-                SolrQuery query = new TweetQuery().createSimilarQuery(tweet);
-                logger.info("[stats] similar search:" + query);
-                doSearch(query, 0, false);
+                TweetESQuery query = getTweetSearch().createQuery().createSimilarQuery(tweet);
+                logger.info("[stats] similar search:" + query.toString());
+//                doSearch(query, 0, false);
                 updateAfterAjax(target, false);
             }
 

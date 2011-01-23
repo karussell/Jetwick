@@ -88,42 +88,5 @@ public class TweetQuery extends JetwickQuery {
         q.addFacetQuery(FILTER_NO_URL_ENTRY);
 
         return q;
-    }
-
-    private final static double MM_BORDER = 0.7;
-
-    public TweetQuery createSimilarQuery(SolrTweet tweet) {
-        new TermCreateCommand().calcTermsWithoutNoise(tweet);
-        return createSimilarQuery(tweet.getTextTerms().getSortedTermLimited(8));
-    }
-
-    private TweetQuery createSimilarQuery(Collection<Entry<String, Integer>> terms) {
-        Set<String> set = new LinkedHashSet<String>();
-
-        for (Entry<String, Integer> entry : terms) {
-            set.add(entry.getKey());
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (String str : set) {
-            sb.append(str);
-            sb.append(" ");
-        }
-
-        // force dismax and specify required matching terms
-        set("qf", TWEET_TEXT);
-        set("defType", "dismax");
-        // TODO can we use solr settings instead?
-        int mmTweets = (int) Math.round(terms.size() * MM_BORDER);
-        // maximal 6 terms
-        mmTweets = Math.min(6, mmTweets);
-        // minimal 4 terms
-        mmTweets = Math.max(4, mmTweets);
-        set("mm", "" + mmTweets);
-        return (TweetQuery) setQuery(cleanupQuery(sb.toString())).addFilterQuery(IS_RT + ":\"false\"");
-    }
-
-    public static String cleanupQuery(String str) {
-        return str.replaceAll("\\|\\|", " ");
-    }
+    }   
 }

@@ -81,6 +81,7 @@ public class Solr2ElasticTweet {
         if (query.getFacetFields() != null) {
             for (String ff : query.getFacetFields()) {
                 ff = removeLocalParams(ff);
+                // TODO parse all query params to find the f.<field>.limit and set .size()
                 srb.addFacet(FacetBuilders.termsFacet(ff).field(ff));
             }
         }
@@ -206,7 +207,7 @@ public class Solr2ElasticTweet {
             // fields can also contain patterns like so name.* to match more fields
             qb = QueryBuilders.queryString(escapeQuery(queryStr)).
                     field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
-                    allowLeadingWildcard(false).analyzer("search_analyzer").useDisMax(true);
+                    allowLeadingWildcard(false).analyzer(getDefaultAnalyzer()).useDisMax(true);
         }
 
         long time = new MyDate().castToHour().getTime();
@@ -218,7 +219,6 @@ public class Solr2ElasticTweet {
                 + "if(retweet <= 100) boost *= 0.1 + retweet / scale; else boost *= 0.1 + 100 / scale;"
                 + "boost / (3.6e-9 * (mynow - doc['dt'].value) + 1);").
                 lang("js").param("mynow", time);
-
     }
 
     public static Object getTermValue(String val) {
@@ -270,5 +270,9 @@ public class Solr2ElasticTweet {
             sb.append(c);
         }
         return sb.toString();
+    }
+    
+    public String getDefaultAnalyzer() {
+        return "search_analyzer";
     }
 }

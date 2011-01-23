@@ -50,9 +50,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.UpdateResponse;
-import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
-import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -160,7 +157,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         return response;
     }
 
-    TweetESQuery createQuery() {
+    public TweetESQuery createQuery() {
         return new TweetESQuery(client.prepareSearch(getIndexName()));
     }
 

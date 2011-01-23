@@ -190,13 +190,13 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         korland.setDescription("hooping hooping solr nice");
         userSearch.save(korland, true);
 
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
-        userSearch.search(list, "hooping", 10, 0);
-        assertEquals(2, list.size());
-
-        list = new LinkedHashSet<SolrUser>();
+        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();        
         userSearch.search(list, "g_korland", 10, 0);
         assertEquals(1, list.size());
+        
+        list = new LinkedHashSet<SolrUser>();
+        userSearch.search(list, "hooping", 10, 0);
+        assertEquals(2, list.size());       
     }
 
     @Test
@@ -230,6 +230,18 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         list = new LinkedHashSet<SolrUser>();
         assertEquals(0, userSearch.search(list, "kasten", 3, 0));
         assertEquals(0, list.size());
+    }
+    
+    @Test
+    public void testFindByScreenname() throws SolrServerException {
+        SolrUser karsten = new SolrUser("karsten");
+        karsten.addOwnTweet(new SolrTweet(1, "hooping hooping", karsten));
+        karsten.addOwnTweet(new SolrTweet(2, "nice solr", karsten));
+        userSearch.save(karsten, true);
+        
+        assertNotNull(userSearch.findByScreenName("karsten"));
+        assertNotNull(userSearch.findByScreenName("Karsten"));       
+        assertNull(userSearch.findByScreenName("hooping"));
     }
 
     @Test
