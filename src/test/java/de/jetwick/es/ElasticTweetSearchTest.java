@@ -15,8 +15,6 @@
  */
 package de.jetwick.es;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;

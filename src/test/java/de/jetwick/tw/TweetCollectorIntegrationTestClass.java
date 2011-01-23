@@ -15,6 +15,8 @@
  */
 package de.jetwick.tw;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.es.ElasticTweetSearchTest;
@@ -52,11 +54,20 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
     @Inject
     private TagDao tagDao;
 
+    @BeforeClass
+    public static void beforeClass() {
+        ElasticTweetSearchTest.beforeClass();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        ElasticTweetSearchTest.afterClass();
+    }
+
     @Override
     @Before
     public void setUp() throws Exception {
-        super.setUp();
-        // TODO call beforeClass instead!!        
+        super.setUp();      
         userSearchTester.setUp();
         tweetSearchTester.setUp();
     }
@@ -89,6 +100,11 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
         Credits cred = new Configuration().getTwitterSearchCredits();
         TwitterSearch tws = new TwitterSearch() {
+
+            @Override
+            public boolean isInitialized() {
+                return true;
+            }                        
 
             @Override
             public long search(String q, Collection<SolrTweet> result, int tweets, long sinceId) {
@@ -158,6 +174,10 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
         res.clear();
         tweetSearch.search(res, new TweetQuery("duplicate"));
+        assertEquals(0, res.size());        
+        
+        res.clear();
+        tweetSearch.search(res, new TweetQuery("duplication"));
         assertEquals(1, res.size());
         assertEquals("tmp", res.get(0).getScreenName());
     }

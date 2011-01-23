@@ -82,7 +82,7 @@ public class HomePageTest extends WicketPagesTestClass {
     }
 
     @Test
-    public void testNormalSearch() throws Exception {        
+    public void testNormalSearch() throws Exception {
 //        setUp();
         ElasticTweetSearch search = getInstance(ElasticTweetSearch.class);
         SolrQuery query = new SolrQuery("timetabling");
@@ -207,6 +207,11 @@ public class HomePageTest extends WicketPagesTestClass {
         return new TwitterSearch() {
 
             @Override
+            public boolean isInitialized() {
+                return true;
+            }
+
+            @Override
             public int getRateLimit() {
                 return 100;
             }
@@ -262,7 +267,6 @@ public class HomePageTest extends WicketPagesTestClass {
             }
         };
     }
-
 //    @Override
 //    protected ElasticTweetSearch createSolrTweetSearch() {
 //        if (ownSolrTweetSearch == null)

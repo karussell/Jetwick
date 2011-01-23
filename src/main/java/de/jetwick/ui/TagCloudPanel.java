@@ -103,21 +103,22 @@ public class TagCloudPanel extends Panel {
 
         if (rsp != null) {
             TermsFacet tf = (TermsFacet) rsp.facets().facet(ElasticTweetSearch.TAG);
-            if (tf != null)
+            if (tf != null) {
                 max = 0;
-            Map<String, Long> tmp = new TreeMap<String, Long>();
-            for (TermsFacet.Entry e : tf.entries()) {
-                if (terms.contains(e.getTerm()))
-                    continue;
+                Map<String, Long> tmp = new TreeMap<String, Long>();
+                for (TermsFacet.Entry e : tf.entries()) {
+                    if (terms.contains(e.getTerm()))
+                        continue;
 
-                if (e.getCount() > max)
-                    max = e.getCount();
+                    if (e.getCount() > max)
+                        max = e.getCount();
 
-                tmp.put(e.getTerm(), (long) e.getCount());
-            }
+                    tmp.put(e.getTerm(), (long) e.getCount());
+                }
 
-            for (Entry<String, Long> entry : tmp.entrySet()) {
-                tags.add(new MapEntry<String, Long>(entry.getKey(), entry.getValue()));
+                for (Entry<String, Long> entry : tmp.entrySet()) {
+                    tags.add(new MapEntry<String, Long>(entry.getKey(), entry.getValue()));
+                }
             }
         }
 
