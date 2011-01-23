@@ -66,8 +66,7 @@ public class TweetQuery extends JetwickQuery {
                 set("f.dest_title_1_s.facet.limit", 12).
                 set("f.tag.facet.mincount", 2).
                 set("f.tag.facet.limit", 20);
-
-        // TODO ES
+        
 //        // latest
 //        q.addFacetQuery(FILTER_ENTRY_LATEST_DT);
 //        // archive
@@ -77,17 +76,16 @@ public class TweetQuery extends JetwickQuery {
         q.addFacetQuery(RT_COUNT + ":[20 TO *]");
         q.addFacetQuery(RT_COUNT + ":[50 TO *]");
 
-        // TODO ES
-//        q.addFacetQuery(FILTER_NO_DUPS);
-//        q.addFacetQuery(FILTER_ONLY_DUPS);
-//
-//        // spam
-//        q.addFacetQuery(FILTER_SPAM);
-//        q.addFacetQuery(FILTER_NO_SPAM);
-//
-//        // links
-//        q.addFacetQuery(FILTER_URL_ENTRY);
-//        q.addFacetQuery(FILTER_NO_URL_ENTRY);
+        q.addFacetQuery(FILTER_NO_DUPS);
+        q.addFacetQuery(FILTER_ONLY_DUPS);
+
+        // spam
+        q.addFacetQuery(FILTER_SPAM);
+        q.addFacetQuery(FILTER_NO_SPAM);
+
+        // links
+        q.addFacetQuery(FILTER_URL_ENTRY);
+        q.addFacetQuery(FILTER_NO_URL_ENTRY);
 
         return q;
     }

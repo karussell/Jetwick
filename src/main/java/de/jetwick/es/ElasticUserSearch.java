@@ -233,8 +233,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 //                setQueryType("standard").
 //                set(MoreLikeThisParams.QF, SCREEN_NAME).
 //                set(MoreLikeThisParams.MLT, "true").
-
-        // TODO this won't use the dismax boosts!?
+        
         query.setQuery(SCREEN_NAME + ":" + queryStr).
                 setQueryType("/" + MoreLikeThisParams.MLT).
                 set(MoreLikeThisParams.SIMILARITY_FIELDS, "bio", "tag").

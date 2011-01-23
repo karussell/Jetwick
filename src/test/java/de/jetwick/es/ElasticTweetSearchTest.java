@@ -672,7 +672,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         entries.add(urlEntry);
 
         tw.setUrlEntries(entries);
-        //TODO
+        //TODO ES
 //        SolrInputDocument iDoc = twSearch.createDoc(tw);
 //        SolrDocument doc = new SolrDocument();
 //        for (Entry<String, SolrInputField> entry : iDoc.entrySet()) {

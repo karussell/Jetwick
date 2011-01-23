@@ -195,28 +195,6 @@ public class Twitter4JTweet implements Tweet {
         return getText().substring(index1 + 3).trim();
     }
 
-    // TODO
-    public void calculateRetweets(Collection<Twitter4JTweet> allTweets) {
-        Map<String, Twitter4JTweet> mappedTweets = new LinkedHashMap();
-
-        for (Twitter4JTweet stw : allTweets) {
-            String key = stw.getTextToRetweet();
-//            if (mappedTweets.containsKey(key))
-//                log("Mapped tweets collection already contains tweet:" + stw.toPersistentString());
-
-            mappedTweets.put(key, stw);
-        }
-        for (Twitter4JTweet stw : allTweets) {
-            if (stw.getOrigRetweetedText().length() > 0) {
-                Twitter4JTweet retweet = mappedTweets.get(stw.getOrigRetweetedText());
-//                if (retweet == null)
-//                    log("Skip retweet: cannot find retweet " + stw.toPersistentString());
-//                else
-//                    retweet.addRetweet(stw);
-            }
-        }
-    }
-
     public boolean isRetweet() {
         return getText().contains("RT ") || getText().contains("Rt ");
     }

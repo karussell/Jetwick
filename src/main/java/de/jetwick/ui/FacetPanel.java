@@ -65,28 +65,25 @@ public class FacetPanel extends Panel {
         tr.put(dtKey, "Date");
         tr.put(langKey, "Language");
         tr.put(IS_RT, "Content");
-        tr.put(IS_RT + ":T", "retweet");
-        tr.put(IS_RT + ":F", "original");
+        tr.put(IS_RT + ":true", "retweet");
+        tr.put(IS_RT + ":false", "original");
 
-        // TODO ES
         tr.put(DUP_COUNT, "Duplicates");
-//        tr.put(FILTER_NO_DUPS, "without");
-//        tr.put(FILTER_ONLY_DUPS, "only duplicated");
+        tr.put(FILTER_NO_DUPS, "without");
+        tr.put(FILTER_ONLY_DUPS, "only duplicated");
 
-        // TODO ES
         tr.put(URL_COUNT, "Links");
-//        tr.put(FILTER_URL_ENTRY, "with");
-//        tr.put(FILTER_NO_URL_ENTRY, "without");
+        tr.put(FILTER_URL_ENTRY, "with");
+        tr.put(FILTER_NO_URL_ENTRY, "without");
 
         tr.put(RT_COUNT, "Retweets");
         tr.put(RT_COUNT + ":[5 TO *]", "5 and more");
         tr.put(RT_COUNT + ":[20 TO *]", "20 and more");
         tr.put(RT_COUNT + ":[50 TO *]", "50 and more");
 
-        // TODO ES
         tr.put(QUALITY, "Spam");
-//        tr.put(FILTER_NO_SPAM, "without");
-//        tr.put(FILTER_SPAM, "Only Spam");
+        tr.put(FILTER_NO_SPAM, "without");
+        tr.put(FILTER_SPAM, "only spam");
 
         tr.put(langKey + ":" + UNKNOWN_LANG, "Other");
         tr.put(langKey + ":" + DE, "Deutsch");
@@ -120,9 +117,9 @@ public class FacetPanel extends Panel {
 
                     @Override
                     protected void populateItem(ListItem li) {
-                        FacetHelper h = (FacetHelper) li.getModelObject();
+                        FacetHelper h = (FacetHelper) li.getModelObject();                        
 
-                        final String filter = h.getFilter();
+                        final String filter = h.getFilter();                        
                         final boolean selected = alreadyFiltered.contains(filter);
 
                         Link link = new IndicatingAjaxFallbackLink("filterValueLink") {
@@ -169,7 +166,6 @@ public class FacetPanel extends Panel {
     public void update(SearchResponse rsp, SolrQuery query) {
         normalFacetFields.clear();
         if (rsp != null) {
-            long numFound = rsp.getHits().getTotalHits();
             for (Entry<String, List<FacetHelper>> entry : createFacetsFields(rsp)) {
                 if (entry != null) {
                     normalFacetFields.add(entry);
@@ -230,9 +226,15 @@ public class FacetPanel extends Panel {
                             List<FacetHelper> list = new ArrayList<FacetHelper>();
                             String key = ff.getName();
                             for (TermsFacet.Entry e : ff.entries()) {
+                                String term = e.getTerm();
+                                if ("T".equals(term))
+                                    term = "true";
+                                else if ("F".equals(term))
+                                    term = "false";
+
                                 // exclude smaller zero?
-                                list.add(new FacetHelper(key, "\"" + e.getTerm() + "\"",
-                                        translate(getAsFilterQuery(key, e)), e.getCount()));
+                                list.add(new FacetHelper(key, "\"" + term + "\"",
+                                        translate(key + ":" + term), e.getCount()));
                             }
                             ret.set(integ, new MapEntry(ff.getName(), list));
                         }
@@ -272,9 +274,5 @@ public class FacetPanel extends Panel {
                 }
         }
         return ret;
-    }
-
-    private String getAsFilterQuery(String key, TermsFacet.Entry e) {
-        return key + ":" + e.getTerm();
     }
 }

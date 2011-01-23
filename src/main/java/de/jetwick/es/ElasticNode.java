@@ -130,7 +130,6 @@ public class ElasticNode {
         System.setProperty("es.path.home", homeDir.getAbsolutePath());
         System.setProperty("es.path.conf", conf);
 
-        // TODO why is number of shards not accepted??
         Builder settings = ImmutableSettings.settingsBuilder().
                 put("network.host", "127.0.0.1").
                 //                put("network.bindHost", "127.0.0.0").

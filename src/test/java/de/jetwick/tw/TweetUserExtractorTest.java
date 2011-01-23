@@ -44,10 +44,5 @@ public class TweetUserExtractorTest {
         assertEquals("user", list.get(3));
 
         assertEquals("@peter_nitsch", Helper.stripOutLuceneHighlighting("@<B>peter</B>_nitsch"));
-
-        // TODO
-//        list = Helper.getUsers(Helper.fixForUserInput("@<B>peter</B>_nitsch"));
-//        assertEquals(1, list.size());
-//        assertEquals("peter_nitsch", list.get(4));
     }
 }

@@ -67,7 +67,7 @@ public abstract class AbstractElasticSearch {
 
     public void nodeInfo() {
         NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
-        String str = "Cluster:" + rsp.getClusterName() + "\t active nodes:";
+        String str = "Cluster:" + rsp.getClusterName() + ". Active nodes:";
         str += rsp.getNodesMap().keySet();
         logger.info(str);
     }

@@ -96,7 +96,7 @@ public class JetwickQuery extends SolrQuery {
             if (userName.contains(" "))
                 userName = "\"" + userName + "\"";
 
-            addFilterQuery(ElasticTweetSearch.FILTER_KEY_USER + userName);
+            addFilterQuery(ElasticTweetSearch.KEY_USER + userName);
         }
         return this;
     }
@@ -105,7 +105,7 @@ public class JetwickQuery extends SolrQuery {
         String fq[] = q.getFilterQueries();
         if (fq != null) {
             for (String str : fq) {
-                if (str.startsWith(ElasticTweetSearch.FILTER_KEY_USER))
+                if (str.startsWith(ElasticTweetSearch.KEY_USER))
                     return str;
             }
         }
@@ -121,7 +121,7 @@ public class JetwickQuery extends SolrQuery {
     }
 
     public static String extractUserName(SolrQuery query) {
-        String tmp = ElasticTweetSearch.FILTER_KEY_USER;
+        String tmp = ElasticTweetSearch.KEY_USER;
         if (query.getFilterQueries() != null)
             for (String f : query.getFilterQueries()) {
                 if (f.startsWith(tmp)) {

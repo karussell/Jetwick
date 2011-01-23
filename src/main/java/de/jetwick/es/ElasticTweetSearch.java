@@ -76,15 +76,25 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String DATE = "dt";
     public static final String DATE_FACET = "datefacet";
     public static final String RT_COUNT = "retw_i";
+    public static final String DUP_COUNT = "dups_i";
     public static final String IS_RT = "crt_b";
     public static final String UPDATE_DT = "update_dt";
     public static final String TAG = "tag";
     public static final String INREPLY_ID = "inreply_l";
     public static final String QUALITY = "quality_i";
-    public static final String DUP_COUNT = "dups_i";
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
-    public static final String FILTER_KEY_USER = "user:";
+    public static final String KEY_USER = "user:";
+    public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
+    
+    public static final String FILTER_NO_DUPS = DUP_COUNT + ":0";
+    public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO *]";
+    
+    public static final String FILTER_NO_URL_ENTRY = URL_COUNT + ":0";
+    public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";    
+    
+    public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
+    public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
     private Logger logger = LoggerFactory.getLogger(getClass());
 
     public ElasticTweetSearch() {
@@ -104,8 +114,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
     @Override
     public String getIndexName() {
-        //return "twindex"; //<-contains data from TweetProducerOffline
-        return "twindexreal";//<-contains real data
+        //return "twindexoffline"; //<-contains data from TweetProducerOffline
+        return "twindex";//<-contains real data
     }
 
     @Override
@@ -217,6 +227,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
 
         b.field("url_i", counter);
+        b.field(DUP_COUNT, tw.getDuplicates().size());
         b.field("lang", tw.getLanguage());
         b.field("quality_i", tw.getQuality());
         b.field("repl_i", tw.getReplyCount());
@@ -848,11 +859,11 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 // remove existing user filter
                 JetwickQuery.applyFacetChange(lastQ, "user", true);
                 // remove any date restrictions
-                JetwickQuery.applyFacetChange(lastQ, "dt", true);
+                JetwickQuery.applyFacetChange(lastQ, DATE, true);
             }
 
             input = input.toLowerCase();
-            lastQ.addFilterQuery("user:" + input + "*");
+            lastQ.addFilterQuery(KEY_USER + input + "*");
             lastQ.setRows(15);
             List<SolrUser> users = new ArrayList<SolrUser>();
             search(users, lastQ);

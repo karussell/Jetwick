@@ -113,7 +113,7 @@ public class MySession extends WebSession {
         try {
 //            logger.info("TOKEN:" + token);
             Cookie cookie = new Cookie(TwitterSearch.COOKIE, token.getToken());
-            // TODO use https: cookie.setSecure(true);
+            // LATER: use https: cookie.setSecure(true);
             cookie.setComment("Supply autologin for jetwick.com");
             // four weeks
             cookie.setMaxAge(4 * 7 * 24 * 60 * 60);

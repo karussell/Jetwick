@@ -474,7 +474,7 @@ public class SolrTweet implements Serializable {
                 "uma", "un", "una", "une", "ut",
                 "va", "van", "να", "vi", "vie", "vos", "vous", "votre",
                 "yang", "για", "yg", "yo", "qué"}));
-    // TODO
+
     public static final Set<String> PHRASE_WHITE_LIST = new LinkedHashSet<String>(Arrays.asList(new String[]{
                 "bin laden", // -> otherwise wrong language detection for 'alqaedatracker' because of 'bin'
                 "open source"

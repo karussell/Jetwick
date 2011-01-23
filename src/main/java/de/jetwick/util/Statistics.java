@@ -207,7 +207,6 @@ public class Statistics {
 //            sout("");
         }
         StringBuilder sb = new StringBuilder();
-        // TODO ES
 //        tweetSearch.getInfo(sb);
 //        sout(sb);
         sout("\n====== DB ======\n");

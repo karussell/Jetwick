@@ -48,7 +48,7 @@ import static org.junit.Assert.*;
  */
 public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
-    // TODO later: @Inject SolrUserSearch solr;
+    // TODO later: @Inject
     private ElasticUserSearchTest userSearchTester = new ElasticUserSearchTest();
     private ElasticTweetSearchTest tweetSearchTester = new ElasticTweetSearchTest();
     @Inject

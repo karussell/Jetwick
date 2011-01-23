@@ -58,7 +58,7 @@ final class WordDelimiterIterator {
     /** if true, need to skip over a possessive found in the last call to next() */
     private boolean skipPossessive = false;
 
-    // TODO: should there be a WORD_DELIM category for chars that only separate words (no catenation of subwords will be
+    // should there be a WORD_DELIM category for chars that only separate words (no catenation of subwords will be
     // done if separated by these chars?) "," would be an obvious candidate...
     static {
         byte[] tab = new byte[256];

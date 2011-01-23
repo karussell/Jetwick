@@ -24,8 +24,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
@@ -40,6 +38,9 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.time.Duration;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.facet.Facet;
+import org.elasticsearch.search.facet.range.RangeFacet;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,35 +169,34 @@ public class SavedSearchPanel extends Panel {
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
     public List<FacetHelper> createFacetsFields(SearchResponse rsp) {
-        List<FacetHelper> list = new ArrayList<FacetHelper>();
-        Map<String, Integer> facetQueries = null;
+        List<FacetHelper> list = new ArrayList<FacetHelper>();        
         Integer count = null;
 
         if (rsp != null) {
-            //TODO ES
-//            facetQueries = rsp.getFacetQuery();
-//            if (facetQueries != null)
-//                for (Entry<String, Integer> entry : facetQueries.entrySet()) {
-//                    if (entry == null)
-//                        continue;
-//
-//                    int firstIndex = entry.getKey().indexOf(SAVED_SEARCHES + ":");
-//                    if (firstIndex < 0)
-//                        continue;
-//
-//                    long val = -1;
-//                    try {
-//                        val = Long.parseLong(entry.getKey().substring(firstIndex + SAVED_SEARCHES.length() + 1));
-//                    } catch (Exception ex) {
-//                    }
-//
-//                    // do not exclude smaller zero
-//                    count = entry.getValue();
+            List<Facet> facets = rsp.facets().facets();
+            if (facets != null)
+                for (Facet f : facets){                    
+                    if(!(f instanceof TermsFacet)) 
+                        continue;
+                    
+                    int firstIndex = f.getName().indexOf(SAVED_SEARCHES + ":");
+                    if (firstIndex < 0)
+                        continue;
+
+                    long val = -1;
+                    try {
+                        val = Long.parseLong(f.getName().substring(firstIndex + SAVED_SEARCHES.length() + 1));
+                    } catch (Exception ex) {
+                    }
+
+                    // TODO ES
+                    // do not exclude smaller zero
+//                    count = ((RangeFacet)f).getCount();
 //                    if (count == null)
 //                        count = 0;
 //
 //                    list.add(new FacetHelper<Long>(SAVED_SEARCHES, val, translate(val), count));
-//                }
+                }
         }
         return list;
     }

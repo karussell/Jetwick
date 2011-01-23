@@ -230,11 +230,10 @@ public class HomePage extends WebPage {
         else if ("oldest".equals(sort))
             JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " asc");
 
-        if (userName == null) {
-            // TODO ES
-//            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
-//            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
-//            q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);
+        if (userName == null) {            
+            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
+            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
+            q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);            
         }
 
         return q;
