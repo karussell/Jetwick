@@ -21,6 +21,8 @@ import com.google.inject.Provider;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
+import de.jetwick.es.Solr2ElasticTweet;
+import de.jetwick.es.TweetESQuery;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;

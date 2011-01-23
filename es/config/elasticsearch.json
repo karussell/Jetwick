@@ -11,11 +11,15 @@
                 "search_analyzer" : {                                                    
                     "tokenizer" : "whitespace",
                     "filter" : ["jetwickfilter", "lowercase", "stop"]
-                }            
+                }
             },                               
             "filter" : {
                 "jetwickfilter": {
                     "type" : "de.jetwick.es.JetwickFilterFactory"
+                },
+                "snowball": {
+                    "type" : "snowball",
+                    "language" : "English"
                 }
             }
         }

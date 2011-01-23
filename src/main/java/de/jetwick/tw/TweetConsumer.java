@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.concurrent.BlockingQueue;
 import org.apache.solr.client.solrj.response.UpdateResponse;
+import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,9 +108,8 @@ public class TweetConsumer extends MyThread {
             if (optimizeToSegmentsAfterUpdate > 0) {
                 if (optimizeInterval > 0 && time - lastOptimizeTime >= optimizeInterval) {
                     lastOptimizeTime = time;
-                    UpdateResponse orsp = tweetSearch.optimize(optimizeToSegmentsAfterUpdate);
-                    logger.info("[es] optimized: " + orsp.getElapsedTime() / 1000.0f
-                            + " to segments:" + optimizeToSegmentsAfterUpdate);
+                    OptimizeResponse orsp = tweetSearch.optimize(optimizeToSegmentsAfterUpdate);
+                    logger.info("[es] optimized twindex to segments:" + optimizeToSegmentsAfterUpdate);
                 }
             }
         }

@@ -204,7 +204,7 @@ public class Solr2ElasticTweet {
             qb = QueryBuilders.matchAllQuery();
         else {
             // fields can also contain patterns like so name.* to match more fields
-            qb = QueryBuilders.queryString(cleanupQuery(queryStr)).
+            qb = QueryBuilders.queryString(escapeQuery(queryStr)).
                     field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
                     allowLeadingWildcard(false).analyzer("search_analyzer").useDisMax(true);
         }
@@ -240,8 +240,8 @@ public class Solr2ElasticTweet {
 //                    }
             }
         }
-        if (newVal instanceof String)
-            newVal = cleanupQuery((String) newVal);
+//        if (newVal instanceof String)
+//            newVal = escapeQuery((String) newVal);
 
         return newVal;
     }
@@ -256,7 +256,7 @@ public class Solr2ElasticTweet {
         return val;
     }
 
-    public static String cleanupQuery(String str) {
+    public static String escapeQuery(String str) {
         // copied from ClientUtils.escapeQueryChars        
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < str.length(); i++) {
