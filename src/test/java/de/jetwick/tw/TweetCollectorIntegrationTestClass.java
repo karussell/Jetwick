@@ -87,12 +87,8 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
 
         // fill DB with default tags
         tagDao.addAll(Arrays.asList("java"));
-        // commit not necessary
-//        assertEquals(1, tagDao.findAll().size());
-//        assertNull(userDao.findByName("timetabling"));
 
         // already existing tweets must not harm
-//        tweetDao.save(new YTweet(3L, "duplicate tweet"));
         ElasticTweetSearch tweetSearch = tweetSearchTester.getTweetSearch();
         ElasticUserSearch userSearch = userSearchTester.getUserSearch();
         tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));
@@ -101,6 +97,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         Credits cred = new Configuration().getTwitterSearchCredits();
         TwitterSearch tws = new TwitterSearch() {
 
+            
             @Override
             public boolean isInitialized() {
                 return true;
@@ -130,8 +127,8 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
             public List<SolrTweet> getTweets(SolrUser user, Collection<SolrUser> users, int twPerPage) {
                 return Collections.EMPTY_LIST;
             }
-        }.setConsumer(cred.getConsumerKey(), cred.getConsumerSecret());
-        tws.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
+        };
+//        tws.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
 
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
         tweetProducer.setTwitterSearch(tws);
@@ -172,13 +169,12 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         tweetSearch.search(res, new TweetQuery("java"));
         assertEquals(1, res.size());
 
-        res.clear();
-        tweetSearch.search(res, new TweetQuery("duplicate"));
-        assertEquals(0, res.size());        
+        Collection<SolrTweet> coll = tweetSearch.searchTweets(new TweetQuery("duplicate"));
+        assertEquals(1, coll.size());        
+        assertEquals("duplication tweet", coll.iterator().next().getText());        
         
-        res.clear();
-        tweetSearch.search(res, new TweetQuery("duplication"));
-        assertEquals(1, res.size());
-        assertEquals("tmp", res.get(0).getScreenName());
+        coll = tweetSearch.searchTweets(new TweetQuery("duplication"));
+        assertEquals(1, coll.size());
+        assertEquals("duplication tweet", coll.iterator().next().getText());
     }
 }

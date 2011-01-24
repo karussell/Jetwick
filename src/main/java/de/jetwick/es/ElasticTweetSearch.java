@@ -34,6 +34,7 @@ import de.jetwick.tw.cmd.SerialCommandExecutor;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.Helper;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,6 +49,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
+import org.apache.lucene.util.Version;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
@@ -1008,6 +1011,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
         TermCreateCommand termCommand = new TermCreateCommand();
 
+        
         double JACC_BORDER = 0.7;
         for (SolrTweet currentTweet : tweets.values()) {
             if (currentTweet.isRetweet())

@@ -15,22 +15,32 @@
  */
 package de.jetwick.es;
 
+import java.io.Reader;
+import org.slf4j.Logger;
+import java.io.IOException;
+import java.io.StringReader;
+
+import org.apache.lucene.analysis.LowerCaseTokenizer;
+import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.MyDate;
 import java.util.Collection;
 import java.util.Map.Entry;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.index.query.xcontent.BoolQueryBuilder;
-import org.elasticsearch.index.query.xcontent.DisMaxQueryBuilder;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
+import org.slf4j.LoggerFactory;
 import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
@@ -39,13 +49,15 @@ import static org.elasticsearch.common.xcontent.XContentFactory.*;
  */
 public class TweetESQuery {
 
+    private final static Logger logger = LoggerFactory.getLogger(TweetESQuery.class);
     private final static double MM_BORDER = 0.7;
     public final static String SAVED_SEARCHES = "ss";
     private SearchRequestBuilder builder;
     private XContentQueryBuilder qb;
 
-    public TweetESQuery() {        
+    public TweetESQuery() {
     }
+
     public TweetESQuery(SearchRequestBuilder builder) {
         this.builder = builder;
         builder.setSearchType(SearchType.QUERY_THEN_FETCH);//QUERY_AND_FETCH would return too many results
@@ -65,18 +77,41 @@ public class TweetESQuery {
         // minimal 4 terms
         minMatchNumber = Math.max(4, minMatchNumber);
 
-        // the following does not use the appropriate analyzer:
-//        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, termsArray).minimumMatch(minMatchNumber);
-        
-        BoolQueryBuilder bqb = QueryBuilders.boolQuery().minimumNumberShouldMatch(minMatchNumber);
-        for (Entry<String, Integer> entry : terms) {
-            bqb.should(QueryBuilders.queryString(ElasticTweetSearch.TWEET_TEXT + ":" + Solr2ElasticTweet.escapeQuery(entry.getKey())));
+        // do we need to escape the terms when querying?
+        String termsArray[] = new String[terms.size()];
+        int counter = 0;
+        for (String str : doSnowballTermsStemming(terms)) {
+            termsArray[counter++] = str;
+        }
+        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, termsArray).minimumMatch(minMatchNumber);
+
+        // use configured stemmer, but querying seems to be slower!
+//        BoolQueryBuilder bqb = QueryBuilders.boolQuery().minimumNumberShouldMatch(minMatchNumber);
+//        for (Entry<String, Integer> entry : terms) {
+//            bqb.should(QueryBuilders.queryString(ElasticTweetSearch.TWEET_TEXT + ":" + Solr2ElasticTweet.escapeQuery(entry.getKey())));
+//        }
+//
+//        qb = bqb;        
+
+        qb = QueryBuilders.filteredQuery(qb, FilterBuilders.termsFilter(ElasticTweetSearch.IS_RT, "false"));
+        return this;
+    }
+
+    public Set<String> doSnowballStemming(Reader reader) {
+        Set<String> res = new LinkedHashSet<String>();        
+
+        TokenStream ts = new LowerCaseTokenizer(reader);
+//        ts = new StopFilter(true, ts, stopWords, true);
+        ts = new SnowballFilter(ts, "English");
+        try {
+            while (ts.incrementToken()) {
+                res.add(ts.getAttribute(TermAttribute.class).term());
+            }
+        } catch (IOException ex) {
+            logger.error("Exception while stemming to snoball", ex);
         }
 
-        qb = bqb;        
-        qb = QueryBuilders.filteredQuery(qb, FilterBuilders.termsFilter(ElasticTweetSearch.IS_RT, "false"));
-//        qb = new DisMaxQueryBuilder().add(qb);
-        return this;
+        return res;
     }
 
     public TweetESQuery createSavedSearchesQuery(Collection<SavedSearch> collSS) {
@@ -121,5 +156,13 @@ public class TweetESQuery {
         } catch (Exception ex) {
             return "<ERROR:" + ex.getMessage() + ">";
         }
+    }
+
+    private Collection<String> doSnowballTermsStemming(Collection<Entry<String, Integer>> terms) {
+        String str = "";
+        for(Entry<String, Integer> e : terms) {
+            str += e.getKey() + " ";
+        }
+        return doSnowballStemming(new StringReader(str));
     }
 }

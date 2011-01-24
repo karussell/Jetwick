@@ -15,6 +15,12 @@
  */
 package de.jetwick.es;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+import org.apache.lucene.analysis.TokenStream;
+import java.io.StringReader;
+import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
+import org.apache.lucene.util.Version;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
@@ -30,9 +36,17 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.LowerCaseTokenizer;
+import org.apache.lucene.analysis.StopAnalyzer;
+import org.apache.lucene.analysis.StopFilter;
+import org.apache.lucene.analysis.WhitespaceTokenizer;
+import org.apache.lucene.analysis.snowball.SnowballFilter;
+import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.analysis.StopTokenFilterFactory;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,12 +63,12 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     public ElasticTweetSearch getTweetSearch() {
         return twSearch;
-    }        
+    }
 
     @Before
-    public void setUp() throws Exception {        
-        twSearch = new ElasticTweetSearch(getClient());        
-        super.setUp(twSearch);        
+    public void setUp() throws Exception {
+        twSearch = new ElasticTweetSearch(getClient());
+        super.setUp(twSearch);
     }
 
     @Test
@@ -66,7 +80,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         SolrTweet tw2 = new SolrTweet(2L, "Java is cool and stable!", otherUser);
         twSearch.update(tw1, false);
         twSearch.update(tw2, true);
-        
+
         assertEquals(1, twSearch.search("java").size());
         assertEquals(1, twSearch.search("test").size());
 //        assertEquals(1, twSearch.search("java stable").size());                
@@ -771,6 +785,25 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.fetchMoreTweets(alreadyExistingTw, users);
         assertEquals(1, u.getOwnTweets().size());
         assertEquals(1L, (long) u.getOwnTweets().iterator().next().getTwitterId());
+    }
+
+    @Test
+    public void testSnowballStemming() throws IOException {
+        twSearch.update(Arrays.asList(createTweet(1L, "duplication", "peter"),
+                createTweet(2L, "testing", "peter")));
+        twSearch.refresh();
+
+        assertEquals(1, twSearch.searchTweets(new SolrQuery("duplicate")).size());
+        assertEquals(1, twSearch.searchTweets(new SolrQuery("test")).size());
+
+        Set<String> stopWords = new LinkedHashSet<String>();
+        stopWords.add("duplicate");
+        
+        
+        Set<String> set = new TweetESQuery().doSnowballStemming(new StringReader("duplication tester"));
+        assertEquals(2, set.size());
+        assertTrue(set.contains("tester"));
+        assertTrue(set.contains("duplic")); 
     }
 
     SolrTweet createSolrTweet(MyDate dt, String twText, String user) {
