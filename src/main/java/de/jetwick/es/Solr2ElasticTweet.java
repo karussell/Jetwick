@@ -29,6 +29,7 @@ import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.range.RangeFacetBuilder;
+import org.elasticsearch.search.internal.ContextIndexSearcher;
 import org.elasticsearch.search.sort.SortOrder;
 
 import static org.elasticsearch.index.query.xcontent.QueryBuilders.*;
@@ -97,21 +98,21 @@ public class Solr2ElasticTweet {
             // so cheat for our case:
             String name = ElasticTweetSearch.DATE_FACET;
             RangeFacetBuilder rfb = FacetBuilders.rangeFacet(name).field(ElasticTweetSearch.DATE);
-
             MyDate date = new MyDate();
 
+            String scope = "date";
             // latest
-            rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate()));
+            rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate())).scope(ElasticTweetSearch.DATE);
 
             for (int i = 0; i < 6; i++) {
                 // from must be smaller than to!
                 MyDate tmp = date.clone();
                 rfb.addRange(Helper.toLocalDateTime(date.minusDays(1).castToDay().toDate()),
-                        Helper.toLocalDateTime(tmp.toDate()));
-            }
+                        Helper.toLocalDateTime(tmp.toDate())).scope(ElasticTweetSearch.DATE);
+            }                       
 
             // oldest
-            rfb.addUnboundedFrom(Helper.toLocalDateTime(date.toDate()));
+            rfb.addUnboundedFrom(Helper.toLocalDateTime(date.toDate())).scope(ElasticTweetSearch.DATE);
 
             srb.addFacet(rfb);
         }
