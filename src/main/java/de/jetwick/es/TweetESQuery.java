@@ -30,7 +30,9 @@ import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.MyDate;
 import java.util.Collection;
 import java.util.Map.Entry;
+import org.apache.lucene.analysis.CharTokenizer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
@@ -97,11 +99,22 @@ public class TweetESQuery {
         return this;
     }
 
-    public Set<String> doSnowballStemming(Reader reader) {
-        Set<String> res = new LinkedHashSet<String>();        
-
-        TokenStream ts = new LowerCaseTokenizer(reader);
+    private Collection<String> doSnowballTermsStemming(Collection<Entry<String, Integer>> terms) {
+        // TODO performance provide a tokenizer from set<String> !
+        String str = "";
+        for (Entry<String, Integer> e : terms) {
+            str += e.getKey() + " ";
+        }
+        // string reader already lowered case
+        Reader reader = new StringReader(str);
+        TokenStream ts = new WhitespaceTokenizer(reader);
+//        TokenStream ts = new LowerCaseTokenizer(reader);                
 //        ts = new StopFilter(true, ts, stopWords, true);
+        return doSnowballStemming(ts);
+    }
+
+    public Set<String> doSnowballStemming(TokenStream ts) {
+        Set<String> res = new LinkedHashSet<String>();
         ts = new SnowballFilter(ts, "English");
         try {
             while (ts.incrementToken()) {
@@ -156,13 +169,5 @@ public class TweetESQuery {
         } catch (Exception ex) {
             return "<ERROR:" + ex.getMessage() + ">";
         }
-    }
-
-    private Collection<String> doSnowballTermsStemming(Collection<Entry<String, Integer>> terms) {
-        String str = "";
-        for(Entry<String, Integer> e : terms) {
-            str += e.getKey() + " ";
-        }
-        return doSnowballStemming(new StringReader(str));
     }
 }

@@ -800,7 +800,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         stopWords.add("duplicate");
         
         
-        Set<String> set = new TweetESQuery().doSnowballStemming(new StringReader("duplication tester"));
+        Set<String> set = new TweetESQuery().doSnowballStemming(
+                new WhitespaceTokenizer(new StringReader("duplication tester")));
         assertEquals(2, set.size());
         assertTrue(set.contains("tester"));
         assertTrue(set.contains("duplic")); 
