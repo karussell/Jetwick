@@ -80,12 +80,11 @@ public class TweetESQuery {
         minMatchNumber = Math.max(4, minMatchNumber);
 
         // do we need to escape the terms when querying?
-        String termsArray[] = new String[terms.size()];
-        int counter = 0;
-        for (String str : doSnowballTermsStemming(terms)) {
-            termsArray[counter++] = str;
-        }
-        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, termsArray).minimumMatch(minMatchNumber);
+        Collection<String> coll = doSnowballTermsStemming(terms);
+        
+        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, 
+                coll.toArray(new String[coll.size()])).
+                minimumMatch(minMatchNumber);
 
         // use configured stemmer, but querying seems to be slower!
 //        BoolQueryBuilder bqb = QueryBuilders.boolQuery().minimumNumberShouldMatch(minMatchNumber);

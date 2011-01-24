@@ -100,20 +100,20 @@ public class Solr2ElasticTweet {
             RangeFacetBuilder rfb = FacetBuilders.rangeFacet(name).field(ElasticTweetSearch.DATE);
             MyDate date = new MyDate();
 
-            String scope = "date";
+            //rfb.scope(name); 
+            
             // latest
-            rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate())).scope(ElasticTweetSearch.DATE);
+            rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate()));
 
             for (int i = 0; i < 6; i++) {
                 // from must be smaller than to!
                 MyDate tmp = date.clone();
                 rfb.addRange(Helper.toLocalDateTime(date.minusDays(1).castToDay().toDate()),
-                        Helper.toLocalDateTime(tmp.toDate())).scope(ElasticTweetSearch.DATE);
+                        Helper.toLocalDateTime(tmp.toDate()));
             }                       
 
             // oldest
-            rfb.addUnboundedFrom(Helper.toLocalDateTime(date.toDate())).scope(ElasticTweetSearch.DATE);
-
+            rfb.addUnboundedFrom(Helper.toLocalDateTime(date.toDate()));
             srb.addFacet(rfb);
         }
 
@@ -218,7 +218,8 @@ public class Solr2ElasticTweet {
                 + "var retweet = doc['retw_i'].value;"
                 + "var scale = 10000;"// time vs. retweet -> what should be more important? +0.1 because boost should end up to be 0 for 0 retweets
                 + "if(retweet <= 100) boost *= 0.1 + retweet / scale; else boost *= 0.1 + 100 / scale;"
-                + "boost / (3.6e-9 * (mynow - doc['dt'].value) + 1);").
+                + "boost / (3.6e-9 * (mynow - doc['dt'].value) + 1);"
+                ).
                 lang("js").param("mynow", time);
     }
 

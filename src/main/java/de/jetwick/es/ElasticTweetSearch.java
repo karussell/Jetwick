@@ -203,8 +203,14 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         b.field("user", tw.getFromUser().getScreenName());
         b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
 
-        // TODO
-        //b.field("relevancy", 1.0);
+        double relevancy = tw.getCreatedAt().getTime() / MyDate.ONE_HOUR;        
+        // every 12 retweets boosts the tweet one hour further
+        float scale = 12;
+        if(tw.getRetweetCount() <= 100) relevancy += tw.getRetweetCount() / scale; 
+        else relevancy += 100 / scale;        
+        if(tw.getText().length() <= 30) relevancy *= 0.5;
+        if(tw.getQuality() <= 65) relevancy *= 0.5;                       
+        b.field("relevancy", relevancy);
 
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
             b.field(TAG, entry.getKey());

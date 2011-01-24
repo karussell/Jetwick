@@ -66,7 +66,7 @@ public class ElasticNode {
         Node node = nodeBuilder().
                 local(true).
                 settings(ImmutableSettings.settingsBuilder().
-                put("index.number_of_shards", 3).
+                put("index.number_of_shards", 4).
                 put("index.number_of_replicas", 1).
                 put("gateway.type", "none").
                 build()).
