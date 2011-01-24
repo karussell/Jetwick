@@ -62,7 +62,7 @@ public class ElasticNode {
         Thread.currentThread().join();
     }
 
-    public static void testLong(String[] args) throws IOException {
+    public static void testLong(String[] args) throws IOException {        
         Node node = nodeBuilder().
                 local(true).
                 settings(ImmutableSettings.settingsBuilder().

@@ -139,6 +139,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
                             updateTagInTA(tag, hits);
                         }
                     } catch (TwitterException ex) {
+                        waitInSeconds = 1f;
                         logger.warn("Couldn't finish search for tag '" + tag.getTerm() + "': " + ex.getMessage());
                         if (ex.exceededRateLimitation())
                             waitInSeconds = ex.getRetryAfter();

@@ -15,12 +15,13 @@
  */
 package de.jetwick.es;
 
+import java.util.Iterator;
+import org.apache.lucene.analysis.Tokenizer;
 import java.io.Reader;
 import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.StringReader;
 
-import org.apache.lucene.analysis.LowerCaseTokenizer;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -30,7 +31,6 @@ import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.MyDate;
 import java.util.Collection;
 import java.util.Map.Entry;
-import org.apache.lucene.analysis.CharTokenizer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
@@ -81,8 +81,8 @@ public class TweetESQuery {
 
         // do we need to escape the terms when querying?
         Collection<String> coll = doSnowballTermsStemming(terms);
-        
-        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT, 
+
+        qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT,
                 coll.toArray(new String[coll.size()])).
                 minimumMatch(minMatchNumber);
 
@@ -99,6 +99,29 @@ public class TweetESQuery {
     }
 
     private Collection<String> doSnowballTermsStemming(Collection<Entry<String, Integer>> terms) {
+        final Iterator<Entry<String, Integer>> iter = terms.iterator();
+        Tokenizer tokenizer = new TokenizerFromSet(new Iterator<String>() {
+
+            @Override
+            public boolean hasNext() {
+                return iter.hasNext();
+            }
+
+            @Override
+            public String next() {
+                return iter.next().getKey();
+            }
+
+            @Override
+            public void remove() {
+                iter.remove();
+            }
+        });
+
+        return doSnowballStemming(tokenizer);
+    }
+
+    private Collection<String> old_doSnowballTermsStemming(Collection<Entry<String, Integer>> terms) {
         // TODO performance provide a tokenizer from set<String> !
         String str = "";
         for (Entry<String, Integer> e : terms) {
