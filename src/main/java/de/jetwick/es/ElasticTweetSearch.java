@@ -161,6 +161,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     }
 
     public TweetESQuery createQuery() {
+        // TODO use multiple indices here
         return new TweetESQuery(client.prepareSearch(getIndexName()));
     }
 

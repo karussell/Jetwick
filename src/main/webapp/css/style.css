@@ -28,6 +28,7 @@ a:hover {color: #0063AC; text-decoration: underline;  }
 small {font-size: 8px;}
 gray {color: gray;}
 body, p {    
+    margin: 0px;
     color: #000;
     font: 1em 'Lucida Grande',sans-serif;
     line-height:1.25em;
@@ -59,10 +60,12 @@ body, p {
 }
 
 .logged-out {
-    margin-top: 0px;
-    margin-bottom: -10px;
+    padding-bottom: 5px;
+    margin-top: -5px;
 }
-
+.login-link {
+    padding-left: 13px;    
+}
 .userpanel {
     font-size: 0.9em;
     list-style: none;    
@@ -93,15 +96,21 @@ body, p {
     color: black; font-size: 0.80em;
 }
 
-.external-refs-right {     
-    padding: 0px 10px 23px 0px;
-    margin: 0px
+.external-refs-right { 
+    padding: 0px 0px 0px 0px;
+    margin: 0px;
+    border-bottom: 1px solid gray;
 }
 
-.external-refs-right ul, .external-refs ul { 
+.external-refs-right ul, .external-refs ul {      
     list-style: none;
     margin: 0;
-    padding-left: 10px;
+    padding-left: 15px;
+}
+.external-refs-right ul li {
+    display: inline;
+    padding-right: 55px;
+    margin: 0px;
 }
 
 .external-refs-right .about-head {
@@ -136,30 +145,32 @@ body, p {
     padding: 0 4px 0px 4px;
     margin-bottom: -5px;
 }
+#flattrimg {
+    margin-bottom: -5px;
+}
 #jetwickaccountimg {
-    width: 20px;
-    margin-bottom: -8px;
-    padding: 0 2px 0px 0px;
+    margin-bottom: -4px;
+    padding: 0px 0px 1px 0px;
 }
 #learnmoreimg {
     width:13px;
-    padding: 0 6px 0px 4px;
+    padding: 0 0px 0px 0px;
     margin-bottom: -2px;
 }
 
 #aboutimg {
     width:15px;
-    padding: 0 6px 0px 4px;
+    padding: 0 0px 0px 0px;
     margin-bottom: -2px;
 }
 
 #fbimg {
-    padding: 0 6px 0px 4px;
+    padding: 0 0px 0px 0px;
     margin-bottom: -2px;
 }
 #imprintimg {
     width:14px;
-    padding: 0 6px 0px 5px;
+    padding: 0 0px 0px 0px;
     margin-bottom: -2px;
 }
 
@@ -178,11 +189,11 @@ body, p {
 .yourkitlogo { clear: both; }
 
 .searchform {        
-    padding-top: 130px;
+    padding-top: 28px;
     padding-bottom: 2px;
     background-image: url("../img/jetwick.png");
     background-repeat: no-repeat;
-    background-position: -15px 38px;
+    background-position: 0px 2px;
 }
 
 .searchboxhints {
@@ -199,10 +210,9 @@ body, p {
 .subtitle a {color: black;}
 .subtitle {
     font-style: italic;
-    font-size: 0.9em;
+    font-size: 0.7em;
     padding-left: 65px;
     padding-bottom: 8px;
-    margin-top: -37px;
 }
 
 div.wicket-aa {
@@ -287,6 +297,9 @@ url("../img/bottom-line.png")
 }
 
 #main {
+    padding-top: 14px;
+}
+#main, .external-refs-right {
     width: 1050px;
     margin-left: auto;
     margin-right: auto;
@@ -607,7 +620,7 @@ url("../img/bottom-line.png")
 #info-panel {
     float: left;
     width: 330px;
-    padding: 10px 0px 0px 18px;
+    padding: 0px 0px 0px 18px;
     margin: 0px;
 }
 

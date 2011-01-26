@@ -28,6 +28,7 @@
         <link rel="stylesheet" type="text/css" href="css/style.css"/>      
     </head>
     <body>
+        <div class="external-refs-right" wicket:id="externalRefsRight">[ex refs]</div>
         <div id="main">
             <div class="feedback" wicket:id="feedback">
             </div>
@@ -38,17 +39,16 @@
             </a>
             <div class="left-column">
                 <div wicket:id="externalRefs">[ex refs]</div>
+                <div class="logged-in" wicket:id="userPanel">[UserPanel]</div>
                 <div wicket:id="savedSearches">[saved searches]</div>
                 <div wicket:id="filterPanel">[facets]</div>
             </div>
-            <div class="content">                
-                <div class="logged-in" wicket:id="userPanel">[UserPanel]</div>
+            <div class="content">                               
                 <div wicket:id="searchbox">[searchbox]</div>
                 <div wicket:id="dateFilter" class="date-filter">[dateFilter]</div>
                 <div wicket:id="results">[results]</div>
             </div>
             <div id="info-panel">
-                <div wicket:id="externalRefsRight">[ex refs]</div>                
                 <div wicket:id="tagcloud">[tag cloud]</div>
                 <div wicket:id="urltrends" class="urltrends">[url trends]</div>
                 <div wicket:id="wikipanel">[wikipedia]</div>
