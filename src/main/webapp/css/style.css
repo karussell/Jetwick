@@ -15,10 +15,13 @@
 */
 
 /*
-  | left   | searchform | right      |
-  | filter | resultlist | info-panel |
-  |----------------------------------|
-  | navigation + footer              |
+  | external-refs-right               |
+  |-----------------------------------|
+  |userpanel| searchform |            |
+  | left    | date-filter| info-panel |
+  | filter  | resultlist | info-panel |
+  |-----------------------------------|
+  | navigation + footer               |
 */
 
 img { border-style: none; }
@@ -52,11 +55,6 @@ body, p {
 .left-column {
     float: left;
 }
-/*
-.logged-out {
-    padding-bottom: 5px;    
-    margin-top: -5px;
-}*/
 
 .login-link {
     padding-left: 13px;    
@@ -136,8 +134,6 @@ body, p {
 .left { float: left; }
 .warn { color: #fc4046;}
 
-/* .addthis-button a img { padding-left: 10px; padding-top: 10px} */
-
 #twimg {
     width:12px;
     padding: 0 4px 0px 4px;
@@ -175,7 +171,6 @@ body, p {
 .jetwickminilogo, .pannouslogo { float:left; }
 .jetwickminilogo a img {
     padding-right: 5px;
-    /*margin-bottom: -15px;*/
     width: 60px;
 }
 
@@ -201,8 +196,7 @@ body, p {
 
 .searchboxhints a {
     font-size: 0.7em;
-    padding: 2px;    
-    /*color: black;*/
+    padding: 2px;
 }
 
 .subtitle a {color: black;}
@@ -237,16 +231,9 @@ div.wicket-aa ul li.selected {
     min-height: 90px;
 }
 
-/*.bar-chart .top-bar-chart {
-    background: #f0efef url("../img/top-line.png") bottom left repeat-x;
-}
-url("../img/bottom-line.png")
-*/
-
 .date-filter .main-bar-chart {
     background: #f2f2f2 url("../img/bottom-line.png") bottom left repeat-x;
     padding: 10px;
-    /*width: 610px;*/
     height: 90px;
 }
 .date-filter-label {
@@ -417,7 +404,7 @@ url("../img/bottom-line.png")
     /*margin-bottom: 5px;*/
 }
 .user {
-    /*float: left; -> do not set otherwise the width is not of equal length*/
+    /*float: left; -> do not set */
     padding: 15px 15px 0px 15px;
     border-bottom: 1px solid gray;    
 }
@@ -451,7 +438,7 @@ url("../img/bottom-line.png")
     /* avoid too lengthy words destroying our layout */
     word-wrap: break-word;
     clear: left;
-    /* if we click a link which is on the lowest line the sliders will appear and sometimes trifft man neben den Link!
+    /* not good: slider will appear => click on link Link does not work!
        overflow: auto; */
 }
 .tweet-links {
@@ -558,7 +545,6 @@ url("../img/bottom-line.png")
 .user-left {
     margin-top: 1px;
     min-height: 22px;
-    /*clear: right;*/
 }
 .user-name {
     padding-left: 10px;
