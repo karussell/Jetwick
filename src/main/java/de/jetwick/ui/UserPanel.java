@@ -16,7 +16,6 @@
 package de.jetwick.ui;
 
 import de.jetwick.solr.SolrUser;
-import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 import org.apache.wicket.AttributeModifier;

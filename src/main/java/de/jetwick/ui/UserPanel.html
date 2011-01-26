@@ -28,13 +28,11 @@
             <a class="login-link" wicket:id="loginLink" title="Login with your twitter account">
                 <img height="30px" src="img/authenticate.png"/>
             </a>
-            <div wicket:id="loginContainer">
-                <div wicket:id="userModal"></div>
-                <div class="userpanel">
-                    <ul>
-                        <li>
-                            <span wicket:id="loginText">[Logged in as]</span>
-                        </li>
+            <div class="userpanel" wicket:id="loginContainer">
+                <div wicket:id="userModal"></div>                
+                <div>                    
+                    <span wicket:id="loginText">[Logged in as]</span>
+                    <ul>                                                                        
                         <li>
                             <a wicket:id="logout">Logout</a>
                         </li>

@@ -52,33 +52,24 @@ body, p {
 .left-column {
     float: left;
 }
-
-.logged-in {
-    margin-top: 0px;
-    padding: 3px 10px 3px 10px;
-    background-color: #f2f1f1;
-}
-
+/*
 .logged-out {
-    padding-bottom: 5px;
+    padding-bottom: 5px;    
     margin-top: -5px;
-}
+}*/
+
 .login-link {
     padding-left: 13px;    
 }
-.userpanel {
-    font-size: 0.9em;
-    list-style: none;    
+
+.userpanel {    
+    padding: 0px 0px 0px 15px;
 }
 .userpanel ul {
+    font-size: 0.9em;
     margin: 0px;
-    padding: 2px;
-}
-
-.userpanel ul li {
-    padding-right: 10px;
-    margin: 0px;
-    display: inline;
+    padding: 0px 0px 0px 5px;
+    list-style: none;    
 }
 
 .external-refs {     
@@ -93,13 +84,20 @@ body, p {
 }
 
 .external-refs ul li a, .external-refs-right ul li a {
-    color: black; font-size: 0.80em;
+    color: black; 
+    font-size: 0.80em;
 }
 
 .external-refs-right { 
-    padding: 0px 0px 0px 0px;
+    font-size: 0.7em;
+    padding: 2px 0px 0px 0px;
     margin: 0px;
     border-bottom: 1px solid gray;
+}
+
+.footer ul {
+    list-style: none;
+    font-size: 0.7em;
 }
 
 .external-refs-right ul, .external-refs ul {      
@@ -210,7 +208,7 @@ body, p {
 .subtitle a {color: black;}
 .subtitle {
     font-style: italic;
-    font-size: 0.7em;
+    font-size: 12px;
     padding-left: 65px;
     padding-bottom: 8px;
 }
@@ -368,7 +366,6 @@ url("../img/bottom-line.png")
 .sorting .selected, .hitsPerPage .selected  {
     font-weight: bold;
 }
-
 
 #resultslist {    
     padding-left: 0px;
@@ -670,7 +667,6 @@ url("../img/bottom-line.png")
 
 .tagcloud {
     float: left;
-    padding-top: 7px;
 }
 
 .tagcloud .var-size-0  { font-size: 12px;}

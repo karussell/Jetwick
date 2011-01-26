@@ -25,6 +25,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 public class ExternalLinksPanel extends Panel {
 
     public ExternalLinksPanel(String id) {
-        super(id);       
+        super(id);  
+        setVisible(false);
     }
 }
