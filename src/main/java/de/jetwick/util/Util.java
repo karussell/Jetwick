@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.util;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -24,11 +24,11 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
+import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
-import de.jetwick.util.Helper;
-import de.jetwick.util.MaxBoundSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +63,8 @@ public class Util {
             util.fillFrom(fromUrl);
         } else if ("copyStaticTweets".equals(cmd)) {
             util.copyStaticTweets();
+        } else if ("copyUsers".equals(cmd)) {
+            util.copyUsers();
         }
     }
 
@@ -89,7 +91,7 @@ public class Util {
         SolrQuery query = new SolrQuery().addFilterQuery(ElasticTweetSearch.UPDATE_DT + ":[* TO *]");
         query.setFacet(true).addFacetField("user").setFacetLimit(2000).setRows(0).setFacetSort("count");
         SearchResponse rsp = fromUserSearch.search(query);
-        
+
         TermsFacet tf = (TermsFacet) rsp.getFacets().facet("user");
         logger.info("found: " + tf.entries().size() + " users with the specified criteria");
         int SLEEP = 30;
@@ -134,7 +136,7 @@ public class Util {
         // TODO send via RMI
     }
 
-    public void fillFrom(final String fromUrl) {        
+    public void fillFrom(final String fromUrl) {
         userSearch = new ElasticUserSearch(url, null, null);
         ElasticTweetSearch fromUserSearch = new ElasticTweetSearch(fromUrl, null, null);
         SolrQuery query = new SolrQuery().setQuery("*:*");
@@ -180,5 +182,17 @@ public class Util {
                 userSearch.refresh();
             }
         }
+    }
+
+    public void copyUsers() throws SolrServerException {
+//        String solrUrl = "http://localhost:8081/solr";
+        String solrUrl = "http://pannous.info/uindex";
+        String login = null;
+        String pw = null;
+        SolrUserSearch solrUserSearch = new SolrUserSearch(solrUrl, login, pw, false);
+
+        Set<SolrUser> users = new LinkedHashSet<SolrUser>();
+        solrUserSearch.search(users, new SolrQuery());
+        userSearch.update(users);
     }
 }
