@@ -44,7 +44,6 @@ public class SearchBox extends Panel {
     private String query;
     private String userName;
     private AutoCompleteTextField queryTF;
-//    private TextField queryTF;
 
     public SearchBox(String id) {
         super(id);
