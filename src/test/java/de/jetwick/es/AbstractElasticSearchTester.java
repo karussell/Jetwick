@@ -51,10 +51,8 @@ public abstract class AbstractElasticSearchTester {
     public void setUp(AbstractElasticSearch search) {
         if(!node.isStarted())
             throw new IllegalStateException("You'll need to call beforeClass and afterClass before using this tester!");
-        
-        
-        if (!search.indexExists(search.getIndexName()))
-            search.createIndex(search.getIndexName());
+                
+        search.saveCreateIndex(search.getIndexName(), false);
 
         // start with a fresh index:
         search.deleteAll();  

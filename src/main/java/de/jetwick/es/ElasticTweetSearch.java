@@ -16,6 +16,7 @@
 package de.jetwick.es;
 
 import de.jetwick.solr.SavedSearch;
+import java.util.logging.Level;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.query.xcontent.NotFilterBuilder;
 import de.jetwick.util.MyDate;
@@ -34,7 +35,6 @@ import de.jetwick.tw.cmd.SerialCommandExecutor;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.Helper;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,8 +49,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
-import org.apache.lucene.util.Version;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
@@ -88,13 +86,10 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     public static final String KEY_USER = "user:";
     public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
-    
     public static final String FILTER_NO_DUPS = DUP_COUNT + ":0";
     public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO *]";
-    
     public static final String FILTER_NO_URL_ENTRY = URL_COUNT + ":0";
-    public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";    
-    
+    public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";
     public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
     public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
     private Logger logger = LoggerFactory.getLogger(getClass());
@@ -161,8 +156,12 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     }
 
     public TweetESQuery createQuery() {
+        return createQuery(getIndexName());
+    }
+
+    public TweetESQuery createQuery(String indexName) {
         // TODO use multiple indices here
-        return new TweetESQuery(client.prepareSearch(getIndexName()));
+        return new TweetESQuery(client.prepareSearch(indexName));
     }
 
     SearchResponse query(TweetESQuery query) {
@@ -204,13 +203,17 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         b.field("user", tw.getFromUser().getScreenName());
         b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
 
-        double relevancy = tw.getCreatedAt().getTime() / MyDate.ONE_HOUR;        
+        double relevancy = tw.getCreatedAt().getTime() / MyDate.ONE_HOUR;
         // every 12 retweets boosts the tweet one hour further
         float scale = 12;
-        if(tw.getRetweetCount() <= 100) relevancy += tw.getRetweetCount() / scale; 
-        else relevancy += 100 / scale;        
-        if(tw.getText().length() <= 30) relevancy *= 0.5;
-        if(tw.getQuality() <= 65) relevancy *= 0.5;                       
+        if (tw.getRetweetCount() <= 100)
+            relevancy += tw.getRetweetCount() / scale;
+        else
+            relevancy += 100 / scale;
+        if (tw.getText().length() <= 30)
+            relevancy *= 0.5;
+        if (tw.getQuality() <= 65)
+            relevancy *= 0.5;
         b.field("relevancy", relevancy);
 
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
@@ -558,31 +561,37 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
     public void update(Collection<SolrTweet> tweets) {
         try {
-            if(tweets.isEmpty())
+            if (tweets.isEmpty())
                 return;
-            
+
             tweets = new SerialCommandExecutor(tweets).add(
                     new TermCreateCommand()).execute();
-            
+
             boolean bulk = true;
-            if(bulk) {                
-                // now using bulk API instead of feeding each doc separate with feedDoc
-                BulkRequestBuilder brb = client.prepareBulk();
-                for (SolrTweet tw : tweets) {
-                    String id = Long.toString(tw.getTwitterId());
-                    XContentBuilder source = createDoc(tw);
-                    brb.add(Requests.indexRequest(getIndexName()).type(getIndexType()).id(id).source(source));
-                }            
-                if (brb.numberOfActions() > 0)
-                    brb.execute().actionGet();
+            if (bulk) {
+                bulkUpdate(tweets, getIndexName());
             } else {
                 for (SolrTweet tw : tweets) {
                     String id = Long.toString(tw.getTwitterId());
                     feedDoc(id, createDoc(tw));
                 }
-            }            
+            }
         } catch (Exception e) {
             logger.error("Exception while updating.", e);
+        }
+    }
+
+    public void bulkUpdate(Collection<SolrTweet> tweets, String indexName) throws IOException {
+        // now using bulk API instead of feeding each doc separate with feedDoc
+        BulkRequestBuilder brb = client.prepareBulk();
+        for (SolrTweet tw : tweets) {
+            String id = Long.toString(tw.getTwitterId());
+            XContentBuilder source = createDoc(tw);
+            brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
+        }
+        if (brb.numberOfActions() > 0) {
+//            System.out.println("actions:" + brb.numberOfActions());
+            brb.execute().actionGet();
         }
     }
 
@@ -1018,7 +1027,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
         TermCreateCommand termCommand = new TermCreateCommand();
 
-        
+
         double JACC_BORDER = 0.7;
         for (SolrTweet currentTweet : tweets.values()) {
             if (currentTweet.isRetweet())
@@ -1067,9 +1076,27 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
 
         return updatedTweets;
-    }  
-    
-    public SearchResponse updateSavedSearches(Collection<SavedSearch> savedSearches) {        
+    }
+
+    public SearchResponse updateSavedSearches(Collection<SavedSearch> savedSearches) {
         return search(createQuery().createSavedSearchesQuery(savedSearches));
+    }
+
+    /**
+     * All indices has to be created before!
+     */
+    public void mergeIndices(Collection<String> indexList, String intoIndex, boolean forceRefresh) {        
+        refresh(indexList);
+        
+        for (String index : indexList) {
+            TweetESQuery q = new TweetESQuery(client.prepareSearch(index)).matchAll();
+            try {
+                bulkUpdate(collectTweets(query(q)), intoIndex);
+            } catch (Exception ex) {
+                logger.error("Failed to copy data from index " + index + " into " + intoIndex + ". query was: " + q, ex);
+            }
+        }
+        
+        refresh(intoIndex);
     }
 }

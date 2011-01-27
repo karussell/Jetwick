@@ -141,6 +141,11 @@ public class TweetESQuery {
         qb = QueryBuilders.matchAllQuery();
         return this;
     }
+    
+    public TweetESQuery matchAll() {
+        qb = QueryBuilders.matchAllQuery();
+        return this;
+    }
 
     public SearchRequestBuilder getRequestBuilder() {
         // TODO move filter creation to this point?        

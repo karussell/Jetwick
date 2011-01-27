@@ -17,10 +17,7 @@ package de.jetwick.es;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.apache.lucene.analysis.TokenStream;
 import java.io.StringReader;
-import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
-import org.apache.lucene.util.Version;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
@@ -36,17 +33,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.LowerCaseTokenizer;
-import org.apache.lucene.analysis.StopAnalyzer;
-import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
-import org.apache.lucene.analysis.snowball.SnowballFilter;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.analysis.StopTokenFilterFactory;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.Before;
 import org.junit.Test;
@@ -798,13 +788,39 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         Set<String> stopWords = new LinkedHashSet<String>();
         stopWords.add("duplicate");
-        
-        
+
+
         Set<String> set = new TweetESQuery().doSnowballStemming(
                 new WhitespaceTokenizer(new StringReader("duplication tester")));
         assertEquals(2, set.size());
         assertTrue(set.contains("tester"));
-        assertTrue(set.contains("duplic")); 
+        assertTrue(set.contains("duplic"));
+    }
+
+    @Test
+    public void testIndexMerge() throws IOException, InterruptedException {
+        String index1 = "index1";
+        String index2 = "index2";
+        String resindex = "resindex";
+//        System.out.println("NOW1");
+        twSearch.createIndex(index1);
+        twSearch.createIndex(index2);
+        twSearch.createIndex(resindex);
+//        System.out.println("NOW2");
+//        twSearch.waitForYellow(resindex);
+    
+        twSearch.bulkUpdate(Arrays.asList(
+                new SolrTweet(1L, "hey cool one", new SolrUser("peter")),
+                new SolrTweet(2L, "two! another one", new SolrUser("test"))), index1);
+
+        twSearch.bulkUpdate(Arrays.asList(
+                new SolrTweet(3L, "second index. one", new SolrUser("people")),
+                new SolrTweet(4L, "snd index! two", new SolrUser("k")),
+                new SolrTweet(5L, "snd index! third", new SolrUser("k"))), index2);        
+                
+        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, true);        
+        
+        assertEquals(5, twSearch.collectTweets(twSearch.query(twSearch.createQuery(resindex).matchAll())).size());
     }
 
     SolrTweet createSolrTweet(MyDate dt, String twText, String user) {

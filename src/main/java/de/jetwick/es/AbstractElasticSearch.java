@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import java.util.Collection;
 import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.elasticsearch.action.WriteConsistencyLevel;
@@ -92,12 +93,20 @@ public abstract class AbstractElasticSearch {
     }
 
     public void saveCreateIndex() {
-        if (!indexExists(getIndexName())) {
-            logger.info("Try to create index: " + getIndexName());
-            createIndex(getIndexName());
-            logger.info("Created index: " + getIndexName());
-        } else
-            logger.info("Index " + getIndexName() + " already exists");
+        saveCreateIndex(getIndexName(), true);
+    }
+
+    public void saveCreateIndex(String name, boolean log) {
+        if (!indexExists(name)) {
+            if (log)
+                logger.info("Try to create index: " + name);
+            createIndex(name);
+            if (log)
+                logger.info("Created index: " + name);
+        } else {
+            if (log)
+                logger.info("Index " + getIndexName() + " already exists");
+        }
     }
 
 //    void ping() {
@@ -108,12 +117,27 @@ public abstract class AbstractElasticSearch {
 //        client.admin().cluster().ping(new SinglePingRequest(getIndexName(), getIndexType(), "1")).actionGet();
 //    }
     void waitForYellow() {
-        client.admin().cluster().health(new ClusterHealthRequest(getIndexName()).waitForYellowStatus()).actionGet();
+        waitForYellow(getIndexName());
+    }
+
+    void waitForYellow(String name) {
+        client.admin().cluster().health(new ClusterHealthRequest(name).waitForYellowStatus()).actionGet();
+    }
+
+    void waitForGreen(String name) {
+        client.admin().cluster().health(new ClusterHealthRequest(name).waitForGreenStatus()).actionGet();
     }
 
     public void refresh() {
-        RefreshResponse rsp = client.admin().indices().refresh(new RefreshRequest(getIndexName())).actionGet();
+        refresh(getIndexName());
+    }
 
+    public void refresh(Collection<String> indices) {
+        refresh(indices.toArray(new String[indices.size()]));
+    }
+
+    public void refresh(String... indices) {
+        RefreshResponse rsp = client.admin().indices().refresh(new RefreshRequest(indices)).actionGet();
         //assertEquals(1, rsp.getFailedShards());
     }
 
@@ -153,9 +177,8 @@ public abstract class AbstractElasticSearch {
                 actionGet();
         refresh();
     }
-    
+
     public OptimizeResponse optimize(int optimizeToSegmentsAfterUpdate) {
-        return client.admin().indices().optimize(new OptimizeRequest(getIndexName()).
-                maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();        
+        return client.admin().indices().optimize(new OptimizeRequest(getIndexName()).maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
     }
 }
