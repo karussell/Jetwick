@@ -173,7 +173,7 @@ public class SavedSearchPanel extends Panel {
         List<FacetHelper> list = new ArrayList<FacetHelper>();        
         Long count = null;
 
-        if (rsp != null) {
+        if (rsp != null && rsp.facets() != null) {
             List<Facet> facets = rsp.facets().facets();
             if (facets != null)
                 for (Facet f : facets){                    

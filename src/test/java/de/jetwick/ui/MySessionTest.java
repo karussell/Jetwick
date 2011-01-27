@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.tw.Twitter4JUser;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;

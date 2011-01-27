@@ -24,6 +24,7 @@ import de.jetwick.tw.Credits;
 import de.jetwick.tw.TweetProducer;
 import de.jetwick.tw.TweetProducerOnline;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.tw.TwitterSearchOffline;
 import de.jetwick.tw.UrlTitleCleaner;
 import de.jetwick.util.MaxBoundSet;
 import org.slf4j.Logger;
@@ -76,7 +77,9 @@ public class DefaultModule extends AbstractModule {
 
     public void installTwitterModule() {
         final Credits cred = config.getTwitterSearchCredits();
-        final TwitterSearch ts = new TwitterSearch().setConsumer(
+//        final TwitterSearch ts = createTwitterSearch().setConsumer(
+//                cred.getConsumerKey(), cred.getConsumerSecret());
+        final TwitterSearch ts = createTwitterSearch().setConsumer(
                 cred.getConsumerKey(), cred.getConsumerSecret());
 
         try {
@@ -89,11 +92,16 @@ public class DefaultModule extends AbstractModule {
 
             @Override
             public TwitterSearch get() {
-                return new TwitterSearch().setConsumer(
+                return createTwitterSearch().setConsumer(
                         cred.getConsumerKey(), cred.getConsumerSecret()).
                         setTwitter4JInstance(ts.getTwitter4JInstance());
             }
         });
+    }
+    
+    public TwitterSearch createTwitterSearch() {
+//        return new TwitterSearch();
+        return new TwitterSearchOffline();
     }
 
     public void installLastSearches() {
