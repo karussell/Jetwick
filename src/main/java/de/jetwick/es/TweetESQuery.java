@@ -172,8 +172,12 @@ public class TweetESQuery {
 
     @Override
     public String toString() {
+        return toString(qb);
+    }
+    
+    public static String toString(ToXContent tmp) {
         try {
-            return qb.toXContent(jsonBuilder(), ToXContent.EMPTY_PARAMS).
+            return tmp.toXContent(jsonBuilder(), ToXContent.EMPTY_PARAMS).
                     prettyPrint().
                     string();
         } catch (Exception ex) {

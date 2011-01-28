@@ -75,6 +75,7 @@ public class Solr2ElasticTweet {
 
             if (fb != null)
                 qb = QueryBuilders.filteredQuery(qb, fb);
+//            srb.setFilter(fb);
         }
 
         if (query.getFacetFields() != null) {
@@ -83,7 +84,7 @@ public class Solr2ElasticTweet {
                 // TODO parse all query params to find the f.<field>.limit and set .size()
                 srb.addFacet(FacetBuilders.termsFacet(ff).field(ff));
             }
-        }
+        }       
 
         if (query.getFacetQuery() != null) {
             for (String ff : query.getFacetQuery()) {
@@ -114,7 +115,7 @@ public class Solr2ElasticTweet {
             rfb.addUnboundedFrom(Helper.toLocalDateTime(date.toDate()));
             srb.addFacet(rfb);
         }
-
+                
         srb.setQuery(qb);
     }
 
