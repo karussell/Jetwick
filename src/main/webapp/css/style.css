@@ -142,23 +142,24 @@ body, p {
 #flattrimg {
     margin-bottom: -5px;
 }
-#jetwickaccountimg {
-    margin-bottom: -4px;
+#jetwickaccountimg {   
+    width:12px;
+    margin-bottom: -5px;
     padding: 0px 0px 1px 0px;
 }
 #learnmoreimg {
-    width:13px;
+    width:14px;
     padding: 0 0px 0px 0px;
     margin-bottom: -2px;
 }
 
 #aboutimg {
-    width:15px;
     padding: 0 0px 0px 0px;
-    margin-bottom: -2px;
+    margin-bottom: -3px;
 }
 
 #fbimg {
+    width:12px;
     padding: 0 0px 0px 0px;
     margin-bottom: -2px;
 }
@@ -181,13 +182,13 @@ body, p {
 
 .yourkitlogo { clear: both; }
 
-.searchform {        
+/*.searchform {        
     padding-top: 28px;
     padding-bottom: 2px;
     background-image: url("../img/jetwick.png");
     background-repeat: no-repeat;
     background-position: 0px 2px;
-}
+}*/
 
 .searchboxhints {
     padding: 0px 7px 0 0;
@@ -199,12 +200,17 @@ body, p {
     padding: 2px;
 }
 
-.subtitle a {color: black;}
+.jetwicklogo:hover {
+    text-decoration: none;
+}
+.jetwicklogo img {
+    margin-bottom: -3px;        
+}
 .subtitle {
+    color: black;
     font-style: italic;
     font-size: 12px;
-    padding-left: 65px;
-    padding-bottom: 8px;
+    margin-left: -90px;        
 }
 
 div.wicket-aa {
