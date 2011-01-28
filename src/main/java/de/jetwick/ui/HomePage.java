@@ -93,8 +93,12 @@ public class HomePage extends WebPage {
     public MySession getMySession() {
         return (MySession) getSession();
     }
-    // for testing
 
+    public SearchBox getSearchBox() {
+        return searchBox;
+    }
+        
+    // for testing
     HomePage() {
     }
 
@@ -389,6 +393,28 @@ public class HomePage extends WebPage {
 
         add(ssPanel.setOutputMarkupId(true));
 
+        searchBox = new SearchBox("searchbox") {
+
+            @Override
+            protected Collection<String> getQueryChoices(String input) {
+                return getTweetSearch().getQueryChoices(lastQuery, input);
+            }
+
+            @Override
+            protected void onSelectionChange(AjaxRequestTarget target, String newValue) {
+                SolrQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
+                JetwickQuery.applyFacetChange(tmpQ, ElasticTweetSearch.DATE, true);
+                doSearch(tmpQ, 0, false, true);
+                updateAfterAjax(target, false);
+            }
+
+            @Override
+            protected Collection<String> getUserChoices(String input) {
+                return getTweetSearch().getUserChoices(lastQuery, input);
+            }
+        };
+        add(searchBox.setOutputMarkupId(true));
+        
         add(new UserPanel("userPanel", this) {
 
             @Override
@@ -406,6 +432,13 @@ public class HomePage extends WebPage {
             public void onShowTweets(AjaxRequestTarget target, String userName) {
                 doSearch((TweetQuery) new TweetQuery().addUserFilter(userName), 0, false);
                 HomePage.this.updateAfterAjax(target, true);
+            }
+
+            @Override
+            public void onSearchFollowers(AjaxRequestTarget target) {
+                Collection<SolrUser> followers = getMySession().getFollowers();                
+                doSearch(new TweetQuery(searchBox.getQuery()).createFollowerQuery(followers), 0, false);
+                HomePage.this.updateAfterAjax(target, false);
             }
 
             @Override
@@ -440,28 +473,6 @@ public class HomePage extends WebPage {
             }
         };
         add(tagCloud.setOutputMarkupId(true));
-
-        searchBox = new SearchBox("searchbox") {
-
-            @Override
-            protected Collection<String> getQueryChoices(String input) {
-                return getTweetSearch().getQueryChoices(lastQuery, input);
-            }
-
-            @Override
-            protected void onSelectionChange(AjaxRequestTarget target, String newValue) {
-                SolrQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
-                JetwickQuery.applyFacetChange(tmpQ, ElasticTweetSearch.DATE, true);
-                doSearch(tmpQ, 0, false, true);
-                updateAfterAjax(target, false);
-            }
-
-            @Override
-            protected Collection<String> getUserChoices(String input) {
-                return getTweetSearch().getUserChoices(lastQuery, input);
-            }
-        };
-        add(searchBox.setOutputMarkupId(true));
 
         navigationPanel = new NavigationPanel("navigation", hitsPerPage) {
 

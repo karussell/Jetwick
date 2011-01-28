@@ -128,4 +128,12 @@ public class MyDate implements Cloneable {
     public String toLocalString() {
         return Helper.toLocalDateTime(new Date(time));
     }
+
+    public long getHours() {
+        return time / ONE_HOUR;
+    }
+    
+    public long getDays() {
+        return time / ONE_DAY;
+    }
 }

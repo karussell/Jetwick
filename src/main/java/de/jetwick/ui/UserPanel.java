@@ -23,10 +23,12 @@ import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
@@ -86,6 +88,27 @@ public class UserPanel extends Panel {
                     public void onClick() {
                         onLogout();
                     }
+                });                               
+                        
+//                add(new IndicatingAjaxFallbackLink("searchFollowers") {
+//
+//                    @Override
+//                    public void onClick(AjaxRequestTarget target) {
+//                        onSearchFollowers(target);
+//                    }
+//                });
+                    
+                add(new AjaxSubmitLink("searchFollowers", homePageRef.getSearchBox().getForm()) {
+
+                    @Override
+                    protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+                        onSearchFollowers(target);
+                    }                
+                
+//                    @Override
+//                    public void onClick(AjaxRequestTarget target) {
+//                        onSearchFollowers(target);
+//                    }
                 });
                 add(new AjaxFallbackLink("showTweets") {
 
@@ -105,13 +128,14 @@ public class UserPanel extends Panel {
                     }
                 });
                 modalW.setTitle("Specify the user and the number of tweets you want to grab");
-                
+
                 final GrabTweetsDialog dialog = new GrabTweetsDialog(modalW.getContentId(), user.getScreenName()) {
 
                     @Override
                     public TwitterSearch getTwitterSearch() {
                         return homePageRef.getTwitterSearch();
                     }
+
                     @Override
                     public void updateAfterAjax(AjaxRequestTarget target) {
                         UserPanel.this.updateAfterAjax(target);
@@ -160,6 +184,9 @@ public class UserPanel extends Panel {
     }
 
     public void onShowTweets(AjaxRequestTarget target, String user) {
+    }
+
+    public void onSearchFollowers(AjaxRequestTarget target) {
     }
 
     public void onLogout() {

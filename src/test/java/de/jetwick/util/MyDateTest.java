@@ -43,4 +43,10 @@ public class MyDateTest {
         assertEquals(3600 * 1000, new MyDate(61 * MyDate.ONE_MINUTE).castToHour().getTime());
         assertEquals(3600 * 1000, new MyDate((60 + 59) * MyDate.ONE_MINUTE).castToHour().getTime());
     }
+    
+    @Test
+    public void testGetHours() {
+        assertEquals(2, new MyDate(2 * MyDate.ONE_HOUR).getHours());
+        assertEquals(2, new MyDate((long)(2.9 * MyDate.ONE_HOUR)).getHours());        
+    }
 }

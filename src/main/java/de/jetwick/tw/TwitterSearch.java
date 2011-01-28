@@ -641,7 +641,7 @@ public class TwitterSearch implements Serializable {
             ResponseList<User> res = null;
             IDs ids = null;
 
-            logger.info("get followers from cursor " + cursor);
+//            logger.info("get followers from cursor " + cursor);
             try {
                 if (cursor < 0)
                     ids = twitter.getFollowersIDs(userName);
@@ -651,7 +651,7 @@ public class TwitterSearch implements Serializable {
                 logger.warn(ex.getMessage());
                 break;
             }
-            logger.info("found " + ids.getIDs().length);
+//            logger.info("found " + ids.getIDs().length);
             if (ids.getIDs().length == 0)
                 break;
 

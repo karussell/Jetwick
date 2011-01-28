@@ -44,11 +44,12 @@ public class SearchBox extends Panel {
     private String query;
     private String userName;
     private AutoCompleteTextField queryTF;
+    private final Form form;
 
     public SearchBox(String id) {
         super(id);
 
-        final Form form = new StatelessForm("searchform") {
+        form = new StatelessForm("searchform") {
 
             @Override
             public void onSubmit() {
@@ -150,6 +151,10 @@ public class SearchBox extends Panel {
         };
         userTF.setMarkupId("userbox");
         form.add(userTF);
+    }
+
+    public Form getForm() {
+        return form;
     }
 
     public void init(SolrQuery solrQuery) {

@@ -19,6 +19,11 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.util.AnyExecutor;
+import de.jetwick.util.MyDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import javax.servlet.http.Cookie;
 import org.apache.wicket.Request;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -168,5 +173,25 @@ public class MySession extends WebSession {
         }
 
         setUser(null);
+    }
+
+    private List<SolrUser> cachedFollowers = new ArrayList<SolrUser>();
+    private MyDate cacheTime = null;
+    
+    public Collection<SolrUser> getFollowers() {
+        if(cacheTime == null || new MyDate().minus(cacheTime).getDays() > 0) {
+            logger.info("Grabbing followers of " + getUser().getScreenName());
+            cacheTime = new MyDate();      
+            twitterSearch.getFollowers(getUser().getScreenName(), new AnyExecutor<SolrUser>() {
+
+                @Override
+                public SolrUser execute(SolrUser u) {
+                    cachedFollowers.add(u);
+                    return u;
+                }
+            });
+        }
+        
+        return cachedFollowers;
     }
 }
