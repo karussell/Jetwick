@@ -17,9 +17,6 @@
 package de.jetwick.data;
 
 import com.google.inject.Inject;
-import de.jetwick.tw.Twitter4JTweet;
-import de.jetwick.tw.TwitterSearch;
-import de.jetwick.util.MyDate;
 import java.util.Random;
 import org.junit.After;
 import org.junit.Before;

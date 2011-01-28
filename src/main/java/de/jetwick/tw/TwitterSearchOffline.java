@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
 import twitter4j.User;
 import twitter4j.http.AccessToken;
 
 /**
- *
+ * Offline twitter search. Implemented to test saved searches.
+ * 
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class TwitterSearchOffline extends TwitterSearch {
+
+    private Logger logger = LoggerFactory.getLogger(TwitterSearchOffline.class);
+
+    public TwitterSearchOffline() {
+        logger.warn("Using offline twitter search!");
+    }
 
     @Override
     public TwitterSearch setTwitter4JInstance(String token, String tokenSecret) {

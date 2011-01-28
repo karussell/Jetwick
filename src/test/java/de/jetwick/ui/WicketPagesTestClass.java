@@ -15,16 +15,6 @@
  */
 package de.jetwick.ui;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import org.apache.lucene.search.Explanation;
-import org.elasticsearch.ElasticSearchParseException;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.xcontent.ToXContent.Params;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.search.SearchHit;
 import java.util.Collection;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -44,10 +34,7 @@ import org.apache.wicket.guice.GuiceComponentInjector;
 import org.apache.wicket.util.tester.WicketTester;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.search.SearchHitField;
-import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.facet.InternalFacets;
-import org.elasticsearch.search.highlight.HighlightField;
 import org.elasticsearch.search.internal.InternalSearchHit;
 import org.elasticsearch.search.internal.InternalSearchHits;
 import org.elasticsearch.search.internal.InternalSearchResponse;
@@ -74,7 +61,7 @@ public class WicketPagesTestClass {
 
             @Override
             public void installTwitterModule() {
-                bind(TwitterSearch.class).toInstance(createTwitterSearch());
+                bind(TwitterSearch.class).toInstance(createTestTwitterSearch());
             }
 
 //            @Override
@@ -123,28 +110,9 @@ public class WicketPagesTestClass {
         };
     }
 
-//    protected ElasticUserSearch createSolrUserSearch() {
-//        ElasticUserSearchTest sst = new ElasticUserSearchTest();
-//        try {
-//            sst.setUp();
-//            return sst.getUserSearch();
-//        } catch (Exception ex) {
-//            throw new UnsupportedOperationException("Cannot setup user search", ex);
-//        }
-//    }
-//
-//    protected ElasticTweetSearch createSolrTweetSearch() {
-//        ElasticTweetSearchTest stst = new ElasticTweetSearchTest();
-//        try {
-//            stst.setUp();
-//            return stst.getTweetSearch();
-//        } catch (Exception ex) {
-//            throw new UnsupportedOperationException("Cannot setup tweet search", ex);
-//        }
-//    }
-    protected TwitterSearch createTwitterSearch() {
+    protected TwitterSearch createTestTwitterSearch() {
         return new TwitterSearch() {
-
+            
             @Override
             public int getRateLimit() {
                 return 100;

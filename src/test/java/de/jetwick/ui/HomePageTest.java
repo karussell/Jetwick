@@ -203,7 +203,7 @@ public class HomePageTest extends WicketPagesTestClass {
     }
 
     @Override
-    protected TwitterSearch createTwitterSearch() {
+    protected TwitterSearch createTestTwitterSearch() {
         return new TwitterSearch() {
 
             @Override
