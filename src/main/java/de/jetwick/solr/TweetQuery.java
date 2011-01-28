@@ -45,6 +45,23 @@ public class TweetQuery extends JetwickQuery {
         return (TweetQuery) attachFacetibility(this);
     }
 
+    public TweetQuery createFollowerQuery(Collection<SolrUser> users) {
+        if (users.isEmpty())
+            return this;
+
+        StringBuilder fq = new StringBuilder("user:(");
+        int counter = 0;
+        for (SolrUser u : users) {
+            if (counter++ > 0)
+                fq.append(" OR ");
+            fq.append(u.getScreenName());
+        }
+
+        fq.append(")");
+        addFilterQuery(fq.toString());
+        return this;
+    }
+
     public static SolrQuery attachFacetibility(SolrQuery q) {
         q.setFacet(true).
                 // now date faceting of dt field:
@@ -66,7 +83,7 @@ public class TweetQuery extends JetwickQuery {
                 set("f.dest_title_1_s.facet.limit", 12).
                 set("f.tag.facet.mincount", 2).
                 set("f.tag.facet.limit", 20);
-        
+
 //        // latest
 //        q.addFacetQuery(FILTER_ENTRY_LATEST_DT);
 //        // archive
@@ -88,5 +105,5 @@ public class TweetQuery extends JetwickQuery {
         q.addFacetQuery(FILTER_NO_URL_ENTRY);
 
         return q;
-    }   
+    }
 }

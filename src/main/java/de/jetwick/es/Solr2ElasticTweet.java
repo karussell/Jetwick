@@ -128,8 +128,19 @@ public class Solr2ElasticTweet {
         String val = strs[1];
 
         if (val.contains(" OR ")) {
+            // handle field:(val OR val2 OR ...)
+            if(val.startsWith("(") && val.endsWith(")")) {
+                val = val.substring(1, val.length() - 1);
+                String[] res = val.split(" OR ");
+                Object[] terms = new Object[res.length];
+                for (int i = 0; i < res.length; i++) {
+                    terms[i] = getTermValue(res[i]);                    
+                }
+                return FilterBuilders.termsFilter(key, terms);
+            }
+                
+            // handle field:xy OR field2:ab OR ...
             String fqs[] = fq.split(" OR ");
-
             String field = null;
             int i = 0;
             Object[] terms = new Object[fqs.length];

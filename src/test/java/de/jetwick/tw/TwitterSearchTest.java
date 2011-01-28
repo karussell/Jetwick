@@ -15,24 +15,9 @@
  */
 package de.jetwick.tw;
 
-import de.jetwick.data.YUser;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
 import de.jetwick.util.Helper;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import org.junit.Test;
-import twitter4j.Paging;
-import twitter4j.RateLimitStatus;
-import twitter4j.ResponseList;
-import twitter4j.Status;
-import twitter4j.Tweet;
-import twitter4j.Twitter;
 import static org.junit.Assert.*;
-import twitter4j.TwitterException;
 
 /**
  *

@@ -24,7 +24,9 @@ import de.jetwick.data.YUser;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.cmd.TermCreateCommand;
+import de.jetwick.util.AnyExecutor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -90,6 +92,21 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         Status st = twitterSearch.getTweet(18845491030L);
         assertNotNull(st.getGeoLocation());
 //        System.out.println("geo:" + st.getGeoLocation());
+    }
+
+    @Test
+    public void getFollowers() throws TwitterException {
+        final Collection<SolrUser> coll = new ArrayList<SolrUser>();
+        twitterSearch.getFollowers("wiedumir", new AnyExecutor<SolrUser>() {
+
+            @Override
+            public SolrUser execute(SolrUser u) {
+                coll.add(u);
+                return u;
+            }
+        });
+        
+        assertTrue(coll.size() > 5);
     }
 
     @Test

@@ -796,6 +796,24 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertTrue(set.contains("tester"));
         assertTrue(set.contains("duplic"));
     }
+    
+    @Test
+    public void testFollowerSearch() throws Exception {
+        twSearch.update(Arrays.asList(
+                createTweet(1L, "test this", "peter"),
+                createTweet(2L, "test others", "tester"),
+                createTweet(3L, "testnot this", "peter"),
+                createTweet(4L, "test this", "peternot")));
+        twSearch.refresh();
+        Collection<SolrUser> users = Arrays.asList(new SolrUser("peter"), new SolrUser("tester"));
+        Collection<SolrTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").
+                createFollowerQuery(users)));
+        
+        assertEquals(2, coll.size());
+        Iterator<SolrTweet> iter = coll.iterator();
+        assertEquals(1L, (long) iter.next().getTwitterId());
+        assertEquals(2L, (long) iter.next().getTwitterId());
+    }
 
     @Test
     public void testIndexMerge() throws IOException, InterruptedException {

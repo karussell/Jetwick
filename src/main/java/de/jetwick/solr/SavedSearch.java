@@ -16,10 +16,8 @@
 package de.jetwick.solr;
 
 import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.es.TweetESQuery;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Date;
 import org.apache.solr.client.solrj.SolrQuery;
 
