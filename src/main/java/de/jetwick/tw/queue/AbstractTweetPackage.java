@@ -42,6 +42,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -138,6 +139,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return processedTweets;
     }
 
+    @Override
     public int getAgeInSeconds() {
         return Math.round((System.currentTimeMillis() - created.getTime()) / 1000f);
     }

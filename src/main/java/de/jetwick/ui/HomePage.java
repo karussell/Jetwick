@@ -79,8 +79,6 @@ public class HomePage extends WebPage {
     private WikipediaLazyLoadPanel wikiPanel;
     private UrlTrendPanel urlTrends;
     @Inject
-    private Provider<FriendSearchHelper> friendHelper;
-    @Inject
     private Provider<ElasticTweetSearch> twindexProvider;
     @Inject
     private Provider<ElasticUserSearch> uindexProvider;
@@ -228,7 +226,7 @@ public class HomePage extends WebPage {
 
         // avoid slow queries for *:* query and filter against latest tweets
         if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
-            logger.info(addIP("[stats] q=''"));            
+            logger.info(addIP("[stats] q=''"));
             q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
         }
 
@@ -618,14 +616,10 @@ public class HomePage extends WebPage {
 
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             if (getMySession().hasLoggedIn()) {
-                if (Helper.isEmpty(tmpUserName)) {
-                    error("Error: no user specified for friend search. Please try again");
-                } else {
-                    Collection<String> friends = friendHelper.get().getFriendsOf(tmpUserName);
-                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
-                    page = 0;
-                    twitterFallback = false;
-                }
+                Collection<String> friends = getMySession().getUser().getFriends();
+                query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
+                page = 0;
+                twitterFallback = false;
             } else
                 info("To use friend search you need to login and tweet about @jetwick");
 //                warn("Please login to search friends of " + parameters.getString("user"));

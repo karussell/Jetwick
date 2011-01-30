@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
+import de.jetwick.solr.SolrUser;
+import java.util.Collection;
 import org.junit.Before;
 import de.jetwick.JetwickTestClass;
 import org.junit.Test;
@@ -34,11 +35,21 @@ public class FriendSearchHelperTest extends JetwickTestClass {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-    }        
+    }
 
     @Test
     public void testGetFriendsOf() {
-        FriendSearchHelper fsh = getInstance(FriendSearchHelper.class);
-        assertEquals(0, fsh.getFriendsOf("test").size());
+        FriendSearchHelper helper = new FriendSearchHelper(null, null) {
+
+            @Override
+            public void updateUser(SolrUser user) {                
+            }
+            
+            @Override
+            public void updateFromTwitter(Collection<String> friends, String screenName) {
+                friends.add("test");
+            }
+        };
+        assertEquals(1, helper.getFriendsOf(new SolrUser("test")).size());
     }
 }

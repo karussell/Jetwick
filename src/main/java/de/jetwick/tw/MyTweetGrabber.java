@@ -157,7 +157,7 @@ public class MyTweetGrabber implements Serializable {
                     logger.info("start archiving!");
                     for (int start = 0; start < maxTweets && !isCanceled(); start += rows) {
                         Collection<SolrTweet> tmp = tweetSearch.getTweets(user, start, rows);
-                        if (tmp.size() == 0)
+                        if (tmp.isEmpty())
                             continue;
                         try {
                             tweetCount += tmp.size();

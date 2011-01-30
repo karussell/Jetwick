@@ -51,10 +51,10 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
     private final Lock lock = new ReentrantLock();
     @Inject
     private TagDao tagDao;
-    private BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
+    protected BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
     private TwitterSearch twSearch;
-    private ElasticUserSearch userSearch;
+    protected ElasticUserSearch userSearch;
     @Inject
     private WorkManager manager;
     private int maxFill = 2000;

@@ -22,7 +22,6 @@ import de.jetwick.util.AnyExecutor;
 import de.jetwick.util.MyDate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,17 +31,17 @@ import org.slf4j.LoggerFactory;
  */
 public class FriendSearchHelper {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    @Inject
-    public TwitterSearch twitter4j;
-    @Inject
-    public ElasticUserSearch userSearch;
+    private final Logger logger = LoggerFactory.getLogger(getClass());    
+    private ElasticUserSearch userSearch;
+    private TwitterSearch twitter4j;
 
-    public Collection<String> getFriendsOf(String screenName) {
-        SolrUser user = getUser(screenName);
-        if (user == null)
-            return Collections.EMPTY_LIST;
+    @Inject
+    public FriendSearchHelper(ElasticUserSearch userSearch, TwitterSearch twitter4j) {
+        this.userSearch = userSearch;
+        this.twitter4j = twitter4j;
+    }
 
+    public Collection<String> getFriendsOf(SolrUser user) {        
         MyDate cacheTime = null;
         if (user.getLastFriendsUpdate() != null)
             cacheTime = new MyDate(user.getLastFriendsUpdate());
@@ -51,25 +50,17 @@ public class FriendSearchHelper {
             final Collection<String> friends = new ArrayList<String>();
             cacheTime = new MyDate();
             try {
-                updateFromTwitter(friends, screenName);
+                updateFromTwitter(friends, user.getScreenName());
                 user.setLastFriendsUpdate(cacheTime.toDate());
             } catch (Exception ex) {
-                logger.error("Error while getting friends for " + screenName, ex);
+                logger.error("Error while getting friends for " + user.getScreenName(), ex);
             }
-            logger.info("Grab " + friends.size() + " friends for " + screenName);
+            logger.info("Grab " + friends.size() + " friends for " + user.getScreenName());
             user.setFriends(friends);
-            userSearch.update(user, false, true);
+            updateUser(user);
             return friends;
         } else
             return user.getFriends();
-    }
-
-    public void setTwitter4j(TwitterSearch twitter4j) {
-        this.twitter4j = twitter4j;
-    }
-
-    public SolrUser getUser(String screenName) {
-        return userSearch.findByScreenName(screenName);
     }
 
     public void updateUser(SolrUser user) {
