@@ -32,6 +32,7 @@ import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
 import de.jetwick.util.Helper;
+import de.jetwick.util.MyDate;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -227,9 +228,8 @@ public class HomePage extends WebPage {
 
         // avoid slow queries for *:* query and filter against latest tweets
         if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
-            logger.info(addIP("[stats] q=''"));
-            // TODO ES
-//            q.addFilterQuery(ElasticTweetSearch.DATE_TAG).addFilterQuery(ElasticTweetSearch.FILTER_ENTRY_LATEST_DT);
+            logger.info(addIP("[stats] q=''"));            
+            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
         }
 
         String sort = parameters.getString("sort");
@@ -239,6 +239,8 @@ public class HomePage extends WebPage {
             JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");
         else if ("oldest".equals(sort))
             JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " asc");
+        else
+            JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCY + " desc");
 
         if (Helper.isEmpty(userName)) {
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
@@ -585,13 +587,13 @@ public class HomePage extends WebPage {
         };
         add(resultsPanel.setOutputMarkupId(true));
         add(wikiPanel = new WikipediaLazyLoadPanel("wikipanel"));
-        
-        
+
+
         String searchType = parameters.getString("search");
         String tmpUserName = null;
-        if(getMySession().hasLoggedIn())
+        if (getMySession().hasLoggedIn())
             tmpUserName = getMySession().getUser().getScreenName();
-        
+
         searchBox = new SearchBox("searchbox", tmpUserName, searchType) {
 
             @Override
@@ -616,9 +618,9 @@ public class HomePage extends WebPage {
 
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             if (getMySession().hasLoggedIn()) {
-                if (Helper.isEmpty(tmpUserName)) {                    
+                if (Helper.isEmpty(tmpUserName)) {
                     error("Error: no user specified for friend search. Please try again");
-                } else {                    
+                } else {
                     Collection<String> friends = friendHelper.get().getFriendsOf(tmpUserName);
                     query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
                     page = 0;

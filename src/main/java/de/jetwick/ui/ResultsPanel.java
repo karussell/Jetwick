@@ -157,7 +157,7 @@ public class ResultsPanel extends Panel {
         };
 
         add(translateAllLink);
-        add(createSortLink("sortRelevance", ""));
+        add(createSortLink("sortRelevance", ElasticTweetSearch.RELEVANCY + " desc"));
         add(createSortLink("sortRetweets", ElasticTweetSearch.RT_COUNT + " desc"));
         add(createSortLink("sortLatest", ElasticTweetSearch.DATE + " desc"));
         add(createSortLink("sortOldest", ElasticTweetSearch.DATE + " asc"));
@@ -245,7 +245,7 @@ public class ResultsPanel extends Panel {
 
             @Override
             public String getTextFromTranslateAllAction(long id) {
-                if (translateAll && translateMap.size() == 0)
+                if (translateAll && translateMap.isEmpty())
                     fillTranslateMap(allTweets.values(), lang);
 
                 return translateMap.get(id);
@@ -370,8 +370,8 @@ public class ResultsPanel extends Panel {
     }
 
     public void setSort(String sortString) {        
-        if (sortString == null)
-            sort = "";
+        if (sortString == null || sortString.isEmpty())
+            sort = ElasticTweetSearch.RELEVANCY + " desc";
         else
             sort = sortString;
     }

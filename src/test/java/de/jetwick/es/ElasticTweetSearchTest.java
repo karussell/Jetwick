@@ -586,7 +586,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(1L, "test", "peter"))).size());
         assertNotNull(twSearch.findByTwitterId(1L));
     }
-    
+
     @Test
     public void testUserChoices() throws SolrServerException {
         twSearch.privateUpdate(Arrays.asList(createTweet(1L, "test", "usera"),
@@ -613,27 +613,26 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(10L, "ginie", "usera"),
                 createTweet(11L, "home", "usera"),
                 // why is as last tweet this necessary? otherwise we don't get 'home' as tag!?
-                createTweet(12L, "testing", "usera")
-                ));
+                createTweet(12L, "testing", "usera")));
 
         assertEquals(2L, twSearch.search(new SolrQuery().addFilterQuery("tag:bluest")).getHits().getTotalHits());
         assertEquals(1L, twSearch.search(new SolrQuery("home")).getHits().getTotalHits());
 
         Collection<String> coll = twSearch.getQueryChoices(null, "abcdxy");
-        assertEquals(0, coll.size());        
+        assertEquals(0, coll.size());
 
         coll = twSearch.getQueryChoices(null, "ab");
         assertEquals(3, coll.size());
         assertTrue(coll.contains("abcdxy"));
-        
+
         // it is important to filter (with regex filter) away some tags otherwise we don't get the important ones:
         coll = twSearch.getQueryChoices(null, "ho");
         assertEquals(1, coll.size());
         assertTrue(coll.contains("home"));
-        
+
         coll = twSearch.getQueryChoices(null, "abcdxy ");
         assertEquals(1, coll.size());
-        assertTrue(coll.contains("abcdxy bluest"));        
+        assertTrue(coll.contains("abcdxy bluest"));
     }
 
     @Test
@@ -828,7 +827,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertTrue(set.contains("tester"));
         assertTrue(set.contains("duplic"));
     }
-    
+
     @Test
     public void testFollowerSearch() throws Exception {
         twSearch.update(Arrays.asList(
@@ -838,9 +837,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(4L, "test this", "peternot")));
         twSearch.refresh();
         Collection<String> users = Arrays.asList("peter", "tester");
-        Collection<SolrTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").
-                createFriendsQuery(users)));
-        
+        Collection<SolrTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").createFriendsQuery(users)));
+
         assertEquals(2, coll.size());
         Iterator<SolrTweet> iter = coll.iterator();
         assertEquals(1L, (long) iter.next().getTwitterId());
@@ -858,7 +856,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.createIndex(resindex);
 //        System.out.println("NOW2");
 //        twSearch.waitForYellow(resindex);
-    
+
         twSearch.bulkUpdate(Arrays.asList(
                 new SolrTweet(1L, "hey cool one", new SolrUser("peter")),
                 new SolrTweet(2L, "two! another one", new SolrUser("test"))), index1);
@@ -866,11 +864,21 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.bulkUpdate(Arrays.asList(
                 new SolrTweet(3L, "second index. one", new SolrUser("people")),
                 new SolrTweet(4L, "snd index! two", new SolrUser("k")),
-                new SolrTweet(5L, "snd index! third", new SolrUser("k"))), index2);        
-                
-        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, true);        
-        
+                new SolrTweet(5L, "snd index! third", new SolrUser("k"))), index2);
+
+        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, true);
+
         assertEquals(5, twSearch.collectTweets(twSearch.query(twSearch.createQuery(resindex).matchAll())).size());
+    }
+
+    @Test
+    public void testFindUser() {
+        twSearch.update(Arrays.asList(
+                createTweet(1L, "test this", "peter"),
+                createTweet(4L, "test this", "peter_not")));
+        twSearch.refresh();
+        
+        assertEquals(1, twSearch.collectTweets(twSearch.search(new SolrQuery().addFilterQuery(ElasticTweetSearch.KEY_USER + "peter"))).size());
     }
 
     SolrTweet createSolrTweet(MyDate dt, String twText, String user) {

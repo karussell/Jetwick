@@ -95,6 +95,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";
     public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
     public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
+    public static final String RELEVANCY = "relevancy";
     private Logger logger = LoggerFactory.getLogger(getClass());
 
     public ElasticTweetSearch() {
@@ -153,7 +154,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
      */
     SearchResponse queryOldSolr(SolrQuery query) {
         SearchRequestBuilder srb = client.prepareSearch(getIndexName());
-        new Solr2ElasticTweet().createElasticQuery(query, srb);
+        new Solr2ElasticTweet().createElasticQuery(query, srb);        
         SearchResponse response = srb.execute().actionGet();
         return response;
     }

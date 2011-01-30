@@ -62,7 +62,6 @@ public class Solr2ElasticTweet {
         }
 
         XContentQueryBuilder qb = createQuery(query.getQuery());
-
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;
             for (String fq : query.getFilterQueries()) {
@@ -98,7 +97,6 @@ public class Solr2ElasticTweet {
             String name = ElasticTweetSearch.DATE_FACET;
             RangeFacetBuilder rfb = FacetBuilders.rangeFacet(name).field(ElasticTweetSearch.DATE);
             MyDate date = new MyDate();
-
             //rfb.scope(name); 
             
             // latest
@@ -117,6 +115,7 @@ public class Solr2ElasticTweet {
         }
                 
         srb.setQuery(qb);
+//        System.out.println(TweetESQuery.toString(qb));
     }
 
     public XContentFilterBuilder filterQuery2Builder(String fq) {
@@ -223,6 +222,8 @@ public class Solr2ElasticTweet {
         }
 
         return qb;
+//        return QueryBuilders.customScoreQuery(qb).script("_score * doc['relevancy'].value").lang("js");
+        
 //        long time = new MyDate().castToHour().getTime();
 //        return customScoreQuery(qb)
 //                .script(
