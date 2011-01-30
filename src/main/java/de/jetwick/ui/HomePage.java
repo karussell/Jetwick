@@ -588,11 +588,11 @@ public class HomePage extends WebPage {
         
         
         String searchType = parameters.getString("search");
-        String userName = null;
+        String tmpUserName = null;
         if(getMySession().hasLoggedIn())
-            userName = getMySession().getUser().getScreenName();
+            tmpUserName = getMySession().getUser().getScreenName();
         
-        searchBox = new SearchBox("searchbox", userName, searchType) {
+        searchBox = new SearchBox("searchbox", tmpUserName, searchType) {
 
             @Override
             protected Collection<String> getQueryChoices(String input) {
@@ -616,10 +616,10 @@ public class HomePage extends WebPage {
 
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             if (getMySession().hasLoggedIn()) {
-                if (Helper.isEmpty(userName)) {                    
+                if (Helper.isEmpty(tmpUserName)) {                    
                     error("Error: no user specified for friend search. Please try again");
                 } else {                    
-                    Collection<String> friends = friendHelper.get().getFriendsOf(userName);
+                    Collection<String> friends = friendHelper.get().getFriendsOf(tmpUserName);
                     query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
                     page = 0;
                     twitterFallback = false;

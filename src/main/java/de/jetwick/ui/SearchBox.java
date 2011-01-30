@@ -18,7 +18,6 @@ package de.jetwick.ui;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.ui.util.DefaultFocusBehaviour;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
-import de.jetwick.util.Helper;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -33,7 +32,6 @@ import org.apache.wicket.markup.html.form.Radio;
 import org.apache.wicket.markup.html.form.RadioGroup;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
@@ -51,7 +49,7 @@ public class SearchBox extends Panel {
     private AutoCompleteTextField queryTF;
     private final Form form;
 
-    public SearchBox(String id, final String user, String searchTypeAsStr) {
+    public SearchBox(String id, final String loggedInUser, String searchTypeAsStr) {
         super(id);
 
         if (searchTypeAsStr != null)
@@ -72,7 +70,7 @@ public class SearchBox extends Panel {
 
                 if (selectedIndex != null && selectedIndex >= 1 && selectedIndex < SEARCHTYPES.size()) {
                     params.add("search", SEARCHTYPES.get(selectedIndex));
-                    params.add("user", user);
+                    params.add("user", loggedInUser);
                 } else if (userName != null && !userName.isEmpty())
                     params.add("user", userName);
 
