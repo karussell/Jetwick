@@ -90,7 +90,7 @@ body, p {
     font-size: 0.7em;
     padding: 2px 0px 0px 0px;
     margin: 0px;
-    border-bottom: 1px solid gray;
+    border-bottom: gray 1px groove;
 }
 
 .footer ul {
@@ -217,24 +217,22 @@ body, p {
     margin-bottom: 7px;
 }
 .search-user-tf  { 
-    width: 200px; 
-/*    border: none;*/
+    width: 203px; 
     border-left: none;
     border-top: none;
     border-right: none;
-    border-bottom: gray 1px solid;    
+    border-bottom: gray 1px groove;    
 }
 
 .searchform {        
-    width: 530px;
+    width: 540px;
     padding-bottom: 5px;
 }
 .searchform-button {
     font-size: 18px;
     border: medium medium;
-    height: 32px;
-    /* on opera we need 83 not 85 */
-    width: 83px;
+    height: 32px;    
+    width: 85px;
 }
 .search-type-left {
     padding-left: 5px;
@@ -375,7 +373,7 @@ div.wicket-aa ul li.selected {
     padding-top: 5px;
     padding-bottom: 5px;
     margin-bottom: 25px;
-    border-bottom: gray 1px solid;
+    border-bottom: gray 1px groove;
 }
 
 #resultslist ul {
@@ -422,7 +420,7 @@ div.wicket-aa ul li.selected {
 .user {
     /*float: left; -> do not set */
     padding: 15px 15px 0px 15px;
-    border-bottom: 1px solid gray;    
+    border-bottom: gray 1px groove;
 }
 
 .bio {
