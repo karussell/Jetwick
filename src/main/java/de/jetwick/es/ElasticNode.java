@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import org.apache.lucene.search.BooleanQuery;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import java.io.File;
@@ -129,6 +130,9 @@ public class ElasticNode {
         File homeDir = new File(home);
         System.setProperty("es.path.home", homeDir.getAbsolutePath());
         System.setProperty("es.path.conf", conf);
+        
+        // increase maxClauseCount for friend search ... not necessary
+//        BooleanQuery.setMaxClauseCount(100000);
 
         Builder settings = ImmutableSettings.settingsBuilder().
                 put("network.host", "127.0.0.1").

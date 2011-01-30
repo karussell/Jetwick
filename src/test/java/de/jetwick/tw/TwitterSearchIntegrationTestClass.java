@@ -21,18 +21,24 @@ import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
+import de.jetwick.es.ElasticTweetSearchTest;
+import de.jetwick.es.TweetESQuery;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.AnyExecutor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 
 import org.junit.Test;
 import twitter4j.Status;
@@ -46,11 +52,23 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
 
     @Inject
     private TwitterSearch twitterSearch;
+    private static ElasticTweetSearchTest twSearchTester = new ElasticTweetSearchTest();
+
+    @BeforeClass
+    public static void beforeClass() {
+        twSearchTester.beforeClass();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        twSearchTester.afterClass();
+    }
 
     @Before
     @Override
     public void setUp() throws Exception {
         super.setUp();
+        twSearchTester.setUp();
         Credits c = new Configuration().getTwitterSearchCredits();
         twitterSearch.setTwitter4JInstance(c.getToken(), c.getTokenSecret());
     }
@@ -105,7 +123,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
                 return u;
             }
         });
-        
+
         assertTrue(coll.size() > 5);
     }
 
@@ -180,5 +198,37 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     public void testTrend() {
         TwitterSearch st = twitterSearch;
         assertTrue(st.getTrends().size() > 0);
+    }
+
+    @Test
+    public void testFriendSearch() {
+//        FriendSearchHelper helper = new FriendSearchHelper() {
+//
+//            @Override
+//            public void updateUser(SolrUser user) {                
+//            }
+//
+//            @Override
+//            public SolrUser getUser(String screenName) {
+//                return new SolrUser(screenName);
+//            }
+//            
+//        };
+//        helper.setTwitter4j(twitterSearch);
+//        Collection<String> f = helper.getFriendsOf("ibood");
+//        assertTrue(f.size() > 10);         
+//        System.out.println("Friends:" + f.size() + " " + f);
+        Collection<String> f = new ArrayList<String>();
+        for (int i = 0; i < 50000; i++) {
+            f.add("user" + i);
+        }
+
+        TweetQuery q = new TweetQuery("").createFriendsQuery(f);
+
+        // create tweet to map some indirectly mapped (not defined) fields like dt
+        twSearchTester.getTweetSearch().update(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("user"))));
+
+        // should not throw an exception
+        twSearchTester.getTweetSearch().search(q);
     }
 }

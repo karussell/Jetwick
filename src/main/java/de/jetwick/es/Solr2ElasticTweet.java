@@ -136,6 +136,7 @@ public class Solr2ElasticTweet {
                 for (int i = 0; i < res.length; i++) {
                     terms[i] = getTermValue(res[i]);                    
                 }
+                                
                 return FilterBuilders.termsFilter(key, terms);
             }
                 

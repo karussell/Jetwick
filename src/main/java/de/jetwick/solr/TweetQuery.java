@@ -41,13 +41,13 @@ public class TweetQuery extends JetwickQuery {
         return (TweetQuery) attachFacetibility(this);
     }
 
-    public TweetQuery createFriendsQuery(Collection<String> users) {
-        if (users.isEmpty())
+    public TweetQuery createFriendsQuery(Collection<String> friends) {
+        if (friends.isEmpty())
             return this;
 
         StringBuilder fq = new StringBuilder("user:(");
         int counter = 0;
-        for (String screenName : users) {
+        for (String screenName : friends) {
             if (counter++ > 0)
                 fq.append(" OR ");
             fq.append(screenName);
