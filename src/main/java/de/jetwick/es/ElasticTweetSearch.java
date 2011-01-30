@@ -492,11 +492,12 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             StringBuilder idStr = new StringBuilder();
             int counts = 0;
             // we can add max ~150 tweets per request (otherwise the webcontainer won't handle the long request)
-            for (SolrTweet tw : tmpTweets) {
+            for (SolrTweet tw : tmpTweets) {                
+                if(counts > 0)
+                    idStr.append(" OR ");
                 counts++;
                 idStr.append("_id:");
-                idStr.append(tw.getTwitterId());
-                idStr.append(" OR ");
+                idStr.append(tw.getTwitterId());                
             }
 
             // get existing tweets and users                
@@ -925,14 +926,13 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 lastQ = lastQ.getCopy().setQuery(firstPart);
                 // remove any date restrictions
                 JetwickQuery.removeFilterQueries(lastQ, "dt");
-                for (String ff : lastQ.getFacetFields()) {
-                    lastQ.removeFacetField(ff);
-                }
+                JetwickQuery.removeFacets(lastQ);                
             }
             
             SearchRequestBuilder srb = client.prepareSearch(getIndexName());
             new Solr2ElasticTweet().createElasticQuery(lastQ, srb);
             TermsFacetBuilder tfb = FacetBuilders.termsFacet(TAG).field(TAG);
+            
             if (!secPart.trim().isEmpty())
                 tfb.regex(secPart + ".*", Pattern.DOTALL);
 
@@ -942,6 +942,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             TermsFacet tf = rsp.facets().facet(TAG);
             if (tf != null) {
                 for (TermsFacet.Entry cnt : tf.entries()) {
+                    System.out.println(cnt.getTerm());
                     String lowerSugg = cnt.getTerm().toLowerCase();
                     if (existingTerms.contains(lowerSugg))
                         continue;

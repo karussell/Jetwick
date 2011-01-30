@@ -601,23 +601,39 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testQueryChoices() throws SolrServerException {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "obama obama", "usera"),
-                createTweet(2L, "bluest obama obama", "usera"),
-                createTweet(3L, "bluest bluest obama", "usera"),
-                createTweet(4L, "obama bluest again and again", "usera")));
+        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "abcd", "usera"),
+                createTweet(2L, "bluest abcdxy abcdxy", "usera"),
+                createTweet(3L, "bluest bluest abcdxy", "usera"),
+                createTweet(4L, "abort", "usera"),
+                createTweet(5L, "bingo", "usera"),
+                createTweet(6L, "chemical", "usera"),
+                createTweet(7L, "destination", "usera"),
+                createTweet(8L, "estimation", "usera"),
+                createTweet(9L, "finish", "usera"),
+                createTweet(10L, "ginie", "usera"),
+                createTweet(11L, "home", "usera"),
+                // why is as last tweet this necessary? otherwise we don't get 'home' as tag!?
+                createTweet(12L, "testing", "usera")
+                ));
 
-        assertEquals(3L, twSearch.search(new SolrQuery().addFilterQuery("tag:bluest")).getHits().getTotalHits());
+        assertEquals(2L, twSearch.search(new SolrQuery().addFilterQuery("tag:bluest")).getHits().getTotalHits());
+        assertEquals(1L, twSearch.search(new SolrQuery("home")).getHits().getTotalHits());
 
-        Collection<String> coll = twSearch.getQueryChoices(null, "obama");
-        assertEquals(0, coll.size());
+        Collection<String> coll = twSearch.getQueryChoices(null, "abcdxy");
+        assertEquals(0, coll.size());        
 
-        coll = twSearch.getQueryChoices(null, "oba");
-        assertEquals(1, coll.size());
-        assertTrue(coll.contains("obama"));
+        coll = twSearch.getQueryChoices(null, "ab");
+        assertEquals(3, coll.size());
+        assertTrue(coll.contains("abcdxy"));
         
-        coll = twSearch.getQueryChoices(null, "obama ");
+        // it is important to filter (with regex filter) away some tags otherwise we don't get the important ones:
+        coll = twSearch.getQueryChoices(null, "ho");
         assertEquals(1, coll.size());
-        assertTrue(coll.contains("obama bluest"));        
+        assertTrue(coll.contains("home"));
+        
+        coll = twSearch.getQueryChoices(null, "abcdxy ");
+        assertEquals(1, coll.size());
+        assertTrue(coll.contains("abcdxy bluest"));        
     }
 
     @Test

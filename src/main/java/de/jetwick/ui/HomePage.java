@@ -617,7 +617,7 @@ public class HomePage extends WebPage {
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             if (getMySession().hasLoggedIn()) {
                 if (Helper.isEmpty(userName)) {                    
-                    error("Error: no userName specified for friend search. Please try again");
+                    error("Error: no user specified for friend search. Please try again");
                 } else {                    
                     Collection<String> friends = friendHelper.get().getFriendsOf(userName);
                     query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);

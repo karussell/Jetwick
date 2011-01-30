@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import org.apache.lucene.search.BooleanQuery;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import java.io.File;
@@ -132,6 +131,7 @@ public class ElasticNode {
         System.setProperty("es.path.conf", conf);
         
         // increase maxClauseCount for friend search ... not necessary
+        // http://wiki.apache.org/lucene-java/LuceneFAQ#Why_am_I_getting_a_TooManyClauses_exception.3F
 //        BooleanQuery.setMaxClauseCount(100000);
 
         Builder settings = ImmutableSettings.settingsBuilder().
