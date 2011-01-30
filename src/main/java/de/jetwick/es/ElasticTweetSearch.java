@@ -941,8 +941,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             Set<String> res = new TreeSet<String>();
             TermsFacet tf = rsp.facets().facet(TAG);
             if (tf != null) {
-                for (TermsFacet.Entry cnt : tf.entries()) {
-                    System.out.println(cnt.getTerm());
+                for (TermsFacet.Entry cnt : tf.entries()) {                    
                     String lowerSugg = cnt.getTerm().toLowerCase();
                     if (existingTerms.contains(lowerSugg))
                         continue;

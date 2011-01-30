@@ -51,22 +51,14 @@ public class FriendSearchHelper {
             final Collection<String> friends = new ArrayList<String>();
             cacheTime = new MyDate();
             try {
-                twitter4j.getFriends(screenName, new AnyExecutor<SolrUser>() {
-
-                    @Override
-                    public SolrUser execute(SolrUser u) {
-                        friends.add(u.getScreenName());
-                        return u;
-                    }
-                });
+                updateFromTwitter(friends, screenName);
                 user.setLastFriendsUpdate(cacheTime.toDate());
-
             } catch (Exception ex) {
                 logger.error("Error while getting friends for " + screenName, ex);
             }
-
             logger.info("Grab " + friends.size() + " friends for " + screenName);
             user.setFriends(friends);
+            userSearch.update(user, false, true);
             return friends;
         } else
             return user.getFriends();
@@ -74,7 +66,7 @@ public class FriendSearchHelper {
 
     public void setTwitter4j(TwitterSearch twitter4j) {
         this.twitter4j = twitter4j;
-    }        
+    }
 
     public SolrUser getUser(String screenName) {
         return userSearch.findByScreenName(screenName);
@@ -82,5 +74,16 @@ public class FriendSearchHelper {
 
     public void updateUser(SolrUser user) {
         userSearch.update(user, false, true);
+    }
+
+    public void updateFromTwitter(final Collection<String> friends, String screenName) {
+        twitter4j.getFriends(screenName, new AnyExecutor<SolrUser>() {
+
+            @Override
+            public SolrUser execute(SolrUser u) {
+                friends.add(u.getScreenName());
+                return u;
+            }
+        });
     }
 }

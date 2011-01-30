@@ -112,8 +112,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
     }
 
-    public void update(SolrUser user, boolean optimize, boolean commit) {
-        save(user, commit);
+    public void update(SolrUser user, boolean optimize, boolean refresh) {
+        save(user, refresh);
     }
 
     public void save(SolrUser user, boolean refresh) {

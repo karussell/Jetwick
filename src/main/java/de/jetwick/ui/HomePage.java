@@ -684,9 +684,6 @@ public class HomePage extends WebPage {
 
         getTweetSearch().attachPagability(query, page, hitsPerPage);
 
-//        if (getMySession().hasLoggedIn())
-//            TweetQuery.updateSavedSearchFacets(query, getMySession().getUser().getSavedSearches());
-
         long start = System.currentTimeMillis();
         long totalHits = 0;
         SearchResponse rsp = null;

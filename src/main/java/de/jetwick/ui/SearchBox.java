@@ -70,7 +70,7 @@ public class SearchBox extends Panel {
 
                 if (selectedIndex != null && selectedIndex >= 1 && selectedIndex < SEARCHTYPES.size()) {
                     params.add("search", SEARCHTYPES.get(selectedIndex));
-                    params.add("user", loggedInUser);
+//                    params.add("user", loggedInUser);
                 } else if (userName != null && !userName.isEmpty())
                     params.add("user", userName);
 
