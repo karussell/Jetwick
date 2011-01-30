@@ -627,7 +627,7 @@ public class HomePage extends WebPage {
                     twitterFallback = false;
                 }
             } else
-                info("Just login to do a search in the tweets of people you follow");
+                info("To use friend search you need to login and tweet about @jetwick");
 //                warn("Please login to search friends of " + parameters.getString("user"));
         }
 

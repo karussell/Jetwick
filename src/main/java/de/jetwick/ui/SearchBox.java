@@ -30,6 +30,7 @@ import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTe
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.Radio;
 import org.apache.wicket.markup.html.form.RadioGroup;
+import org.apache.wicket.markup.html.form.StatelessForm;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
@@ -49,6 +50,11 @@ public class SearchBox extends Panel {
     private AutoCompleteTextField queryTF;
     private final Form form;
 
+    // for test
+    public SearchBox(String id) {
+        this(id, null, null);
+    }
+
     public SearchBox(String id, final String loggedInUser, String searchTypeAsStr) {
         super(id);
 
@@ -60,21 +66,11 @@ public class SearchBox extends Panel {
         final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
 
         // TODO StatelessForm not working with Radio!!??
-        form = new Form("searchform") {
+        form = new StatelessForm("searchform") {
 
             @Override
             public void onSubmit() {
-                PageParameters params = new PageParameters();
-                if (query != null && !query.isEmpty())
-                    params.add("q", query);
-
-                if (selectedIndex != null && selectedIndex == 1) {
-                    params.add("search", SEARCHTYPES.get(selectedIndex));
-//                    params.add("user", loggedInUser);
-                } else if (userName != null && !userName.isEmpty())
-                    params.add("user", userName);
-
-                setResponsePage(getApplication().getHomePage(), params);
+                setResponsePage(getApplication().getHomePage(), getParams(query, selectedIndex, userName, loggedInUser));
             }
         };
         form.setMarkupId("queryform");
@@ -199,5 +195,24 @@ public class SearchBox extends Panel {
 
     protected Collection<String> getUserChoices(String input) {
         throw new RuntimeException();
+    }
+
+    public PageParameters getParams(String tmpQuery, Integer tmpSelectedIndex, String tmpUserName, String tmpLoginUser) {
+        PageParameters params = new PageParameters();
+        if (tmpQuery != null && !tmpQuery.isEmpty())
+            params.add("q", tmpQuery);
+
+        if (tmpSelectedIndex == null || tmpSelectedIndex == 0) {
+            if (tmpUserName != null)
+                params.add("user", tmpUserName);
+        } else if (tmpSelectedIndex == 2) {
+            params.add("search", SEARCHTYPES.get(2));
+            params.add("user", tmpUserName);
+        } else if (tmpSelectedIndex == 1) {
+            params.add("search", SEARCHTYPES.get(1));
+//            params.add("user", tmpLoginUser);
+        }
+
+        return params;
     }
 }
