@@ -49,12 +49,17 @@ public class Util {
     private final String url;
     private ElasticUserSearch userSearch;
     private int userCounter;
+    private Configuration config = new Configuration();
 
     public static void main(String[] args) throws SolrServerException {
         Map<String, String> map = Helper.parseArguments(args);
 
         String url = map.get("url");
         String cmd = map.get("cmd");
+        
+        System.out.println("cmd is overwritten to use copyUsers. Remove in source if appropriated");
+        cmd = "copyUsers";
+
         Util util = new Util(url);
         if ("deleteAll".equals(cmd)) {
             util.deleteAll();
@@ -69,11 +74,14 @@ public class Util {
     }
 
     public Util(String url) {
+        if(url == null || url.isEmpty())
+            url = config.getTweetSearchUrl();
+        
         this.url = url;
     }
 
     public void deleteAll() {
-        userSearch = new ElasticUserSearch(url, null, null);
+        userSearch = createUserSearch();
         // why don't we need to set? query.setQueryType("simple")
         userSearch.deleteAll();
         userSearch.refresh();
@@ -137,7 +145,7 @@ public class Util {
     }
 
     public void fillFrom(final String fromUrl) {
-        userSearch = new ElasticUserSearch(url, null, null);
+        userSearch = createUserSearch();
         ElasticTweetSearch fromUserSearch = new ElasticTweetSearch(fromUrl, null, null);
         SolrQuery query = new SolrQuery().setQuery("*:*");
         query.setQueryType("simple");
@@ -185,14 +193,25 @@ public class Util {
     }
 
     public void copyUsers() throws SolrServerException {
-//        String solrUrl = "http://localhost:8081/solr";
-        String solrUrl = "http://pannous.info/uindex";
-        String login = null;
-        String pw = null;
-        SolrUserSearch solrUserSearch = new SolrUserSearch(solrUrl, login, pw, false);
+        String solrUrl = "http://www.pannous.info/uindex";
+        
+        SolrUserSearch solrUserSearch = new SolrUserSearch(solrUrl, 
+                config.getTweetSearchLogin(), config.getTweetSearchPassword(), false);
 
         Set<SolrUser> users = new LinkedHashSet<SolrUser>();
-        solrUserSearch.search(users, new SolrQuery());
+        solrUserSearch.search(users, new SolrQuery().setRows(1000));
+
+        userSearch = createUserSearch();
+        System.out.println("count before:" + userSearch.countAll() + " found:" + users);
+
         userSearch.update(users);
+        userSearch.refresh();
+
+        System.out.println("count now:" + userSearch.countAll());
+        System.out.println("pannous account? " + userSearch.findByScreenName("pannous"));
+    }
+
+    ElasticUserSearch createUserSearch() {
+        return new ElasticUserSearch(url, null, null);
     }
 }
