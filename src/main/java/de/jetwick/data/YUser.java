@@ -78,11 +78,6 @@ public class YUser implements DbObject, Serializable {
     private Date twitterCreatedAt;
     @Temporal(javax.persistence.TemporalType.TIMESTAMP)
     private Date updateAt;
-    // mappedBy in this case avoids a third USER_ID column in the join table YUSER_YUSER
-    @ManyToMany(mappedBy = "followers")
-    private Set<YUser> following = new LinkedHashSet<YUser>();
-    @ManyToMany
-    private Set<YUser> followers = new LinkedHashSet<YUser>();
     @ElementCollection
     @CollectionTable(name = "tags", joinColumns =
     @JoinColumn(name = "id"))
@@ -204,34 +199,6 @@ public class YUser implements DbObject, Serializable {
 
     public boolean isAdmin() {
         return adminUser;
-    }
-
-    public void addFollower(YUser u) {
-        addFollower(u, true);
-    }
-
-    public void addFollower(YUser u, boolean reverse) {
-        followers.add(u);
-        if (reverse)
-            u.addFollowing(this, false);
-    }
-
-    public Collection<YUser> getFollowers() {
-        return Collections.unmodifiableCollection(followers);
-    }
-
-    public void addFollowing(YUser u) {
-        addFollowing(u, true);
-    }
-
-    public void addFollowing(YUser u, boolean reverse) {
-        following.add(u);
-        if (reverse)
-            u.addFollower(this, false);
-    }
-
-    public Collection<YUser> getFollowing() {
-        return Collections.unmodifiableCollection(following);
     }
 
     public Integer getTwitterId() {

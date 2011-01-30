@@ -84,10 +84,11 @@ public class HomePageTest extends WicketPagesTestClass {
     @Test
     public void testNormalSearch() throws Exception {
 //        setUp();
-        ElasticTweetSearch search = getInstance(ElasticTweetSearch.class);
+        ElasticTweetSearch search = getInstance(ElasticTweetSearch.class);                
         SolrQuery query = new SolrQuery("timetabling");
-        tester.startPage(new HomePage(query, 0, false));
+        tester.startPage(new HomePage(query));
         tester.assertNoErrorMessage();
+        
         verify(search).search(new LinkedHashSet<SolrUser>(), query);
     }
 
@@ -149,7 +150,7 @@ public class HomePageTest extends WicketPagesTestClass {
         HomePage page = getInstance(HomePage.class);
 
         // query and user are null and hits == 0 => no background thread is created
-        page.init(new SolrQuery(), 0, false);
+        page.init(new SolrQuery(), new PageParameters(), 0, false);
         assertNull(page.getQueueThread());
 
         page.doSearch(new SolrQuery(), 0, false, true);
@@ -177,7 +178,7 @@ public class HomePageTest extends WicketPagesTestClass {
         HomePage page = getInstance(HomePage.class);
 
         // normal query fails but set twitterfallback = false
-        page.init(new SolrQuery("java"), 0, true);
+        page.init(new SolrQuery("java"), new PageParameters(), 0, true);
         page.getQueueThread().run();
         assertNotNull(sentTweets);
         assertEquals("", uString);

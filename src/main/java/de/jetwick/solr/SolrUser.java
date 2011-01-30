@@ -19,6 +19,7 @@ import de.jetwick.data.YUser;
 import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -33,6 +34,8 @@ public class SolrUser extends YUser {
     private static final long serialVersionUID = 1L;
     private Collection<SolrTweet> ownTweets = new LinkedHashSet<SolrTweet>();
     private Map<Long, SavedSearch> savedSearches = new LinkedHashMap<Long, SavedSearch>();
+    private Date lastFriendsUpdate;
+    private Collection<String> friends;
 
     /**
      * You'll need to call setTwitter4JInstance after this
@@ -85,5 +88,24 @@ public class SolrUser extends YUser {
 //            dirtyOwnTweets = false;
 //        }
         return Collections.unmodifiableCollection(ownTweets);
+    }
+
+    public Collection<String> getFriends() {
+        if(friends == null)
+            return Collections.EMPTY_LIST;
+        return Collections.unmodifiableCollection(friends);
+    }
+
+    public SolrUser setFriends(Collection<String> friends) {
+        this.friends = friends;
+        return this;
+    }
+
+    public Date getLastFriendsUpdate() {
+        return lastFriendsUpdate;
+    }
+
+    public void setLastFriendsUpdate(Date lastFriendsUpdate) {
+        this.lastFriendsUpdate = lastFriendsUpdate;
     }
 }

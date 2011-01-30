@@ -382,8 +382,8 @@ public class ResultsPanel extends Panel {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 PageParameters pp = new PageParameters();
-                pp.add("h", "" + hits);
-                pp.add("u", user);
+                pp.add("hits", "" + hits);
+                pp.add("user", user);
                 pp.add("q", query);
                 setResponsePage(getApplication().getHomePage(), pp);
             }

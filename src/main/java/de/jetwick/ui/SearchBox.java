@@ -19,19 +19,21 @@ import de.jetwick.solr.JetwickQuery;
 import de.jetwick.ui.util.DefaultFocusBehaviour;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
 import de.jetwick.util.Helper;
-import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.StatelessForm;
+import org.apache.wicket.markup.html.form.Radio;
+import org.apache.wicket.markup.html.form.RadioGroup;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
-import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
@@ -41,69 +43,45 @@ import org.apache.wicket.model.PropertyModel;
  */
 public class SearchBox extends Panel {
 
+    public static final String ALL = "all", USER = "user", FRIENDS = "friends";
+    public static final List<String> SEARCHTYPES = Arrays.asList(ALL, FRIENDS, USER);
+    private Integer selectedIndex;
     private String query;
     private String userName;
     private AutoCompleteTextField queryTF;
     private final Form form;
 
-    public SearchBox(String id) {
+    public SearchBox(String id, final String user, String searchTypeAsStr) {
         super(id);
 
-        form = new StatelessForm("searchform") {
+        if (searchTypeAsStr != null)
+            selectedIndex = SEARCHTYPES.indexOf(searchTypeAsStr);
+        else
+            selectedIndex = 0;
+
+        final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
+
+        // TODO StatelessForm not working with Radio!!??
+        form = new Form("searchform") {
 
             @Override
             public void onSubmit() {
                 PageParameters params = new PageParameters();
                 if (query != null && !query.isEmpty())
                     params.add("q", query);
-                if (userName != null && !userName.isEmpty())
-                    params.add("u", userName);
 
-//                setResponsePage(HomePage.class, params);
+                if (selectedIndex != null && selectedIndex >= 1 && selectedIndex < SEARCHTYPES.size()) {
+                    params.add("search", SEARCHTYPES.get(selectedIndex));
+                    params.add("user", user);
+                } else if (userName != null && !userName.isEmpty())
+                    params.add("user", userName);
+
                 setResponsePage(getApplication().getHomePage(), params);
             }
         };
-
         form.setMarkupId("queryform");
         add(form);
 
-        form.add(new BookmarkablePageLink("homelink", HomePage.class));
-        Model hrefModel = new Model() {
-
-            @Override
-            public Serializable getObject() {
-                String paramStr = "";
-                String txt = "";
-
-                if (userName != null && !userName.isEmpty()) {
-                    paramStr += "u=" + userName;
-                    txt += "@" + userName + " ";
-                }
-
-                if (query != null && !query.isEmpty()) {
-                    if (!paramStr.isEmpty()) {
-                        paramStr += "&";
-                        txt += "and ";
-                    }
-
-                    paramStr += "q=" + query;
-                    txt += query + " ";
-                }
-
-                if (!paramStr.isEmpty())
-                    paramStr = "?" + paramStr;
-
-                if (!txt.isEmpty())
-                    txt = "about " + txt;
-                else
-                    txt = "about any topic at ";
-
-                return Helper.toTwitterStatus(Helper.twitterUrlEncode("News " + txt
-                        + "http://jetwick.com/" + paramStr));
-            }
-        };
-
-        form.add(new ExternalLink("tweetQuery", hrefModel));
         AutoCompleteSettings config = new AutoCompleteSettings().setUseHideShowCoveredIEFix(false);
         config.setThrottleDelay(200);
 
@@ -150,11 +128,50 @@ public class SearchBox extends Panel {
             }
         };
         userTF.setMarkupId("userbox");
-        form.add(userTF);
-    }
 
-    public Form getForm() {
-        return form;
+        rg.add(new Radio("0", new Model(0)));
+        rg.add(new Radio("1", new Model(1)));
+        rg.add(new Radio("2", new Model(2)));
+        rg.add(userTF);
+        form.add(rg);
+
+        form.add(new BookmarkablePageLink("homelink", HomePage.class));
+//        Model hrefModel = new Model() {
+//
+//            @Override
+//            public Serializable getObject() {
+//                String paramStr = "";
+//                String txt = "";
+//
+//                if (userName != null && !userName.isEmpty()) {
+//                    paramStr += "user=" + userName;
+//                    txt += "@" + userName + " ";
+//                }
+//
+//                if (query != null && !query.isEmpty()) {
+//                    if (!paramStr.isEmpty()) {
+//                        paramStr += "&";
+//                        txt += "and ";
+//                    }
+//
+//                    paramStr += "q=" + query;
+//                    txt += query + " ";
+//                }
+//
+//                if (!paramStr.isEmpty())
+//                    paramStr = "?" + paramStr;
+//
+//                if (!txt.isEmpty())
+//                    txt = "about " + txt;
+//                else
+//                    txt = "about any topic at ";
+//
+//                return Helper.toTwitterStatus(Helper.twitterUrlEncode("News " + txt
+//                        + "http://jetwick.com/" + paramStr));
+//            }
+//        };
+
+//        form.add(new ExternalLink("tweetQuery", hrefModel));                
     }
 
     public void init(SolrQuery solrQuery) {

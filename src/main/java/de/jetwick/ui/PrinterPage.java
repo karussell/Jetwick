@@ -39,7 +39,7 @@ public class PrinterPage extends WebPage {
             public void populateItem(final ListItem item) {
                 final SolrTweet tw = (SolrTweet) item.getModelObject();
 
-                item.add(new ExternalLink("userName", "http://jetwick.com/?u="
+                item.add(new ExternalLink("userName", "http://jetwick.com/?user="
                         + Helper.urlEncode(tw.getFromUser().getScreenName()),
                         tw.getFromUser().getScreenName()));
 

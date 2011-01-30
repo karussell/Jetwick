@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import java.util.Collections;
 import de.jetwick.util.Helper;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -30,7 +31,6 @@ import de.jetwick.tw.cmd.StringFreqMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +142,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
         b.field("createdAt_dt", user.getCreatedAt());
         b.field("twCreatedAt_dt", user.getTwitterCreatedAt());
+        b.field("friendsUpdate_dt", user.getLastFriendsUpdate());
+        b.field("friends", Helper.toStringArray(user.getFriends()));
 
         int counter = 1;
         for (SavedSearch ss : user.getSavedSearches()) {
@@ -194,6 +196,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         user.setUpdateAt(Helper.toDateNoNPE((String) doc.get("timestamp")));
         user.setCreatedAt(Helper.toDateNoNPE((String) doc.get("createdAt_dt")));
         user.setTwitterCreatedAt(Helper.toDateNoNPE((String) doc.get("twCreatedAt_dt")));
+        user.setLastFriendsUpdate(Helper.toDateNoNPE((String) doc.get("friendsUpdate_dt")));
+        user.setFriends((Collection<String>)doc.get("friends"));
 
         long counter = 1;
         while (true) {
@@ -233,7 +237,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 //                setQueryType("standard").
 //                set(MoreLikeThisParams.QF, SCREEN_NAME).
 //                set(MoreLikeThisParams.MLT, "true").
-        
+
         query.setQuery(SCREEN_NAME + ":" + queryStr).
                 setQueryType("/" + MoreLikeThisParams.MLT).
                 set(MoreLikeThisParams.SIMILARITY_FIELDS, "bio", "tag").

@@ -124,8 +124,10 @@ public class JetwickQuery extends SolrQuery {
         String tmp = ElasticTweetSearch.KEY_USER;
         if (query.getFilterQueries() != null)
             for (String f : query.getFilterQueries()) {
-                if (f.startsWith(tmp)) {
+                if (f.startsWith(tmp)) {                    
                     tmp = f.substring(tmp.length()).trim();
+                    if(tmp.contains(" OR "))
+                        return "";
                     if (tmp.length() > 1 && tmp.startsWith("\"") && tmp.endsWith("\""))
                         tmp = tmp.substring(1, tmp.length() - 1);
                     return trimUserName(tmp);

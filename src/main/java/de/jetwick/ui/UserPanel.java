@@ -88,28 +88,8 @@ public class UserPanel extends Panel {
                     public void onClick() {
                         onLogout();
                     }
-                });                               
-                        
-//                add(new IndicatingAjaxFallbackLink("searchFollowers") {
-//
-//                    @Override
-//                    public void onClick(AjaxRequestTarget target) {
-//                        onSearchFollowers(target);
-//                    }
-//                });
-                    
-                add(new AjaxSubmitLink("searchFollowers", homePageRef.getSearchBox().getForm()) {
-
-                    @Override
-                    protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
-                        onSearchFollowers(target);
-                    }                
-                
-//                    @Override
-//                    public void onClick(AjaxRequestTarget target) {
-//                        onSearchFollowers(target);
-//                    }
                 });
+
                 add(new AjaxFallbackLink("showTweets") {
 
                     @Override
@@ -184,9 +164,6 @@ public class UserPanel extends Panel {
     }
 
     public void onShowTweets(AjaxRequestTarget target, String user) {
-    }
-
-    public void onSearchFollowers(AjaxRequestTarget target) {
     }
 
     public void onLogout() {

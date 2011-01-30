@@ -59,7 +59,7 @@ public class TwitterSearchOffline extends TwitterSearch {
     }
 
     @Override
-    public void getFollowers(String userName, AnyExecutor<SolrUser> executor) {
+    public void getFriends(String userName, AnyExecutor<SolrUser> executor) {
         executor.execute(new SolrUser("timetabling"));
         executor.execute(new SolrUser("dzone"));
     }        

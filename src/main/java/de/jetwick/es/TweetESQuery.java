@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.util.Helper;
 import java.util.Iterator;
 import org.apache.lucene.analysis.Tokenizer;
 import org.slf4j.Logger;
@@ -51,15 +52,21 @@ public class TweetESQuery {
     private final static Logger logger = LoggerFactory.getLogger(TweetESQuery.class);
     private final static double MM_BORDER = 0.7;
     public final static String SAVED_SEARCHES = "ss";
-    private SearchRequestBuilder builder;
+    protected SearchRequestBuilder builder;
     private XContentQueryBuilder qb;
+    private boolean setQuery = true;
 
     public TweetESQuery() {
     }
 
     public TweetESQuery(SearchRequestBuilder builder) {
         this.builder = builder;
-        builder.setSearchType(SearchType.QUERY_THEN_FETCH);//QUERY_AND_FETCH would return too many results
+        builder.setSearchType(SearchType.QUERY_THEN_FETCH);
+    }
+
+    public TweetESQuery(SearchRequestBuilder builder, boolean setQuery) {
+        this(builder);
+        this.setQuery = setQuery;
     }
 
     public TweetESQuery createSimilarQuery(SolrTweet tweet) {
@@ -80,7 +87,7 @@ public class TweetESQuery {
         Collection<String> coll = doSnowballTermsStemming(terms);
 
         qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT,
-                coll.toArray(new String[coll.size()])).
+                Helper.toStringArray(coll)).
                 minimumMatch(minMatchNumber);
 
         // use configured stemmer, but querying seems to be slower!
@@ -141,15 +148,15 @@ public class TweetESQuery {
         qb = QueryBuilders.matchAllQuery();
         return this;
     }
-    
+
     public TweetESQuery matchAll() {
         qb = QueryBuilders.matchAllQuery();
         return this;
     }
 
     public SearchRequestBuilder getRequestBuilder() {
-        // TODO move filter creation to this point?        
-        builder.setQuery(qb);
+        if (setQuery)
+            builder.setQuery(qb);
         return builder;
     }
 
@@ -174,7 +181,7 @@ public class TweetESQuery {
     public String toString() {
         return toString(qb);
     }
-    
+
     public static String toString(ToXContent tmp) {
         try {
             return tmp.toXContent(jsonBuilder(), ToXContent.EMPTY_PARAMS).

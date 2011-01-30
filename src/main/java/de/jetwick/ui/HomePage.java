@@ -27,9 +27,11 @@ import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
+import de.jetwick.tw.FriendSearchHelper;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
+import de.jetwick.util.Helper;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -76,6 +78,8 @@ public class HomePage extends WebPage {
     private WikipediaLazyLoadPanel wikiPanel;
     private UrlTrendPanel urlTrends;
     @Inject
+    private Provider<FriendSearchHelper> friendHelper;
+    @Inject
     private Provider<ElasticTweetSearch> twindexProvider;
     @Inject
     private Provider<ElasticUserSearch> uindexProvider;
@@ -85,6 +89,7 @@ public class HomePage extends WebPage {
     private transient Thread tweetThread;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
+    private String userName = "";
 
     public TwitterSearch getTwitterSearch() {
         return getMySession().getTwitterSearch();
@@ -94,12 +99,12 @@ public class HomePage extends WebPage {
         return (MySession) getSession();
     }
 
-    public SearchBox getSearchBox() {
-        return searchBox;
-    }
-        
     // for testing
     HomePage() {
+    }
+
+    HomePage(SolrQuery q) {
+        init(q, PageParameters.NULL, 0, false);
     }
 
     public HomePage(final PageParameters parameters) {
@@ -123,13 +128,8 @@ public class HomePage extends WebPage {
             setResponsePage(HomePage.class);
         } else {
             initSession();
-            init(createQuery(parameters), 0, true);
+            init(createQuery(parameters), parameters, 0, true);
         }
-    }
-
-    public HomePage(SolrQuery query, int page, boolean twitterFallback) {
-        initSession();
-        init(query, page, twitterFallback);
     }
 
     private void initSession() {
@@ -170,8 +170,8 @@ public class HomePage extends WebPage {
     }
 
     public SolrQuery createQuery(PageParameters parameters) {
-        // TODO M2.1 parameters.get("h").toString can cause NPE!!
-        String hitsStr = parameters.getString("h");
+        // TODO M2.1 parameters.get("hits").toString can cause NPE!!
+        String hitsStr = parameters.getString("hits");
         if (hitsStr != null) {
             try {
                 hitsPerPage = Integer.parseInt(hitsStr);
@@ -206,9 +206,14 @@ public class HomePage extends WebPage {
         if (queryStr == null)
             queryStr = "";
 
-        String userName = null;
+        userName = "";
         if (q == null) {
             userName = parameters.getString("u");
+            if (userName == null)
+                userName = parameters.getString("user");
+
+            if (userName == null)
+                userName = "";
             q = new TweetQuery(queryStr).addUserFilter(userName);
         }
 
@@ -222,7 +227,7 @@ public class HomePage extends WebPage {
 
         // avoid slow queries for *:* query and filter against latest tweets
         if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
-            logger.info(addIP("[stats] q=''"));  
+            logger.info(addIP("[stats] q=''"));
             // TODO ES
 //            q.addFilterQuery(ElasticTweetSearch.DATE_TAG).addFilterQuery(ElasticTweetSearch.FILTER_ENTRY_LATEST_DT);
         }
@@ -235,10 +240,10 @@ public class HomePage extends WebPage {
         else if ("oldest".equals(sort))
             JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " asc");
 
-        if (userName == null) {            
+        if (Helper.isEmpty(userName)) {
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
-            q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);            
+            q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);
         }
 
         return q;
@@ -267,7 +272,7 @@ public class HomePage extends WebPage {
         }
     }
 
-    public void init(SolrQuery query, final int page, boolean twitterFallback) {
+    public void init(SolrQuery query, PageParameters parameters, int page, boolean twitterFallback) {
         setStatelessHint(true);
         feedbackPanel = new FeedbackPanel("feedback");
         add(feedbackPanel.setOutputMarkupId(true));
@@ -370,7 +375,7 @@ public class HomePage extends WebPage {
             public void updateSSCounts(AjaxRequestTarget target) {
                 try {
                     SolrUser user = getMySession().getUser();
-                    if (user != null) {                                                
+                    if (user != null) {
                         update(getTweetSearch().updateSavedSearches(user.getSavedSearches()));
                         if (target != null)
                             target.addComponent(ssPanel);
@@ -393,28 +398,6 @@ public class HomePage extends WebPage {
 
         add(ssPanel.setOutputMarkupId(true));
 
-        searchBox = new SearchBox("searchbox") {
-
-            @Override
-            protected Collection<String> getQueryChoices(String input) {
-                return getTweetSearch().getQueryChoices(lastQuery, input);
-            }
-
-            @Override
-            protected void onSelectionChange(AjaxRequestTarget target, String newValue) {
-                SolrQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
-                JetwickQuery.applyFacetChange(tmpQ, ElasticTweetSearch.DATE, true);
-                doSearch(tmpQ, 0, false, true);
-                updateAfterAjax(target, false);
-            }
-
-            @Override
-            protected Collection<String> getUserChoices(String input) {
-                return getTweetSearch().getUserChoices(lastQuery, input);
-            }
-        };
-        add(searchBox.setOutputMarkupId(true));
-        
         add(new UserPanel("userPanel", this) {
 
             @Override
@@ -432,13 +415,6 @@ public class HomePage extends WebPage {
             public void onShowTweets(AjaxRequestTarget target, String userName) {
                 doSearch((TweetQuery) new TweetQuery().addUserFilter(userName), 0, false);
                 HomePage.this.updateAfterAjax(target, true);
-            }
-
-            @Override
-            public void onSearchFollowers(AjaxRequestTarget target) {
-                Collection<SolrUser> followers = getMySession().getFollowers();                
-                doSearch(new TweetQuery(searchBox.getQuery()).createFollowerQuery(followers), 0, false);
-                HomePage.this.updateAfterAjax(target, false);
             }
 
             @Override
@@ -560,7 +536,7 @@ public class HomePage extends WebPage {
                 if (queryStr != null && !queryStr.isEmpty())
                     p.add("q", queryStr);
                 if (userName != null)
-                    p.add("u", userName.trim());
+                    p.add("user", userName.trim());
 
                 doSearch(createQuery(p), 0, true);
             }
@@ -608,8 +584,49 @@ public class HomePage extends WebPage {
             }
         };
         add(resultsPanel.setOutputMarkupId(true));
-
         add(wikiPanel = new WikipediaLazyLoadPanel("wikipanel"));
+        
+        
+        String searchType = parameters.getString("search");
+        String userName = null;
+        if(getMySession().hasLoggedIn())
+            userName = getMySession().getUser().getScreenName();
+        searchBox = new SearchBox("searchbox", userName, searchType) {
+
+            @Override
+            protected Collection<String> getQueryChoices(String input) {
+                return getTweetSearch().getQueryChoices(lastQuery, input);
+            }
+
+            @Override
+            protected void onSelectionChange(AjaxRequestTarget target, String newValue) {
+                SolrQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
+                JetwickQuery.applyFacetChange(tmpQ, ElasticTweetSearch.DATE, true);
+                doSearch(tmpQ, 0, false, true);
+                updateAfterAjax(target, false);
+            }
+
+            @Override
+            protected Collection<String> getUserChoices(String input) {
+                return getTweetSearch().getUserChoices(lastQuery, input);
+            }
+        };
+        add(searchBox.setOutputMarkupId(true));
+
+        if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
+            if (getMySession().hasLoggedIn()) {
+                if (Helper.isEmpty(userName)) {                    
+                    error("Error: no userName specified for friend search. Please try again");
+                } else {
+                    Collection<String> friends = friendHelper.get().getFriendsOf(userName);
+                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
+                    page = 0;
+                    twitterFallback = false;
+                }
+            } else
+                info("Just login to do a search in the tweets of people you follow");
+//                warn("Please login to search friends of " + parameters.getString("user"));
+        }
 
         doSearch(query, page, twitterFallback);
     }
@@ -639,6 +656,7 @@ public class HomePage extends WebPage {
                 queryString = "";
         }
 
+        // if query is lastQuery then user is saved in filter not in a pageParam
         String userName = searchBox.getUserName();
         resultsPanel.setAdQuery(queryString);
         wikiPanel.setParams(queryString, language);
@@ -662,7 +680,7 @@ public class HomePage extends WebPage {
             lastQuery = query;
 
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
-        
+
         getTweetSearch().attachPagability(query, page, hitsPerPage);
 
 //        if (getMySession().hasLoggedIn())
@@ -689,7 +707,7 @@ public class HomePage extends WebPage {
         } else {
             if (queryString.isEmpty()) {
                 if (userName.isEmpty()) {
-                    // something is wrong with our index because q='' and u='' should give us all docs!
+                    // something is wrong with our index because q='' and user='' should give us all docs!
                     logger.error(addIP("[stats] 0 results for q='' using news!"));
                     queryString = "news";
                     startBGThread = false;
@@ -714,7 +732,7 @@ public class HomePage extends WebPage {
                 }
             }
 
-            if (users.size() == 0) {
+            if (users.isEmpty()) {
                 if (!msg.isEmpty())
                     msg = " " + msg;
                 msg = "Sorry, nothing found" + msg + ".";

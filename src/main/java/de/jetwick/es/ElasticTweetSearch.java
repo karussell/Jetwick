@@ -15,8 +15,8 @@
  */
 package de.jetwick.es;
 
+import java.util.regex.Pattern;
 import de.jetwick.solr.SavedSearch;
-import java.util.logging.Level;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.query.xcontent.NotFilterBuilder;
 import de.jetwick.util.MyDate;
@@ -60,7 +60,9 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static org.elasticsearch.common.xcontent.XContentFactory.*;
@@ -85,6 +87,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
     public static final String KEY_USER = "user:";
+    public static final String USER = "user";
     public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String FILTER_NO_DUPS = DUP_COUNT + ":0";
     public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO *]";
@@ -867,24 +870,15 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
     public Collection<String> getUserChoices(SolrQuery lastQ, String input) {
         try {
-            if (input.length() < 2)
+            if (input.length() < 1)
                 return Collections.emptyList();
 
-            if (lastQ == null)
-                lastQ = new TweetQuery("");
-            else {
-                lastQ = lastQ.getCopy();
-                // remove existing user filter
-                JetwickQuery.applyFacetChange(lastQ, "user", true);
-                // remove any date restrictions
-                JetwickQuery.applyFacetChange(lastQ, DATE, true);
-            }
-
+            // NOT context dependent any longer ...                        
             input = input.toLowerCase();
-            lastQ.addFilterQuery(KEY_USER + input + "*");
-            lastQ.setRows(15);
+            SearchRequestBuilder srb = client.prepareSearch(getIndexName());            
+            srb.setQuery(QueryBuilders.fieldQuery(USER, input + "*"));
             List<SolrUser> users = new ArrayList<SolrUser>();
-            search(users, lastQ);
+            search(users, new TweetESQuery(srb, false));
             Set<String> res = new TreeSet<String>();
             for (SolrUser u : users) {
                 if (u.getScreenName().startsWith(input))
@@ -920,19 +914,30 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 existingTerms.add(secPart);
 
             if (lastQ == null)
-                lastQ = new TweetQuery(firstPart);
+                lastQ = new TweetQuery(firstPart) {
+
+                    @Override
+                    public TweetQuery attachFacetibility() {
+                        return this;
+                    }
+                };
             else {
                 lastQ = lastQ.getCopy().setQuery(firstPart);
                 // remove any date restrictions
-                JetwickQuery.applyFacetChange(lastQ, "dt", true);
+                JetwickQuery.removeFilterQueries(lastQ, "dt");
+                for (String ff : lastQ.getFacetFields()) {
+                    lastQ.removeFacetField(ff);
+                }
             }
-
+            
+            SearchRequestBuilder srb = client.prepareSearch(getIndexName());
+            new Solr2ElasticTweet().createElasticQuery(lastQ, srb);
+            TermsFacetBuilder tfb = FacetBuilders.termsFacet(TAG).field(TAG);
             if (!secPart.trim().isEmpty())
-                lastQ.setFacetPrefix(TAG, secPart);
+                tfb.regex(secPart + ".*", Pattern.DOTALL);
 
-            lastQ.setRows(0);
-            lastQ.set("f.tag.facet.limit", 15);
-            SearchResponse rsp = search(lastQ);
+            srb.addFacet(tfb);
+            SearchResponse rsp = search(new TweetESQuery(srb, false));
             Set<String> res = new TreeSet<String>();
             TermsFacet tf = rsp.facets().facet(TAG);
             if (tf != null) {
@@ -940,7 +945,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                     String lowerSugg = cnt.getTerm().toLowerCase();
                     if (existingTerms.contains(lowerSugg))
                         continue;
-
+                    
                     if (lowerSugg.startsWith(secPart)) {
                         if (firstPart.isEmpty())
                             res.add(cnt.getTerm());
@@ -1085,9 +1090,9 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     /**
      * All indices has to be created before!
      */
-    public void mergeIndices(Collection<String> indexList, String intoIndex, boolean forceRefresh) {        
+    public void mergeIndices(Collection<String> indexList, String intoIndex, boolean forceRefresh) {
         refresh(indexList);
-        
+
         for (String index : indexList) {
             TweetESQuery q = new TweetESQuery(client.prepareSearch(index)).matchAll();
             try {
@@ -1096,7 +1101,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 logger.error("Failed to copy data from index " + index + " into " + intoIndex + ". query was: " + q, ex);
             }
         }
-        
+
         refresh(intoIndex);
     }
 }

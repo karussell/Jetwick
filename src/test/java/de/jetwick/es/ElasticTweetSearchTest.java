@@ -586,6 +586,18 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(1L, "test", "peter"))).size());
         assertNotNull(twSearch.findByTwitterId(1L));
     }
+    
+    @Test
+    public void testUserChoices() throws SolrServerException {
+        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "test", "usera"),
+                createTweet(2L, "pest", "usera"),
+                createTweet(3L, "schnest", "usera")));
+
+        Collection<String> coll = twSearch.getUserChoices(null, "user");
+        assertEquals(1, coll.size());
+        coll = twSearch.getUserChoices(null, "loose");
+        assertEquals(0, coll.size());
+    }
 
     @Test
     public void testQueryChoices() throws SolrServerException {
@@ -599,9 +611,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         Collection<String> coll = twSearch.getQueryChoices(null, "obama");
         assertEquals(0, coll.size());
 
+        coll = twSearch.getQueryChoices(null, "oba");
+        assertEquals(1, coll.size());
+        assertTrue(coll.contains("obama"));
+        
         coll = twSearch.getQueryChoices(null, "obama ");
         assertEquals(1, coll.size());
-        assertTrue(coll.contains("obama bluest"));
+        assertTrue(coll.contains("obama bluest"));        
     }
 
     @Test
@@ -805,9 +821,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(3L, "testnot this", "peter"),
                 createTweet(4L, "test this", "peternot")));
         twSearch.refresh();
-        Collection<SolrUser> users = Arrays.asList(new SolrUser("peter"), new SolrUser("tester"));
+        Collection<String> users = Arrays.asList("peter", "tester");
         Collection<SolrTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").
-                createFollowerQuery(users)));
+                createFriendsQuery(users)));
         
         assertEquals(2, coll.size());
         Iterator<SolrTweet> iter = coll.iterator();

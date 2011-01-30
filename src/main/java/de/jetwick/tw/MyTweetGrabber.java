@@ -99,6 +99,7 @@ public class MyTweetGrabber implements Serializable {
                 String name = "";
                 if (tweets == null) {
                     if (userName != null && !userName.isEmpty()) {
+                        // TODO exlude friendSearch
                         try {
                             if (!isSearchDoneInLastMinutes("user:" + userName)) {
 //                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());

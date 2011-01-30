@@ -251,7 +251,7 @@ public class Helper {
     }
 
     public static String toJetwickUser(String title, String user) {
-        return toInternLink(title, JURL + "?u=" + user);
+        return toInternLink(title, JURL + "?user=" + user);
     }
 
     public static String toJetwickSearch(String title, String q) {
@@ -572,9 +572,9 @@ public class Helper {
     }
 
     public static String readInputStream(InputStream is) throws IOException {
-        if(is == null)
+        if (is == null)
             throw new IllegalArgumentException("stream mustn't be null!");
-        
+
         BufferedReader bufReader = new BufferedReader(new InputStreamReader(is, "UTF8"));
         StringBuilder sb = new StringBuilder();
         String line;
@@ -776,5 +776,13 @@ public class Helper {
             arr[idx + 1] = StrUtils.HEX_DIGITS[b & 0xf];
         }
         return new String(arr);
+    }
+
+    public static String[] toStringArray(Collection<String> coll) {
+        return coll.toArray(new String[coll.size()]);
+    }
+
+    public static boolean isEmpty(String str) {
+        return str == null || str.isEmpty();
     }
 }

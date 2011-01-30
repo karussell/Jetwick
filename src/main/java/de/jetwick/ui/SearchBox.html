@@ -24,73 +24,32 @@
         <title>[Panel Test]</title>
     </head>
     <body>
-        <wicket:panel>
-            <script type="text/javascript">/*<![CDATA[/*>*/
-                Wicket.Event.add(window, "domready", function(event) {
-                    qb=document.getElementById('querybox');
-                    qbBlur =  function(event) {
-                        if(qb.value==''){
-                            qb.setAttribute('class', 'search-tweet-tf-inact');
-                            qb.value='Search Twitter';
-                        }
-                        return true;
-                    };
-                    qbFocus = function(event) {
-                        if(qb.value=='Search Twitter')qb.value='';
-                        qb.setAttribute('class', 'search-tweet-tf');
-                        return true;
-                    };
-                    Wicket.Event.add(qb, "blur",  qbBlur);
-                    Wicket.Event.add(qb, "focus", qbFocus);
-
-                    ub=document.getElementById('userbox');
-                    ubBlur = function(event) {
-                        if(ub.value==''){
-                            ub.setAttribute('class', 'search-user-tf-inact');
-                            ub.value='User [optional]';
-                        }
-                        return true;
-                    };
-                    ubFocus = function(event) {
-                        if(ub.value=='User [optional]')ub.value='';
-                        ub.setAttribute('class', 'search-user-tf');
-                        return true;
-                    };
-
-                    Wicket.Event.add(ub, "blur",  ubBlur);
-                    Wicket.Event.add(ub, "focus", ubFocus);
-
-                    ubBlur();                    
-
-                    fo=document.getElementById('queryform');
-                    Wicket.Event.add(fo, "submit", function(event) {
-                        ubFocus();
-                        qbFocus();
-                    });
-                });
-
-                /*]]>*/</script>
+        <wicket:panel>           
             <div class="searchform">
                 <form id="queryform" wicket:id="searchform">                                        
-                    <div title="Go back to home">                        
-                        <a class="jetwicklogo" wicket:id="homelink">
+                    <div class="jetwicklogo" title="Go back to home">                        
+                        <a wicket:id="homelink">
                             <img src="img/jetwick.png"/>
-                            <span class="subtitle">Search twitter without noise</span>
+                            <div class="subtitle">Search twitter without noise</div>
                         </a>
                     </div>
                     <div>
                         <div>
                             <input id="querybox" type="text" wicket:id="textField" class="search-tweet-tf"
-                                   name="q" title="Enter your query"/>
-                            <input id="userbox" type="text" wicket:id="userTextField" class="search-user-tf"
-                                   name="u" title="Restrict search result to one user"/>
-                            <input type="submit" value="Search" class="searchform-button"/>
-                        </div>
-                        <div class="searchboxhints">
-                            <a wicket:id="tweetQuery" target="_blank" 
-                               title="Creates a tweet with a link to your current search" href="#">
-                                Tweet Query
-                            </a>
+                                   name="q" title="Enter your query"/>                                                        
+                            
+                            <input type="submit" value="Search" class="searchform-button"/>                            
+                            <div wicket:id="searchTypes">
+                                <span class="search-type-left search-type">User Filter</span>
+                                <input wicket:id="0" id="sb-all" type="radio" group="searchType" value="0"/>                                 
+                                <label class="search-type" for="sb-all" title="No restriction">None</label>
+                                <input wicket:id="1" id="sb-friends" type="radio" group="searchType" value="1"/>
+                                <label class="search-type" for="sb-friends" title="Only show tweets of people you follow! Login before!">Only Friends</label>
+                                <input onclick='getElementById("userbox").focus()' wicket:id="2" id="sb-user" type="radio" group="searchType" value="2"/>
+                                <label class="search-type" for="sb-user" title="Only show tweets of the specified user">One User:</label>
+                                <input id="userbox" type="text" wicket:id="userTextField" class="search-user-tf"
+                                   name="user" title="Restrict search result to one user"/>                            
+                             </div>
                         </div>
                     </div>
                 </form>

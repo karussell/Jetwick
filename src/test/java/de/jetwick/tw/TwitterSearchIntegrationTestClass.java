@@ -97,7 +97,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void getFollowers() throws TwitterException {
         final Collection<SolrUser> coll = new ArrayList<SolrUser>();
-        twitterSearch.getFollowers("wiedumir", new AnyExecutor<SolrUser>() {
+        twitterSearch.getFriends("wiedumir", new AnyExecutor<SolrUser>() {
 
             @Override
             public SolrUser execute(SolrUser u) {

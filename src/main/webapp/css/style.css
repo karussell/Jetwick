@@ -182,14 +182,6 @@ body, p {
 
 .yourkitlogo { clear: both; }
 
-/*.searchform {        
-    padding-top: 28px;
-    padding-bottom: 2px;
-    background-image: url("../img/jetwick.png");
-    background-repeat: no-repeat;
-    background-position: 0px 2px;
-}*/
-
 .searchboxhints {
     padding: 0px 7px 0 0;
     float: right;
@@ -199,18 +191,56 @@ body, p {
     font-size: 0.7em;
     padding: 2px;
 }
-
+.jetwicklogo {
+    float: left;
+    padding: 0px 30px 10px 10px;    
+}
 .jetwicklogo:hover {
     text-decoration: none;
 }
-.jetwicklogo img {
-    margin-bottom: -3px;        
+.jetwicklogo img { 
+    float: left;    
+    margin-bottom: -3px;      
 }
-.subtitle {
+.subtitle {        
+    float: left;
     color: black;
     font-style: italic;
-    font-size: 12px;
-    margin-left: -90px;        
+    font-size: 17px;    
+    padding: 19px 0px 10px 20px;
+}
+
+.search-tweet-tf { 
+    width: 435px; 
+    font-size: 20px;
+    height: 27px;
+    margin-bottom: 7px;
+}
+.search-user-tf  { 
+    width: 200px; 
+/*    border: none;*/
+    border-left: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: gray 1px solid;    
+}
+
+.searchform {        
+    width: 530px;
+    padding-bottom: 5px;
+}
+.searchform-button {
+    font-size: 18px;
+    border: medium medium;
+    height: 32px;
+    /* on opera we need 83 not 85 */
+    width: 83px;
+}
+.search-type-left {
+    padding-left: 5px;
+}
+.search-type {    
+    font-size: 12px;    
 }
 
 div.wicket-aa {
@@ -267,28 +297,8 @@ div.wicket-aa ul li.selected {
     background-image: url("../img/bar-min-dark.png");
 }
 
-.search-tweet-tf, .search-tweet-tf-inact { width: 260px; }
-.search-user-tf, .search-user-tf-inact { width: 160px;  }
-.search-user-tf, .search-tweet-tf,.search-tweet-tf-inact, .search-user-tf-inact {
-    padding-left: 2px;
-    font-size: 16px;
-    height: 23px;
-}
-.search-tweet-tf-inact, .search-user-tf-inact {
-    color: gray;
-    font-style: italic;
-}
-
-.searchform-button {
-    font-size: 16px;
-    border: medium medium;
-    height: 27px;
-    /* on opera we need 83 not 85 */
-    width: 83px;
-}
-
 #main {
-    padding-top: 14px;
+    padding-top: 24px;
 }
 #main, .external-refs-right {
     width: 1050px;

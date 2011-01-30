@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.util.Helper;
 import java.util.Collection;
 import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -133,7 +134,7 @@ public abstract class AbstractElasticSearch {
     }
 
     public void refresh(Collection<String> indices) {
-        refresh(indices.toArray(new String[indices.size()]));
+        refresh(Helper.toStringArray(indices));
     }
 
     public void refresh(String... indices) {

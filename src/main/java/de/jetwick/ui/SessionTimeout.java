@@ -33,8 +33,11 @@ public class SessionTimeout extends WebPage {
         if (oldParams != null) {
             if (oldParams.getString("q") != null)
                 newParams.add("q", oldParams.getString("q"));
-            if (oldParams.getString("u") != null)
-                newParams.add("u", oldParams.getString("u"));
+            String userAsStr = oldParams.getString("user");
+            if (userAsStr == null)
+                userAsStr = oldParams.getString("u");
+            if (userAsStr != null)
+                newParams.add("user", userAsStr);
         }
 
         ((MySession) getSession()).setSessionTimedOut(true);

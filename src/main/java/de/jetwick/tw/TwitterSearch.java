@@ -622,7 +622,7 @@ public class TwitterSearch implements Serializable {
         // -> stream.filter(new FilterQuery(new int[]{1, 2, 3,}));
     }
 
-    public void getFollowers(String userName, AnyExecutor<SolrUser> executor) {
+    public void getFriends(String userName, AnyExecutor<SolrUser> executor) {
         long cursor = -1;
         while (true) {
             int rate;
@@ -640,18 +640,15 @@ public class TwitterSearch implements Serializable {
 
             ResponseList<User> res = null;
             IDs ids = null;
-
-//            logger.info("get followers from cursor " + cursor);
             try {
                 if (cursor < 0)
-                    ids = twitter.getFollowersIDs(userName);
+                    ids = twitter.getFriendsIDs(userName);
                 else
-                    ids = twitter.getFollowersIDs(userName, cursor);
+                    ids = twitter.getFriendsIDs(userName, cursor);
             } catch (TwitterException ex) {
                 logger.warn(ex.getMessage());
                 break;
             }
-//            logger.info("found " + ids.getIDs().length);
             if (ids.getIDs().length == 0)
                 break;
 

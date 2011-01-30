@@ -42,7 +42,7 @@ public class About extends WebPage {
             public void onClick() {
                 PageParameters pp = new PageParameters();
                 pp.add("q", "java");
-                pp.add("u", "timetabling");
+                pp.add("user", "timetabling");
                 setResponsePage(About.this.getApplication().getHomePage(), pp);
             }
         });

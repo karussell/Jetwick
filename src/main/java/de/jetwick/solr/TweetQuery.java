@@ -15,11 +15,7 @@
  */
 package de.jetwick.solr;
 
-import de.jetwick.tw.cmd.TermCreateCommand;
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Map.Entry;
-import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import static de.jetwick.es.ElasticTweetSearch.*;
 
@@ -45,16 +41,16 @@ public class TweetQuery extends JetwickQuery {
         return (TweetQuery) attachFacetibility(this);
     }
 
-    public TweetQuery createFollowerQuery(Collection<SolrUser> users) {
+    public TweetQuery createFriendsQuery(Collection<String> users) {
         if (users.isEmpty())
             return this;
 
         StringBuilder fq = new StringBuilder("user:(");
         int counter = 0;
-        for (SolrUser u : users) {
+        for (String screenName : users) {
             if (counter++ > 0)
                 fq.append(" OR ");
-            fq.append(u.getScreenName());
+            fq.append(screenName);
         }
 
         fq.append(")");

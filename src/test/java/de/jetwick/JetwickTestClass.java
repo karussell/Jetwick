@@ -50,18 +50,7 @@ public class JetwickTestClass {
     }
 
     public Module createModule() {
-        return new DefaultModule() {
-
-//            @Override
-//            public void installDbModule() {
-//                // explicitely disable DB
-//            }
-
-            @Override
-            public void installSearchModule() {
-                // no search required
-            }                  
-        };
+        return new DefaultModule();
     }
 
     public static Thread.UncaughtExceptionHandler createExceptionMapHandler(final Map<Thread, Throwable> exceptionMap) {
@@ -75,7 +64,7 @@ public class JetwickTestClass {
     }
 
     public static void checkExceptions(Map<Thread, Throwable> exceptionMap) {
-        if (exceptionMap.size() != 0) {
+        if (!exceptionMap.isEmpty()) {
             for (Entry<Thread, Throwable> e : exceptionMap.entrySet()) {
                 e.getValue().printStackTrace();
             }

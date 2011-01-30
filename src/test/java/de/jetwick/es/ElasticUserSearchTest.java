@@ -15,6 +15,8 @@
  */
 package de.jetwick.es;
 
+import java.util.Collections;
+import java.util.Arrays;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import de.jetwick.solr.SavedSearch;
@@ -22,9 +24,7 @@ import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.UserQuery;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -305,4 +305,17 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
     }    
+    
+     @Test
+    public void testFriends() throws Exception {
+         SolrUser user = new SolrUser("peter").setFriends(Arrays.asList("test", "tester"));
+         SolrUser user2 = new SolrUser("karsten").setFriends(Collections.EMPTY_LIST);
+         SolrUser user3 = new SolrUser("johannes").setFriends(null);
+         userSearch.save(user, false);
+         userSearch.save(user2, false);
+         userSearch.save(user3, true);
+         assertEquals(2, userSearch.findByScreenName("peter").getFriends().size());
+         assertEquals(0, userSearch.findByScreenName("karsten").getFriends().size());
+         assertEquals(0, userSearch.findByScreenName("johannes").getFriends().size());
+     }
 }

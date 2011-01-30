@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui.util;
 
+import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.AjaxEditableLabel;
+import org.apache.wicket.markup.html.form.FormComponent;
+import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.util.convert.IConverter;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class MyEditableLabel extends AjaxEditableLabel {
+public class MyEditableLabel<T> extends AjaxEditableLabel<T> {
 
     public MyEditableLabel(String id, IModel model) {
         super(id, model);
@@ -38,4 +41,33 @@ public class MyEditableLabel extends AjaxEditableLabel {
     public void onEdit(AjaxRequestTarget target) {
         super.onEdit(target);
     }
+
+//    protected FormComponent<T> newEditor(MarkupContainer parent, String componentId, IModel<T> model) {
+//        TextField<T> editor = new TextField<T>(componentId, model) {
+//
+//            private static final long serialVersionUID = 1L;
+//
+//            @Override
+//            public IConverter getConverter(Class<?> type) {
+//                IConverter c = AjaxEditableLabel.this.getConverter(type);
+//                return c != null ? c : super.getConverter(type);
+//            }
+//
+//            @Override
+//            protected void onModelChanged() {
+//                super.onModelChanged();
+//                AjaxEditableLabel.this.onModelChanged();
+//            }
+//
+//            @Override
+//            protected void onModelChanging() {
+//                super.onModelChanging();
+//                AjaxEditableLabel.this.onModelChanging();
+//            }
+//        };
+//        editor.setOutputMarkupId(true);
+//        editor.setVisible(false);
+//        editor.add(new EditorAjaxBehavior());
+//        return editor;
+//    }
 }

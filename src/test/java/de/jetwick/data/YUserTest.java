@@ -52,20 +52,4 @@ public class YUserTest {
         user.setUpdateAt(Helper.plusDays(new Date(), -7));
         assertFalse(user.isOutOfDate());
     }
-
-    @Test
-    public void testAutoReverse() {
-        // followers <-> following
-        YUser user = new YUser("Peter");
-        YUser user2 = new YUser("Test");
-        user.addFollower(user2);
-        assertEquals(user, user2.getFollowing().iterator().next());
-
-        user = new YUser("Peter");
-        user2 = new YUser("Test");
-        user.addFollowing(user2);
-        assertEquals(user, user2.getFollowers().iterator().next());
-
-        // for the other relation ships look into YTweetTest
-    }
 }
