@@ -53,7 +53,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
     private TagDao tagDao;
     protected BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
-    private TwitterSearch twSearch;
+    protected TwitterSearch twSearch;
     protected ElasticUserSearch userSearch;
     @Inject
     private WorkManager manager;
@@ -67,6 +67,10 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
 
     public BlockingQueue<TweetPackage> getQueue() {
         return tweetPackages;
+    }
+
+    public void setQueue(BlockingQueue<TweetPackage> packages) {
+        this.tweetPackages = packages;
     }
 
     @Override

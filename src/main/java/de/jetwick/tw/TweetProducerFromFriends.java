@@ -18,6 +18,7 @@ package de.jetwick.tw;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.queue.TweetPackageList;
+import de.jetwick.util.StopWatch;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -36,6 +37,10 @@ public class TweetProducerFromFriends extends TweetProducerOnline {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     Map<String, TwitterSearch> userMap = new LinkedHashMap<String, TwitterSearch>();
 
+    public TweetProducerFromFriends() {
+        setName("friend-tweet-producer");
+    }
+
     public void run(int count) {
         for (int i = 0; i < count; i++) {
             innerRun();
@@ -44,6 +49,7 @@ public class TweetProducerFromFriends extends TweetProducerOnline {
 
     @Override
     public void run() {
+        logger.info("Started " + getName());
         while (!isInterrupted()) {
             innerRun();
         }
@@ -62,23 +68,44 @@ public class TweetProducerFromFriends extends TweetProducerOnline {
             }
         }
 
+        logger.info("Found:" + users.size() + " users in user index");
         for (SolrUser u : users) {
-            TwitterSearch ts = userMap.get(u.getScreenName());
-            if (ts == null) {
-                ts = createTwitter4J(u.getTwitterToken(), u.getTwitterTokenSecret());
-                userMap.put(u.getScreenName(), ts);
+            
+            if(!"timetabling".equalsIgnoreCase(u.getScreenName()))
+                continue;
+            
+            if (u.getTwitterToken() == null || u.getTwitterTokenSecret() == null) {
+                logger.info("Skipped user:" + u.getScreenName() + " - no token or secret!");
+                continue;
             }
 
+            TwitterSearch ts = userMap.get(u.getScreenName());
+            if (ts == null) {
+                try {
+                    ts = createTwitter4J(u.getTwitterToken(), u.getTwitterTokenSecret());
+                    userMap.put(u.getScreenName(), ts);
+                } catch (Exception ex) {
+                    logger.error("Skipping user:" + u.getScreenName() + " token:" + u.getTwitterToken() + " secret:" + u.getTwitterTokenSecret() + " Error:" + ex.getMessage());
+                    continue;
+                }
+            }
+            
+            logger.info("SUCCESS:" + u.getScreenName());
+
             try {
-                new FriendSearchHelper(userSearch, ts).getFriendsOf(u);
+                StopWatch watch = new StopWatch("friends").start();
+                int ret = new FriendSearchHelper(userSearch, ts).getFriendsOf(u).size();
+                logger.info("Inited " + ret + " friends from " + u.getScreenName() + " " + watch.stop());
             } catch (Exception ex) {
                 logger.error("Exception when getting friends from " + u.getScreenName(), ex);
             }
 
             try {
+                StopWatch watch = new StopWatch("friends").start();
                 Set<SolrTweet> tweets = new LinkedHashSet<SolrTweet>();
                 ts.getHomeTimeline(tweets, 200, 0);
                 tweetPackages.add(new TweetPackageList("friendsOf:" + u.getScreenName()).init(MyTweetGrabber.idCounter.addAndGet(1), tweets));
+                logger.info("Pushed " + tweets.size() + " friend tweets of " + u.getScreenName() + " into queue. " + watch.stop());
             } catch (Exception ex) {
                 logger.error("Exception while retrieving from twitter friend tweets of " + u.getScreenName(), ex);
             }
@@ -86,6 +113,7 @@ public class TweetProducerFromFriends extends TweetProducerOnline {
     }
 
     protected TwitterSearch createTwitter4J(String twitterToken, String twitterTokenSecret) {
-        return new TwitterSearch().setTwitter4JInstance(twitterToken, twitterTokenSecret);
+        return new TwitterSearch().setConsumer(twSearch.getConsumerKey(), twSearch.getConsumerSecret()).
+                setTwitter4JInstance(twitterToken, twitterTokenSecret);
     }
 }

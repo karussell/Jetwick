@@ -79,7 +79,7 @@ public class TweetCollector {
         tagDao.addAll(DEFAULT_ST);
         manager.endWork();
 
-        // producer -> queue1 -> resolve url (max threads) -> queue2 -> feed solr (min time, max tweets)
+        // producer's -> queue1 -> resolve url (max threads) -> queue2 -> feed solr (min time, max tweets)
         //              /\
         //              ||
         //          rmi from UI
@@ -92,6 +92,14 @@ public class TweetCollector {
         twProducer.setUserSearch(userSearch);        
 
         BlockingQueue<TweetPackage> queue1 = twProducer.getQueue();
+        
+        // feeding queue1 from tweets of friends (of registered users)
+        TweetProducerFromFriends producerFromFriends = injector.getInstance(TweetProducerFromFriends.class);
+        producerFromFriends.setQueue(queue1);
+        producerFromFriends.setTwitterSearch(tws);
+        producerFromFriends.setUserSearch(userSearch);        
+        //TODO producerFromFriends.setMaxFill(2 * tweetsPerBatch);        
+                
         // feeding queue1 from UI
         RMIServer rmiServer = injector.getInstance(RMIServer.class);
         rmiServer.setFeedingQueue(queue1);
@@ -121,11 +129,14 @@ public class TweetCollector {
         rmiServerThread.start();
         twConsumer.start();
         twUrlResolver.start();
+        producerFromFriends.start();
         Thread twProducerThread = new Thread(twProducer, "tweet-producer");
         twProducerThread.setUncaughtExceptionHandler(excHandler);
         twProducerThread.start();
 
         twProducerThread.join();
+        
+        producerFromFriends.interrupt();
         twConsumer.interrupt();
         twUrlResolver.interrupt();
         rmiServerThread.interrupt();
