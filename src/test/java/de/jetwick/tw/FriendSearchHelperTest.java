@@ -15,10 +15,12 @@
  */
 package de.jetwick.tw;
 
+import java.util.ArrayList;
 import de.jetwick.solr.SolrUser;
 import java.util.Collection;
 import org.junit.Before;
 import de.jetwick.JetwickTestClass;
+import de.jetwick.util.MyDate;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -51,5 +53,37 @@ public class FriendSearchHelperTest extends JetwickTestClass {
             }
         };
         assertEquals(1, helper.getFriendsOf(new SolrUser("test")).size());
+    }
+    
+    @Test
+    public void testDayRefresh() {
+        final Collection<String> list = new ArrayList<String>();
+        FriendSearchHelper helper = new FriendSearchHelper(null, null) {
+
+            @Override
+            public void updateUser(SolrUser user) {                
+                list.add("now");
+            }
+            
+            @Override
+            public void updateFromTwitter(Collection<String> friends, String screenName) {            
+            }
+        };
+        
+        SolrUser user = new SolrUser("peter");
+        helper.getFriendsOf(user);        
+        assertEquals(1, list.size());        
+        
+        helper.getFriendsOf(user);        
+        assertEquals(1, list.size());
+        
+        // force 'aging' of user update
+        user.setLastFriendsUpdate(new MyDate().minusDays(4).toDate());        
+        helper.getFriendsOf(user);        
+        assertEquals(2, list.size());
+        
+        user.setLastFriendsUpdate(new MyDate().minusDays(3).toDate());        
+        helper.getFriendsOf(user);        
+        assertEquals(2, list.size());
     }
 }

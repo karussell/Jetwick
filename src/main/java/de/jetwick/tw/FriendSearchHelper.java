@@ -64,6 +64,7 @@ public class FriendSearchHelper {
     }
 
     public void updateUser(SolrUser user) {
+        // avoid refresh if more users are registered
         userSearch.update(user, false, true);
     }
 
