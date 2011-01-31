@@ -99,9 +99,7 @@ public abstract class AbstractElasticSearch {
 
     public void saveCreateIndex(String name, boolean log) {
 //         if (!indexExists(name)) {
-        try {
-            if (log)
-                logger.info("Try to create index: " + name);
+        try {            
             createIndex(name);
             if (log)
                 logger.info("Created index: " + name);

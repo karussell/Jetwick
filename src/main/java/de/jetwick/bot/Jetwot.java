@@ -87,7 +87,7 @@ public class Jetwot {
         Injector injector = Guice.createInjector(module);
         tweetSearch = injector.getInstance(ElasticTweetSearch.class);
         tw4j = new TwitterSearch().setConsumer(credits.getConsumerKey(), credits.getConsumerSecret());
-        tw4j.setTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
+        tw4j.initTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
 
         try {
             for (SolrTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<SolrUser>(), 20)) {

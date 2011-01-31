@@ -70,7 +70,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         super.setUp();
         twSearchTester.setUp();
         Credits c = new Configuration().getTwitterSearchCredits();
-        twitterSearch.setTwitter4JInstance(c.getToken(), c.getTokenSecret());
+        twitterSearch.initTwitter4JInstance(c.getToken(), c.getTokenSecret());
     }
 
     @Override

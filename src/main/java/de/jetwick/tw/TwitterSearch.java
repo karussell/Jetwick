@@ -83,18 +83,25 @@ public class TwitterSearch implements Serializable {
     }
 
     public String getConsumerSecret() {
-        return consumerKey;
+        return consumerSecret;
     }
 
-    public TwitterSearch setTwitter4JInstance(String token, String tokenSecret) {
+    /**
+     * Connect with twitter to get a new personalized twitter4j instance.
+     * @throws RuntimeException if verification or connecting failed
+     */
+    public TwitterSearch initTwitter4JInstance(String token, String tokenSecret) {
         if (consumerKey == null)
             throw new NullPointerException("Please use init consumer settings!");
 
-        twitter = createTwitter(token, tokenSecret);
+        twitter = createTwitter(token, tokenSecret);        
         logger.info("create new TwitterSearch");
         return this;
     }
 
+    /**
+     * Set an already 'connected' twitter4j instance. No exception can be thrown.
+     */
     public TwitterSearch setTwitter4JInstance(Twitter tw) {
         twitter = tw;
         return this;
@@ -104,10 +111,17 @@ public class TwitterSearch implements Serializable {
         return twitter;
     }
 
-    public void setup() {
+    private void setupProperties() {
+        // this issue should now be resolved:
         // http://groups.google.com/group/twitter4j/browse_thread/thread/6f6d5b35149e2faa
-        System.setProperty("twitter4j.http.useSSL", "false");
-
+//        System.setProperty("twitter4j.http.useSSL", "false");
+        
+        // friends makes problems
+        // http://groups.google.com/group/twitter4j/browse_thread/thread/f696de22d4554143
+        // http://groups.google.com/group/twitter-development-talk/browse_thread/thread/cd76f954957f6fb0
+        // http://groups.google.com/group/twitter-development-talk/browse_thread/thread/9e9bfec2f076e4f9
+        //System.setProperty("twitter4j.http.useSSL", "true");
+        
         // changing some properties to be applied on HttpURLConnection
         // default read timeout 120000 see twitter4j.internal.http.HttpClientImpl
         System.setProperty("twitter4j.http.readTimeout", "10000");
@@ -117,11 +131,12 @@ public class TwitterSearch implements Serializable {
     }
 
     public Twitter createTwitter(String token, String tokenSecret) {
-        setup();
+        setupProperties();
         AccessToken aToken = new AccessToken(token, tokenSecret);
         // get this from your application details side !
-        Twitter t = new TwitterFactory().getOAuthAuthorizedInstance(
-                consumerKey, consumerSecret, aToken);
+        Twitter t = new TwitterFactory().getInstance();
+        t.setOAuthConsumer(consumerKey, consumerSecret);
+        t.setOAuthAccessToken(aToken);
         try {
 //            RequestToken requestToken = t.getOAuthRequestToken();
 //            System.out.println("TW-URL:" + requestToken.getAuthorizationURL());

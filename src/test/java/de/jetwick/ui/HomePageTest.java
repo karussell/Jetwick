@@ -223,7 +223,7 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public TwitterSearch setTwitter4JInstance(String token, String tokenSec) {
+            public TwitterSearch initTwitter4JInstance(String token, String tokenSec) {
                 return this;
             }
 

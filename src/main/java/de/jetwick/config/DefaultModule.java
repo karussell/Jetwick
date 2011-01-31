@@ -83,7 +83,7 @@ public class DefaultModule extends AbstractModule {
                 cred.getConsumerKey(), cred.getConsumerSecret());
 
         try {
-            ts.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
+            ts.initTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
         } catch (Exception ex) {
             logger.error("Cannot create twitter4j instance!\n######### TWITTER4J ERROR: But start jetwick nevertheless! Error:" + ex);
         }
@@ -92,6 +92,7 @@ public class DefaultModule extends AbstractModule {
 
             @Override
             public TwitterSearch get() {
+                // avoid exception in this getter: do not call twitter.verify which can fail if twitter down etc
                 return createTwitterSearch().setConsumer(
                         cred.getConsumerKey(), cred.getConsumerSecret()).
                         setTwitter4JInstance(ts.getTwitter4JInstance());

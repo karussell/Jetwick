@@ -19,11 +19,6 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
-import de.jetwick.util.AnyExecutor;
-import de.jetwick.util.MyDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import javax.servlet.http.Cookie;
 import org.apache.wicket.Request;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -79,6 +74,7 @@ public class MySession extends WebSession {
         return twitterSearch;
     }
 
+    // called for every request. initialized with default karussell data
     public void setTwitterSearch(TwitterSearch twitterSearch) {
         this.twitterSearch = twitterSearch;
     }
@@ -113,7 +109,7 @@ public class MySession extends WebSession {
      * Use only if specified ts is already initialized
      */
     public Cookie setTwitterSearch(AccessToken token, ElasticUserSearch uSearch, WebResponse response) {
-        twitterSearch.setTwitter4JInstance(token.getToken(), token.getTokenSecret());
+        twitterSearch.initTwitter4JInstance(token.getToken(), token.getTokenSecret());
         twitterSearchInitialized = true;
         try {
 //            logger.info("TOKEN:" + token);

@@ -83,7 +83,7 @@ public class MySessionTest extends WicketPagesTestClass {
     public void testSetCookie() throws TwitterException {
         MySession session = (MySession) tester.getWicketSession();
         TwitterSearch ts = mock(TwitterSearch.class);
-        when(ts.setTwitter4JInstance("normalToken", "tSec")).thenReturn(ts);
+        when(ts.initTwitter4JInstance("normalToken", "tSec")).thenReturn(ts);
         //when(ts.getCredits()).thenReturn(new Credits("normalToken", "tSec", "x", "y"));
         when(ts.getTwitterUser()).thenReturn(new Twitter4JUser("testuser"));
 

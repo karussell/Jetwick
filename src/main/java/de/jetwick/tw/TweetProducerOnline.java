@@ -48,7 +48,6 @@ import twitter4j.TwitterException;
 public class TweetProducerOnline extends MyThread implements TweetProducer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Lock lock = new ReentrantLock();
     @Inject
     private TagDao tagDao;
     protected BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
@@ -65,6 +64,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
         super("tweet-producer");
     }
 
+    @Override
     public BlockingQueue<TweetPackage> getQueue() {
         return tweetPackages;
     }
@@ -162,10 +162,12 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
         logger.info(getName() + " successfully finished");
     }
 
-    public void setMaxFill(int maxFill) {
+    @Override
+    public void setMaxFill(int maxFill) {        
         this.maxFill = maxFill;
     }
 
+    @Override
     public void setTwitterSearch(TwitterSearch tws) {
         this.twSearch = tws;
     }
@@ -203,6 +205,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
         return tags;
     }
 
+    @Override
     public void setUserSearch(ElasticUserSearch userSearch) {
         this.userSearch = userSearch;
     }

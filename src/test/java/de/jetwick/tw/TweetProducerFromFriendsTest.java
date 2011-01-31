@@ -24,10 +24,8 @@ import de.jetwick.solr.SolrUser;
 import de.jetwick.util.AnyExecutor;
 import org.junit.Before;
 import de.jetwick.es.ElasticUserSearchTest;
-import java.util.Arrays;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import twitter4j.Tweet;
 import twitter4j.TwitterException;
 
 /**

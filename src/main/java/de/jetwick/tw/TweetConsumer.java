@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.concurrent.BlockingQueue;
-import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

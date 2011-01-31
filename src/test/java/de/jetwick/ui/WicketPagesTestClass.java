@@ -119,7 +119,7 @@ public class WicketPagesTestClass {
             }
 
             @Override
-            public TwitterSearch setTwitter4JInstance(String t, String ts) {
+            public TwitterSearch initTwitter4JInstance(String t, String ts) {
                 return this;
             }
 

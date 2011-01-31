@@ -39,7 +39,7 @@ public class TwitterSearchOffline extends TwitterSearch {
     }
 
     @Override
-    public TwitterSearch setTwitter4JInstance(String token, String tokenSecret) {
+    public TwitterSearch initTwitter4JInstance(String token, String tokenSecret) {
         return this;
     }
 
