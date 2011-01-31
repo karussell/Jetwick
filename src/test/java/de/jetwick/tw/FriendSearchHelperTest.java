@@ -52,7 +52,7 @@ public class FriendSearchHelperTest extends JetwickTestClass {
                 friends.add("test");
             }
         };
-        assertEquals(1, helper.getFriendsOf(new SolrUser("test")).size());
+        assertEquals(1, helper.updateFriendsOf(new SolrUser("test")).size());
     }
     
     @Test
@@ -71,19 +71,19 @@ public class FriendSearchHelperTest extends JetwickTestClass {
         };
         
         SolrUser user = new SolrUser("peter");
-        helper.getFriendsOf(user);        
+        helper.updateFriendsOf(user);        
         assertEquals(1, list.size());        
         
-        helper.getFriendsOf(user);        
+        helper.updateFriendsOf(user);        
         assertEquals(1, list.size());
         
         // force 'aging' of user update
         user.setLastFriendsUpdate(new MyDate().minusDays(4).toDate());        
-        helper.getFriendsOf(user);        
+        helper.updateFriendsOf(user);        
         assertEquals(2, list.size());
         
         user.setLastFriendsUpdate(new MyDate().minusDays(3).toDate());        
-        helper.getFriendsOf(user);        
+        helper.updateFriendsOf(user);        
         assertEquals(2, list.size());
     }
 }

@@ -41,7 +41,7 @@ public class FriendSearchHelper {
         this.twitter4j = twitter4j;
     }
 
-    public Collection<String> getFriendsOf(SolrUser user) {        
+    public Collection<String> updateFriendsOf(SolrUser user) {        
         MyDate cacheTime = null;
         if (user.getLastFriendsUpdate() != null)
             cacheTime = new MyDate(user.getLastFriendsUpdate());

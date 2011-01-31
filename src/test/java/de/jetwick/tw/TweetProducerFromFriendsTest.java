@@ -84,6 +84,11 @@ public class TweetProducerFromFriendsTest {
             protected TwitterSearch createTwitter4J(String twitterToken, String twitterTokenSecret) {
                 return mockedTwitter;
             }
+
+            @Override
+            protected boolean isValidUser(SolrUser u) {
+                return true;
+            }            
         };
         producer.setUserSearch(getUserSearch());
         producer.run(1);

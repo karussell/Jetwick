@@ -202,8 +202,4 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
         else
             return 0;
     }
-
-    public boolean isHomeTimeline() {
-        return term.startsWith("##");
-    }
 }

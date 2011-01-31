@@ -138,7 +138,7 @@ public class ElasticNode {
                 put("network.host", "127.0.0.1").
                 //                put("network.bindHost", "127.0.0.0").
                 //                put("network.publishHost", "127.0.0.0").
-                put("index.number_of_shards", 3).
+                put("index.number_of_shards", 16).
                 put("index.number_of_replicas", 1);
 
         if (testing) {

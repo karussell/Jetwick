@@ -27,7 +27,6 @@ import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
-import de.jetwick.tw.FriendSearchHelper;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
@@ -631,9 +630,11 @@ public class HomePage extends WebPage {
                 query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
                 page = 0;
                 twitterFallback = false;
-            } else
-                info("To use friend search you need to login and tweet about @jetwick");
+            } else {
+                info("To use friend search you need to login: click authenticate on the left.");
+                info("Do not forget to tweet about @jetwick ala 'Tried @jetwick today and searched within the tweets of my friends'");
 //                warn("Please login to search friends of " + parameters.getString("user"));
+            }
         }
 
         doSearch(query, page, twitterFallback);

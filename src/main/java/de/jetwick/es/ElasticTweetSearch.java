@@ -95,7 +95,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";
     public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
     public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
-    public static final String RELEVANCE = "relevancy";
+    public static final String RELEVANCE = "relevance";
     private Logger logger = LoggerFactory.getLogger(getClass());
 
     public ElasticTweetSearch() {
@@ -208,8 +208,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
 
         double relevancy = tw.getCreatedAt().getTime() / MyDate.ONE_HOUR;
-        // every 12 retweets boosts the tweet one hour further
-        float scale = 12;
+        // every 20 retweets boosts the tweet one hour further
+        float scale = 20;
         if (tw.getRetweetCount() <= 100)
             relevancy += tw.getRetweetCount() / scale;
         else
@@ -218,7 +218,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             relevancy *= 0.5;
         if (tw.getQuality() <= 65)
             relevancy *= 0.5;
-        b.field("relevancy", relevancy);
+        b.field(RELEVANCE, relevancy);
 
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
             b.field(TAG, entry.getKey());
@@ -1092,7 +1092,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
      * All indices has to be created before!
      */
     public void mergeIndices(Collection<String> indexList, String intoIndex, boolean forceRefresh) {
-        refresh(indexList);
+        if(forceRefresh)
+            refresh(indexList);
 
         for (String index : indexList) {
             TweetESQuery q = new TweetESQuery(client.prepareSearch(index)).matchAll();
@@ -1103,6 +1104,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             }
         }
 
-        refresh(intoIndex);
+        if(forceRefresh)
+            refresh(intoIndex);
     }
 }

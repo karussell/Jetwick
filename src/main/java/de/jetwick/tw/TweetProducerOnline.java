@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
@@ -122,12 +120,8 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
                     float waitInSeconds = 0.1f;
                     try {
                         long maxId = 0;
-                        LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
-                        if (tag.isHomeTimeline()) {
-                            logger.info("use hometimeline:" + tag);
-                            maxId = twSearch.getHomeTimeline(tmp, tag.getPages() * 100, tag.getLastId());
-                        } else
-                            maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
+                        LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();                        
+                        maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
 
                         int hits = tmp.size();
                         tag.setLastId(maxId);
