@@ -224,12 +224,10 @@ public class HomePage extends WebPage {
             q.addFilterQuery(ElasticTweetSearch.DATE + ":[" + fromDateStr + " TO *]");
         }
 
-        // avoid slow queries for *:* query and filter against latest tweets
-        if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
-            logger.info(addIP("[stats] q=''"));
-            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
-        }
-
+        // front page/empty => sort against relevance
+        // user search    => sort against latest date
+        // other        => sort against retweets if no sort specified
+        
         String sort = parameters.getString("sort");
         if ("retweets".equals(sort))
             JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");
@@ -237,15 +235,28 @@ public class HomePage extends WebPage {
             JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");
         else if ("oldest".equals(sort))
             JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " asc");
-        else
-            JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCY + " desc");
-
+        else if ("relevance".equals(sort))
+            JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
+        else {
+            JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");            
+            
+            if(!Helper.isEmpty(userName))
+                JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");                    
+        }
+                
+        // front page: avoid slow queries for matchall query and filter against latest tweets only
+        if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
+            logger.info(addIP("[stats] q=''"));
+            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
+            if(Helper.isEmpty(sort))
+                JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
+        }
+        
         if (Helper.isEmpty(userName)) {
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
             q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);
         }
-
         return q;
     }
 

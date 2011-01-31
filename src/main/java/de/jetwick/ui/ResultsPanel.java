@@ -157,7 +157,7 @@ public class ResultsPanel extends Panel {
         };
 
         add(translateAllLink);
-        add(createSortLink("sortRelevance", ElasticTweetSearch.RELEVANCY + " desc"));
+        add(createSortLink("sortRelevance", ElasticTweetSearch.RELEVANCE + " desc"));
         add(createSortLink("sortRetweets", ElasticTweetSearch.RT_COUNT + " desc"));
         add(createSortLink("sortLatest", ElasticTweetSearch.DATE + " desc"));
         add(createSortLink("sortOldest", ElasticTweetSearch.DATE + " asc"));
@@ -371,7 +371,7 @@ public class ResultsPanel extends Panel {
 
     public void setSort(String sortString) {        
         if (sortString == null || sortString.isEmpty())
-            sort = ElasticTweetSearch.RELEVANCY + " desc";
+            sort = ElasticTweetSearch.RELEVANCE + " desc";
         else
             sort = sortString;
     }
