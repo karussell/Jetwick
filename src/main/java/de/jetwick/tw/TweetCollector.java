@@ -88,13 +88,13 @@ public class TweetCollector {
         TweetProducer twProducer = injector.getInstance(TweetProducer.class);
         int tweetsPerBatch = cfg.getTweetsPerBatch();
         twProducer.setMaxFill(2 * tweetsPerBatch);
-        twProducer.setTwitterSearch(tws);
+        twProducer.setTwitterSearch(tws); 
         twProducer.setUserSearch(userSearch);        
 
         BlockingQueue<TweetPackage> queue1 = twProducer.getQueue();
         
         // feeding queue1 from tweets of friends (of registered users)
-        TweetProducerFromFriends producerFromFriends = injector.getInstance(TweetProducerFromFriends.class);
+        TweetProducerViaUsers producerFromFriends = injector.getInstance(TweetProducerViaUsers.class);
         producerFromFriends.setQueue(queue1);
         producerFromFriends.setTwitterSearch(tws);
         producerFromFriends.setUserSearch(userSearch);        

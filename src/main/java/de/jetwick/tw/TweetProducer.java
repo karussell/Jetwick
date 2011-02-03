@@ -32,11 +32,11 @@ public interface TweetProducer extends Runnable {
     void run();
 
     void setMaxFill(int maxFill);
-    
+
     void setTwitterSearch(TwitterSearch tws);
-    
+
     /**
      * For initialization of all the tags
      */
-    void setUserSearch(ElasticUserSearch userSearch);   
+    void setUserSearch(ElasticUserSearch userSearch);
 }

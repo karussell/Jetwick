@@ -627,11 +627,13 @@ public class HomePage extends WebPage {
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             if (getMySession().hasLoggedIn()) {
                 Collection<String> friends = getMySession().getUser().getFriends();
-                query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
-                page = 0;
-                twitterFallback = false;
-                info("Note: if you have recently logged in you won't get results. Please try again in 2 minutes. "
-                        + "Found: " + friends.size() + " friends");
+                if(friends.isEmpty()) {                    
+                    info("You recently logged in. Please try again in 2 minutes to use friend search.");
+                } else {
+                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
+                    page = 0;
+                    twitterFallback = false;
+                }
             } else {
                 info("To use friend search you need to login: click authenticate on the left.");
                 info("Do not forget to tweet about @jetwick ala 'Tried @jetwick today and searched within the tweets of my friends'");

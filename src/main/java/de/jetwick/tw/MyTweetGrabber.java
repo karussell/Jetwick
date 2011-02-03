@@ -162,7 +162,7 @@ public class MyTweetGrabber implements Serializable {
                         try {
                             tweetCount += tmp.size();
                             for (SolrTweet tw : tmp) {
-                                tw.setUpdatedAt(new Date());
+                                tw.makePersistent();
                             }
 
                             TweetPackageList pkg = new TweetPackageList("archiving user:" + userName).init(idCounter.addAndGet(1), tmp);

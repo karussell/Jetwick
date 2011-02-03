@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +42,7 @@ import twitter4j.TwitterException;
  * 
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetProducerOnline extends MyThread implements TweetProducer {
+public class TweetProducerViaSearch extends MyThread implements TweetProducer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     @Inject
@@ -58,7 +57,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
     private long feededTweets = 0;
     private long start = System.currentTimeMillis();
 
-    public TweetProducerOnline() {
+    public TweetProducerViaSearch() {
         super("tweet-producer");
     }
 
@@ -120,7 +119,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
                     float waitInSeconds = 0.1f;
                     try {
                         long maxId = 0;
-                        LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();                        
+                        LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
                         maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
 
                         int hits = tmp.size();
@@ -157,7 +156,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
     }
 
     @Override
-    public void setMaxFill(int maxFill) {        
+    public void setMaxFill(int maxFill) {
         this.maxFill = maxFill;
     }
 
@@ -177,7 +176,6 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
         for (YTag tag : tagDao.findAllSorted()) {
             tmp.put(tag.getTerm(), tag);
         }
-
         try {
             Collection<String> userQueryTerms = userSearch.getQueryTerms();
             int counter = 0;
@@ -190,7 +188,7 @@ public class TweetProducerOnline extends MyThread implements TweetProducer {
                 }
             }
             logger.info("Will add query terms " + counter + " of " + userQueryTerms);
-        } catch (SolrServerException ex) {
+        } catch (Exception ex) {
             logger.error("Couldn't query user index to feed tweet index with user queries:" + ex.getMessage());
         }
 

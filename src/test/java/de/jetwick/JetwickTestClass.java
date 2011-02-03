@@ -50,7 +50,13 @@ public class JetwickTestClass {
     }
 
     public Module createModule() {
-        return new DefaultModule();
+        return new DefaultModule() {
+
+            @Override
+            public void installSearchModule() {
+                // avoid that we need to set up (user/tweet) search
+            }            
+        };
     }
 
     public static Thread.UncaughtExceptionHandler createExceptionMapHandler(final Map<Thread, Throwable> exceptionMap) {

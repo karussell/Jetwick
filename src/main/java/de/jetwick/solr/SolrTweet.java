@@ -202,6 +202,10 @@ public class SolrTweet implements Serializable {
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
+    
+    public void makePersistent() {
+        setUpdatedAt(new Date());
+    }
 
     /**
      * @return false if this tweet should be deleted after some days

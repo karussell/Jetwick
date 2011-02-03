@@ -24,6 +24,7 @@ import de.jetwick.solr.SolrUser;
 import de.jetwick.util.AnyExecutor;
 import org.junit.Before;
 import de.jetwick.es.ElasticUserSearchTest;
+import java.util.Iterator;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import twitter4j.TwitterException;
@@ -32,7 +33,7 @@ import twitter4j.TwitterException;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetProducerFromFriendsTest {
+public class TweetProducerViaUsersTest {
 
     ElasticUserSearchTest tester = new ElasticUserSearchTest();
 
@@ -79,11 +80,12 @@ public class TweetProducerFromFriendsTest {
             @Override
             public long getHomeTimeline(Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
                 result.add(new SolrTweet(1L, "test tweet", new SolrUser("timetabling")));
+                result.add(new SolrTweet(2L, "cool, this tweet will auto persist", new SolrUser("test")));
                 return 2L;
             }
         };
 
-        TweetProducerFromFriends producer = new TweetProducerFromFriends() {
+        TweetProducerViaUsers producer = new TweetProducerViaUsers() {
 
             @Override
             protected TwitterSearch createTwitter4J(String twitterToken, String twitterTokenSecret) {
@@ -104,7 +106,11 @@ public class TweetProducerFromFriendsTest {
         producer.run(1);
 
         assertEquals(1, producer.getQueue().size());
-        assertEquals("test tweet", producer.getQueue().poll().getTweets().iterator().next().getText());
+        Iterator<SolrTweet> iter = producer.getQueue().poll().getTweets().iterator();
+        SolrTweet tw = iter.next();
+        assertEquals("test tweet", tw.getText());
+        assertFalse(tw.isPersistent());
+        assertTrue(iter.next().isPersistent());
         
         assertEquals(2, getUserSearch().findByScreenName("test").getFriends().size());
         assertTrue(getUserSearch().findByScreenName("test").getFriends().contains("friend1oftest"));
