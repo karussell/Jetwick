@@ -352,7 +352,7 @@ public class Helper {
     }
 
     /**
-     * @return a sorted list where the string with the highest integer value comes first!
+     * @return a sorted list where the object with the highest integer value comes first!
      */
     public static <T> List<Entry<T, Integer>> sort(Collection<Entry<T, Integer>> entrySet) {
         List<Entry<T, Integer>> sorted = new ArrayList<Entry<T, Integer>>(entrySet);

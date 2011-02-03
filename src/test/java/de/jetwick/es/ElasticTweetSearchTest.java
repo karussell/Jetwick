@@ -850,12 +850,11 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         String index1 = "index1";
         String index2 = "index2";
         String resindex = "resindex";
-//        System.out.println("NOW1");
         twSearch.createIndex(index1);
         twSearch.createIndex(index2);
         twSearch.createIndex(resindex);
-//        System.out.println("NOW2");
-//        twSearch.waitForYellow(resindex);
+        System.out.println("testIndexMerge wait for yellow");
+        twSearch.waitForYellow(resindex);
 
         twSearch.bulkUpdate(Arrays.asList(
                 new SolrTweet(1L, "hey cool one", new SolrUser("peter")),

@@ -134,12 +134,12 @@ public class ElasticNode {
         // http://wiki.apache.org/lucene-java/LuceneFAQ#Why_am_I_getting_a_TooManyClauses_exception.3F
 //        BooleanQuery.setMaxClauseCount(100000);
 
-        Builder settings = ImmutableSettings.settingsBuilder().
-                put("network.host", "127.0.0.1").
-                //                put("network.bindHost", "127.0.0.0").
-                //                put("network.publishHost", "127.0.0.0").
-                put("index.number_of_shards", 16).
-                put("index.number_of_replicas", 1);
+        Builder settings = ImmutableSettings.settingsBuilder();
+//                put("network.host", "127.0.0.1").
+//                //                put("network.bindHost", "127.0.0.0").
+//                //                put("network.publishHost", "127.0.0.0").
+//                put("index.number_of_shards", 16).
+//                put("index.number_of_replicas", 1);
 
         if (testing) {
             settings.put("gateway.type", "none");

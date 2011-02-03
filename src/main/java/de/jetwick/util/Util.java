@@ -195,12 +195,15 @@ public class Util {
     public void copyUsers() throws SolrServerException {
         String solrUrl = "http://www.pannous.info/uindex";
         
+        System.out.println("create solrusersearch");
         SolrUserSearch solrUserSearch = new SolrUserSearch(solrUrl, 
                 config.getTweetSearchLogin(), config.getTweetSearchPassword(), false);
 
+        System.out.println("query user index");
         Set<SolrUser> users = new LinkedHashSet<SolrUser>();
-        solrUserSearch.search(users, new SolrQuery().setRows(1000));
+        solrUserSearch.search(users, new SolrQuery().setRows(100));
 
+        System.out.println("create usersearch");
         userSearch = createUserSearch();
         System.out.println("count before:" + userSearch.countAll() + " found:" + users);
 

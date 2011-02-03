@@ -66,9 +66,14 @@ public class TweetProducerFromFriendsTest {
         final TwitterSearch mockedTwitter = new TwitterSearch() {
 
             @Override
+            public int getRateLimit() {
+                return 200;
+            }
+
+            @Override
             public void getFriends(String userName, AnyExecutor<SolrUser> executor) {
-                executor.execute(new SolrUser("friend1OfTest"));
-                executor.execute(new SolrUser("friend2OfTest"));
+                executor.execute(new SolrUser("friend1oftest"));
+                executor.execute(new SolrUser("friend2oftest"));
             }
 
             @Override
@@ -87,6 +92,11 @@ public class TweetProducerFromFriendsTest {
 
             @Override
             protected boolean isValidUser(SolrUser u) {
+                return true;
+            }
+
+            @Override
+            protected synchronized boolean myWait(float seconds) {
                 return true;
             }            
         };

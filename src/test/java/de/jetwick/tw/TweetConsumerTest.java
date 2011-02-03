@@ -15,9 +15,12 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.es.ElasticTweetSearch;
+import com.google.inject.Module;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import de.jetwick.JetwickTestClass;
+import de.jetwick.config.DefaultModule;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.solr.SolrUser;
@@ -69,11 +72,20 @@ public class TweetConsumerTest extends JetwickTestClass {
         tester.tearDown();
     }
 
+    @Override
+    public Module createModule() {
+        return new DefaultModule() {
+
+            @Override
+            public void installSearchModule() {
+                bind(ElasticTweetSearch.class).toInstance(tester.getTweetSearch());
+            }            
+        };
+    }        
+
     @Test
     public void testAddAll() {
         tweetConsumer.setRemoveDays(1);
-//        dbHelper.setRemoveDays(1);
-//        tweetConsumer.setDbHelper(dbHelper);
         LinkedBlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         SolrTweet tw = createTweet(1L, "@daniel fancy!", "timetabling");
         tw.setCreatedAt(new Date());

@@ -15,6 +15,8 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.queue.TweetPackageList;
@@ -54,21 +56,25 @@ public class TweetProducerFromFriends extends TweetProducerOnline {
             if (!innerRun())
                 break;
         }
+        logger.info("Finished " + getName());
     }
 
     public boolean innerRun() {
         Set<SolrUser> users = new LinkedHashSet<SolrUser>();
         long counts = userSearch.countAll();
         int ROWS = 100;
+        // paging
         for (int i = 0; i < counts / ROWS + 1; i++) {
-            SolrQuery q = new SolrQuery().setStart(i * ROWS).setRows((i + 1) * ROWS);
+            // prefer last logged in users
+            SolrQuery q = new SolrQuery().setStart(i * ROWS).setRows(ROWS).
+                    setSortField(ElasticUserSearch.CREATED_AT, SolrQuery.ORDER.desc);
             try {
                 userSearch.search(users, q);
             } catch (SolrServerException ex) {
                 logger.error("Couldn't search user index", ex);
             }
         }
-
+        
         logger.info("Found:" + users.size() + " users in user index");
         for (SolrUser u : users) {
             if (!isValidUser(u))
@@ -86,36 +92,57 @@ public class TweetProducerFromFriends extends TweetProducerOnline {
                             u.getTwitterTokenSecret()));
                 } catch (Exception ex) {
                     logger.error("Skipping user:" + u.getScreenName() + " token:"
-                            + u.getTwitterToken(), ex);
+                            + u.getTwitterToken() + " Error:" + getErrorMsg(ex));
                     continue;
                 }
             }
 
+//            try {
+//                logger.info("Now User:" + ue.getTwitterSearch().getScreenName());
+//            } catch (Exception ex) {
+//                logger.error("Error when getting user", ex);
+//                continue;
+//            }
+
+            if (ue.getTwitterSearch().getRateLimit() < TwitterSearch.LIMIT) {
+                logger.info("No API points left for user:" + ue.getUser() + " " + ue.getTwitterSearch().getSecondsUntilReset());
+                continue;
+            }
+
             // regularly check if friends of user u were changed
             try {
+                logger.info("Grabbing friends of " + ue.getTwitterSearch().getScreenName() + " (" + ue.getUser().getScreenName() + ")");
                 new FriendSearchHelper(userSearch, ue.getTwitterSearch()).updateFriendsOf(u).size();
             } catch (Exception ex) {
                 logger.error("Exception when getting friends from " + u.getScreenName()
-                        + " Error:" + ex.getMessage());
+                        + " Error:" + getErrorMsg(ex));
             }
 
             // regularly feed tweets of friends from user u            
             try {
                 StopWatch watch = new StopWatch("friends").start();
                 Set<SolrTweet> tweets = new LinkedHashSet<SolrTweet>();
-                ue.setLastId(ue.getTwitterSearch().getHomeTimeline(tweets, 200, ue.getLastId()));
-                tweetPackages.add(new TweetPackageList("friendsOf:" + u.getScreenName()).init(MyTweetGrabber.idCounter.addAndGet(1), tweets));
-                logger.info("Pushed " + tweets.size() + " friend tweets of " + u.getScreenName()
-                        + " into queue. Last id " + ue.getLastId() + ". " + watch.stop());
+                ue.setLastId(ue.getTwitterSearch().getHomeTimeline(tweets, 99, ue.getLastId()));
+                if (tweets.size() > 0) {
+                    tweetPackages.add(new TweetPackageList("friendsOf:" + u.getScreenName()).init(MyTweetGrabber.idCounter.addAndGet(1), tweets));
+                    logger.info("Pushed " + tweets.size() + " friend tweets of " + u.getScreenName()
+                            + " into queue. Last id " + ue.getLastId() + ". " + watch.stop());
+                }
             } catch (Exception ex) {
                 logger.error("Exception while retrieving friend tweets of "
-                        + u.getScreenName() + " Error:" + ex.getMessage());
+                        + u.getScreenName() + " Error:" + getErrorMsg(ex));
             }
 
-            myWait(30);
+            // do not hit twitter too much
+            myWait(2);
         }
 
+        myWait(10);
         return true;
+    }
+
+    String getErrorMsg(Throwable e) {
+        return e.getMessage().replaceAll("\\n", " ");
     }
 
     protected TwitterSearch createTwitter4J(String twitterToken, String twitterTokenSecret) {

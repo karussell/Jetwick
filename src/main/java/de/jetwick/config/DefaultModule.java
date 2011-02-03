@@ -24,7 +24,6 @@ import de.jetwick.tw.Credits;
 import de.jetwick.tw.TweetProducer;
 import de.jetwick.tw.TweetProducerOnline;
 import de.jetwick.tw.TwitterSearch;
-import de.jetwick.tw.TwitterSearchOffline;
 import de.jetwick.tw.UrlTitleCleaner;
 import de.jetwick.util.MaxBoundSet;
 import org.slf4j.Logger;

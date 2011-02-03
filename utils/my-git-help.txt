@@ -1,5 +1,98 @@
 # http://help.github.com/git-cheat-sheets/
 
+
+bar:~$ cd repo;git init
+# now add remove host into .git/config
+foo:~/repo$ git remote add --mirror PANNOUS bar:repo
+foo:~/repo$ git push PANNOUS
+
+git pull origin master	
+git push origin dev
+
+last 3 commits:
+HEAD, HEAD^, and HEAD~2
+
+UNDO commit and redo
+==============
+
+ $ git commit ...
+ $ git revert HEAD
+ $ git reset --soft HEAD
+ (or remove completly 
+  $ git reset --hard HEAD
+ )
+ $ edit
+ $ git commit -a -c ORIG_HEAD
+see more
+http://www.kernel.org/pub/software/scm/git/docs/git-reset.html
+
+ADD files to commit
+============
+
+git commit --amend -m 'Add an author/email comment'
+(comment replaces old comment!)
+
+UNDO changes
+=========
+
+$ git checkout -- <file>
+
+REVERT VS: CHECKOUT
+===============
+http://bryan-murdock.blogspot.com/2007/07/git-revert-is-not-equivalent-to-svn.html
+
+git checkout <hash>
+
+=> 1. git diff (nothing 
+changed) + 2. but source files are rolled back!
+
+MERGE single commit
+==============
+ $ git cherry-pick -n <commit>
+
+if status 'unmerged'
+============
+simply $ git add <file>
+
+CREATE BRANCH
+==========
+either:
+$ git branch my2.6.14 v2.6.14
+$ git checkout my2.6.14
+or:
+$ git checkout -b my2.6.14 v2.6.14
+
+DELETE BRANCH
+===========
+
+(merge tmp into some other branch then:) 
+
+$ git branch -d tmp
+
+PUSH Branch
+===========
+git push --all
+
+SHOW branches 
+(local + remote)
+==========
+git branch -a
+
+FETCH + MERGE instead PULL
+==================
+
+see http://longair.net/blog/2009/04/16/git-fetch-and-merge/
+
+so use
+$ git fetch
+$ git merge origin/solandra
+
+PRETTY LOG
+========
+git log --pretty=oneline
+git log --pretty=format:"%h %ad | %s%d [%an]" --graph --date=short
+
+
 # add remote repo
 git remote add origin git@github.com:karussell/Jetwick.git
 

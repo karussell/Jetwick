@@ -226,7 +226,7 @@ public class HomePage extends WebPage {
         // front page/empty => sort against relevance
         // user search    => sort against latest date
         // other        => sort against retweets if no sort specified
-        
+
         String sort = parameters.getString("sort");
         if ("retweets".equals(sort))
             JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");
@@ -237,20 +237,20 @@ public class HomePage extends WebPage {
         else if ("relevance".equals(sort))
             JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
         else {
-            JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");            
-            
-            if(!Helper.isEmpty(userName))
-                JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");                    
+            JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");
+
+            if (!Helper.isEmpty(userName))
+                JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");
         }
-                
+
         // front page: avoid slow queries for matchall query and filter against latest tweets only
         if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
             logger.info(addIP("[stats] q=''"));
             q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
-            if(Helper.isEmpty(sort))
+            if (Helper.isEmpty(sort))
                 JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
         }
-        
+
         if (Helper.isEmpty(userName)) {
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
@@ -630,6 +630,8 @@ public class HomePage extends WebPage {
                 query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
                 page = 0;
                 twitterFallback = false;
+                info("Note: if you have recently logged in you won't get results. Please try again in 2 minutes. "
+                        + "Found: " + friends.size() + " friends");
             } else {
                 info("To use friend search you need to login: click authenticate on the left.");
                 info("Do not forget to tweet about @jetwick ala 'Tried @jetwick today and searched within the tweets of my friends'");
@@ -749,7 +751,7 @@ public class HomePage extends WebPage {
             }
 
             if (startBGThread)
-                msg += " Come back in ~10min for filterable results.";
+                msg += " Please try again in two minutes to get jetwicked results.";
         }
 
         if (startBGThread) {

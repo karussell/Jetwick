@@ -136,7 +136,7 @@ public class SolrTweet implements Serializable {
 
     public String getLowerCaseText() {
         if (lowerCaseText == null)
-            lowerCaseText = getText().toLowerCase();
+            lowerCaseText = getText().toLowerCase();        
 
         return lowerCaseText;
     }
@@ -311,7 +311,7 @@ public class SolrTweet implements Serializable {
         this.daemon = daemon;
         return this;
     }
-    
+
     /**
      * If a tweet is added to the system and it is a retweet but no original
      * tweet can be found a daemon tweet will be created to reflect this
@@ -474,7 +474,6 @@ public class SolrTweet implements Serializable {
                 "uma", "un", "una", "une", "ut",
                 "va", "van", "να", "vi", "vie", "vos", "vous", "votre",
                 "yang", "για", "yg", "yo", "qué"}));
-
     public static final Set<String> PHRASE_WHITE_LIST = new LinkedHashSet<String>(Arrays.asList(new String[]{
                 "bin laden", // -> otherwise wrong language detection for 'alqaedatracker' because of 'bin'
                 "open source"

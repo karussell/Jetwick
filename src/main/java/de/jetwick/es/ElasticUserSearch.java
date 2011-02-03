@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import java.util.Collections;
 import de.jetwick.util.Helper;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -55,6 +54,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
     private Logger logger = LoggerFactory.getLogger(getClass());
     private static final String QUERY_TERMS = "ss_qterms_mv_s";
     private static final String SCREEN_NAME = "name";
+    public static final String CREATED_AT = "createdAt_dt";
+    
     protected int termMinFrequency = 2;
 
     public ElasticUserSearch(Configuration config) {
@@ -140,7 +141,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         b.field("token_s", user.getTwitterToken());
         b.field("tokenSecret_s", user.getTwitterTokenSecret());
 
-        b.field("createdAt_dt", user.getCreatedAt());
+        b.field(CREATED_AT, user.getCreatedAt());
         b.field("twCreatedAt_dt", user.getTwitterCreatedAt());
         b.field("friendsUpdate_dt", user.getLastFriendsUpdate());
         b.field("friends", Helper.toStringArray(user.getFriends()));
@@ -194,7 +195,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         user.setTwitterTokenSecret((String) doc.get("tokenSecret_s"));
 
         user.setUpdateAt(Helper.toDateNoNPE((String) doc.get("timestamp")));
-        user.setCreatedAt(Helper.toDateNoNPE((String) doc.get("createdAt_dt")));
+        user.setCreatedAt(Helper.toDateNoNPE((String) doc.get(CREATED_AT)));
         user.setTwitterCreatedAt(Helper.toDateNoNPE((String) doc.get("twCreatedAt_dt")));
         user.setLastFriendsUpdate(Helper.toDateNoNPE((String) doc.get("friendsUpdate_dt")));
         user.setFriends((Collection<String>)doc.get("friends"));

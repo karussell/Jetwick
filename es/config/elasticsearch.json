@@ -1,5 +1,10 @@
 {    
+    "network" : {
+        "host" : "127.0.0.1"
+    },
     "index" : {
+        "number_of_shards": 16,
+        "number_of_replicas": 1,
         "refresh_interval" : "2s",        
         "analysis" : {
             "//standard tokenizer removes all punctuation chars so avoid it to have # and @":"comment",

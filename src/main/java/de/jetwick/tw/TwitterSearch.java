@@ -61,7 +61,7 @@ public class TwitterSearch implements Serializable {
     private static final long serialVersionUID = 1L;
     public final static String COOKIE = "jetwick";
     /**
-     * Do not use less than 20 api points for queueing searches of unloggedin users
+     * Do not use less than this limit of 20 api points for queueing searches of unloggedin users
      */
     public final static int LIMIT = 50;
     private Twitter twitter;
@@ -94,7 +94,7 @@ public class TwitterSearch implements Serializable {
         if (consumerKey == null)
             throw new NullPointerException("Please use init consumer settings!");
 
-        twitter = createTwitter(token, tokenSecret);        
+        twitter = createTwitter(token, tokenSecret);
         logger.info("create new TwitterSearch");
         return this;
     }
@@ -115,13 +115,13 @@ public class TwitterSearch implements Serializable {
         // this issue should now be resolved:
         // http://groups.google.com/group/twitter4j/browse_thread/thread/6f6d5b35149e2faa
 //        System.setProperty("twitter4j.http.useSSL", "false");
-        
+
         // friends makes problems
         // http://groups.google.com/group/twitter4j/browse_thread/thread/f696de22d4554143
         // http://groups.google.com/group/twitter-development-talk/browse_thread/thread/cd76f954957f6fb0
         // http://groups.google.com/group/twitter-development-talk/browse_thread/thread/9e9bfec2f076e4f9
         //System.setProperty("twitter4j.http.useSSL", "true");
-        
+
         // changing some properties to be applied on HttpURLConnection
         // default read timeout 120000 see twitter4j.internal.http.HttpClientImpl
         System.setProperty("twitter4j.http.readTimeout", "10000");
@@ -176,8 +176,16 @@ public class TwitterSearch implements Serializable {
         tmpRequestToken = null;
         return aToken;
     }
+    
+    public String getScreenName() {
+        try {
+            return twitter.getScreenName();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
 
-    public SolrUser getUser() throws TwitterException {
+    public SolrUser getUser() throws TwitterException {        
         return getUser(twitter.getScreenName());
     }
 
@@ -642,15 +650,17 @@ public class TwitterSearch implements Serializable {
         while (true) {
             int rate;
 
-            while ((rate = getRateLimit()) < 5) {
+            while ((rate = getRateLimit()) < LIMIT) {
                 int reset = -1;
                 try {
                     reset = twitter.getRateLimitStatus().getSecondsUntilReset();
                 } catch (Exception ex) {
                 }
-                logger.info("... waiting 5 minutes. rate limit:" + rate
-                        + ". minutes until reset:" + (int) (reset / 60.0f));
-                myWait(5 * 60);
+                if (reset > 1) {
+                    logger.info("no api points left while getFriends! Skipping ...");
+                    return;
+                }
+                myWait(reset);
             }
 
             ResponseList<User> res = null;
