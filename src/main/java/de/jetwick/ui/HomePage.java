@@ -626,7 +626,7 @@ public class HomePage extends WebPage {
 
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             if (getMySession().hasLoggedIn()) {
-                Collection<String> friends = getMySession().getUser().getFriends();
+                Collection<String> friends = getMySession().getFriends(uindexProvider.get());
                 if(friends.isEmpty()) {                    
                     info("You recently logged in. Please try again in 2 minutes to use friend search.");
                 } else {
@@ -635,8 +635,8 @@ public class HomePage extends WebPage {
                     twitterFallback = false;
                 }
             } else {
-                info("To use friend search you need to login: click authenticate on the left.");
-                info("Do not forget to tweet about @jetwick ala 'Tried @jetwick today and searched within the tweets of my friends'");
+                info("To use friend search you need to login: click login on the left.");
+                info("Do not forget to tweet this: 'Tried @jetwick today and searched within the tweets of my friends'");
 //                warn("Please login to search friends of " + parameters.getString("user"));
             }
         }

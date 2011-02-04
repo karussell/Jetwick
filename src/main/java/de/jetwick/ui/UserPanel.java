@@ -85,7 +85,7 @@ public class UserPanel extends Panel {
                 String name = user.getRealName();
                 if (name == null)
                     name = user.getScreenName();
-                add(new Label("loginText", "Hello " + name + "!"));
+                add(new Label("loginText", "Hi " + name + "!"));
                 add(new Link("logout") {
 
                     @Override

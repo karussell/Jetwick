@@ -19,6 +19,7 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
+import java.util.Collection;
 import javax.servlet.http.Cookie;
 import org.apache.wicket.Request;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -35,6 +36,7 @@ import twitter4j.http.AccessToken;
  */
 public class MySession extends WebSession {
 
+    private static final long serialVersionUID = 1L;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     /**
      * twitter4j saves state. so it is a bit complicated.
@@ -169,5 +171,15 @@ public class MySession extends WebSession {
         }
 
         setUser(null);
+    }
+
+    public Collection<String> getFriends(ElasticUserSearch uSearch) {
+        Collection<String> friends = getUser().getFriends();
+        if(friends.isEmpty()) {
+            // we will need to update regularly to avoid missing the friends-update from TweetProducer
+            user = uSearch.findByScreenName(getUser().getScreenName());
+            friends = user.getFriends();            
+        }        
+        return friends;
     }
 }
