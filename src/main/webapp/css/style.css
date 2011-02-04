@@ -170,7 +170,7 @@ body, p {
 }
 
 .jetwickminilogo, .pannouslogo { float:left; }
-.jetwickminilogo a img {
+.jetwickminilogo a img {    
     padding-right: 5px;
     width: 60px;
 }
@@ -182,18 +182,9 @@ body, p {
 
 .yourkitlogo { clear: both; }
 
-.searchboxhints {
-    padding: 0px 7px 0 0;
-    float: right;
-}
-
-.searchboxhints a {
-    font-size: 0.7em;
-    padding: 2px;
-}
 .jetwicklogo {
     float: left;
-    padding: 0px 30px 10px 10px;    
+    padding: 0px 30px 10px 2px;    
 }
 .jetwicklogo:hover {
     text-decoration: none;
@@ -211,31 +202,33 @@ body, p {
 }
 
 .search-tweet-tf { 
-    width: 435px; 
+    width: 415px; 
     font-size: 20px;
-    height: 27px;
+    height: 27px;    
     margin-bottom: 7px;
 }
-.search-user-tf  { 
-    width: 203px; 
+.search-user-tf {    
+    width: 150px;
     border-left: none;
     border-top: none;
     border-right: none;
     border-bottom: gray 1px groove;    
 }
 
-.searchform {        
-    width: 540px;
-    padding-bottom: 5px;
+.searchform {    
+    padding-left: 10px;    
+    padding-bottom: 2px;
 }
 .searchform-button {
     font-size: 18px;
     border: medium medium;
     height: 32px;    
-    width: 85px;
+    width: 83px;
 }
 .search-type-left {
-    padding-left: 5px;
+    padding-left: 2px;
+    padding-right: 8px;
+    font-weight: bold;
 }
 .search-type {    
     font-size: 12px;    
@@ -616,7 +609,7 @@ div.wicket-aa ul li.selected {
 }
 #info-panel {
     float: left;
-    width: 330px;
+    width: 325px;
     padding: 0px 0px 0px 18px;
     margin: 0px;
 }

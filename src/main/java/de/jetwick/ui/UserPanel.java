@@ -18,17 +18,16 @@ package de.jetwick.ui;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
+import org.apache.wicket.Application;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
@@ -54,9 +53,14 @@ public class UserPanel extends Panel {
                 String url;
                 try {
                     logger.info("Clicked Login!");
-                    PageParameters params = new PageParameters();
-                    params.add("callback", "true");
-                    String callbackUrl = RequestUtils.toAbsolutePath(urlFor(HomePage.class, params).toString());
+                    String callbackUrl;
+                    if (Application.DEVELOPMENT.equals(getApplication().getConfigurationType())) {
+                        PageParameters params = new PageParameters();
+                        params.add("callback", "true");
+                        callbackUrl = RequestUtils.toAbsolutePath(urlFor(HomePage.class, params).toString());
+                    } else
+                        callbackUrl = "http://jetwick.com?callback=true";
+
                     url = homePageRef.getTwitterSearch().oAuthLogin(callbackUrl);
                     if (url != null)
                         getRequestCycle().setRequestTarget(new RedirectRequestTarget(url));

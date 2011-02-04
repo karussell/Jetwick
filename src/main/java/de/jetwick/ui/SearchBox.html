@@ -39,14 +39,14 @@
                                    name="q" title="Enter your query"/>                                                        
                             
                             <input type="submit" value="Search" class="searchform-button"/>                            
-                            <div wicket:id="searchTypes">
+                            <div wicket:id="searchTypes" class="test">
                                 <span class="search-type-left search-type">User Filter</span>
-                                <input onclick='getElementById("userbox").value=""' wicket:id="0" id="sb-all" type="radio" group="searchType" value="0"/>                                 
-                                <label class="search-type" for="sb-all" title="No restriction">None</label>
-                                <input onclick='getElementById("userbox").value=""' wicket:id="1" id="sb-friends" type="radio" group="searchType" value="1"/>
-                                <label class="search-type" for="sb-friends" title="Only show tweets of people you follow! Login before!">Only Friends</label>
-                                <input onclick='getElementById("userbox").focus()' wicket:id="2" id="sb-user" type="radio" group="searchType" value="2"/>
-                                <label class="search-type" for="sb-user" title="Only show tweets of the specified user">One User:</label>
+                                <input onclick='getElementById("userbox").value=""' wicket:id="0" id="sbnone" type="radio" group="searchType" value="0"/>                                 
+                                <label class="search-type" for="sbnone" title="No restriction">None</label>
+                                <input onclick='getElementById("userbox").value=""' wicket:id="1" id="sbfriends" type="radio" group="searchType" value="1"/>
+                                <label class="search-type" for="sbfriends" title="Only show tweets of people you follow! Login before!">Only Friends</label>
+                                <input onclick='getElementById("userbox").focus()' wicket:id="2" id="sbuser" type="radio" group="searchType" value="2"/>
+                                <label class="search-type" for="sbuser" title="Only show tweets of the specified user">One User:</label>
                                 <input id="userbox" type="text" wicket:id="userTextField" class="search-user-tf"
                                    name="user" title="Restrict search result to one user"/>                            
                              </div>

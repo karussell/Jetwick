@@ -26,6 +26,7 @@ import de.jetwick.tw.TweetProducerViaSearch;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.UrlTitleCleaner;
 import de.jetwick.util.MaxBoundSet;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class DefaultModule extends AbstractModule {
     }
 
     @Override
-    protected void configure() {
+    protected void configure() {        
         logger.info(config.toString());
         installTweetProducer();
         installLastSearches();

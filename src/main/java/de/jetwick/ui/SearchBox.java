@@ -63,9 +63,7 @@ public class SearchBox extends Panel {
         else
             selectedIndex = 0;
 
-        final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
-
-        // TODO StatelessForm not working with Radio!!??
+        final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));        
         form = new StatelessForm("searchform") {
 
             @Override
@@ -123,9 +121,9 @@ public class SearchBox extends Panel {
         };
         userTF.setMarkupId("userbox");
 
-        rg.add(new Radio("0", new Model(0)));
-        rg.add(new Radio("1", new Model(1)));
-        rg.add(new Radio("2", new Model(2)));
+        rg.add(new Radio("0", new Model(0)).setMarkupId("sbnone"));
+        rg.add(new Radio("1", new Model(1)).setMarkupId("sbfriends"));
+        rg.add(new Radio("2", new Model(2)).setMarkupId("sbuser"));
         rg.add(userTF);
         form.add(rg);
 
