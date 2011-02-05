@@ -48,6 +48,7 @@ public class ElasticNode {
 
     private static Logger logger = LoggerFactory.getLogger(ElasticNode.class);
     public static final String CLUSTER = "jetwickcluster";
+    public static final int PORT = 9300;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         ElasticNode node = new ElasticNode().start("es");

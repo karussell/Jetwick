@@ -101,7 +101,7 @@ public class TagCloudPanel extends Panel {
         if (query.getQuery() != null)
             terms.addAll(Arrays.asList(query.getQuery().split(" ")));
 
-        if (rsp != null) {
+        if (rsp != null && rsp.facets() != null) {
             TermsFacet tf = (TermsFacet) rsp.facets().facet(ElasticTweetSearch.TAG);
             if (tf != null) {
                 max = 0;

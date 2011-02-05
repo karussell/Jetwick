@@ -80,7 +80,7 @@ public class Solr2ElasticTweet {
         if (query.getFacetFields() != null) {
             for (String ff : query.getFacetFields()) {
                 ff = removeLocalParams(ff);
-                // TODO parse all query params to find the f.<field>.limit and set .size()
+                // TODO parse all query params to find the f.<field>.limit then set .size() from that
                 srb.addFacet(FacetBuilders.termsFacet(ff).field(ff));
             }
         }       

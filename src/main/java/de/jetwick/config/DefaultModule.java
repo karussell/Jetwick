@@ -17,6 +17,8 @@ package de.jetwick.config;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
+import de.jetwick.es.AbstractElasticSearch;
+import de.jetwick.es.ElasticNode;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
@@ -26,7 +28,7 @@ import de.jetwick.tw.TweetProducerViaSearch;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.UrlTitleCleaner;
 import de.jetwick.util.MaxBoundSet;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +41,10 @@ public class DefaultModule extends AbstractModule {
     }
 
     @Override
-    protected void configure() {        
+    protected void configure() {
         logger.info(config.toString());
+        bind(Configuration.class).toInstance(config);
+
         installTweetProducer();
         installLastSearches();
         installTwitterModule();
@@ -62,12 +66,15 @@ public class DefaultModule extends AbstractModule {
     }
 
     public void installSearchModule() {
-        bind(Configuration.class).toInstance(config);        
-        ElasticTweetSearch tweetSearch = new ElasticTweetSearch(config);
+        // TODO shouldn't fail when node is not available!!??
+        Client client = AbstractElasticSearch.createClient(ElasticNode.CLUSTER,
+                config.getTweetSearchUrl(), ElasticNode.PORT);
+
+        ElasticTweetSearch tweetSearch = new ElasticTweetSearch(client);
         tweetSearch.nodeInfo();
         bind(ElasticTweetSearch.class).toInstance(tweetSearch);
 
-        ElasticUserSearch userSearch = new ElasticUserSearch(config);
+        ElasticUserSearch userSearch = new ElasticUserSearch(client);
         bind(ElasticUserSearch.class).toInstance(userSearch);
     }
 
@@ -99,7 +106,7 @@ public class DefaultModule extends AbstractModule {
             }
         });
     }
-    
+
     public TwitterSearch createTwitterSearch() {
         return new TwitterSearch();
 //        return new TwitterSearchOffline();

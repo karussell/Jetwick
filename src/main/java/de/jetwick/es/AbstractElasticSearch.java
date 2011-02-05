@@ -58,12 +58,16 @@ public abstract class AbstractElasticSearch {
     }
 
     public AbstractElasticSearch(String url, String login, String pw) {
-        Settings s = ImmutableSettings.settingsBuilder().put("cluster.name", ElasticNode.CLUSTER).build();
-        TransportClient tmp = new TransportClient(s);
-        tmp.addTransportAddress(new InetSocketTransportAddress(url, 9300));
-        client = tmp;
+        client = createClient(ElasticNode.CLUSTER, url, ElasticNode.PORT);
     }
 
+    public static Client createClient(String cluster, String url, int port) {
+        Settings s = ImmutableSettings.settingsBuilder().put("cluster.name", cluster).build();
+        TransportClient tmp = new TransportClient(s);
+        tmp.addTransportAddress(new InetSocketTransportAddress(url, port));
+        return tmp;
+    }
+    
     public abstract String getIndexName();
 
     public abstract String getIndexType();
