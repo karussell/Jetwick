@@ -251,7 +251,8 @@ public class HomePage extends WebPage {
                 JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
         }
 
-        if (Helper.isEmpty(userName)) {
+        String filter = parameters.getString("filter");        
+        if (Helper.isEmpty(userName) && !"none".equals(filter)) {
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
             q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
             q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);

@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.index.analysis.StopAnalyzerProvider;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;

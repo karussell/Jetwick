@@ -11,11 +11,11 @@
             "analyzer" : {                
                 "index_analyzer" : {                    
                     "tokenizer" : "whitespace",
-                    "filter" : ["jetwickfilter", "lowercase", "snowball", "stop"]
+                    "filter" : ["jetwickfilter", "lowercase", "snowball"]
                 },
                 "search_analyzer" : {                                                    
                     "tokenizer" : "whitespace",
-                    "filter" : ["jetwickfilter", "lowercase", "snowball", "stop"]
+                    "filter" : ["jetwickfilter", "lowercase", "snowball"]
                 }
             },                               
             "filter" : {
