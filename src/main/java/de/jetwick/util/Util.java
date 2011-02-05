@@ -26,12 +26,14 @@ import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.SolrUserSearch;
+import de.jetwick.tw.Credits;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -56,9 +58,10 @@ public class Util {
 
         String url = map.get("url");
         String cmd = map.get("cmd");
-        
-        System.out.println("cmd is overwritten to use copyUsers. Remove in source if appropriated");
-        cmd = "copyUsers";
+
+        cmd = "showFollowers";
+
+        System.out.println("cmd=" + cmd);
 
         Util util = new Util(url);
         if ("deleteAll".equals(cmd)) {
@@ -70,13 +73,15 @@ public class Util {
             util.copyStaticTweets();
         } else if ("copyUsers".equals(cmd)) {
             util.copyUsers();
+        } else if ("showFollowers".equals(cmd)) {
+            util.showFollowers("jetwick");
         }
     }
 
     public Util(String url) {
-        if(url == null || url.isEmpty())
+        if (url == null || url.isEmpty())
             url = config.getTweetSearchUrl();
-        
+
         this.url = url;
     }
 
@@ -194,9 +199,9 @@ public class Util {
 
     public void copyUsers() throws SolrServerException {
         String solrUrl = "http://www.pannous.info/uindex";
-        
+
         System.out.println("create solrusersearch");
-        SolrUserSearch solrUserSearch = new SolrUserSearch(solrUrl, 
+        SolrUserSearch solrUserSearch = new SolrUserSearch(solrUrl,
                 config.getTweetSearchLogin(), config.getTweetSearchPassword(), false);
 
         System.out.println("query user index");
@@ -216,5 +221,30 @@ public class Util {
 
     ElasticUserSearch createUserSearch() {
         return new ElasticUserSearch(url, null, null);
+    }
+
+    public void showFollowers(String user) throws SolrServerException {
+//        ElasticUserSearch uSearch = createUserSearch();
+//        Set<SolrUser> jetwickUsers = new LinkedHashSet<SolrUser>();
+//        uSearch.search(jetwickUsers, new SolrQuery().setRows(10000));
+        final Set<String> set = new TreeSet<String>();
+//        for (SolrUser u : jetwickUsers) {
+//            set.add(u.getScreenName());
+//        }
+        Credits credits = config.getTwitterSearchCredits();
+        TwitterSearch tw4j = new TwitterSearch().setConsumer(credits.getConsumerKey(), credits.getConsumerSecret());
+        tw4j.initTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
+        tw4j.getFollowers(user, new AnyExecutor<SolrUser>() {
+
+            @Override
+            public SolrUser execute(SolrUser o) {
+//                if (set.contains(o.getScreenName()))
+                set.add(o.getScreenName());
+                return null;
+            }
+        });
+        for (String u : set) {
+            System.out.println(u);
+        }
     }
 }

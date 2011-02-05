@@ -70,7 +70,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                     setSortField(ElasticUserSearch.CREATED_AT, SolrQuery.ORDER.desc);
             try {
                 userSearch.search(users, q);
-            } catch (SolrServerException ex) {
+            } catch (Exception ex) {
                 logger.error("Couldn't search user index", ex);
             }
         }

@@ -635,8 +635,8 @@ public class HomePage extends WebPage {
                     twitterFallback = false;
                 }
             } else {
-                info("To use friend search you need to login: click login on the left.");
-                info("Do not forget to tweet this: 'Tried @jetwick today and searched within the tweets of my friends'");
+                info("Login on the left to use friend search. Do not forget to tweet about jetwick.");                
+                info("Follow us to get news about jetwick and to recieve private messages (rare frequency).");
 //                warn("Please login to search friends of " + parameters.getString("user"));
             }
         }

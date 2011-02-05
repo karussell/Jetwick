@@ -176,7 +176,7 @@ public class TwitterSearch implements Serializable {
         tmpRequestToken = null;
         return aToken;
     }
-    
+
     public String getScreenName() {
         try {
             return twitter.getScreenName();
@@ -185,7 +185,7 @@ public class TwitterSearch implements Serializable {
         }
     }
 
-    public SolrUser getUser() throws TwitterException {        
+    public SolrUser getUser() throws TwitterException {
         return getUser(twitter.getScreenName());
     }
 
@@ -645,7 +645,15 @@ public class TwitterSearch implements Serializable {
         // -> stream.filter(new FilterQuery(new int[]{1, 2, 3,}));
     }
 
+    public void getFollowers(String user, AnyExecutor<SolrUser> anyExecutor) {
+        getFriendsOrFollowers(user, anyExecutor, false);
+    }
+
     public void getFriends(String userName, AnyExecutor<SolrUser> executor) {
+        getFriendsOrFollowers(userName, executor, true);
+    }
+
+    private void getFriendsOrFollowers(String userName, AnyExecutor<SolrUser> executor, boolean friends) {
         long cursor = -1;
         while (true) {
             int rate;
@@ -657,7 +665,7 @@ public class TwitterSearch implements Serializable {
                 } catch (Exception ex) {
                 }
                 if (reset > 1) {
-                    logger.info("no api points left while getFriends! Skipping ...");
+                    logger.info("no api points left while getFriendsOrFollowers! Skipping ...");
                     return;
                 }
                 myWait(reset);
@@ -666,10 +674,17 @@ public class TwitterSearch implements Serializable {
             ResponseList<User> res = null;
             IDs ids = null;
             try {
-                if (cursor < 0)
-                    ids = twitter.getFriendsIDs(userName);
-                else
-                    ids = twitter.getFriendsIDs(userName, cursor);
+                if (friends) {
+                    if (cursor < 0)
+                        ids = twitter.getFriendsIDs(userName);
+                    else
+                        ids = twitter.getFriendsIDs(userName, cursor);
+                } else {
+                    if (cursor < 0)
+                        ids = twitter.getFollowersIDs(userName);
+                    else
+                        ids = twitter.getFollowersIDs(userName, cursor);
+                }
             } catch (TwitterException ex) {
                 logger.warn(ex.getMessage());
                 break;

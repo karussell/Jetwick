@@ -50,7 +50,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -397,7 +396,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    Collection<SolrUser> search(String str) throws SolrServerException {
+    Collection<SolrUser> search(String str) {
         List<SolrUser> user = new ArrayList<SolrUser>();
         search(user, new TweetQuery(str));
         return user;
@@ -789,7 +788,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     }
 
     protected void findRepliesForOriginalTweets(SolrQuery query, Map<Long, SolrTweet> tweets,
-            Collection<SolrTweet> updatedTweets) throws SolrServerException {
+            Collection<SolrTweet> updatedTweets) {
 
         Map<Long, SolrTweet> replyMap = new LinkedHashMap<Long, SolrTweet>();
         SearchResponse rsp = queryOldSolr(query);
@@ -812,7 +811,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     }
 
     protected void selectOriginalTweetsWithReplies(SolrQuery query, Collection<SolrTweet> tweets,
-            Collection<SolrTweet> updatedTweets) throws SolrServerException {
+            Collection<SolrTweet> updatedTweets) {
 
         SearchResponse rsp = queryOldSolr(query);
         SearchHits docs = rsp.getHits();
@@ -1010,7 +1009,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         return sb.toString();
     }
 
-    public Collection<SolrTweet> searchAds(String query) throws SolrServerException {
+    public Collection<SolrTweet> searchAds(String query) {
         query = query.trim();
         if (query.isEmpty())
             return Collections.EMPTY_LIST;

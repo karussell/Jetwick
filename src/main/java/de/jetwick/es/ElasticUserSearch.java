@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -261,7 +260,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
                 return res.iterator().next();
             else
                 throw new IllegalStateException("token search:" + token + " returns more than one users:" + res);
-        } catch (SolrServerException ex) {
+        } catch (Exception ex) {
             logger.error("Couldn't load user with token:" + token + " " + ex.getMessage());
             return null;
         }
@@ -277,14 +276,14 @@ public class ElasticUserSearch extends AbstractElasticSearch {
                 return res.iterator().next();
             else
                 throw new IllegalStateException("screenName search:" + name + " returns more than one users:" + res);
-        } catch (SolrServerException ex) {
+        } catch (Exception ex) {
             logger.error("Couldn't load user with screenName:" + name + " " + ex.getMessage());
             return null;
         }
     }
 
     // TODO facet pagination
-    public Collection<String> getQueryTerms() throws SolrServerException {
+    public Collection<String> getQueryTerms() {
         SearchResponse rsp = search(new SolrQuery().setFacet(true).addFacetField(QUERY_TERMS).setFacetMinCount(1));
         TermsFacet tf = (TermsFacet) rsp.getFacets().facet(QUERY_TERMS);
         Collection<String> res = new ArrayList<String>();
@@ -296,11 +295,11 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return res;
     }
 
-    public SearchResponse search(SolrQuery query) throws SolrServerException {
+    public SearchResponse search(SolrQuery query) {
         return search(new ArrayList(), query);
     }
 
-    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) throws SolrServerException {
+    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) {
         SearchRequestBuilder srb = client.prepareSearch(getIndexName());
         new Solr2ElasticUser().createElasticQuery(query, srb);
         SearchResponse response = srb.execute().actionGet();
@@ -321,7 +320,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     /** use createQuery + search instead */
     @Deprecated
-    Collection<SolrUser> search(String string) throws SolrServerException {
+    Collection<SolrUser> search(String string) {
         Set<SolrUser> ret = new LinkedHashSet<SolrUser>();
         search(ret, string, 10, 0);
         return ret;
@@ -329,7 +328,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     /** use createQuery + search instead */
     @Deprecated
-    long search(Collection<SolrUser> users, String qStr, int hitsPerPage, int page) throws SolrServerException {
+    long search(Collection<SolrUser> users, String qStr, int hitsPerPage, int page) {
         SolrQuery query = new UserQuery(qStr);
         attachPagability(query, page, hitsPerPage);
         SearchResponse rsp = search(users, query);
