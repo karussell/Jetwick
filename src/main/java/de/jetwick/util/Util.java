@@ -25,7 +25,6 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.SolrUserSearch;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
@@ -70,9 +69,7 @@ public class Util {
             final String fromUrl = map.get("url.from");
             util.fillFrom(fromUrl);
         } else if ("copyStaticTweets".equals(cmd)) {
-            util.copyStaticTweets();
-        } else if ("copyUsers".equals(cmd)) {
-            util.copyUsers();
+            util.copyStaticTweets();        
         } else if ("showFollowers".equals(cmd)) {
             util.showFollowers("jetwick");
         }
@@ -195,28 +192,6 @@ public class Util {
                 userSearch.refresh();
             }
         }
-    }
-
-    public void copyUsers() throws SolrServerException {
-        String solrUrl = "http://www.pannous.info/uindex";
-
-        System.out.println("create solrusersearch");
-        SolrUserSearch solrUserSearch = new SolrUserSearch(solrUrl,
-                config.getTweetSearchLogin(), config.getTweetSearchPassword(), false);
-
-        System.out.println("query user index");
-        Set<SolrUser> users = new LinkedHashSet<SolrUser>();
-        solrUserSearch.search(users, new SolrQuery().setRows(100));
-
-        System.out.println("create usersearch");
-        userSearch = createUserSearch();
-        System.out.println("count before:" + userSearch.countAll() + " found:" + users);
-
-        userSearch.update(users);
-        userSearch.refresh();
-
-        System.out.println("count now:" + userSearch.countAll());
-        System.out.println("pannous account? " + userSearch.findByScreenName("pannous"));
     }
 
     ElasticUserSearch createUserSearch() {
