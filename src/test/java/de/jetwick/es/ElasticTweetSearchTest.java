@@ -68,12 +68,16 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         SolrUser otherUser = new SolrUser("otherUser");
         SolrTweet tw2 = new SolrTweet(2L, "Java is cool and stable!", otherUser);
+        SolrTweet tw3 = new SolrTweet(3L, "Java is stable!", otherUser);
         twSearch.update(tw1, false);
-        twSearch.update(tw2, true);
+        twSearch.update(tw2, false);
+        twSearch.update(tw3, true);
 
         assertEquals(1, twSearch.search("java").size());
         assertEquals(1, twSearch.search("test").size());
-//        assertEquals(1, twSearch.search("java stable").size());                
+        assertEquals(1, twSearch.searchTweets(new SolrQuery("this test")).size());
+        assertEquals(2, twSearch.searchTweets(new SolrQuery("java stable")).size());
+        assertEquals(1, twSearch.searchTweets(new SolrQuery("java cool stable")).size());        
     }
 
     @Test

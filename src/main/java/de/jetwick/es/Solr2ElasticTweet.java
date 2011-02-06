@@ -25,6 +25,7 @@ import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.analysis.StopAnalyzerProvider;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.index.query.xcontent.QueryStringQueryBuilder.Operator;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
@@ -217,7 +218,7 @@ public class Solr2ElasticTweet {
             qb = QueryBuilders.matchAllQuery();
         else {
             // fields can also contain patterns like so name.* to match more fields
-            qb = QueryBuilders.queryString(escapeQuery(queryStr)).
+            qb = QueryBuilders.queryString(queryStr).defaultOperator(Operator.AND).
                     field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
                     allowLeadingWildcard(false).analyzer(getDefaultAnalyzer()).useDisMax(true);
         }
