@@ -28,11 +28,7 @@ import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.tw.TwitterSearch;
 import org.apache.wicket.Application;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
-import org.apache.wicket.request.IRequestCycleProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

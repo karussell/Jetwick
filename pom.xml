@@ -481,7 +481,6 @@
             <url>http://elasticsearch.googlecode.com/svn/maven</url>
         </repository>
         
-
     </repositories>
 </project>
 
