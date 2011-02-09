@@ -72,12 +72,6 @@ public abstract class AbstractElasticSearch {
 
     public abstract String getIndexType();
 
-    public void nodeInfo() {
-        NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
-        String str = "Cluster:" + rsp.getClusterName() + ". Active nodes:";
-        str += rsp.getNodesMap().keySet();
-        logger.info(str);
-    }
 
     public boolean indexExists(String indexName) {
         // make sure node is up to create the index otherwise we get: blocked by: [1/not recovered from gateway];
@@ -147,7 +141,11 @@ public abstract class AbstractElasticSearch {
     }
 
     public long countAll() {
-        CountResponse response = client.prepareCount(getIndexName()).
+        return countAll(getIndexName());
+    }
+    
+    public long countAll(String... indices) {
+        CountResponse response = client.prepareCount(indices).
                 setQuery(QueryBuilders.matchAllQuery()).
                 execute().actionGet();
         return response.getCount();
@@ -172,18 +170,26 @@ public abstract class AbstractElasticSearch {
     }
 
     public void deleteAll() {
+        deleteAll(getIndexName());
+    }
+    
+    public void deleteAll(String indexName) {
         //client.prepareIndex().setOpType(OpType.)
         //there is an index delete operation
         // http://www.elasticsearch.com/docs/elasticsearch/rest_api/admin/indices/delete_index/
 
-        client.prepareDeleteByQuery(getIndexName()).
+        client.prepareDeleteByQuery(indexName).               
                 setQuery(QueryBuilders.matchAllQuery()).
-                execute().
-                actionGet();
-        refresh();
+                execute().actionGet();
+        refresh(indexName);
     }
 
-    public OptimizeResponse optimize(int optimizeToSegmentsAfterUpdate) {
-        return client.admin().indices().optimize(new OptimizeRequest(getIndexName()).maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
+    public OptimizeResponse optimize() {
+        return optimize(getIndexName(), 1);
+    }
+    
+    public OptimizeResponse optimize(String indexName, int optimizeToSegmentsAfterUpdate) {
+        return client.admin().indices().optimize(new OptimizeRequest(indexName).
+                maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
     }
 }

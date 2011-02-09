@@ -39,6 +39,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +131,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
     }
 
     public XContentBuilder createDoc(SolrUser user) throws IOException {
-        XContentBuilder b = jsonBuilder().startObject();
+        XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         // make sure that if we look for a specific user this user will show up first:
         b.field(SCREEN_NAME, user.getScreenName());
         b.field("realName", user.getRealName());

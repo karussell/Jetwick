@@ -91,8 +91,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         // already existing tweets must not harm
         ElasticTweetSearch tweetSearch = tweetSearchTester.getTweetSearch();
         ElasticUserSearch userSearch = userSearchTester.getUserSearch();
-        tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));
-        tweetSearch.refresh();
+        tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));        
 
         Credits cred = new Configuration().getTwitterSearchCredits();
         TwitterSearch tws = new TwitterSearch() {

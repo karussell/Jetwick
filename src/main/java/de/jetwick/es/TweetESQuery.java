@@ -35,13 +35,13 @@ import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.slf4j.LoggerFactory;
-import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
  *
@@ -184,7 +184,7 @@ public class TweetESQuery {
 
     public static String toString(ToXContent tmp) {
         try {
-            return tmp.toXContent(jsonBuilder(), ToXContent.EMPTY_PARAMS).
+            return tmp.toXContent(JsonXContent.unCachedContentBuilder(), ToXContent.EMPTY_PARAMS).
                     prettyPrint().
                     string();
         } catch (Exception ex) {

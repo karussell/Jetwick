@@ -101,9 +101,9 @@ public class Statistics {
         if (argStr != null) {
             int segments = 1;
             logger.info("Start optimizing for twindex");
-            OptimizeResponse rsp = tweetSearch.optimize(segments);
+            OptimizeResponse rsp = tweetSearch.optimize(tweetSearch.getIndexName(), segments);
             logger.info("Optimized twindex to " + segments + " segments for " + rsp.getSuccessfulShards() + "/" + rsp.getTotalShards() + " shards.\n Now uindex");
-            rsp = tweetSearch.optimize(segments);
+            rsp = tweetSearch.optimize(tweetSearch.getIndexName(), segments);
             logger.info("Optimized uindex  to " + segments + " segments for " + rsp.getSuccessfulShards() + "/" + rsp.getTotalShards() + " shards.");
         }
 

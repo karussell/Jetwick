@@ -16,6 +16,7 @@
 package de.jetwick.util;
 
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provider;
@@ -29,6 +30,7 @@ import de.jetwick.tw.Credits;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -47,47 +49,77 @@ import org.slf4j.LoggerFactory;
 public class Util {
 
     private static Logger logger = LoggerFactory.getLogger(Util.class);
-    private final String url;
+    @Inject
     private ElasticUserSearch userSearch;
+    @Inject
+    private ElasticTweetSearch tweetSearch;
     private int userCounter;
     private Configuration config = new Configuration();
 
     public static void main(String[] args) throws SolrServerException {
         Map<String, String> map = Helper.parseArguments(args);
 
-        String url = map.get("url");
         String cmd = map.get("cmd");
 
-        cmd = "showFollowers";
-
-        System.out.println("cmd=" + cmd);
-
-        Util util = new Util(url);
-        if ("deleteAll".equals(cmd)) {
+        Util util = new Util();
+        String argStr = "";
+        if (!Helper.isEmpty(map.get("deleteAll"))) {
             util.deleteAll();
-        } else if ("fillFrom".equals(cmd)) {
-            final String fromUrl = map.get("url.from");
+            return;
+        }
+
+        argStr = map.get("fillFrom");
+        if (!Helper.isEmpty(argStr)) {
+            String fromUrl = argStr;
             util.fillFrom(fromUrl);
-        } else if ("copyStaticTweets".equals(cmd)) {
-            util.copyStaticTweets();        
-        } else if ("showFollowers".equals(cmd)) {
-            util.showFollowers("jetwick");
+            return;
+        }
+
+        if (!Helper.isEmpty(map.get("copyStaticTweets"))) {
+            util.copyStaticTweets();
+            return;
+        }
+
+        argStr = map.get("showFollowers");
+        if (!Helper.isEmpty(argStr)) {
+            String user = argStr;
+            util.showFollowers(user);
+            return;
+        }
+
+        if (!Helper.isEmpty(map.get("optimize"))) {
+            util.optimize();
+            return;
+        }
+
+        // copyIndex=twindex2
+        argStr = map.get("copyIndex");
+        if (!Helper.isEmpty(argStr)) {
+            String index = argStr;
+            util.copyIndex(index);
+            return;
+        }
+        
+        // call after copyIndex:
+        // removeOldTweetIndexAndAlias=twindex2
+        argStr = map.get("removeOldTweetIndexAndAlias");
+        if (!Helper.isEmpty(argStr)) {
+            String newIndexName = argStr;
+            util.removeOldTweetIndexAndAliasNew(newIndexName);
+            return;
         }
     }
 
-    public Util(String url) {
-        if (url == null || url.isEmpty())
-            url = config.getTweetSearchUrl();
-
-        this.url = url;
+    public Util() {
+        Module module = new DefaultModule();
+        Guice.createInjector(module).injectMembers(this);
     }
 
     public void deleteAll() {
-        userSearch = createUserSearch();
         // why don't we need to set? query.setQueryType("simple")
         userSearch.deleteAll();
         userSearch.refresh();
-        logger.info("Successfully finished deleteAll of " + url);
+        logger.info("Successfully finished deleteAll");
     }
 
     private void copyStaticTweets() throws SolrServerException {
@@ -147,8 +179,7 @@ public class Util {
     }
 
     public void fillFrom(final String fromUrl) {
-        userSearch = createUserSearch();
-        ElasticTweetSearch fromUserSearch = new ElasticTweetSearch(fromUrl, null, null);
+        ElasticTweetSearch fromTweetSearch = new ElasticTweetSearch(fromUrl, null, null);
         SolrQuery query = new SolrQuery().setQuery("*:*");
         query.setQueryType("simple");
         long maxPage = 1;
@@ -159,18 +190,18 @@ public class Util {
             @Override
             public void run() {
                 userSearch.refresh();
-                logger.info(userCounter + " users pushed to " + url + " from " + fromUrl);
+                logger.info(userCounter + " users pushed to default tweet search from " + fromUrl);
             }
         };
         Runtime.getRuntime().addShutdownHook(new Thread(optimizeOnExit));
 
         for (int page = 0; page < maxPage; page++) {
-            fromUserSearch.attachPagability(query, page, hitsPerPage);
+            fromTweetSearch.attachPagability(query, page, hitsPerPage);
             users.clear();
 
             SearchResponse rsp;
             try {
-                rsp = fromUserSearch.search(users, query);
+                rsp = fromTweetSearch.search(users, query);
             } catch (Exception ex) {
                 logger.warn("Error while searching!", ex);
                 continue;
@@ -192,10 +223,6 @@ public class Util {
                 userSearch.refresh();
             }
         }
-    }
-
-    ElasticUserSearch createUserSearch() {
-        return new ElasticUserSearch(url, null, null);
     }
 
     public void showFollowers(String user) throws SolrServerException {
@@ -221,5 +248,32 @@ public class Util {
         for (String u : set) {
             System.out.println(u);
         }
+    }
+
+    public void optimize() {
+        tweetSearch.optimize();
+    }
+
+    public void copyIndex(String newIndex) {
+        try {
+            logger.info("Old index has totalhits:" + tweetSearch.countAll());            
+            tweetSearch.saveCreateIndex(newIndex, true);
+            Thread.sleep(1000);
+            
+            logger.info("Now copy from " + tweetSearch.getIndexName() + " to " + newIndex);            
+            tweetSearch.mergeIndices(Arrays.asList(tweetSearch.getIndexName()), newIndex, 1000, true);           
+            
+            tweetSearch.setIndexName(newIndex);
+            logger.info("New index has totalhits:" + tweetSearch.countAll() + " Now optimize ...");            
+            tweetSearch.optimize();
+        } catch (Exception ex) {
+            logger.error("Exception while copyIndex", ex);
+        }
+    }
+
+    public void removeOldTweetIndexAndAliasNew(String newIndex){
+        String alias = tweetSearch.getIndexName();
+        tweetSearch.deleteIndex(alias);
+        tweetSearch.addIndexAlias(newIndex, alias);
     }
 }

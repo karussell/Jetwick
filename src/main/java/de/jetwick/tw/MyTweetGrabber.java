@@ -59,7 +59,7 @@ public class MyTweetGrabber implements Serializable {
     }
 
     public void setUserName(String userName) {
-        this.userName = userName;
+        this.userName = userName.toLowerCase();
     }
 
     public String getUserName() {

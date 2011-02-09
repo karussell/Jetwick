@@ -30,13 +30,15 @@ import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import java.io.IOException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.node.Node;
 import static org.elasticsearch.node.NodeBuilder.*;
 
@@ -53,17 +55,18 @@ public class ElasticNode {
     public static void main(String[] args) throws IOException, InterruptedException {
         ElasticNode node = new ElasticNode().start("es");
         node.waitForYellow();
+        node.printInfo();
 
         ElasticTweetSearch twSearch = new ElasticTweetSearch(node.client());
-        twSearch.saveCreateIndex();
-        
+        twSearch.saveCreateIndex();        
+
         ElasticUserSearch uSearch = new ElasticUserSearch(node.client());
         uSearch.saveCreateIndex();
 
         Thread.currentThread().join();
     }
 
-    public static void testLong(String[] args) throws IOException {        
+    public static void testLong(String[] args) throws IOException {
         Node node = nodeBuilder().
                 local(true).
                 settings(ImmutableSettings.settingsBuilder().
@@ -90,7 +93,7 @@ public class ElasticNode {
                 actionGet();
         client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
 
-        XContentBuilder docBuilder = XContentFactory.jsonBuilder().startObject();
+        XContentBuilder docBuilder = JsonXContent.unCachedContentBuilder().startObject();
         docBuilder.field("longval", 124L);
         docBuilder.endObject();
 
@@ -130,7 +133,7 @@ public class ElasticNode {
         File homeDir = new File(home);
         System.setProperty("es.path.home", homeDir.getAbsolutePath());
         System.setProperty("es.path.conf", conf);
-        
+
         // increase maxClauseCount for friend search ... not necessary
         // http://wiki.apache.org/lucene-java/LuceneFAQ#Why_am_I_getting_a_TooManyClauses_exception.3F
 //        BooleanQuery.setMaxClauseCount(100000);
@@ -168,14 +171,14 @@ public class ElasticNode {
     public void stop() {
         if (node == null)
             throw new RuntimeException("Node not started");
-        
+
         started = false;
         node.close();
     }
 
     public boolean isStarted() {
         return started;
-    }        
+    }
 
     public Client client() {
         if (node == null)
@@ -191,9 +194,16 @@ public class ElasticNode {
         node.client().admin().cluster().health(new ClusterHealthRequest("twindex").waitForYellowStatus()).actionGet();
         logger.info("Now node status is 'yellow'!");
     }
-    
+
     public void waitForOneActiveShard() {
         node.client().admin().cluster().health(new ClusterHealthRequest("twindex").waitForActiveShards(1)).actionGet();
         logger.info("Now node has at least one active shard!");
+    }
+
+    public void printInfo() {
+        NodesInfoResponse rsp = node.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
+        String str = "Cluster:" + rsp.getClusterName() + ". Active nodes:";
+        str += rsp.getNodesMap().keySet();
+        logger.info(str);
     }
 }

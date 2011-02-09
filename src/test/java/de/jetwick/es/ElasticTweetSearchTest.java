@@ -37,6 +37,8 @@ import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +79,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(1, twSearch.search("test").size());
         assertEquals(1, twSearch.searchTweets(new SolrQuery("this test")).size());
         assertEquals(2, twSearch.searchTweets(new SolrQuery("java stable")).size());
-        assertEquals(1, twSearch.searchTweets(new SolrQuery("java cool stable")).size());        
+        assertEquals(1, twSearch.searchTweets(new SolrQuery("java cool stable")).size());
     }
 
     @Test
@@ -748,7 +750,6 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         tw2.setUrlEntries(entries);
 
         twSearch.update(Arrays.asList(tw1, tw2));
-
     }
 
     @Test
@@ -757,7 +758,6 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         tw.setRt(1);
         tw.setQuality(100);
         twSearch.update(Arrays.asList(tw));
-        twSearch.refresh();
         assertEquals(1, twSearch.search("text").size());
         assertEquals(0, twSearch.searchAds("text").size());
 
@@ -772,14 +772,12 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         tw.setRt(1);
         tw.setQuality(100);
         twSearch.update(Arrays.asList(tw));
-        twSearch.refresh();
         assertEquals(0, twSearch.searchAds("text").size());
 
         tw = createNowTweet(1L, "text #jetwick", "peter");
         tw.setRt(1);
         tw.setQuality(90);
         twSearch.update(Arrays.asList(tw));
-        twSearch.refresh();
         assertEquals(1, twSearch.searchAds("text").size());
         assertEquals(0, twSearch.searchAds(" ").size());
 
@@ -787,7 +785,6 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         tw.setQuality(89);
         tw.setRt(1);
         twSearch.update(Arrays.asList(tw));
-        twSearch.refresh();
         assertEquals(0, twSearch.searchAds("text").size());
     }
 
@@ -798,7 +795,6 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.update(Arrays.asList(
                 createTweet(1L, "test", "peter"),
                 tw2 = createTweet(2L, "text", "peter")));
-        twSearch.refresh();
 
         Map<Long, SolrTweet> alreadyExistingTw = new LinkedHashMap<Long, SolrTweet>();
         alreadyExistingTw.put(2L, tw2);
@@ -816,7 +812,6 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     public void testSnowballStemming() throws IOException {
         twSearch.update(Arrays.asList(createTweet(1L, "duplication", "peter"),
                 createTweet(2L, "testing", "peter")));
-        twSearch.refresh();
 
         assertEquals(1, twSearch.searchTweets(new SolrQuery("duplicate")).size());
         assertEquals(1, twSearch.searchTweets(new SolrQuery("test")).size());
@@ -839,14 +834,18 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(2L, "test others", "tester"),
                 createTweet(3L, "testnot this", "peter"),
                 createTweet(4L, "test this", "peternot")));
-        twSearch.refresh();
         Collection<String> users = Arrays.asList("peter", "tester");
         Collection<SolrTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").createFriendsQuery(users)));
 
         assertEquals(2, coll.size());
-        Iterator<SolrTweet> iter = coll.iterator();
-        assertEquals(1L, (long) iter.next().getTwitterId());
-        assertEquals(2L, (long) iter.next().getTwitterId());
+        int counter = 0;
+        for (SolrTweet tw : coll) {
+            if (tw.getTwitterId() == 1L)
+                counter++;
+            else if (tw.getTwitterId() == 2L)
+                counter++;
+        }
+        assertEquals(2, counter);
     }
 
     @Test
@@ -857,8 +856,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.createIndex(index1);
         twSearch.createIndex(index2);
         twSearch.createIndex(resindex);
-        System.out.println("testIndexMerge wait for yellow");
         twSearch.waitForYellow(resindex);
+        twSearch.deleteAll(index1);
+        twSearch.deleteAll(index2);
+        twSearch.deleteAll(resindex);
 
         twSearch.bulkUpdate(Arrays.asList(
                 new SolrTweet(1L, "hey cool one", new SolrUser("peter")),
@@ -869,18 +870,139 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 new SolrTweet(4L, "snd index! two", new SolrUser("k")),
                 new SolrTweet(5L, "snd index! third", new SolrUser("k"))), index2);
 
-        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, true);
+        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 10, true);
 
-        assertEquals(5, twSearch.collectTweets(twSearch.query(twSearch.createQuery(resindex).matchAll())).size());
+        assertEquals(5, twSearch.countAll(resindex));
     }
 
+    @Test
+    public void testUpdateOneTweetForTwoIndices() throws IOException, InterruptedException {
+        String index1 = "index1";
+        String index2 = "index2";
+        twSearch.saveCreateIndex(index1, false);
+        twSearch.saveCreateIndex(index2, false);
+        twSearch.waitForYellow(index1);
+        twSearch.deleteAll(index1);
+        twSearch.deleteAll(index2);
+
+        List<SolrTweet> list = new ArrayList<SolrTweet>();
+        SolrUser user2 = new SolrUser("peter2");
+        for (int i = 0; i < 2; i++) {
+            list.add(new SolrTweet(i, "nice day", user2));
+        }
+        twSearch.bulkUpdate(list, index1, true);
+        assertEquals(2, twSearch.countAll(index1));
+        assertEquals(0, twSearch.countAll(index2));
+
+        twSearch.bulkUpdate(list, index1, true);
+        twSearch.bulkUpdate(list, index2, true);
+        assertEquals(2, twSearch.countAll(index1));
+
+        // !! indices are independent !!
+        assertEquals(2, twSearch.countAll(index2));
+        assertEquals(4, twSearch.countAll(index1, index2));
+    }
+
+    @Test
+    public void testIndexMergeWithPaging() throws Exception {
+        String index1 = "index1";
+        String index2 = "index2";
+        String resindex = "resindex";
+        try {
+            twSearch.deleteIndex(index1);
+            twSearch.deleteIndex(index2);
+            twSearch.deleteIndex(resindex);
+        } catch(IndexMissingException ex) {
+        }
+        twSearch.saveCreateIndex(index1, false);
+        twSearch.saveCreateIndex(index2, false);
+        twSearch.saveCreateIndex(resindex, false);
+        twSearch.waitForYellow(resindex);
+
+        // delete index instead of clearing it (can have side effects!)
+//        twSearch.deleteAll(index1);
+//        twSearch.deleteAll(index2);
+//        twSearch.deleteAll(resindex);
+//        Thread.sleep(10000);
+
+        // this update makes a problem later on, when searching on index1
+        twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser"))), index1, true);
+
+        List<SolrTweet> list = new ArrayList<SolrTweet>();
+        SolrUser user = new SolrUser("peter");
+        for (int i = 0; i < 100; i++) {
+            list.add(new SolrTweet(i, "hey cool one", user));
+        }
+        SolrUser user2 = new SolrUser("peter2");
+        for (int i = 100; i < 200; i++) {
+            list.add(new SolrTweet(i, "nice day", user2));
+        }
+        twSearch.bulkUpdate(list, index1, true);
+        // identical tweets -> TODO do or don't update?
+        List<SolrTweet> list2 = new ArrayList<SolrTweet>();
+        for (int i = 0; i < 100; i++) {
+            list2.add(new SolrTweet(i, "[updated] hey cool one", user));
+        }
+        // different tweets
+        SolrUser user3 = new SolrUser("peter3");
+        for (int i = 300; i < 400; i++) {
+            list2.add(new SolrTweet(i, "what's going on?", user3));
+        }
+        twSearch.bulkUpdate(list2, index2, true);
+        System.out.println("1:" + twSearch.countAll(index1) + " 2:" + twSearch.countAll(index2) + " res:" + twSearch.countAll(resindex));
+        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 2, true);
+
+        // 100 + 100 in the first list. in list2 only 100 new => 300
+        assertEquals(300, twSearch.countAll(resindex));
+        SearchRequestBuilder b = twSearch.createQuery(resindex).matchAll().getRequestBuilder();
+        b.setSize(1000);
+        assertEquals(300, twSearch.collectTweets(b.execute().actionGet()).size());
+    }
+
+//    @Test
+//    public void testDeleteAndAlias() throws IOException, InterruptedException {
+//        // make sure we can delete all entries from resindex        
+//        
+//        String index1 = "index1";
+//        String resindex = "resindex";                
+//        twSearch.saveCreateIndex(index1, false);        
+//        twSearch.saveCreateIndex(resindex, false);        
+//        twSearch.waitForYellow(resindex);
+//        
+//        twSearch.deleteAll(index1);
+//        twSearch.deleteAll(resindex);
+//        // index2 was created in the previously test
+//        // don't remove index2 to make sure we grab really only from index1
+////        twSearch.deleteAll("index2");        
+//        
+//        List<SolrTweet> list = new ArrayList<SolrTweet>();
+//        SolrUser user = new SolrUser("peter");
+//        for (int i = 0; i < 100; i++) {
+//            list.add(new SolrTweet(i, "hey cool one", user));
+//        }
+//        
+//        twSearch.bulkUpdate(list, index1, true);  
+//        assertEquals(0, twSearch.countAll(resindex));
+//        twSearch.mergeIndices(Arrays.asList(index1), resindex, 2, true);        
+//        assertEquals(100, twSearch.countAll(resindex));
+//        assertEquals(100, twSearch.countAll(index1));
+//        
+//        twSearch.deleteIndex(index1);
+//        try {
+//            assertEquals(0, twSearch.countAll(index1));
+//            assertFalse(true);
+//        } catch(IndexMissingException ex) {
+//            assertTrue(true);
+//        }
+//        twSearch.addIndexAlias(resindex, index1);        
+//        assertEquals(100, twSearch.countAll(index1));
+//    }
     @Test
     public void testFindUser() {
         twSearch.update(Arrays.asList(
                 createTweet(1L, "test this", "peter"),
                 createTweet(4L, "test this", "peter_not")));
-        twSearch.refresh();
-        
+
         assertEquals(1, twSearch.collectTweets(twSearch.search(new SolrQuery().addFilterQuery(ElasticTweetSearch.KEY_USER + "peter"))).size());
     }
 

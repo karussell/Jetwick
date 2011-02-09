@@ -107,7 +107,7 @@ public class TweetConsumer extends MyThread {
             if (optimizeToSegmentsAfterUpdate > 0) {
                 if (optimizeInterval > 0 && time - lastOptimizeTime >= optimizeInterval) {
                     lastOptimizeTime = time;
-                    OptimizeResponse orsp = tweetSearch.optimize(optimizeToSegmentsAfterUpdate);
+                    OptimizeResponse orsp = tweetSearch.optimize(tweetSearch.getIndexName(), optimizeToSegmentsAfterUpdate);
                     logger.info("[es] optimized twindex to segments:" + optimizeToSegmentsAfterUpdate);
                 }
             }

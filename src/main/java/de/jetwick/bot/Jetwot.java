@@ -38,6 +38,7 @@ import java.util.Random;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import twitter4j.TwitterException;
 
 /**
  * Idea: either twitterbot or own UI to show trends!
@@ -137,6 +138,13 @@ public class Jetwot {
                     logger.info("=> retweeted:" + selectedTweet.getText() + " " + selectedTweet.getTwitterId());
                 } catch (Exception ex) {
                     logger.error("Couldn't retweet tweet:" + selectedTweet + " " + ex.getMessage());
+                    if (ex instanceof TwitterException) {
+                        TwitterException ex2 = ((TwitterException) ex);
+                        if (ex2.exceededRateLimitation()) {
+                            logger.error("Remaining hits:" + ex2.getRateLimitStatus().getRemainingHits()
+                                    + " wait some seconds:" + ex2.getRateLimitStatus().getResetTimeInSeconds());
+                        }
+                    }
                 }
             }
 

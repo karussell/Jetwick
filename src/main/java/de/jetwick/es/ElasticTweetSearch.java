@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.common.unit.TimeValue;
 import java.util.regex.Pattern;
 import de.jetwick.solr.SavedSearch;
 import org.elasticsearch.client.Requests;
@@ -50,18 +51,27 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static org.elasticsearch.common.xcontent.XContentFactory.*;
@@ -95,6 +105,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
     public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
     public static final String RELEVANCE = "relevance";
+    private String indexName = "twindex";
     private Logger logger = LoggerFactory.getLogger(getClass());
 
     public ElasticTweetSearch() {
@@ -114,8 +125,11 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
     @Override
     public String getIndexName() {
-        //return "twindexoffline"; //<-contains data from TweetProducerOffline
-        return "twindex";//<-contains real data
+        return indexName;
+    }
+
+    public void setIndexName(String indexName) {
+        this.indexName = indexName;
     }
 
     @Override
@@ -167,13 +181,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         return new TweetESQuery(client.prepareSearch(indexName));
     }
 
-    SearchResponse query(TweetESQuery query) {
+    public SearchResponse query(TweetESQuery query) {
         return query.getRequestBuilder().execute().actionGet();
-    }
-
-    XContentBuilder createMatchAll() throws IOException {
-        XContentBuilder b = jsonBuilder();
-        return b.startObject().startObject("query").startObject("match_all").endObject().endObject().endObject();
     }
 
     public XContentBuilder createDoc(SolrTweet tw) throws IOException {
@@ -188,7 +197,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         if (tw.isDaemon())
             return null;
 
-        XContentBuilder b = jsonBuilder().startObject();
+        XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         b.field(TWEET_TEXT, tw.getText());
         b.field("tw_i", tw.getText().length());
         b.field(UPDATE_DT, tw.getUpdatedAt());
@@ -260,7 +269,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         String name = (String) source.get(USER);
         String text = (String) source.get(TWEET_TEXT);
         if (text == null || name == null || idAsStr == null) {
-            logger.error("Null tweet text or id!!!??" + idAsStr + " " + name + " " + text);            
+            logger.error("Null tweet text or id!!!??" + idAsStr + " " + name + " " + text);
             return new SolrTweet(-1L, "", new SolrUser(""));
         }
 
@@ -569,6 +578,10 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     }
 
     public void update(Collection<SolrTweet> tweets) {
+        update(tweets, true);
+    }
+
+    public void update(Collection<SolrTweet> tweets, boolean refresh) {
         try {
             if (tweets.isEmpty())
                 return;
@@ -578,7 +591,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
             boolean bulk = true;
             if (bulk) {
-                bulkUpdate(tweets, getIndexName());
+                bulkUpdate(tweets, getIndexName(), refresh);
             } else {
                 for (SolrTweet tw : tweets) {
                     String id = Long.toString(tw.getTwitterId());
@@ -591,16 +604,23 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     }
 
     public void bulkUpdate(Collection<SolrTweet> tweets, String indexName) throws IOException {
+        bulkUpdate(tweets, indexName, false);
+    }
+
+    public void bulkUpdate(Collection<SolrTweet> tweets, String indexName, boolean refresh) throws IOException {
         // now using bulk API instead of feeding each doc separate with feedDoc
         BulkRequestBuilder brb = client.prepareBulk();
         for (SolrTweet tw : tweets) {
             String id = Long.toString(tw.getTwitterId());
             XContentBuilder source = createDoc(tw);
             brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
+            brb.setRefresh(refresh);
         }
         if (brb.numberOfActions() > 0) {
 //            System.out.println("actions:" + brb.numberOfActions());
-            brb.execute().actionGet();
+            BulkResponse rsp = brb.execute().actionGet();
+            if (rsp.hasFailures())
+                logger.error("Error while bulkUpdate:" + rsp.buildFailureMessage());
         }
     }
 
@@ -1095,20 +1115,57 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     /**
      * All indices has to be created before!
      */
-    public void mergeIndices(Collection<String> indexList, String intoIndex, boolean forceRefresh) {
-        if (forceRefresh)
+    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh) {
+        if (forceRefresh) {
             refresh(indexList);
-
-        for (String index : indexList) {
-            TweetESQuery q = new TweetESQuery(client.prepareSearch(index)).matchAll();
+            refresh(intoIndex);
+        }
+        
+        for (String fromIndex : indexList) {        
+            SearchResponse rsp = client.prepareSearch(fromIndex).
+                    // important to sort otherwise https://github.com/elasticsearch/elasticsearch/issues/issue/680
+                    addSort("_id", SortOrder.ASC).
+                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
+                    // important to use QUERY_THEN_FETCH !
+                    setSearchType(SearchType.QUERY_THEN_FETCH).
+                    setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();            
+                        
             try {
-                bulkUpdate(collectTweets(query(q)), intoIndex);
+                long total = rsp.hits().totalHits();                                
+                int collectedResults = 0;
+                int currentResults;
+                while ((currentResults = rsp.hits().hits().length) > 0) {                                        
+                    Collection tweets = collectTweets(rsp);
+                    bulkUpdate(tweets, intoIndex);
+                    collectedResults += currentResults;
+                    rsp = client.prepareSearchScroll(rsp.scrollId()).
+                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();                                                
+//                    logger.info("Progress " + collectedResults +"/" + total + " fromIndex=" + fromIndex);
+                }
+                logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
             } catch (Exception ex) {
-                logger.error("Failed to copy data from index " + index + " into " + intoIndex + ". query was: " + q, ex);
+                logger.error("Failed to copy data from index " + fromIndex + " into " + intoIndex + ".", ex);
             }
         }
 
         if (forceRefresh)
             refresh(intoIndex);
+    }
+
+    public void deleteIndex(String indexName) {
+        DeleteIndexResponse rsp = client.admin().indices().delete(new DeleteIndexRequest(indexName)).actionGet();
+        logger.info("delete of " + indexName + ":" + rsp.acknowledged());
+    }
+
+    public void addIndexAlias(String indexName, String alias) {
+//        new AliasAction(AliasAction.Type.ADD, index, alias)
+        client.admin().indices().aliases(new IndicesAliasesRequest().addAlias(indexName, alias)).actionGet();
+    }
+
+    public void nodeInfo() {
+        NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
+        String str = "Cluster:" + rsp.getClusterName() + ". Active nodes:";
+        str += rsp.getNodesMap().keySet();
+        logger.info(str);
     }
 }

@@ -20,7 +20,7 @@
         <hibernate.version>3.5.1-Final</hibernate.version>        
         <es.version>0.15.0-SNAPSHOT</es.version>        
 <!--        <es.version>0.14.1</es.version>-->
-        <lucene.version>3.0.3</lucene.version>        
+        <!-- <lucene.version>3.0.3</lucene.version> -->
         <liquibase.version>1.9.4</liquibase.version>
         <liquibase.plugin.version>1.9.5.0</liquibase.plugin.version>
         <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
@@ -76,68 +76,8 @@
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>${es.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch-lang-javascript</artifactId>
-            <version>${es.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>rhino</groupId>
-            <artifactId>js</artifactId>
-            <version>1.7R2</version>
-        </dependency>
-        <!-- no need for those languages because JS is fastest:
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch-lang-groovy</artifactId>
-            <version>${es.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <version>1.7.6</version>
-        </dependency>
-                
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch-lang-python</artifactId>
-            <version>${es.version}</version>
-        </dependency>  
-        <dependency>
-            <groupId>org.python</groupId>
-            <artifactId>jython</artifactId>
-            <version>2.5.2rc2</version>
-        </dependency>  
-        -->
+        </dependency>        
         
-        <!-- required dep for elastic search -->
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analyzers</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>        
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-highlighter</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-fast-vector-highlighter</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-snowball</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-queries</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>        
-
         <dependency>
             <groupId>org.apache.wicket</groupId>
             <artifactId>wicket</artifactId>
@@ -456,6 +396,13 @@
             <name>Peter's Repository with warp persist, mydoggy, PgsLookAndFeel, ... </name>
             <url>http://peat_hal.users.sourceforge.net/m2repository/</url>
         </repository>
+        
+        <repository>
+            <id>java.net</id>
+            <name>for jna, which is for ES</name>
+            <url>http://download.java.net/maven/2/</url>
+        </repository>
+        
         <!--
         <repository>
             <id>visural-wicket</id>
