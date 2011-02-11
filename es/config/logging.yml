@@ -1,9 +1,16 @@
+# WARNING: will only be have an effect if NOT running via jetwick ElasticNode!
+# otherwise jetwick's log4j comes into the game
+
 rootLogger: INFO, console, file
 logger:
   # log action execution errors for easier debugging
-  action: DEBUG
+  action: TRACE
+  #action.search: TRACE
   # reduce the logging for aws, too much is logged under the default INFO
   com.amazonaws: WARN
+
+  # does not work to see indexing activity
+  #index.engine: INFO
 
   # gateway
   #gateway: DEBUG

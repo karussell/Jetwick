@@ -19,7 +19,6 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.ui.util.FacetHelper;
 import de.jetwick.ui.util.LabeledLink;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.wicket.ajax.AjaxRequestTarget;

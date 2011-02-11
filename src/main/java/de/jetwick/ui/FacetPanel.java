@@ -77,9 +77,9 @@ public class FacetPanel extends Panel {
         tr.put(FILTER_NO_URL_ENTRY, "without");
 
         tr.put(RT_COUNT, "Retweets");
-        tr.put(RT_COUNT + ":[5 TO *]", "5 and more");
-        tr.put(RT_COUNT + ":[20 TO *]", "20 and more");
-        tr.put(RT_COUNT + ":[50 TO *]", "50 and more");
+        tr.put(RT_COUNT + ":[5 TO Infinity]", "5 and more");
+        tr.put(RT_COUNT + ":[20 TO Infinity]", "20 and more");
+        tr.put(RT_COUNT + ":[50 TO Infinity]", "50 and more");
 
         tr.put(QUALITY, "Spam");
         tr.put(FILTER_NO_SPAM, "without");

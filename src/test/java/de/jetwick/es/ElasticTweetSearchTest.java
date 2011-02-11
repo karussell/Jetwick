@@ -83,7 +83,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
-    public void testHashtags() throws Exception {
+    public void testHashtags() {
         // # is handled as digit so that we can search for java to get java and #java results (the same applies to @)
         twSearch.update(createTweet(1L, "is cool and stable! #java", "peter2"));
         assertEquals(1, twSearch.search("java").size());
@@ -96,6 +96,17 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.update(createTweet(1L, "is cool and stable! java", "peter2"));
         assertEquals(1, twSearch.search("java").size());
         assertEquals(0, twSearch.search("#java").size());
+    }
+
+    @Test
+    public void testHashtags2() {
+        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "egypt germany", "peter"),
+                createTweet(2L, "egypt #germany", "peter2"),
+                createTweet(3L, "egypt #Germany", "peter3"),
+                createTweet(4L, "egypt #GERMANY", "peter4")));
+
+        assertEquals(4, twSearch.search("egypt germany").size());
+        assertEquals(3, twSearch.search("egypt #germany").size());
     }
 
     @Test
@@ -912,7 +923,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
             twSearch.deleteIndex(index1);
             twSearch.deleteIndex(index2);
             twSearch.deleteIndex(resindex);
-        } catch(IndexMissingException ex) {
+        } catch (IndexMissingException ex) {
         }
         twSearch.saveCreateIndex(index1, false);
         twSearch.saveCreateIndex(index2, false);
@@ -949,7 +960,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
             list2.add(new SolrTweet(i, "what's going on?", user3));
         }
         twSearch.bulkUpdate(list2, index2, true);
-        System.out.println("1:" + twSearch.countAll(index1) + " 2:" + twSearch.countAll(index2) + " res:" + twSearch.countAll(resindex));
+//        System.out.println("1:" + twSearch.countAll(index1) + " 2:" + twSearch.countAll(index2) + " res:" + twSearch.countAll(resindex));
         twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 2, true);
 
         // 100 + 100 in the first list. in list2 only 100 new => 300

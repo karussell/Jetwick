@@ -256,10 +256,13 @@ div.wicket-aa ul li.selected {
     min-height: 90px;
 }
 
-.date-filter .main-bar-chart {
+.date-filter .main-bar-chart {    
     background: #f2f2f2 url("../img/bottom-line.png") bottom left repeat-x;
     padding: 10px;
     height: 90px;
+    -moz-border-radius:10px;
+    -webkit-border-radius:10px;
+    border-radius:10px;
 }
 .date-filter-label {
     padding-bottom: 2px;
@@ -277,7 +280,7 @@ div.wicket-aa ul li.selected {
 
 .date-filter .bar-chart .filter-add .item-span {
     background-repeat: repeat-y;
-    background-image: url("../img/bar-min.png");
+    background-image: url("../img/bar-min.png");    
 }
 
 .date-filter .bar-chart .filter-rm .item-span {

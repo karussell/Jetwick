@@ -131,7 +131,7 @@ public class SavedSearch implements Serializable {
     }
 
     private String getLastQueryDateFilter() {
-        return ElasticTweetSearch.DATE + ":[" + Helper.toLocalDateTime(lastQueryDate) + " TO *]";
+        return ElasticTweetSearch.DATE + ":[" + Helper.toLocalDateTime(lastQueryDate) + " TO Infinity]";
     }
 
     @Override

@@ -220,7 +220,7 @@ public class HomePage extends WebPage {
             if (!fromDateStr.contains("T"))
                 fromDateStr += "T00:00:00Z";
 
-            q.addFilterQuery(ElasticTweetSearch.DATE + ":[" + fromDateStr + " TO *]");
+            q.addFilterQuery(ElasticTweetSearch.DATE + ":[" + fromDateStr + " TO Infinity]");
         }
 
         // front page/empty => sort against relevance
@@ -246,7 +246,7 @@ public class HomePage extends WebPage {
         // front page: avoid slow queries for matchall query and filter against latest tweets only
         if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
             logger.info(addIP("[stats] q=''"));
-            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
+            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO Infinity]");
             if (Helper.isEmpty(sort))
                 JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
         }
@@ -515,7 +515,7 @@ public class HomePage extends WebPage {
             @Override
             protected boolean isAlreadyFiltered(String filter) {
                 if (lastQuery != null)
-                    return JetwickQuery.containsFilter(lastQuery, filter);
+                    return JetwickQuery.containsFilter(lastQuery, filter);                
 
                 return false;
             }
@@ -636,8 +636,7 @@ public class HomePage extends WebPage {
                     twitterFallback = false;
                 }
             } else {
-                info("Login on the left to use friend search. Do not forget to tweet about jetwick.");                
-                info("Follow us to get news about jetwick and to recieve private messages (rare frequency).");
+                info("Login to use friend search. Follow us to recieve private messages on updates (rare frequency).");
 //                warn("Please login to search friends of " + parameters.getString("user"));
             }
         }

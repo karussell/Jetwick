@@ -32,7 +32,6 @@ import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.range.RangeFacetBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
-
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
@@ -62,29 +61,41 @@ public class Solr2ElasticTweet {
             }
         }
 
-        XContentQueryBuilder qb = createQuery(query.getQuery());
+        XContentQueryBuilder qb = createQuery(query.getQuery());        
+
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;
+            XContentFilterBuilder forDateFacetFilter = null;
             for (String fq : query.getFilterQueries()) {
                 XContentFilterBuilder tmp = filterQuery2Builder(fq);
-                if (fb != null)
-                    fb = FilterBuilders.andFilter(fb, tmp);
-                else
-                    fb = tmp;
+                if (fq.contains(ElasticTweetSearch.DATE + ":")) {
+                    if (forDateFacetFilter != null)
+                        forDateFacetFilter = FilterBuilders.andFilter(forDateFacetFilter, tmp);
+                    else
+                        forDateFacetFilter = tmp;
+                } else {
+                    if (fb != null)
+                        fb = FilterBuilders.andFilter(fb, tmp);
+                    else
+                        fb = tmp;
+                }
             }
 
             if (fb != null)
                 qb = QueryBuilders.filteredQuery(qb, fb);
-//            srb.setFilter(fb);
+
+            if (forDateFacetFilter != null) {
+//                System.out.println("NOW:"+TweetESQuery.toString(forDateFacetFilter));
+                srb.setFilter(forDateFacetFilter);
+            }
         }
 
         if (query.getFacetFields() != null) {
             for (String ff : query.getFacetFields()) {
-                ff = removeLocalParams(ff);
                 // TODO parse all query params to find the f.<field>.limit then set .size() from that
                 srb.addFacet(FacetBuilders.termsFacet(ff).field(ff));
             }
-        }       
+        }
 
         if (query.getFacetQuery() != null) {
             for (String ff : query.getFacetQuery()) {
@@ -99,7 +110,7 @@ public class Solr2ElasticTweet {
             RangeFacetBuilder rfb = FacetBuilders.rangeFacet(name).field(ElasticTweetSearch.DATE);
             MyDate date = new MyDate();
             //rfb.scope(name); 
-            
+
             // latest
             rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate()));
 
@@ -108,38 +119,35 @@ public class Solr2ElasticTweet {
                 MyDate tmp = date.clone();
                 rfb.addRange(Helper.toLocalDateTime(date.minusDays(1).castToDay().toDate()),
                         Helper.toLocalDateTime(tmp.toDate()));
-            }                       
+            }
 
             // oldest
             rfb.addUnboundedFrom(Helper.toLocalDateTime(date.toDate()));
             srb.addFacet(rfb);
         }
-                
+
         srb.setQuery(qb);
 //        System.out.println(TweetESQuery.toString(qb));
     }
 
     public XContentFilterBuilder filterQuery2Builder(String fq) {
-        // skip local parameter!
-        fq = removeLocalParams(fq);
-
         String strs[] = fq.split(":", 2);
         String key = strs[0];
         String val = strs[1];
 
         if (val.contains(" OR ")) {
             // handle field:(val OR val2 OR ...)
-            if(val.startsWith("(") && val.endsWith(")")) {
+            if (val.startsWith("(") && val.endsWith(")")) {
                 val = val.substring(1, val.length() - 1);
                 String[] res = val.split(" OR ");
                 Object[] terms = new Object[res.length];
                 for (int i = 0; i < res.length; i++) {
-                    terms[i] = getTermValue(res[i]);                    
+                    terms[i] = getTermValue(res[i]);
                 }
-                                
+
                 return FilterBuilders.termsFilter(key, terms);
             }
-                
+
             // handle field:xy OR field2:ab OR ...
             String fqs[] = fq.split(" OR ");
             String field = null;
@@ -199,7 +207,8 @@ public class Solr2ElasticTweet {
                     rfb.to(to).includeUpper(true);
                 else
                     rfb.lte(to);
-            }
+            } else
+                rfb.includeUpper(false);
 
             if (from == null && to == null)
                 return FilterBuilders.existsFilter(val);
@@ -224,7 +233,7 @@ public class Solr2ElasticTweet {
 
         return qb;
 //        return QueryBuilders.customScoreQuery(qb).script("_score * doc['relevancy'].value").lang("js");
-        
+
 //        long time = new MyDate().castToHour().getTime();
 //        return customScoreQuery(qb)
 //                .script(
@@ -267,8 +276,10 @@ public class Solr2ElasticTweet {
     private static String removeLocalParams(String val) {
         if (val.startsWith("{")) {
             int index = val.indexOf("}");
-            if (index > 0)
+            if (index > 0) {
+                System.out.println("NOW:" + val);
                 val = val.substring(index + 1);
+            }
         }
 
         return val;
@@ -289,7 +300,7 @@ public class Solr2ElasticTweet {
         }
         return sb.toString();
     }
-    
+
     public String getDefaultAnalyzer() {
         return "search_analyzer";
     }

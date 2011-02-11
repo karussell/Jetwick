@@ -156,8 +156,7 @@ public class JetwickQuery extends SolrQuery {
     public static void removeFilterQueries(SolrQuery query, String filterKey) {
         if (query.getFilterQueries() != null)
             for (String str : query.getFilterQueries()) {
-                if (str.startsWith(filterKey + ":")
-                        || str.startsWith("{!tag=" + filterKey + "}" + filterKey + ":"))
+                if (str.startsWith(filterKey + ":"))
                     query.removeFilterQuery(str);
             }
     }
@@ -178,8 +177,7 @@ public class JetwickQuery extends SolrQuery {
     public static String getFirstFilterQuery(SolrQuery query, String filterKeyWithoutTag) {
         if (query.getFilterQueries() != null)
             for (String str : query.getFilterQueries()) {
-                if (str.startsWith(filterKeyWithoutTag + ":")
-                        || str.startsWith("{!tag=" + filterKeyWithoutTag + "}" + filterKeyWithoutTag + ":"))
+                if (str.startsWith(filterKeyWithoutTag + ":"))
                     return str;
             }
         return null;
@@ -189,16 +187,13 @@ public class JetwickQuery extends SolrQuery {
         String filterKey = getFilterKey(filterWithoutTag);
         if (filterKey == null)
             return false;
-
-        filterKey = removeTag(filterKey);
+        
         String filterToExpand = getFirstFilterQuery(q, filterKey);
         if (filterToExpand != null) {
             q.removeFilterQuery(filterToExpand);
             filterToExpand += " OR ";
         } else {
             filterToExpand = "";
-            if (addTag && !filterKey.contains("{!tag="))
-                filterToExpand += "{!tag=" + filterKey + "}";
         }
 
         q.addFilterQuery(filterToExpand + filterWithoutTag);
@@ -209,10 +204,9 @@ public class JetwickQuery extends SolrQuery {
         String filterKey = getFilterKey(filterWithoutTag);
         if (filterKey == null)
             return false;
-
-        filterKey = removeTag(filterKey);
+        
         removeFilterQueries(q, filterKey);
-        q.addFilterQuery("{!tag=" + filterKey + "}" + filterWithoutTag);
+        q.addFilterQuery(filterWithoutTag);
         return true;
     }
 
@@ -246,12 +240,9 @@ public class JetwickQuery extends SolrQuery {
 
         String res[] = filterToReduce.split(" OR ");
         q.removeFilterQuery(filterToReduce);
-        boolean containsTag = filterToReduce.contains("{!tag=");
-
         filterToReduce = "";
         int alreadyAdded = 0;
-        for (int i = 0; i < res.length; i++) {
-            res[i] = removeTag(res[i]);
+        for (int i = 0; i < res.length; i++) {            
             if (filterWithoutTag.equals(res[i]))
                 continue;
 
@@ -261,22 +252,11 @@ public class JetwickQuery extends SolrQuery {
             filterToReduce += res[i];
         }
 
-        if (!filterToReduce.isEmpty()) {
-            if (containsTag)
-                filterToReduce = "{!tag=" + filterKey + "}" + filterToReduce;
+        if (!filterToReduce.isEmpty()) {            
             q.addFilterQuery(filterToReduce);
         }
 
         return true;
-    }
-
-    public static String removeTag(String filterKey) {
-        if (filterKey.startsWith("{!tag=")) {
-            int index = filterKey.indexOf("}");
-            if (index > 0)
-                filterKey = filterKey.substring(index + 1);
-        }
-        return filterKey;
     }
 
     public static SolrQuery parse(String qString) {

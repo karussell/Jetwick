@@ -59,8 +59,6 @@ public class Util {
     public static void main(String[] args) throws SolrServerException {
         Map<String, String> map = Helper.parseArguments(args);
 
-        String cmd = map.get("cmd");
-
         Util util = new Util();
         String argStr = "";
         if (!Helper.isEmpty(map.get("deleteAll"))) {
@@ -95,8 +93,8 @@ public class Util {
         // copyIndex=twindex2
         argStr = map.get("copyIndex");
         if (!Helper.isEmpty(argStr)) {
-            String index = argStr;
-            util.copyIndex(index);
+            String newIndex = argStr;
+            util.copyIndex(newIndex);
             return;
         }
         
@@ -130,7 +128,7 @@ public class Util {
         TwitterSearch twSearch = injector.getInstance(TwitterSearch.class);
         twSearch.initTwitter4JInstance(cfg.getTwitterSearchCredits().getToken(), cfg.getTwitterSearchCredits().getTokenSecret());
         ElasticTweetSearch fromUserSearch = new ElasticTweetSearch(injector.getInstance(Configuration.class));
-        SolrQuery query = new SolrQuery().addFilterQuery(ElasticTweetSearch.UPDATE_DT + ":[* TO *]");
+        SolrQuery query = new SolrQuery().addFilterQuery(ElasticTweetSearch.UPDATE_DT + ":[-Infinity TO Infinity]");
         query.setFacet(true).addFacetField("user").setFacetLimit(2000).setRows(0).setFacetSort("count");
         SearchResponse rsp = fromUserSearch.search(query);
 
@@ -261,7 +259,7 @@ public class Util {
             Thread.sleep(1000);
             
             logger.info("Now copy from " + tweetSearch.getIndexName() + " to " + newIndex);            
-            tweetSearch.mergeIndices(Arrays.asList(tweetSearch.getIndexName()), newIndex, 1000, true);           
+            tweetSearch.mergeIndices(Arrays.asList(tweetSearch.getIndexName()), newIndex, 10000, true);           
             
             tweetSearch.setIndexName(newIndex);
             logger.info("New index has totalhits:" + tweetSearch.countAll() + " Now optimize ...");            
