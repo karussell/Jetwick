@@ -117,6 +117,10 @@ public class SavedSearch implements Serializable {
                 if (fq.startsWith(ElasticTweetSearch.FIRST_URL_TITLE + ":"))
                     continue;
 
+                // Infinity cannot be passed to boolean query
+                fq = fq.replaceAll("Infinity\\]", "*]");
+                fq = fq.replaceAll("\\[-Infinity", "*]");
+
                 if (counter == 0)
                     facetQuery = "(" + facetQuery + ")";
 
@@ -130,8 +134,8 @@ public class SavedSearch implements Serializable {
         return facetQuery;
     }
 
-    private String getLastQueryDateFilter() {
-        return ElasticTweetSearch.DATE + ":[" + Helper.toLocalDateTime(lastQueryDate) + " TO Infinity]";
+    private String getLastQueryDateFilter() {        
+        return ElasticTweetSearch.DATE + ":[" + Helper.toLocalDateTime(lastQueryDate) + " TO *]";
     }
 
     @Override

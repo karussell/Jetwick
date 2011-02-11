@@ -185,7 +185,7 @@ public class Solr2ElasticTweet {
             RangeFilterBuilder rfb = FilterBuilders.rangeFilter(key);
             Object from = null;
             Object to = null;
-            //+-Infinity comes from ES
+            
             if (!val.startsWith("*") && !val.startsWith("-Infinity")) {
                 try {
                     from = Integer.parseInt(val.substring(0, index1));
@@ -207,8 +207,7 @@ public class Solr2ElasticTweet {
                     rfb.to(to).includeUpper(true);
                 else
                     rfb.lte(to);
-            } else
-                rfb.includeUpper(false);
+            }
 
             if (from == null && to == null)
                 return FilterBuilders.existsFilter(val);

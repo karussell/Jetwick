@@ -220,7 +220,7 @@ public class HomePage extends WebPage {
             if (!fromDateStr.contains("T"))
                 fromDateStr += "T00:00:00Z";
 
-            q.addFilterQuery(ElasticTweetSearch.DATE + ":[" + fromDateStr + " TO Infinity]");
+            q.addFilterQuery(ElasticTweetSearch.DATE + ":[" + fromDateStr + " TO *]");
         }
 
         // front page/empty => sort against relevance
@@ -246,7 +246,7 @@ public class HomePage extends WebPage {
         // front page: avoid slow queries for matchall query and filter against latest tweets only
         if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
             logger.info(addIP("[stats] q=''"));
-            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO Infinity]");
+            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
             if (Helper.isEmpty(sort))
                 JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
         }

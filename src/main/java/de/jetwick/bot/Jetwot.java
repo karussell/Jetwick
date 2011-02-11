@@ -172,13 +172,13 @@ public class Jetwot {
 
     public Collection<SolrTweet> search() {
         SolrQuery query = new SolrQuery(). // should be not too old
-                addFilterQuery(DATE + ":[" + new MyDate().minusDays(6).toLocalString() + " TO Infinity]").
+                addFilterQuery(DATE + ":[" + new MyDate().minusDays(6).toLocalString() + " TO *]").
                 // should be high quality
-                addFilterQuery(QUALITY + ":[90 TO Infinity]").
+                addFilterQuery(QUALITY + ":[90 TO *]").
                 // should be the first tweet with this content
                 addFilterQuery(DUP_COUNT + ":0").
                 // only tweets which were already tweeted minRT-times
-                addFilterQuery(RT_COUNT + ":[" + minRT + " TO Infinity]").
+                addFilterQuery(RT_COUNT + ":[" + minRT + " TO *]").
                 // only original tweets
                 addFilterQuery(IS_RT + ":false").
                 // for english our spam + dup detection works ok

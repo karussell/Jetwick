@@ -100,11 +100,11 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String USER = "user";
     public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String FILTER_NO_DUPS = DUP_COUNT + ":0";
-    public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO Infinity]";
+    public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO *]";
     public static final String FILTER_NO_URL_ENTRY = URL_COUNT + ":0";
-    public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO Infinity]";
-    public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO Infinity]";
-    public static final String FILTER_SPAM = QUALITY + ":[Infinity TO " + SolrTweet.QUAL_SPAM + "]";
+    public static final String FILTER_URL_ENTRY = URL_COUNT + ":[1 TO *]";
+    public static final String FILTER_NO_SPAM = QUALITY + ":[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]";
+    public static final String FILTER_SPAM = QUALITY + ":[* TO " + SolrTweet.QUAL_SPAM + "]";
     public static final String RELEVANCE = "relevance";
     private String indexName = "twindex";
     private Logger logger = LoggerFactory.getLogger(getClass());
@@ -370,7 +370,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
             // more fine grained information about retweets
             Map<String, Integer> orderedFQ = new LinkedHashMap<String, Integer>();
-            orderedFQ.put(RT_COUNT + ":[16 TO Infinity]", 16);
+            orderedFQ.put(RT_COUNT + ":[16 TO *]", 16);
             orderedFQ.put(RT_COUNT + ":[11 TO 15]", 11);
             orderedFQ.put(RT_COUNT + ":[6 TO 10]", 6);
             orderedFQ.put(RT_COUNT + ":[1 TO 5]", 1);
@@ -395,7 +395,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 counter += ff.count();
                 if (counter >= minResults) {
                     if (entry.getValue() > 0)
-                        resQuery.addFilterQuery(RT_COUNT + ":[" + entry.getValue() + " TO Infinity]");
+                        resQuery.addFilterQuery(RT_COUNT + ":[" + entry.getValue() + " TO *]");
                     break;
                 }
             }
@@ -1040,7 +1040,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         // NOW/DAY-3DAYS
         MyDate from = new MyDate().castToDay().minusDays(2);
         search(users, new SolrQuery(query).addFilterQuery("tw:#jetwick").
-                //                addFilterQuery(RT_COUNT + ":[1 TO Infinity]").
+                //                addFilterQuery(RT_COUNT + ":[1 TO *]").
                 addFilterQuery(QUALITY + ":[90 TO 100]").
                 addFilterQuery(IS_RT + ":false").
                 addFilterQuery(DATE + ":[" + from.toLocalString() + " TO " + now.toLocalString() + "]").

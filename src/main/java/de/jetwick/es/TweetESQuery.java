@@ -141,7 +141,8 @@ public class TweetESQuery {
 
     public TweetESQuery createSavedSearchesQuery(Collection<SavedSearch> collSS) {
         for (SavedSearch ss : collSS) {
-            builder.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + ":" + ss.getId(), QueryBuilders.queryString(ss.calcFacetQuery())));
+            builder.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + ":" + ss.getId(),
+                    QueryBuilders.queryString(ss.calcFacetQuery())));
         }
 
         builder.setFrom(0).setSize(0);

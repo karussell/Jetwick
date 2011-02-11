@@ -128,7 +128,7 @@ public class Util {
         TwitterSearch twSearch = injector.getInstance(TwitterSearch.class);
         twSearch.initTwitter4JInstance(cfg.getTwitterSearchCredits().getToken(), cfg.getTwitterSearchCredits().getTokenSecret());
         ElasticTweetSearch fromUserSearch = new ElasticTweetSearch(injector.getInstance(Configuration.class));
-        SolrQuery query = new SolrQuery().addFilterQuery(ElasticTweetSearch.UPDATE_DT + ":[-Infinity TO Infinity]");
+        SolrQuery query = new SolrQuery().addFilterQuery(ElasticTweetSearch.UPDATE_DT + ":[* TO *]");
         query.setFacet(true).addFacetField("user").setFacetLimit(2000).setRows(0).setFacetSort("count");
         SearchResponse rsp = fromUserSearch.search(query);
 

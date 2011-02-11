@@ -137,18 +137,24 @@ public class JSDateFilter extends Panel {
             if (rf != null) {                
                 for (RangeFacet.Entry e : rf.entries()) {                    
                     String display = "";
-                    String filter = "[" + e.getFromAsString() + " TO " + e.getToAsString() + "]";
+                    String fromStr = e.getFromAsString();
+                    String toStr = e.getToAsString();
+
+                    if(fromStr.contains("-Infinity")) {
+                        display = "older";
+                        fromStr = "*";
+                    } else if(toStr.contains("Infinity")) {
+                        display = "last 8h";
+                        toStr = "*";
+                    }
+
+                    String filter = "[" + fromStr + " TO " + toStr + "]";
                     
                     // ignore year and time
-                    int index = e.getToAsString().indexOf("T");
+                    int index = toStr.indexOf("T");
                     if (index > 0)
-                        display = e.getToAsString().substring(5, index);
+                        display = toStr.substring(5, index);
                     
-                    if(e.fromAsString().contains("-Infinity")) {                        
-                        display = "older";
-                    } else if(e.toAsString().contains("Infinity")) {
-                        display = "last 8h";
-                    }
 //                    System.out.println(filter + " " + e.getCount());
                     facetList.add(new FacetHelper(dtKey, filter, display, e.getCount()));
                 }

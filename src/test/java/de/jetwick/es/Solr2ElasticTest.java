@@ -43,14 +43,14 @@ public class Solr2ElasticTest {
 
         XContentFilterBuilder builder = new Solr2ElasticTweet().filterQuery2Builder("field:[1 TO 2]");
         assertEquals(1, 1);
-        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[1 TO *]");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[1 TO Infinity]");
         assertTrue(builder instanceof RangeFilterBuilder);
         assertEquals(c("{'range':{'field':{'from':1,'to':null,'include_lower':true,'include_upper':true}}}"), toString(builder));
         
-        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[* TO *]");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[-Infinity TO Infinity]");
         assertTrue(builder instanceof ExistsFilterBuilder);        
         
-        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[* TO 2]");
+        builder = new Solr2ElasticTweet().filterQuery2Builder("field:[-Infinity TO 2]");
         assertTrue(builder instanceof RangeFilterBuilder);
         assertEquals(c("{'range':{'field':{'from':null,'to':2,'include_lower':true,'include_upper':true}}}"), toString(builder));
 
