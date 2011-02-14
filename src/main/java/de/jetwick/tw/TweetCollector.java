@@ -39,14 +39,11 @@ public class TweetCollector {
 
     // twClient.getTrend() ...  20 tweets per min
     // RT                  ... 100 tweets per sec (as of 9.5.2010)
-    public static List<String> DEFAULT_ST = Arrays.asList(
-//            "##timetabling", "RT",
-            "twitter search"
-//            , "algorithm", "solr",
-//            "lucene", "netbeans", "db4o", "java", "javascript", "javafx", "dzone",
-//            "oracle", "open source", "google", "obama",
-//            "wicket", "wikileaks", "world cup", "news"
-            );
+    public static List<String> DEFAULT_ST = Arrays.asList("##timetabling", "RT",
+            "java", "algorithm", "solr",
+            "lucene", "netbeans", "db4o", "java", "javascript", "javafx", "dzone",
+            "oracle", "open source", "google", "obama",
+            "wicket", "wikileaks", "world cup", "news");
     private static Logger logger = LoggerFactory.getLogger(TweetCollector.class);
     private static Thread.UncaughtExceptionHandler excHandler = new Thread.UncaughtExceptionHandler() {
 

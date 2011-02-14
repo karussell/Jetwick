@@ -386,14 +386,12 @@ public class TwitterSearch implements Serializable {
         for (int page = 0; page < maxPages; page++) {
             Query query = new Query(term);
             // RECENT or POPULAR
-            // was MIXED
             query.setResultType(Query.MIXED);
 
             // avoid that more recent results disturb our paging!
             if (page > 0)
                 query.setMaxId(maxId);
 
-//            query.setSinceId(sinceId);
             query.setPage(page + 1);
             query.setRpp(hitsPerPage);
             QueryResult res = twitter.search(query);
@@ -437,9 +435,11 @@ public class TwitterSearch implements Serializable {
         return solrTweets;
     }
 
-    public TwitterStream getAsyncTwitter() {
+    public AsyncTwitter getAsyncTwitter(TwitterListener listener) {
         try {
-            return new TwitterStreamFactory().getInstance(twitter.getAuthorization());
+            AsyncTwitterFactory factory = new AsyncTwitterFactory(listener);
+            AsyncTwitter asyncTwitter = factory.getInstance(twitter.getAuthorization());
+            return asyncTwitter;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

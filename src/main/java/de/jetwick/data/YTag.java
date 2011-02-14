@@ -141,7 +141,7 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
             queryInterval = Math.min(queryInterval, 5 * 60 * 1001);
 
         // force max 5 hours
-//        queryInterval = Math.min(queryInterval, 5 * 3600 * 1001);
+//        queryInterval = Math.min(queryInterval, 3 * 3600 * 1001);
 
 //        logger.info(newTweets + " hits for " + term + "\t" + lastId
 //                + "\t => query interval was: " + Math.round(old / 1000f)
