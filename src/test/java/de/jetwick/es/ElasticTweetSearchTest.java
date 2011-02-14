@@ -345,6 +345,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         twA = twSearch.findByTwitterId(1L);
         assertEquals(2, twA.getReplyCount());
+        
+        // return null when not found
+        assertNull(twSearch.findByTwitterId(23L));
     }
 
     @Test

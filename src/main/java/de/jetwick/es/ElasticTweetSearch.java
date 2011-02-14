@@ -889,6 +889,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         try {
             GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), "" + twitterId).
                     execute().actionGet();
+            if(rsp.getSource() == null)
+                return null;
             return readDoc(rsp.getSource(), rsp.getId());
         } catch (Exception ex) {
             throw new RuntimeException(ex);
