@@ -20,13 +20,11 @@ import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.StopWatch;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,6 +148,8 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
     }
 
     String getErrorMsg(Throwable e) {
+        if (e == null || e.getMessage() == null)
+            return "<no error message>";
         return e.getMessage().replaceAll("\\n", " ");
     }
 

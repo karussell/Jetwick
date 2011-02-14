@@ -191,7 +191,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         resList.clear();
         // searchAndGetUsers with the saved sinceId
         st.search(tag.getTerm(), resList, 200, tag.getLastId());
-        assertTrue(resList.size() > 0);
+        assertTrue(resList.size() > 0);        
     }
 
     @Test

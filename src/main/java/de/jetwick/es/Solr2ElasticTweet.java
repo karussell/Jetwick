@@ -68,26 +68,25 @@ public class Solr2ElasticTweet {
             XContentFilterBuilder forDateFacetFilter = null;
             for (String fq : query.getFilterQueries()) {
                 XContentFilterBuilder tmp = filterQuery2Builder(fq);
-                if (fq.contains(ElasticTweetSearch.DATE + ":")) {
-                    if (forDateFacetFilter != null)
-                        forDateFacetFilter = FilterBuilders.andFilter(forDateFacetFilter, tmp);
-                    else
-                        forDateFacetFilter = tmp;
-                } else {
+//                if (fq.contains(ElasticTweetSearch.DATE + ":")) {
+//                    if (forDateFacetFilter != null)
+//                        forDateFacetFilter = FilterBuilders.andFilter(forDateFacetFilter, tmp);
+//                    else
+//                        forDateFacetFilter = tmp;
+//                } else {
                     if (fb != null)
                         fb = FilterBuilders.andFilter(fb, tmp);
                     else
                         fb = tmp;
-                }
+//                }
             }
 
             if (fb != null)
                 qb = QueryBuilders.filteredQuery(qb, fb);
 
-            if (forDateFacetFilter != null) {
-//                System.out.println("NOW:"+TweetESQuery.toString(forDateFacetFilter));
-                srb.setFilter(forDateFacetFilter);
-            }
+//            if (forDateFacetFilter != null) {
+//                srb.setFilter(forDateFacetFilter);
+//            }
         }
 
         if (query.getFacetFields() != null) {

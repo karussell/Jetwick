@@ -84,7 +84,6 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
         try {
             MAIN:
             while (!isInterrupted()) {
-
                 if (tags.isEmpty()) {
                     initTags();
                     if (tags.size() == 0) {
@@ -129,6 +128,10 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
                         logger.info("tweets/sec:" + tweetsPerSec + " \tqueue= " + count + " \t + "
                                 + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
 
+//                        System.out.println("maxId:" + maxId);
+//                        for (SolrTweet tw : tmp) {
+//                            System.out.println("#" + tw.getTwitterId() + " " + tw.getCreatedAt());
+//                        }
                         tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
 
                         if (!tag.isTransient()) {

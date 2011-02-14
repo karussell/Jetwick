@@ -38,6 +38,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.Before;
@@ -307,7 +308,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         Collection<SolrTweet> res = twSearch.update(list, new Date(0));
         assertEquals(4, res.size());
-
+        
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
 
@@ -345,6 +346,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         twA = twSearch.findByTwitterId(1L);
         assertEquals(2, twA.getReplyCount());
+        
+        assertNull(twSearch.findByTwitterId(27L));
     }
 
     @Test
@@ -919,24 +922,17 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         String index1 = "index1";
         String index2 = "index2";
         String resindex = "resindex";
-        try {
-            twSearch.deleteIndex(index1);
-            twSearch.deleteIndex(index2);
-            twSearch.deleteIndex(resindex);
-        } catch (IndexMissingException ex) {
-        }
         twSearch.saveCreateIndex(index1, false);
         twSearch.saveCreateIndex(index2, false);
         twSearch.saveCreateIndex(resindex, false);
         twSearch.waitForYellow(resindex);
 
-        // delete index instead of clearing it (can have side effects!)
-//        twSearch.deleteAll(index1);
-//        twSearch.deleteAll(index2);
-//        twSearch.deleteAll(resindex);
-//        Thread.sleep(10000);
+        twSearch.deleteAll(index1);
+        twSearch.deleteAll(index2);
+        twSearch.deleteAll(resindex);
 
         // this update makes a problem later on, when searching on index1
+        // PS: only when NOT sorting in mergeIndices!
         twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser"))), index1, true);
 
         List<SolrTweet> list = new ArrayList<SolrTweet>();
@@ -970,44 +966,45 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(300, twSearch.collectTweets(b.execute().actionGet()).size());
     }
 
-//    @Test
-//    public void testDeleteAndAlias() throws IOException, InterruptedException {
-//        // make sure we can delete all entries from resindex        
-//        
-//        String index1 = "index1";
-//        String resindex = "resindex";                
-//        twSearch.saveCreateIndex(index1, false);        
-//        twSearch.saveCreateIndex(resindex, false);        
-//        twSearch.waitForYellow(resindex);
-//        
-//        twSearch.deleteAll(index1);
-//        twSearch.deleteAll(resindex);
-//        // index2 was created in the previously test
-//        // don't remove index2 to make sure we grab really only from index1
-////        twSearch.deleteAll("index2");        
-//        
-//        List<SolrTweet> list = new ArrayList<SolrTweet>();
-//        SolrUser user = new SolrUser("peter");
-//        for (int i = 0; i < 100; i++) {
-//            list.add(new SolrTweet(i, "hey cool one", user));
-//        }
-//        
-//        twSearch.bulkUpdate(list, index1, true);  
-//        assertEquals(0, twSearch.countAll(resindex));
-//        twSearch.mergeIndices(Arrays.asList(index1), resindex, 2, true);        
-//        assertEquals(100, twSearch.countAll(resindex));
-//        assertEquals(100, twSearch.countAll(index1));
-//        
-//        twSearch.deleteIndex(index1);
-//        try {
-//            assertEquals(0, twSearch.countAll(index1));
-//            assertFalse(true);
-//        } catch(IndexMissingException ex) {
-//            assertTrue(true);
-//        }
-//        twSearch.addIndexAlias(resindex, index1);        
-//        assertEquals(100, twSearch.countAll(index1));
-//    }
+    @Test
+    public void testDeleteAndAlias() throws IOException, InterruptedException {
+        // make sure we can delete all entries from resindex        
+
+        String index1 = "index1";
+        String resindex = "resindex";
+        twSearch.saveCreateIndex(index1, false);
+        twSearch.saveCreateIndex(resindex, false);
+        twSearch.waitForYellow(resindex);
+
+        twSearch.deleteAll(index1);
+        twSearch.deleteAll(resindex);
+        // index2 was created in the previously test
+        // don't remove index2 to make sure we grab really only from index1
+//        twSearch.deleteAll("index2");        
+
+        List<SolrTweet> list = new ArrayList<SolrTweet>();
+        SolrUser user = new SolrUser("peter");
+        for (int i = 0; i < 100; i++) {
+            list.add(new SolrTweet(i, "hey cool one", user));
+        }
+
+        twSearch.bulkUpdate(list, index1, true);
+        assertEquals(0, twSearch.countAll(resindex));
+        twSearch.mergeIndices(Arrays.asList(index1), resindex, 2, true);
+        assertEquals(100, twSearch.countAll(resindex));
+        assertEquals(100, twSearch.countAll(index1));
+
+        twSearch.deleteIndex(index1);
+        try {
+            assertEquals(0, twSearch.countAll(index1));
+            assertFalse(true);
+        } catch (IndexMissingException ex) {
+            assertTrue(true);
+        }
+        twSearch.addIndexAlias(resindex, index1);
+        assertEquals(100, twSearch.countAll(index1));
+    }
+
     @Test
     public void testFindUser() {
         twSearch.update(Arrays.asList(
@@ -1015,6 +1012,25 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(4L, "test this", "peter_not")));
 
         assertEquals(1, twSearch.collectTweets(twSearch.search(new SolrQuery().addFilterQuery(ElasticTweetSearch.KEY_USER + "peter"))).size());
+    }
+
+    @Test
+    public void testQueryMultipleIndices() throws Exception {
+        String index1 = "index1";
+        String index2 = "index2";
+        twSearch.saveCreateIndex(index1, false);
+        twSearch.saveCreateIndex(index2, false);
+        twSearch.waitForYellow(index1);
+
+        twSearch.deleteAll(index1);
+        twSearch.deleteAll(index2);
+
+        twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser")).setRt(0)), index1, true);
+        twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser")).setRt(2)), index2, true);
+
+        SearchResponse rsp = twSearch.getClient().prepareSearch(index1, index2).
+                setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
+        assertEquals(2, twSearch.collectTweets(rsp).size());
     }
 
     SolrTweet createSolrTweet(MyDate dt, String twText, String user) {
