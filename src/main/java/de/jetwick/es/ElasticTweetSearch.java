@@ -75,7 +75,6 @@ import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
  * Provides search functionality via elasticsearch.
@@ -136,6 +135,10 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     @Override
     public String getIndexType() {
         return "tweet";
+    }
+
+    Client getClient() {
+        return client;
     }
 
     public void deleteUntil(Date removeUntil) {
@@ -217,8 +220,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         b.field("iconUrl", tw.getFromUser().getProfileImageUrl());
 
         double relevancy = tw.getCreatedAt().getTime() / MyDate.ONE_HOUR;
-        // every 20 retweets boosts the tweet one hour further
-        float scale = 15;
+        // every 14 retweets boosts the tweet one hour further
+        float scale = 14;
         if (tw.getRetweetCount() <= 100)
             relevancy += tw.getRetweetCount() / scale;
         else
@@ -889,7 +892,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         try {
             GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), "" + twitterId).
                     execute().actionGet();
-            if(rsp.getSource() == null)
+            if (rsp.getSource() == null)
                 return null;
             return readDoc(rsp.getSource(), rsp.getId());
         } catch (Exception ex) {
@@ -1123,29 +1126,29 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             refresh(indexList);
             refresh(intoIndex);
         }
-        
-        for (String fromIndex : indexList) {        
+
+        for (String fromIndex : indexList) {
             SearchResponse rsp = client.prepareSearch(fromIndex).
                     // important to sort otherwise https://github.com/elasticsearch/elasticsearch/issues/issue/680
                     addSort("_id", SortOrder.ASC).
                     setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
                     // important to use QUERY_THEN_FETCH !
                     setSearchType(SearchType.QUERY_THEN_FETCH).
-                    setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();            
-                        
+                    setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
+
             try {
-                long total = rsp.hits().totalHits();                                
+                long total = rsp.hits().totalHits();
                 int collectedResults = 0;
                 int currentResults;
-                while ((currentResults = rsp.hits().hits().length) > 0) {                                        
+                while ((currentResults = rsp.hits().hits().length) > 0) {
                     Collection tweets = collectTweets(rsp);
                     StopWatch updateWatch = new StopWatch().start();
                     bulkUpdate(tweets, intoIndex);
                     updateWatch.stop();
                     collectedResults += currentResults;
                     StopWatch queryWatch = new StopWatch().start();
-                    rsp = client.prepareSearchScroll(rsp.scrollId()).                    
-                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();                                                
+                    rsp = client.prepareSearchScroll(rsp.scrollId()).
+                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
                     queryWatch.stop();
 //                    logger.info("Progress " + collectedResults +"/" + total + " fromIndex=" +
 //                            fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
