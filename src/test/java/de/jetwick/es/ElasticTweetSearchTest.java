@@ -922,23 +922,16 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     public void testIndexMergeWithPaging() throws Exception {
         String index1 = "index1";
         String index2 = "index2";
-        String resindex = "resindex";
-        try {
-            twSearch.deleteIndex(index1);
-            twSearch.deleteIndex(index2);
-            twSearch.deleteIndex(resindex);
-        } catch (IndexMissingException ex) {
-        }
+        String resindex = "resindex";        
         twSearch.saveCreateIndex(index1, false);
         twSearch.saveCreateIndex(index2, false);
         twSearch.saveCreateIndex(resindex, false);
         twSearch.waitForYellow(resindex);
 
-        // delete index instead of clearing it (can have side effects!)
-//        twSearch.deleteAll(index1);
-//        twSearch.deleteAll(index2);
-//        twSearch.deleteAll(resindex);
-//        Thread.sleep(10000);
+        // clearing index
+        twSearch.deleteAll(index1);
+        twSearch.deleteAll(index2);
+        twSearch.deleteAll(resindex);
 
         // this update makes a problem later on, when searching on index1
         twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser"))), index1, true);

@@ -15,6 +15,8 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.util.Helper;
+import java.util.Map;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import java.io.File;
@@ -52,7 +54,7 @@ public class ElasticNode {
     public static final String CLUSTER = "jetwickcluster";
     public static final int PORT = 9300;
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException {            
         ElasticNode node = new ElasticNode().start("es");
         node.waitForYellow();
         node.printInfo();
