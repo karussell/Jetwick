@@ -28,6 +28,7 @@ import org.elasticsearch.index.query.xcontent.QueryStringQueryBuilder.Operator;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
+import org.elasticsearch.search.facet.AbstractFacetBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.range.RangeFacetBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -61,18 +62,18 @@ public class Solr2ElasticTweet {
             }
         }
 
-        XContentQueryBuilder qb = createQuery(query.getQuery());        
-
+        XContentQueryBuilder qb = createQuery(query.getQuery());
+        // the dateFilter should not apply to the date facets!
+        XContentFilterBuilder dateFilter = null;
         if (query.getFilterQueries() != null) {
             XContentFilterBuilder fb = null;
-            XContentFilterBuilder forDateFacetFilter = null;
             for (String fq : query.getFilterQueries()) {
                 XContentFilterBuilder tmp = filterQuery2Builder(fq);
                 if (fq.contains(ElasticTweetSearch.DATE + ":")) {
-                    if (forDateFacetFilter != null)
-                        forDateFacetFilter = FilterBuilders.andFilter(forDateFacetFilter, tmp);
+                    if (dateFilter != null)
+                        dateFilter = FilterBuilders.andFilter(dateFilter, tmp);
                     else
-                        forDateFacetFilter = tmp;
+                        dateFilter = tmp;
                 } else {
                     if (fb != null)
                         fb = FilterBuilders.andFilter(fb, tmp);
@@ -84,22 +85,28 @@ public class Solr2ElasticTweet {
             if (fb != null)
                 qb = QueryBuilders.filteredQuery(qb, fb);
 
-            if (forDateFacetFilter != null) {
-//                System.out.println("NOW:"+TweetESQuery.toString(forDateFacetFilter));
-                srb.setFilter(forDateFacetFilter);
+            if (dateFilter != null) {
+//                System.out.println("NOW:"+TweetESQuery.toString(dateFilter));
+                srb.setFilter(dateFilter);
             }
         }
 
         if (query.getFacetFields() != null) {
             for (String ff : query.getFacetFields()) {
                 // TODO parse all query params to find the f.<field>.limit then set .size() from that
-                srb.addFacet(FacetBuilders.termsFacet(ff).field(ff));
+                AbstractFacetBuilder fb = FacetBuilders.termsFacet(ff).field(ff);
+                if (dateFilter != null)
+                    fb.facetFilter(dateFilter);
+                srb.addFacet(fb);
             }
         }
 
         if (query.getFacetQuery() != null) {
             for (String ff : query.getFacetQuery()) {
-                srb.addFacet(FacetBuilders.filterFacet(ff).filter(filterQuery2Builder(ff)));
+                AbstractFacetBuilder fb = FacetBuilders.filterFacet(ff).filter(filterQuery2Builder(ff));
+                if (dateFilter != null)
+                    fb.facetFilter(dateFilter);
+                srb.addFacet(fb);
             }
         }
 
@@ -109,7 +116,6 @@ public class Solr2ElasticTweet {
             String name = ElasticTweetSearch.DATE_FACET;
             RangeFacetBuilder rfb = FacetBuilders.rangeFacet(name).field(ElasticTweetSearch.DATE);
             MyDate date = new MyDate();
-            //rfb.scope(name); 
 
             // latest
             rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate()));
@@ -185,7 +191,7 @@ public class Solr2ElasticTweet {
             RangeFilterBuilder rfb = FilterBuilders.rangeFilter(key);
             Object from = null;
             Object to = null;
-            
+
             if (!val.startsWith("*") && !val.startsWith("-Infinity")) {
                 try {
                     from = Integer.parseInt(val.substring(0, index1));
