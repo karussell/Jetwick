@@ -18,6 +18,7 @@ package de.jetwick.tw;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.StopWatch;
 import java.util.LinkedHashMap;
@@ -71,6 +72,18 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
             } catch (Exception ex) {
                 logger.error("Couldn't search user index", ex);
             }
+        }
+        
+        // do not add more tweets to the pipe if consumer cannot process it
+        int count = 0;
+        while (true) {
+            count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
+            if (count < maxFill)
+                break;
+
+            logger.info("... WAITING! " + count + " are too many tweets from friend-tweet search!");
+            if (!myWait(20))
+                return false;
         }
 
         logger.info("Found:" + users.size() + " users in user index");

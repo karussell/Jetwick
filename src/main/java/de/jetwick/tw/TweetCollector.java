@@ -98,7 +98,7 @@ public class TweetCollector {
         producerFromFriends.setQueue(queue1);
         producerFromFriends.setTwitterSearch(tws);
         producerFromFriends.setUserSearch(userSearch);        
-        //TODO producerFromFriends.setMaxFill(2 * tweetsPerBatch);        
+        producerFromFriends.setMaxFill(2 * tweetsPerBatch);        
                 
         // feeding queue1 from UI
         RMIServer rmiServer = injector.getInstance(RMIServer.class);

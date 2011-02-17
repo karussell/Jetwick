@@ -51,9 +51,10 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
     private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
     protected TwitterSearch twSearch;
     protected ElasticUserSearch userSearch;
+    protected int maxFill = 2000;
+    
     @Inject
-    private WorkManager manager;
-    private int maxFill = 2000;
+    private WorkManager manager;    
     private long feededTweets = 0;
     private long start = System.currentTimeMillis();
 
