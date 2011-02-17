@@ -9,6 +9,8 @@ es/data/
 es/work/
 es/logs/
 es/jetwickcluster
+utils/scripts
+utils/copy-scripts-*.sh
 esOld/
 target/
 adindex/data/

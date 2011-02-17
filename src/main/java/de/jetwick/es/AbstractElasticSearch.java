@@ -23,7 +23,10 @@ import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -69,7 +72,7 @@ public abstract class AbstractElasticSearch {
     }
     
     public abstract String getIndexName();
-
+    public abstract void setIndexName(String indexName);
     public abstract String getIndexType();
 
 
@@ -191,5 +194,21 @@ public abstract class AbstractElasticSearch {
     public OptimizeResponse optimize(String indexName, int optimizeToSegmentsAfterUpdate) {
         return client.admin().indices().optimize(new OptimizeRequest(indexName).
                 maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
+    }
+        
+    public void deleteIndex(String indexName) {
+        client.admin().indices().delete(new DeleteIndexRequest(indexName)).actionGet();    
+    }
+
+    public void addIndexAlias(String indexName, String alias) {
+//        new AliasAction(AliasAction.Type.ADD, index, alias)
+        client.admin().indices().aliases(new IndicesAliasesRequest().addAlias(indexName, alias)).actionGet();
+    }
+
+    public void nodeInfo() {
+        NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
+        String str = "Cluster:" + rsp.getClusterName() + ". Active nodes:";
+        str += rsp.getNodesMap().keySet();
+        logger.info(str);
     }
 }

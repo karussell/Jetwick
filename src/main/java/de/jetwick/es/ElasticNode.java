@@ -15,32 +15,17 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.util.Helper;
-import java.util.Map;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
-import org.elasticsearch.index.query.xcontent.TermFilterBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
-import org.elasticsearch.index.query.xcontent.FilterBuilders;
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.WriteConsistencyLevel;
-import org.elasticsearch.client.action.index.IndexRequestBuilder;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import java.io.IOException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.node.Node;
 import static org.elasticsearch.node.NodeBuilder.*;
 
@@ -68,59 +53,6 @@ public class ElasticNode {
         Thread.currentThread().join();
     }
 
-    public static void testLong(String[] args) throws IOException {
-        Node node = nodeBuilder().
-                local(true).
-                settings(ImmutableSettings.settingsBuilder().
-                put("index.number_of_shards", 4).
-                put("index.number_of_replicas", 1).
-                put("gateway.type", "none").
-                build()).
-                build().
-                start();
-
-        String indexName = "tweetindex";
-        String indexType = "tweet";
-        String fileAsString = "{"
-                + "\"tweet\" : {"
-                + "    \"properties\" : {"
-                + "         \"longval\" : { \"type\" : \"long\", \"null_value\" : -1}"
-                + "}}}";
-
-        Client client = node.client();
-
-        // create index
-        client.admin().indices().
-                create(new CreateIndexRequest(indexName).mapping(indexType, fileAsString)).
-                actionGet();
-        client.admin().cluster().health(new ClusterHealthRequest(indexName).waitForYellowStatus()).actionGet();
-
-        XContentBuilder docBuilder = JsonXContent.unCachedContentBuilder().startObject();
-        docBuilder.field("longval", 124L);
-        docBuilder.endObject();
-
-        // feed previously created doc
-        IndexRequestBuilder irb = client.prepareIndex(indexName, indexType, "1").
-                setConsistencyLevel(WriteConsistencyLevel.DEFAULT).
-                setSource(docBuilder);
-        irb.execute().actionGet();
-
-        // make doc available for sure
-        client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
-
-        // query for this doc
-        XContentQueryBuilder qb = QueryBuilders.matchAllQuery();
-        TermFilterBuilder fb = FilterBuilders.termFilter("longval", 124L);
-        SearchRequestBuilder srb = client.prepareSearch(indexName).
-                setSearchType(SearchType.QUERY_AND_FETCH).
-                setQuery(QueryBuilders.filteredQuery(qb, fb));
-        SearchResponse response = srb.execute().actionGet();
-        System.out.println("failed shards:" + response.getFailedShards());
-        Object num = response.getHits().hits()[0].getSource().get("longval");
-        System.out.println("longval:" + num);
-        System.out.println("longval.getClass:" + num.getClass());
-        node.stop();
-    }
     private Node node;
     private boolean started = false;
 

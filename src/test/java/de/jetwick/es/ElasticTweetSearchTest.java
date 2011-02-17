@@ -885,7 +885,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 new SolrTweet(4L, "snd index! two", new SolrUser("k")),
                 new SolrTweet(5L, "snd index! third", new SolrUser("k"))), index2);
 
-        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 10, true);
+        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 10, true, null);
 
         assertEquals(5, twSearch.countAll(resindex));
     }
@@ -958,7 +958,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         }
         twSearch.bulkUpdate(list2, index2, true);
 //        System.out.println("1:" + twSearch.countAll(index1) + " 2:" + twSearch.countAll(index2) + " res:" + twSearch.countAll(resindex));
-        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 2, true);
+        twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 2, true, null);
 
         // 100 + 100 in the first list. in list2 only 100 new => 300
         assertEquals(300, twSearch.countAll(resindex));
@@ -991,7 +991,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         twSearch.bulkUpdate(list, index1, true);
         assertEquals(0, twSearch.countAll(resindex));
-        twSearch.mergeIndices(Arrays.asList(index1), resindex, 2, true);
+        twSearch.mergeIndices(Arrays.asList(index1), resindex, 2, true, null);
         assertEquals(100, twSearch.countAll(resindex));
         assertEquals(100, twSearch.countAll(index1));
 

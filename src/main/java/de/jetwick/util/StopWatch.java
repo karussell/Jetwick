@@ -29,6 +29,9 @@ public class StopWatch {
     public StopWatch(String name) {
         this.name = name;
     }
+    
+    public StopWatch() {        
+    }
 
     public StopWatch setName(String name) {
         this.name = name;

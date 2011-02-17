@@ -51,11 +51,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
@@ -68,6 +63,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
+import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
@@ -128,6 +124,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         return indexName;
     }
 
+    @Override
     public void setIndexName(String indexName) {
         this.indexName = indexName;
     }
@@ -615,6 +612,11 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         // now using bulk API instead of feeding each doc separate with feedDoc
         BulkRequestBuilder brb = client.prepareBulk();
         for (SolrTweet tw : tweets) {
+            if (tw.getTwitterId() == null) {
+                logger.warn("Skipped tweet without twitterid when bulkUpdate:" + tw);
+                continue;
+            }
+
             String id = Long.toString(tw.getTwitterId());
             XContentBuilder source = createDoc(tw);
             brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
@@ -1121,20 +1123,24 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     /**
      * All indices has to be created before!
      */
-    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh) {
+    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh,
+            XContentFilterBuilder additionalFilter) {
         if (forceRefresh) {
             refresh(indexList);
             refresh(intoIndex);
         }
 
         for (String fromIndex : indexList) {
-            SearchResponse rsp = client.prepareSearch(fromIndex).
+            SearchRequestBuilder srb = client.prepareSearch(fromIndex).
                     // important to sort otherwise https://github.com/elasticsearch/elasticsearch/issues/issue/680
                     addSort("_id", SortOrder.ASC).
                     setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
                     // important to use QUERY_THEN_FETCH !
                     setSearchType(SearchType.QUERY_THEN_FETCH).
-                    setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
+                    setScroll(TimeValue.timeValueMinutes(30));
+            if (additionalFilter != null)
+                srb.setFilter(additionalFilter);
+            SearchResponse rsp = srb.execute().actionGet();
 
             try {
                 long total = rsp.hits().totalHits();
@@ -1150,8 +1156,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                     rsp = client.prepareSearchScroll(rsp.scrollId()).
                             setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
                     queryWatch.stop();
-//                    logger.info("Progress " + collectedResults +"/" + total + " fromIndex=" +
-//                            fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
+                    logger.info("Progress " + collectedResults +"/" + total + " fromIndex=" +
+                            fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
                 }
                 logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
             } catch (Exception ex) {
@@ -1161,22 +1167,5 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
         if (forceRefresh)
             refresh(intoIndex);
-    }
-
-    public void deleteIndex(String indexName) {
-        DeleteIndexResponse rsp = client.admin().indices().delete(new DeleteIndexRequest(indexName)).actionGet();
-        logger.info("delete of " + indexName + ":" + rsp.acknowledged());
-    }
-
-    public void addIndexAlias(String indexName, String alias) {
-//        new AliasAction(AliasAction.Type.ADD, index, alias)
-        client.admin().indices().aliases(new IndicesAliasesRequest().addAlias(indexName, alias)).actionGet();
-    }
-
-    public void nodeInfo() {
-        NodesInfoResponse rsp = client.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
-        String str = "Cluster:" + rsp.getClusterName() + ". Active nodes:";
-        str += rsp.getNodesMap().keySet();
-        logger.info(str);
     }
 }

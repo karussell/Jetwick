@@ -37,13 +37,20 @@ import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.common.params.MoreLikeThisParams;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 /**
  *
@@ -55,8 +62,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
     private static final String QUERY_TERMS = "ss_qterms_mv_s";
     private static final String SCREEN_NAME = "name";
     public static final String CREATED_AT = "createdAt_dt";
-    
     protected int termMinFrequency = 2;
+    private String indexName = "uindex";
 
     public ElasticUserSearch(Configuration config) {
         this(config.getTweetSearchUrl(), config.getTweetSearchLogin(), config.getTweetSearchPassword());
@@ -72,7 +79,12 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     @Override
     public String getIndexName() {
-        return "uindex";
+        return indexName;
+    }
+
+    @Override
+    public void setIndexName(String indexName) {
+        this.indexName = indexName;
     }
 
     @Override
@@ -198,7 +210,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         user.setCreatedAt(Helper.toDateNoNPE((String) doc.get(CREATED_AT)));
         user.setTwitterCreatedAt(Helper.toDateNoNPE((String) doc.get("twCreatedAt_dt")));
         user.setLastFriendsUpdate(Helper.toDateNoNPE((String) doc.get("friendsUpdate_dt")));
-        user.setFriends((Collection<String>)doc.get("friends"));
+        user.setFriends((Collection<String>) doc.get("friends"));
 
         long counter = 1;
         while (true) {
@@ -338,5 +350,75 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     void setTermMinFrequency(int tmf) {
         termMinFrequency = tmf;
+    }
+
+    public void bulkUpdate(Collection<SolrUser> users, String indexName) throws IOException {
+        bulkUpdate(users, indexName, false);
+    }
+
+    public void bulkUpdate(Collection<SolrUser> users, String indexName, boolean refresh) throws IOException {
+        // now using bulk API instead of feeding each doc separate with feedDoc
+        BulkRequestBuilder brb = client.prepareBulk();
+        logger.info(users.toString());
+        for (SolrUser user : users) {
+            if (user.getScreenName() == null) {
+                logger.warn("Skipped user without screenName when bulkUpdate:" + user);
+                continue;
+            }
+
+            String id = user.getScreenName();
+            XContentBuilder source = createDoc(user);
+            brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
+            brb.setRefresh(refresh);
+        }
+        if (brb.numberOfActions() > 0) {
+//            System.out.println("actions:" + brb.numberOfActions());
+            BulkResponse rsp = brb.execute().actionGet();
+            if (rsp.hasFailures())
+                logger.error("Error while bulkUpdate:" + rsp.buildFailureMessage());
+        }
+    }
+
+    /**
+     * All indices has to be created before!
+     */
+    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh,
+            XContentFilterBuilder additionalFilter) {
+        if (forceRefresh) {
+            refresh(indexList);
+            refresh(intoIndex);
+        }
+
+        for (String fromIndex : indexList) {
+            SearchRequestBuilder srb = client.prepareSearch(fromIndex).
+                    // important to sort otherwise https://github.com/elasticsearch/elasticsearch/issues/issue/680
+                    addSort("_id", SortOrder.ASC).
+                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
+                    // important to use QUERY_THEN_FETCH !
+                    setSearchType(SearchType.QUERY_THEN_FETCH).
+                    setScroll(TimeValue.timeValueMinutes(30));
+            if (additionalFilter != null)
+                srb.setFilter(additionalFilter);
+            
+            SearchResponse rsp = srb.execute().actionGet();
+            try {
+                long total = rsp.hits().totalHits();
+                int collectedResults = 0;
+                int currentResults;
+                while ((currentResults = rsp.hits().hits().length) > 0) {
+                    Collection users = collectUsers(rsp);
+                    bulkUpdate(users, intoIndex);
+                    collectedResults += currentResults;
+                    rsp = client.prepareSearchScroll(rsp.scrollId()).
+                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
+                }
+                logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
+            } catch (Exception ex) {
+                logger.error("Failed to copy data from index " + fromIndex + " into " + intoIndex + ".", ex);
+            }
+        }
+
+        if (forceRefresh)
+            refresh(intoIndex);
     }
 }

@@ -38,6 +38,8 @@ import java.util.TreeSet;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.xcontent.ExistsFilterBuilder;
+import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,20 +92,29 @@ public class Util {
             return;
         }
 
-        // copyIndex=twindex2
-        argStr = map.get("copyIndex");
+        // copyUserIndex=newtwindex
+        argStr = map.get("copyUserIndex");
         if (!Helper.isEmpty(argStr)) {
             String newIndex = argStr;
-            util.copyIndex(newIndex);
+            util.copyUserIndex(newIndex);
             return;
         }
-        
-        // call after copyIndex:
-        // removeOldTweetIndexAndAlias=twindex2
-        argStr = map.get("removeOldTweetIndexAndAlias");
+
+        // copyUserIndex=newtwindex
+        argStr = map.get("copyTweetIndex");
         if (!Helper.isEmpty(argStr)) {
-            String newIndexName = argStr;
-            util.removeOldTweetIndexAndAliasNew(newIndexName);
+            String newIndex = argStr;
+            util.copyTweetIndex(newIndex);
+            return;
+        }
+
+        // call after copyIndex:
+        // removeOldTweetIndexAndAlias=newtwindex
+        argStr = map.get("removeIndexAndAddAlias");
+        if (!Helper.isEmpty(argStr)) {
+            String oldIndex = argStr.split(",")[0];
+            String newIndex = argStr.split(",")[1];            
+            util.removeIndexAndAddAlias(oldIndex, newIndex);
             return;
         }
     }
@@ -252,26 +263,51 @@ public class Util {
         tweetSearch.optimize();
     }
 
-    public void copyIndex(String newIndex) {
+    public void copyTweetIndex(String newIndex) {
         try {
-            logger.info("Old index has totalhits:" + tweetSearch.countAll());            
-            tweetSearch.saveCreateIndex(newIndex, true);
-            Thread.sleep(1000);
-            
-            logger.info("Now copy from " + tweetSearch.getIndexName() + " to " + newIndex);            
-            tweetSearch.mergeIndices(Arrays.asList(tweetSearch.getIndexName()), newIndex, 10000, true);           
-            
+            logger.info("Old index has totalhits:" + tweetSearch.countAll());
+            if (!tweetSearch.indexExists(newIndex)) {
+                logger.info("New Index '" + newIndex + "' does not exist! create it before copy!");
+                return;
+            }
+
+            ExistsFilterBuilder filter = FilterBuilders.existsFilter(ElasticTweetSearch.UPDATE_DT);
+            logger.info("Now copy from " + tweetSearch.getIndexName() + " to " + newIndex + " with exist filter: " + filter);           
+            tweetSearch.mergeIndices(Arrays.asList(tweetSearch.getIndexName()), newIndex, 10000, true,
+                    filter);
+
             tweetSearch.setIndexName(newIndex);
-            logger.info("New index has totalhits:" + tweetSearch.countAll() + " Now optimize ...");            
+            logger.info("New index has totalhits:" + tweetSearch.countAll() + " Now optimize ...");
             tweetSearch.optimize();
         } catch (Exception ex) {
             logger.error("Exception while copyIndex", ex);
         }
     }
 
-    public void removeOldTweetIndexAndAliasNew(String newIndex){
-        String alias = tweetSearch.getIndexName();
-        tweetSearch.deleteIndex(alias);
-        tweetSearch.addIndexAlias(newIndex, alias);
+    public void copyUserIndex(String newIndex) {
+        try {
+            logger.info("Old index has totalhits:" + userSearch.countAll());
+            if (!userSearch.indexExists(newIndex)) {
+                logger.info("New Index '" + newIndex + "' does not exist! create it before copy!");
+                return;
+            }
+
+            logger.info("Now copy from " + userSearch.getIndexName() + " to " + newIndex);                        
+            userSearch.mergeIndices(Arrays.asList(userSearch.getIndexName()), newIndex, 10000, true,
+                    null);
+
+            userSearch.setIndexName(newIndex);
+            logger.info("New index has totalhits:" + userSearch.countAll() + " Now optimize ...");
+            userSearch.optimize();
+        } catch (Exception ex) {
+            logger.error("Exception while copyIndex", ex);
+        }
+    }
+
+    public void removeIndexAndAddAlias(String oldIndex, String newIndex) {        
+        tweetSearch.deleteIndex(oldIndex);
+        tweetSearch.addIndexAlias(newIndex, oldIndex);        
+        
+        logger.info("added alias:" + newIndex + " for deleted:" + oldIndex);
     }
 }
