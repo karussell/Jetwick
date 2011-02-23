@@ -223,13 +223,13 @@ body, p {
     height: 32px;    
     width: 85px;
 }
-.search-type-left {
-    padding-left: 1px;
-    padding-right: 8px;
-    font-weight: bold;
+#search-type-left {
+    padding-left: 6px;
+    padding-right: 8px;    
+    font-size: 14px;        
 }
 .search-type {    
-    font-size: 12px;    
+    font-size: 11px;    
 }
 
 div.wicket-aa {
@@ -257,6 +257,7 @@ div.wicket-aa ul li.selected {
 }
 
 .date-filter .main-bar-chart {    
+    font-size: 14px;
     background: #f2f2f2 url("../img/bottom-line.png") bottom left repeat-x;
     padding: 10px;
     height: 90px;
@@ -275,7 +276,7 @@ div.wicket-aa ul li.selected {
 }
 
 .date-filter .bar-chart .item span {
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .date-filter .bar-chart .filter-add .item-span {
@@ -375,8 +376,7 @@ div.wicket-aa ul li.selected {
     margin: 0px;
 }
 
-#resultslist-header {
-    min-height: 40px;
+#resultslist-header {    
     font-size: 0.8em;    
     border-bottom: 1px solid gray;        
 }
@@ -384,14 +384,15 @@ div.wicket-aa ul li.selected {
 #resultslist-header .sorting {    
     float: right;    
 }
+
 #resultslist-footer {    
+    font-size: 0.8em;    
     padding: 4px;
 }
 
 .export-link { float: right; }
 
-.export-link, .hitsPerPage {
-    font-size: 0.8em;
+.export-link, .hitsPerPage {    
     padding-top: 0px;
 }
 
@@ -435,7 +436,7 @@ div.wicket-aa ul li.selected {
 .userheader .tags li a { color: gray; }
 
 .button-link img {
-    margin-bottom: -7px;
+    margin-bottom: -5px;
 }
 
 .tweet-text {
@@ -446,7 +447,23 @@ div.wicket-aa ul li.selected {
     /* not good: slider will appear => click on link Link does not work!
        overflow: auto; */
 }
-.tweet-links {
+
+/* does not work for shitty IE6 :( */
+.tweet-links-container .tweet-links {
+    display:none;
+}
+.tweet-links-container .tweet-important-links {
+    display:none;
+}
+
+.tweet-links-container:hover .tweet-links  {
+    display:block;
+}
+.tweet-links-container:hover .tweet-important-links  {
+    display:block;
+}
+
+.tweet-links {    
     margin-right: auto;
     padding-left: 10px;
     padding-top: 3px;
@@ -463,16 +480,16 @@ div.wicket-aa ul li.selected {
 .tweet-links li  {    
     padding-right: 5px;
     padding-left: 5px;
-    display: inline;
+    display: inline;    
 }
 
-.tweet-important-links li {
-    padding-left: 5px;
-    display: inline;
-}
-.tweet-important-links {
+.tweet-important-links {       
     padding-top: 3px;
     float: left;
+}
+.tweet-important-links li {    
+    padding-left: 5px;
+    display: inline;
 }
 
 .tweet-important-links li a {
@@ -483,7 +500,11 @@ div.wicket-aa ul li.selected {
     color: #003f6e;
 }
 
-.user-name { font-weight: bold; font-size: 0.8em; }
+/*.user-name a { color: black; }*/
+.user-name {
+    /*    font-weight: bold;*/
+    font-size: 0.9em; 
+}
 
 .tweet .user-name {
     padding: 0 0 0 0;
@@ -514,7 +535,7 @@ div.wicket-aa ul li.selected {
 
 .subtweets {    
     padding-left: 15px;
-    padding-top: 5px;
+    padding-top: 10px;
 }
 
 .navigation {
@@ -541,7 +562,7 @@ div.wicket-aa ul li.selected {
 .rep-link a { color: black; }
 
 .more-tweets {
-    font-size: 0.7em;
+    font-size: 0.6em;
     padding: 0px 5px 0 10px;
 }
 

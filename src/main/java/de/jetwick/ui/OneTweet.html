@@ -25,46 +25,48 @@
     </head>
     <body>
         <wicket:panel>            
-            <div class="user-name" wicket:id="userNameLink" title="Search User on Jetwick"/>
-            <div wicket:id="spamIndicator" class="spam-indicator">
-                <img src="img/eye.png"/>
-                This Tweet is probably spam.
+            <div class="tweet-links-container" onmouseover="">
+                <div class="user-name" wicket:id="userNameLink" title="Search User on Jetwick"/>
+                <div wicket:id="spamIndicator" class="spam-indicator">
+                    <img src="img/eye.png"/>
+                    This Tweet is probably spam.
+                </div>            
+                <div wicket:id="tweetText" class="tweet-text">[tweetText]</div>                                        
+                <ul class="tweet-important-links">
+                    <li>
+                        <a wicket:id="translateLink" class="button-link">
+                            <img src="img/translate.png" title="Translate Tweet"/>
+                        </a>
+                    </li>
+                    <!-- disabled until we completly migrated to ES
+                   <li>
+                       <a wicket:id="similarLink" class="button-link">
+                           <img src="img/find-similar.png" title="Find Similar Tweets"/>
+                       </a>
+                   </li>
+                    -->
+                    <li>
+                        <a wicket:id="retweeters" title="Show Retweets"><span wicket:id="retweetersLabel">[retweeters]</span></a>
+                    </li>  
+                    <li>
+                        <a wicket:id="replies" title="Show Replies"><span wicket:id="repliesLabel">replies</span></a>
+                    </li>
+                    <li>
+                        <a wicket:id="inreplyof" title="Show tweet where this tweet replies to">in reply of</a>
+                    </li>
+                </ul>
+                <ul class="tweet-links">
+                    <li>
+                        <a target="_blank" wicket:id="tweetDate" title="Show Status on twitter.com"><span wicket:id="tweetDateLabel"/></a>
+                    </li>
+                    <li>
+                        <a target="_blank" wicket:id="tweetReply" title="Reply on twitter.com">reply</a>
+                    </li>
+                    <li>
+                        <a target="_blank" wicket:id="tweetRetweet" title="Retweet on twitter.com">retweet</a>
+                    </li>
+                </ul>
             </div>
-            <div wicket:id="tweetText" class="tweet-text">[tweetText]</div>
-            <ul class="tweet-important-links">
-                <li>
-                    <a wicket:id="translateLink" class="button-link">
-                        <img src="img/translate.png" title="Translate Tweet"/>
-                    </a>
-                </li>
-                <!-- disabled until we completly migrated to ES
-                <li>
-                    <a wicket:id="similarLink" class="button-link">
-                        <img src="img/find-similar.png" title="Find Similar Tweets"/>
-                    </a>
-                </li>
-                -->
-                <li>
-                    <a wicket:id="retweeters" title="Show Retweets"><span wicket:id="retweetersLabel">[retweeters]</span></a>
-                </li>
-                <li>
-                    <a wicket:id="replies" title="Show Replies"><span wicket:id="repliesLabel">replies</span></a>
-                </li>
-                <li>
-                    <a wicket:id="inreplyof" title="Show tweet where this tweet replies to">in reply of</a>
-                </li>
-            </ul>
-            <ul class="tweet-links">
-                <li>
-                    <a target="_blank" wicket:id="tweetDate" title="Show Status on twitter.com"><span wicket:id="tweetDateLabel"/></a>
-                </li>
-                <li>
-                    <a target="_blank" wicket:id="tweetReply" title="Reply on twitter.com">reply</a>
-                </li>
-                <li>
-                    <a target="_blank" wicket:id="tweetRetweet" title="Retweet on twitter.com">retweet</a>
-                </li>
-            </ul>
             <div class="subtweets">
                 <ul>
                     <li wicket:id="subtweets" class="subtweet">

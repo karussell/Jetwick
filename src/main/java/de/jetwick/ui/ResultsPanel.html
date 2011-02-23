@@ -26,13 +26,7 @@
     <body>
         <wicket:panel>            
             <div id="resultslist">
-                <div id="resultslist-header">
-                    <div>
-                        <div wicket:id="findOriginLink" class="find-origin-link"
-                             title="You will get the oldest, most retweeted content">[FindOriginOfQuery]</div>
-                        <span wicket:id="qmWarn" class="querymessage warn">[Msg]</span>
-                        <span wicket:id="qm" class="querymessage">[Msg]</span>                        
-                    </div>
+                <div id="resultslist-header">                   
                     <div>
                         <div class="sorting">
                             Sort
@@ -77,6 +71,12 @@
                     </li>
                 </ul>
                 <div id="resultslist-footer">
+                    <div>
+                        <div wicket:id="findOriginLink" class="find-origin-link"
+                             title="You will get the oldest, most retweeted content">[FindOriginOfQuery]</div>
+                        <span wicket:id="qmWarn" class="querymessage warn">[Msg]</span>
+                        <span wicket:id="qm" class="querymessage">[Msg]</span>                        
+                    </div>
                     <div class="export-link">
                         Export as <a wicket:id="exportCsvLink" href="#">csv</a> |
                         <a wicket:id="exportHtmlLink" href="#">html</a>

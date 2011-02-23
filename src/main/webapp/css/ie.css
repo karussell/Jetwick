@@ -1,0 +1,7 @@
+/* show always - no hover effect */
+.tweet-links-container .tweet-links  {
+    display:block;
+}
+.tweet-links-container .tweet-important-links  {
+    display:block;
+}
