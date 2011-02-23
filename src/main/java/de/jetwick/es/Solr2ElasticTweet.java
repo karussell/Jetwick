@@ -129,7 +129,7 @@ public class Solr2ElasticTweet {
             // latest
             rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate()));
 
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i < 7; i++) {
                 // from must be smaller than to!
                 MyDate tmp = date.clone();
                 rfb.addRange(Helper.toLocalDateTime(date.minusDays(1).castToDay().toDate()),

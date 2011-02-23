@@ -117,7 +117,7 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
                             break MAIN;
                     }
 
-                    float waitInSeconds = 1f;
+                    float waitInSeconds = 2f;
                     try {
                         long maxId = 0;
                         LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();

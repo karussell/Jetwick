@@ -41,6 +41,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.elasticsearch.search.facet.termsstats.TermsStatsFacet;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -701,7 +702,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         SearchResponse rsp = twSearch.search(new TweetQuery());
         assertEquals(3, rsp.hits().getTotalHits());
         // only the second tweet will contain a tag with atom!
-        assertEquals(1, ((TermsFacet) rsp.facets().facet("tag")).getEntries().size());
+        assertEquals(1, ((TermsStatsFacet) rsp.facets().facet("tag")).getEntries().size());
 
         rsp = twSearch.search(new SolrQuery().addFilterQuery("tag:atom"));
         assertEquals(2, twSearch.collectTweets(rsp).size());

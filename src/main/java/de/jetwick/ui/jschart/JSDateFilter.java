@@ -131,31 +131,30 @@ public class JSDateFilter extends Panel {
         if (rsp == null)
             return;
 
-        totalHits = rsp.getHits().getTotalHits();        
+        totalHits = rsp.getHits().getTotalHits();
         if (rsp != null) {
             RangeFacet rf = rsp.facets().facet(ElasticTweetSearch.DATE_FACET);
-            if (rf != null) {                
-                for (RangeFacet.Entry e : rf.entries()) {                    
+            if (rf != null) {
+                for (RangeFacet.Entry e : rf.entries()) {
                     String display = "";
                     String fromStr = e.getFromAsString();
                     String toStr = e.getToAsString();
-
-                    if(fromStr.contains("-Infinity")) {
+//                    System.out.println("from:" + fromStr + " " + toStr);
+                    if (fromStr.contains("-Infinity")) {
                         display = "older";
                         fromStr = "*";
-                    } else if(toStr.contains("Infinity")) {
+                    } else if (toStr.contains("Infinity")) {
                         display = "last 8h";
                         toStr = "*";
+                    } else {
+                        // ignore year and time
+                        int index = toStr.indexOf("T");
+                        if (index > 0)
+                            display = toStr.substring(5, index);
                     }
 
                     String filter = "[" + fromStr + " TO " + toStr + "]";
-                    
-                    // ignore year and time
-                    int index = toStr.indexOf("T");
-                    if (index > 0)
-                        display = toStr.substring(5, index);
-                    
-//                    System.out.println(filter + " " + e.getCount());
+//                    System.out.println(display + " " + filter + " " + e.getCount());
                     facetList.add(new FacetHelper(dtKey, filter, display, e.getCount()));
                 }
             }

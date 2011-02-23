@@ -1144,7 +1144,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 int collectedResults = 0;                
                 while (true) {
                     StopWatch queryWatch = new StopWatch().start();                    
-                    System.out.println("NOW!!!");
+//                    System.out.println("NOW!!!");
                     rsp = client.prepareSearchScroll(scrollId).
                             setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();                    
                     long currentResults = rsp.hits().totalHits();
