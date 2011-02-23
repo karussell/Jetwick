@@ -15,18 +15,12 @@
  */
 package de.jetwick.es;
 
-import org.elasticsearch.search.sort.SortOrder;
+import java.util.TreeSet;
+import org.elasticsearch.search.facet.termsstats.TermsStatsFacet.ComparatorType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import java.util.Collection;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.common.unit.TimeValue;
-import java.util.LinkedHashMap;
 import java.util.Map.Entry;
-import java.util.Arrays;
 import java.util.Map;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Requests;
@@ -45,6 +39,9 @@ import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.search.facet.AbstractFacetBuilder;
+import org.elasticsearch.search.facet.FacetBuilders;
+import org.elasticsearch.search.facet.termsstats.TermsStatsFacet;
 import static org.elasticsearch.node.NodeBuilder.*;
 
 /**
@@ -60,10 +57,11 @@ public class TestES {
     private Client client;
     private String indexType = "tweet";
     private String NUM = "num";
+    private String TITLE = "title";
 
     public void start() throws IOException, InterruptedException {
         Node node = nodeBuilder().
-//                local(true).
+                //                local(true).
                 settings(ImmutableSettings.settingsBuilder().
                 put("index.number_of_shards", 2).
                 put("index.number_of_replicas", 0).
@@ -74,44 +72,31 @@ public class TestES {
 
         client = node.client();
 
-        // create indices
+// create indices
         String index1 = "index1";
-        String resindex = "resindex";
         createIndex(index1);
-        createIndex(resindex);
-        waitForYellow(resindex);
+        waitForYellow(index1);
 
-        boolean showStrangeBehaviour = true;
-        boolean test1 = true;
-        if (showStrangeBehaviour) {
-            if (test1)
-                // will result in "collected:185" BUT should be 200
-                feedDoc(index1, createDoc(2), "0");
-            else
-                // collected:169 BUT should be 200
-                feedDoc(index1, createDoc(2), "199");
-        } else {
-            if (test1)
-                // collected:201 is okay
-                feedDoc(index1, createDoc(2), "-1");
-            else
-                // collected:201 is okay
-                feedDoc(index1, createDoc(2), "200");
+        for (int i = 0; i < 20; i++) {
+            feedDoc(index1, createDoc(i%10, "test this again"), "" + i);
         }
-//        Thread.sleep(10000);
-        // create some equal content from 0..199
-        Map<String, XContentBuilder> map = new LinkedHashMap<String, XContentBuilder>();
-        for (int i = 0; i < 200; i++) {
-            map.put("" + i, createDoc(i));
+
+        String facetField = NUM;
+        AbstractFacetBuilder fb = FacetBuilders.termsStats(facetField).keyField(facetField).valueScript("doc.score").order(ComparatorType.TOTAL);
+//        XContentQueryBuilder qb = QueryBuilders.queryString(rand)constantScoreQuery();
+        SearchResponse rsp = client.prepareSearch(index1).
+                setQuery(QueryBuilders.matchAllQuery()).
+                addFacet(fb).
+                execute().actionGet();
+
+        TermsStatsFacet f = (TermsStatsFacet) rsp.facets().facet(facetField);
+
+        for (TermsStatsFacet.Entry e : f.entries()) {
+            System.out.println("term:" + e.term() + "\t count:" + e.count() + "\t total:" + e.total());// always 1? + "\t" + e.mean());
         }
-        bulkUpdate(map, index1);
 
-//        Thread.sleep(10000);
-        System.out.println("index1:" + countAll(index1) + " resindex:" + countAll(resindex));
-        mergeIndices(Arrays.asList(index1), resindex, 2);
-
-        logger.info("200? " + countAll(resindex));
-
+        System.out.println("there should be 10 terms. there were:" + f.entries().size());
+        
         node.stop();
     }
 
@@ -142,9 +127,10 @@ public class TestES {
         return response.getCount();
     }
 
-    public XContentBuilder createDoc(int num) throws IOException {
+    public XContentBuilder createDoc(int num, String title) throws IOException {
         XContentBuilder docBuilder = JsonXContent.unCachedContentBuilder().startObject();
         docBuilder.field(NUM, num);
+        docBuilder.field(TITLE, title);
         docBuilder.endObject();
         return docBuilder;
     }
@@ -162,51 +148,6 @@ public class TestES {
             if (rsp.hasFailures())
                 System.out.println("Error while bulkUpdate:" + rsp.buildFailureMessage());
         }
-    }
-
-    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage) {
-        refresh(indexList.toArray(new String[0]));
-        refresh(intoIndex);
-
-        for (String fromIndex : indexList) {        
-            SearchResponse rsp = client.prepareSearch(fromIndex).
-                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
-                    addSort("_id", SortOrder.ASC).
-                    // important to use QUERY_THEN_FETCH !
-                    setSearchType(SearchType.QUERY_THEN_FETCH).
-                    setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
-            try {
-                long total = rsp.hits().totalHits();
-                int collectedResults = 0;
-                
-                do {
-//                while ((currentResults = rsp.hits().hits().length) > 0) {
-                    Map<String, XContentBuilder> docs = collectDocs(rsp);
-                    bulkUpdate(docs, intoIndex);
-                    collectedResults += rsp.hits().hits().length;;
-                    rsp = client.prepareSearchScroll(rsp.scrollId()).
-                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
-                    logger.info("Progress " + collectedResults + "/" + total + " fromIndex=" + fromIndex);
-                } while (rsp.hits().hits().length > 0);
-                logger.info("Finished copying of index " + fromIndex + ". Total:" + total + " collected:" + collectedResults);
-            } catch (Exception ex) {
-                logger.error("Failed to copy data from index " + fromIndex + " into " + intoIndex + ".", ex);
-            }
-        }
-
-        refresh(intoIndex);
-    }
-
-    public Map<String, XContentBuilder> collectDocs(SearchResponse rsp) throws IOException {
-        SearchHits docs = rsp.getHits();
-        Map<String, XContentBuilder> list = new LinkedHashMap<String, XContentBuilder>();
-
-        for (SearchHit sd : docs) {
-            int num = (Integer) sd.getSource().get(NUM);
-            list.put(sd.getId(), createDoc(num));
-        }
-
-        return list;
     }
 
     public void feedDoc(String indexName, XContentBuilder b, String id) {

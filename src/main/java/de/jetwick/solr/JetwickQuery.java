@@ -32,16 +32,6 @@ public class JetwickQuery extends SolrQuery {
             for (String str : facets) {
                 query.removeFacetField(str);
             }
-
-        query.set("facet.date", (String) null).
-                set("facet.date.start", (String) null).
-                set("facet.date.end", (String) null).
-                set("facet.date.gap", (String) null);
-
-        query.set("f.dest_title_1_s.facet.mincount", (String) null).
-                set("f.dest_title_1_s.facet.limit", (String) null).
-                set("f.tag.facet.mincount", (String) null).
-                set("f.tag.facet.limit", (String) null);
     }
 
     public JetwickQuery(boolean init) {

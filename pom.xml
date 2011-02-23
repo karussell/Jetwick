@@ -18,7 +18,7 @@
 
         <dn.version>2.0.4</dn.version>
         <hibernate.version>3.5.1-Final</hibernate.version>        
-        <es.version>0.15.0-SNAPSHOT</es.version>        
+        <es.version>0.16.0-SNAPSHOT</es.version>        
 <!--        <es.version>0.14.1</es.version>-->
         <!-- <lucene.version>3.0.3</lucene.version> -->
         <liquibase.version>1.9.4</liquibase.version>
@@ -42,42 +42,27 @@
             <version>2.1.11</version>
         </dependency>
 
-        <!-- install patched solr
-             mvn install:install-file -DgroupId=org.apache.solr -DartifactId=solr-core -Dpackaging=jar -Dversion=1.4.1 -Dfile=apache-solr-core-1.4.2-dev.jar
-             mvn install:install-file -DgroupId=org.apache.solr -DartifactId=solr-solrj -Dpackaging=jar -Dversion=1.4.1 -Dfile=apache-solr-solrj-1.4.2-dev.jar
-             do not overwrite the previous generated pom with -DgeneratePom=true !!
-         -->
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
             <version>${solr.version}</version>
         </dependency>
         
-        <!--
-        <dependency>
-            <groupId>org.apache.solr</groupId>
-            <artifactId>solr-core</artifactId>
-            <version>${solr.version}</version>
-            - https://issues.apache.org/jira/browse/SOLR-1950 -
-            <exclusions>
-                <exclusion>
-                    <groupId>woodstox</groupId>
-                    <artifactId>wstx-asl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.geronimo.specs</groupId>
-                    <artifactId>geronimo-stax-api_1.0_spec</artifactId>
-                </exclusion>              
-            </exclusions>
-        </dependency>
-        -->
-
+        <!-- Grab from source: git clone git://github.com/elasticsearch/elasticsearch.git             
+             Then do: ./gradlew clean install
+          -->
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>${es.version}</version>
         </dependency>        
         
+        <dependency>
+            <groupId>org.ccil.cowan.tagsoup</groupId>
+            <artifactId>tagsoup</artifactId>
+            <version>1.2</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.wicket</groupId>
             <artifactId>wicket</artifactId>
@@ -98,33 +83,7 @@
             <artifactId>wicket-guice</artifactId>
             <version>${wicket.version}</version>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>com.visural</groupId>
-            <artifactId>visural-wicket</artifactId>
-            <version>0.6.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.visural</groupId>
-            <artifactId>visural-common</artifactId>
-            <version>0.4.3</version>
-        </dependency>
-        -->
-
-        <!--
-         <dependency>
-            <groupId>jfree</groupId>
-            <artifactId>jfreechart</artifactId>
-            <version>1.0.13</version>
-        </dependency>
-        -->
-        <!--
-        <dependency>
-            <groupId>com.caucho</groupId>
-            <artifactId>resin-hessian</artifactId>
-            <version>4.0.7</version>
-        </dependency>
-        -->
+        
         <dependency>
             <groupId>com.wideplay.warp</groupId>
             <artifactId>warp-persist</artifactId>
@@ -156,14 +115,6 @@
             <version>3.8.0.GA</version>
         </dependency>
 
-        <!-- TODO org.hibernate.connection.C3P0ConnectionProvider
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-c3p0</artifactId>
-            <version>3.3.2.GA</version>
-        </dependency>
-        -->
-
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -176,14 +127,6 @@
             <artifactId>servlet-api</artifactId>
             <version>2.5</version>
         </dependency>
-
-        <!-- detailed jdbc logging (from hibernate)
-        <dependency>
-            <groupId>p6spy</groupId>
-            <artifactId>p6spy</artifactId>
-            <version>1.3</version>
-        </dependency>
-        -->
 
         <dependency>
             <groupId>org.slf4j</groupId>

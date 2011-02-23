@@ -89,12 +89,12 @@ public class TweetQuery extends JetwickQuery {
         q.addFacetQuery(RT_COUNT + ":[20 TO *]");
         q.addFacetQuery(RT_COUNT + ":[50 TO *]");
 
-        q.addFacetQuery(FILTER_NO_DUPS);
-        q.addFacetQuery(FILTER_ONLY_DUPS);
+//        q.addFacetQuery(FILTER_NO_DUPS);
+//        q.addFacetQuery(FILTER_ONLY_DUPS);
 
         // spam
-        q.addFacetQuery(FILTER_SPAM);
-        q.addFacetQuery(FILTER_NO_SPAM);
+//        q.addFacetQuery(FILTER_SPAM);
+//        q.addFacetQuery(FILTER_NO_SPAM);
 
         // links
         q.addFacetQuery(FILTER_URL_ENTRY);

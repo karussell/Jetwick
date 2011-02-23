@@ -884,7 +884,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 new SolrTweet(3L, "second index. one", new SolrUser("people")),
                 new SolrTweet(4L, "snd index! two", new SolrUser("k")),
                 new SolrTweet(5L, "snd index! third", new SolrUser("k"))), index2);
-
+        
         twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 10, true, null);
 
         assertEquals(5, twSearch.countAll(resindex));

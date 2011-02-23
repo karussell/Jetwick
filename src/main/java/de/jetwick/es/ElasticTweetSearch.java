@@ -68,7 +68,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1130,13 +1129,10 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             refresh(intoIndex);
         }
 
-        for (String fromIndex : indexList) {
-            SearchRequestBuilder srb = client.prepareSearch(fromIndex).
-                    // important to sort otherwise https://github.com/elasticsearch/elasticsearch/issues/issue/680
-                    addSort("_id", SortOrder.ASC).
-                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
-                    // important to use QUERY_THEN_FETCH !
-                    setSearchType(SearchType.QUERY_THEN_FETCH).
+        for (String fromIndex : indexList) {            
+            SearchRequestBuilder srb = client.prepareSearch(fromIndex).                    
+                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).                   
+                    setSearchType(SearchType.SCAN).
                     setScroll(TimeValue.timeValueMinutes(30));
             if (additionalFilter != null)
                 srb.setFilter(additionalFilter);
@@ -1144,18 +1140,23 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
             try {
                 long total = rsp.hits().totalHits();
-                int collectedResults = 0;
-                int currentResults;
-                while ((currentResults = rsp.hits().hits().length) > 0) {
+                String scrollId = rsp.scrollId();
+                int collectedResults = 0;                
+                while (true) {
+                    StopWatch queryWatch = new StopWatch().start();                    
+                    System.out.println("NOW!!!");
+                    rsp = client.prepareSearchScroll(scrollId).
+                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();                    
+                    long currentResults = rsp.hits().totalHits();
+                    if(currentResults == 0)
+                        break;
+                    
+                    queryWatch.stop();
                     Collection tweets = collectTweets(rsp);
                     StopWatch updateWatch = new StopWatch().start();
                     bulkUpdate(tweets, intoIndex);
                     updateWatch.stop();
-                    collectedResults += currentResults;
-                    StopWatch queryWatch = new StopWatch().start();
-                    rsp = client.prepareSearchScroll(rsp.scrollId()).
-                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
-                    queryWatch.stop();
+                    collectedResults += currentResults;                    
                     logger.info("Progress " + collectedResults +"/" + total + " fromIndex=" +
                             fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
                 }

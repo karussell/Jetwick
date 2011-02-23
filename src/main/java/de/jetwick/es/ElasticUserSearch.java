@@ -390,27 +390,27 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
 
         for (String fromIndex : indexList) {
-            SearchRequestBuilder srb = client.prepareSearch(fromIndex).
-                    // important to sort otherwise https://github.com/elasticsearch/elasticsearch/issues/issue/680
-                    addSort("_id", SortOrder.ASC).
-                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
-                    // important to use QUERY_THEN_FETCH !
-                    setSearchType(SearchType.QUERY_THEN_FETCH).
+            SearchRequestBuilder srb = client.prepareSearch(fromIndex).                    
+                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).                   
+                    setSearchType(SearchType.SCAN).
                     setScroll(TimeValue.timeValueMinutes(30));
             if (additionalFilter != null)
                 srb.setFilter(additionalFilter);
-            
             SearchResponse rsp = srb.execute().actionGet();
             try {
                 long total = rsp.hits().totalHits();
-                int collectedResults = 0;
-                int currentResults;
-                while ((currentResults = rsp.hits().hits().length) > 0) {
+                int collectedResults = 0;                
+                String scrollId = rsp.scrollId();                
+                while (true) {
+                    rsp = client.prepareSearchScroll(scrollId).
+                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();                    
+                    int currentResults = rsp.hits().hits().length;
+                    if(currentResults == 0)
+                        break;
+
                     Collection users = collectUsers(rsp);
                     bulkUpdate(users, intoIndex);
-                    collectedResults += currentResults;
-                    rsp = client.prepareSearchScroll(rsp.scrollId()).
-                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
+                    collectedResults += currentResults;                    
                 }
                 logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
             } catch (Exception ex) {

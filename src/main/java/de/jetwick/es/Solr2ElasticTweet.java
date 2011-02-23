@@ -31,6 +31,7 @@ import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import org.elasticsearch.search.facet.AbstractFacetBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.range.RangeFacetBuilder;
+import org.elasticsearch.search.facet.termsstats.TermsStatsFacet.ComparatorType;
 import org.elasticsearch.search.sort.SortOrder;
 
 /**
@@ -94,7 +95,15 @@ public class Solr2ElasticTweet {
         if (query.getFacetFields() != null) {
             for (String ff : query.getFacetFields()) {
                 // TODO parse all query params to find the f.<field>.limit then set .size() from that
-                AbstractFacetBuilder fb = FacetBuilders.termsFacet(ff).field(ff);
+                AbstractFacetBuilder fb;
+                if (ff.equals(ElasticTweetSearch.FIRST_URL_TITLE) || ff.equals(ElasticTweetSearch.TAG)) {
+                    // hmmh no real differences ... strange
+                    fb = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.score").order(ComparatorType.TOTAL);//.size(15);
+//                    fb = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.relevance.value").order(ComparatorType.TOTAL);//.size(15);
+//                    fb = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.relevance.value").order(ComparatorType.COUNT).size(15);
+                } else
+                    fb = FacetBuilders.termsFacet(ff).field(ff);                    
+
                 if (dateFilter != null)
                     fb.facetFilter(dateFilter);
                 srb.addFacet(fb);

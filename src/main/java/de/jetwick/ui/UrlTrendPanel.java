@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.response.FacetField;
-import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.behavior.AttributeAppender;
@@ -38,7 +36,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.elasticsearch.search.facet.termsstats.TermsStatsFacet;
 
 /**
  *
@@ -151,9 +149,11 @@ public class UrlTrendPanel extends Panel {
                         filter.set(0, true);
                 }
 
-            TermsFacet tf = (TermsFacet) rsp.getFacets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
+            TermsStatsFacet tf = (TermsStatsFacet) rsp.getFacets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
+//            TermsFacet tf = (TermsFacet) rsp.getFacets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
             if (tf != null)
-                for (TermsFacet.Entry e : tf.entries()) {
+                for (TermsStatsFacet.Entry e : tf.entries()) {
+//                for (TermsFacet.Entry e : tf.entries()) {
                     String str = e.getTerm();
                     // although we avoid indexing empty title -> its save to do it again ;-)
                     if (!str.isEmpty())
