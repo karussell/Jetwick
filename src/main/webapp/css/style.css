@@ -411,7 +411,7 @@ div.wicket-aa ul li.selected {
 }
 .user {
     /*float: left; -> do not set */
-    padding: 15px 15px 0px 15px;
+    padding: 12px 15px 0px 0px;
     border-bottom: gray 1px groove;
 }
 
@@ -464,9 +464,10 @@ div.wicket-aa ul li.selected {
 }
 
 .tweet-links {    
+    float: left;
     margin-right: auto;
     padding-left: 10px;
-    padding-top: 3px;
+    padding-top: 0px;
 }
 .tweet-links li a {
     font-size: 10px;
@@ -484,8 +485,8 @@ div.wicket-aa ul li.selected {
 }
 
 .tweet-important-links {       
-    padding-top: 3px;
     float: left;
+    padding-top: 0px;    
 }
 .tweet-important-links li {    
     padding-left: 5px;
@@ -535,7 +536,7 @@ div.wicket-aa ul li.selected {
 
 .subtweets {    
     padding-left: 15px;
-    padding-top: 10px;
+    padding-top: 11px;
 }
 
 .navigation {
