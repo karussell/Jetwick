@@ -16,7 +16,7 @@
 
 package de.jetwick.tw;
 
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -45,7 +45,7 @@ public class HashtagExtractor extends Extractor {
     }
 
     @Override
-    public HashtagExtractor setTweet(SolrTweet tweet) {
+    public HashtagExtractor setTweet(JTweet tweet) {
         super.setTweet(tweet);
         return this;
     }

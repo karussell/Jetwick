@@ -16,7 +16,6 @@
 
 package de.jetwick.data;
 
-import de.jetwick.solr.SolrTweet;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
@@ -26,42 +25,42 @@ import java.util.LinkedHashSet;
  */
 public class UpdateResult {
 
-    private Collection<SolrTweet> removedTweets;
-    private Collection<SolrTweet> updatedTweets;
+    private Collection<JTweet> removedTweets;
+    private Collection<JTweet> updatedTweets;
 
     public UpdateResult() {
-        updatedTweets = new LinkedHashSet<SolrTweet>();
-        removedTweets = new LinkedHashSet<SolrTweet>();
+        updatedTweets = new LinkedHashSet<JTweet>();
+        removedTweets = new LinkedHashSet<JTweet>();
     }
 
-    public Collection<SolrTweet> getUpdatedTweets() {
+    public Collection<JTweet> getUpdatedTweets() {
         return updatedTweets;
     }
 
-    public boolean addUpdatedTweet(SolrTweet tweet) {
+    public boolean addUpdatedTweet(JTweet tweet) {
         if (tweet != null && !removedTweets.contains(tweet))
             return updatedTweets.add(tweet);
 
         return false;
     }
 
-    public void addUpdatedTweets(Collection<SolrTweet> list) {
-        for (SolrTweet tw : list) {
+    public void addUpdatedTweets(Collection<JTweet> list) {
+        for (JTweet tw : list) {
             addUpdatedTweet(tw);
         }
     }
 
-    public Collection<SolrTweet> getDeletedTweets() {
+    public Collection<JTweet> getDeletedTweets() {
         return removedTweets;
     }
 
-    public void addAllDeletedTweets(Collection<SolrTweet> removedTweets) {
+    public void addAllDeletedTweets(Collection<JTweet> removedTweets) {
         this.removedTweets.addAll(removedTweets);
     }
 
     public void addAll(UpdateResult res) {
         addAllDeletedTweets(res.getDeletedTweets());
-        for (SolrTweet tw : res.getUpdatedTweets()) {
+        for (JTweet tw : res.getUpdatedTweets()) {
             addUpdatedTweet(tw);
         }
     }

@@ -16,7 +16,7 @@
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
@@ -91,7 +91,7 @@ public class TweetConsumer extends MyThread {
             currentTime = new StopWatch("");
             longTime.start();
             currentTime.start();
-            Collection<SolrTweet> res = updateTweets(tweetPackages, tweetBatchSize);
+            Collection<JTweet> res = updateTweets(tweetPackages, tweetBatchSize);
             currentTime.stop();
             longTime.stop();
             indexedTweets += res.size();
@@ -115,9 +115,9 @@ public class TweetConsumer extends MyThread {
         logger.info(getName() + " finished");
     }
 
-    public Collection<SolrTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
+    public Collection<JTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
         Collection<TweetPackage> donePackages = new ArrayList<TweetPackage>();
-        Collection<SolrTweet> tweetSet = new LinkedHashSet<SolrTweet>();
+        Collection<JTweet> tweetSet = new LinkedHashSet<JTweet>();
         while (true) {
             TweetPackage tw = tws.poll();
             if (tw == null)
@@ -132,7 +132,7 @@ public class TweetConsumer extends MyThread {
         int maxTrials = 1;
         for (int trial = 1; trial <= maxTrials; trial++) {
             try {
-                Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
+                Collection<JTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
                 receivedTweets += tweetSet.size();
                 String str = "[es] indexed:";
                 for (TweetPackage pkg : donePackages) {

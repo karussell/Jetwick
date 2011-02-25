@@ -21,7 +21,7 @@ import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.data.TagDao;
 import de.jetwick.data.YTag;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
@@ -120,7 +120,7 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
                     float waitInSeconds = 2f;
                     try {
                         long maxId = 0;
-                        LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
+                        LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
                         maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
 
                         int hits = tmp.size();

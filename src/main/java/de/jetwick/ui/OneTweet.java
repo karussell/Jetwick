@@ -17,8 +17,8 @@ package de.jetwick.ui;
 
 import de.jetwick.ui.util.LabeledLink;
 import com.google.api.translate.Language;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.Extractor;
 import de.jetwick.util.Helper;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class OneTweet extends Panel {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private String language;
-    private List<SolrTweet> subTweets = new ArrayList<SolrTweet>();
+    private List<JTweet> subTweets = new ArrayList<JTweet>();
     private boolean rtClicked = false;
     private boolean rpClicked = false;
     private boolean clickedTranslate = false;
@@ -58,14 +58,14 @@ public class OneTweet extends Panel {
         super(id);
     }
 
-    public OneTweet init(IModel<SolrTweet> model, boolean showUser) {
+    public OneTweet init(IModel<JTweet> model, boolean showUser) {
         setOutputMarkupId(true);
-        final SolrTweet tweet = model.getObject();
+        final JTweet tweet = model.getObject();
         if(tweet == null) {
             setVisible(false);
             return this;
         }
-        final SolrUser user = tweet.getFromUser();
+        final JUser user = tweet.getFromUser();
 
         if (showUser) {
             LabeledLink userNameLink = new LabeledLink("userNameLink", user.getScreenName() + ":", false) {
@@ -126,7 +126,7 @@ public class OneTweet extends Panel {
         };
 
         add(inReplyOfButton);
-        if (SolrTweet.isDefaultInReplyId(tweet.getInReplyTwitterId()))
+        if (JTweet.isDefaultInReplyId(tweet.getInReplyTwitterId()))
             inReplyOfButton.setVisible(false);
 
         IndicatingAjaxFallbackLink rtLink = new IndicatingAjaxFallbackLink("retweeters") {
@@ -195,7 +195,7 @@ public class OneTweet extends Panel {
                 item.add(new OneTweet("suboneTweet") {
 
                     @Override
-                    public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {
+                    public Collection<JTweet> onReplyClick(long id, boolean retweet) {
                         return OneTweet.this.onReplyClick(id, retweet);
                     }
 
@@ -205,12 +205,12 @@ public class OneTweet extends Panel {
                     }
 
                     @Override
-                    public void onFindSimilarClick(SolrTweet tweet, AjaxRequestTarget target) {
+                    public void onFindSimilarClick(JTweet tweet, AjaxRequestTarget target) {
                         OneTweet.this.onFindSimilarClick(tweet, target);
                     }
 
                     @Override
-                    public Collection<SolrTweet> onInReplyOfClick(long id) {
+                    public Collection<JTweet> onInReplyOfClick(long id) {
                         return OneTweet.this.onInReplyOfClick(id);
                     }
                 }.init(item.getModel(), true).setLanguage(language));
@@ -221,7 +221,7 @@ public class OneTweet extends Panel {
         return this;
     }
 
-    public String translate(SolrTweet tweet) {
+    public String translate(JTweet tweet) {
         String trText = getTextFromTranslateAllAction(tweet.getTwitterId());
         if (trText != null)
             return trText;
@@ -247,17 +247,17 @@ public class OneTweet extends Panel {
         return this;
     }
 
-    public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {
+    public Collection<JTweet> onReplyClick(long id, boolean retweet) {
         return Collections.EMPTY_LIST;
     }
 
-    public Collection<SolrTweet> onInReplyOfClick(long id) {
+    public Collection<JTweet> onInReplyOfClick(long id) {
         return Collections.EMPTY_LIST;
     }
 
     public void onUserClick(String screenName) {
     }
 
-    public void onFindSimilarClick(SolrTweet tweet, AjaxRequestTarget target) {
+    public void onFindSimilarClick(JTweet tweet, AjaxRequestTarget target) {
     }
 }

@@ -16,7 +16,7 @@
 package de.jetwick.tw;
 
 import java.util.ArrayList;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JUser;
 import java.util.Collection;
 import org.junit.Before;
 import de.jetwick.JetwickTestClass;
@@ -44,7 +44,7 @@ public class FriendSearchHelperTest extends JetwickTestClass {
         FriendSearchHelper helper = new FriendSearchHelper(null, null) {
 
             @Override
-            public void updateUser(SolrUser user) {                
+            public void updateUser(JUser user) {                
             }
             
             @Override
@@ -52,7 +52,7 @@ public class FriendSearchHelperTest extends JetwickTestClass {
                 friends.add("test");
             }
         };
-        assertEquals(1, helper.updateFriendsOf(new SolrUser("test")).size());
+        assertEquals(1, helper.updateFriendsOf(new JUser("test")).size());
     }
     
     @Test
@@ -61,7 +61,7 @@ public class FriendSearchHelperTest extends JetwickTestClass {
         FriendSearchHelper helper = new FriendSearchHelper(null, null) {
 
             @Override
-            public void updateUser(SolrUser user) {                
+            public void updateUser(JUser user) {                
                 list.add("now");
             }
             
@@ -70,7 +70,7 @@ public class FriendSearchHelperTest extends JetwickTestClass {
             }
         };
         
-        SolrUser user = new SolrUser("peter");
+        JUser user = new JUser("peter");
         helper.updateFriendsOf(user);        
         assertEquals(1, list.size());        
         

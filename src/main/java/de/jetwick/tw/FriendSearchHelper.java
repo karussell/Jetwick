@@ -17,7 +17,7 @@ package de.jetwick.tw;
 
 import com.google.inject.Inject;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JUser;
 import de.jetwick.util.AnyExecutor;
 import de.jetwick.util.MyDate;
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public class FriendSearchHelper {
         this.twitter4j = twitter4j;
     }
 
-    public Collection<String> updateFriendsOf(SolrUser user) {        
+    public Collection<String> updateFriendsOf(JUser user) {        
         MyDate cacheTime = null;
         if (user.getLastFriendsUpdate() != null)
             cacheTime = new MyDate(user.getLastFriendsUpdate());
@@ -63,16 +63,16 @@ public class FriendSearchHelper {
             return user.getFriends();
     }
 
-    public void updateUser(SolrUser user) {
+    public void updateUser(JUser user) {
         // avoid refresh if more users are registered
         userSearch.update(user, false, true);
     }
 
     public void updateFromTwitter(final Collection<String> friends, String screenName) {
-        twitter4j.getFriends(screenName, new AnyExecutor<SolrUser>() {
+        twitter4j.getFriends(screenName, new AnyExecutor<JUser>() {
 
             @Override
-            public SolrUser execute(SolrUser u) {
+            public JUser execute(JUser u) {
                 friends.add(u.getScreenName());
                 return u;
             }

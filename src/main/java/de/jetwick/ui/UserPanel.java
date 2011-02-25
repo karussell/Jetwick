@@ -15,7 +15,7 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 import org.apache.wicket.Application;
@@ -81,7 +81,7 @@ public class UserPanel extends Panel {
         WebMarkupContainer container = new WebMarkupContainer("loginContainer") {
 
             {
-                final SolrUser user = homePageRef.getMySession().getUser();
+                final JUser user = homePageRef.getMySession().getUser();
                 String name = user.getRealName();
                 if (name == null)
                     name = user.getScreenName();

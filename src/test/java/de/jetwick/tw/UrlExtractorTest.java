@@ -16,8 +16,8 @@
 package de.jetwick.tw;
 
 import de.jetwick.data.UrlEntry;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import java.io.BufferedReader;
@@ -53,8 +53,8 @@ public class UrlExtractorTest {
     }
 
     public Collection<UrlEntry> get(int index) {
-        Iterator<SolrTweet> iter = ret.iterator().next().getTweets().iterator();
-        SolrTweet tw;
+        Iterator<JTweet> iter = ret.iterator().next().getTweets().iterator();
+        JTweet tw;
         int tmp = 0;
         while (iter.hasNext()) {
             tw = iter.next();
@@ -193,12 +193,12 @@ public class UrlExtractorTest {
         };
     }
 
-    SolrTweet createTweet(long id, String twText) {
-        return new SolrTweet(id, twText, new SolrUser("tmp")).setCreatedAt(new Date(id));
+    JTweet createTweet(long id, String twText) {
+        return new JTweet(id, twText, new JUser("tmp")).setCreatedAt(new Date(id));
     }
     public static int counter = 0;
 
-    BlockingQueue<TweetPackage> createPkg(SolrTweet... tweets) {
+    BlockingQueue<TweetPackage> createPkg(JTweet... tweets) {
         return new LinkedBlockingQueue<TweetPackage>(
                 Arrays.asList(
                 new TweetPackageList("tmp").init(counter++, Arrays.asList(tweets))));

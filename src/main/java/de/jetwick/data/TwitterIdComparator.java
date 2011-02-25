@@ -16,7 +16,6 @@
 
 package de.jetwick.data;
 
-import de.jetwick.solr.SolrTweet;
 import java.util.Comparator;
 
 /**
@@ -24,10 +23,10 @@ import java.util.Comparator;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TwitterIdComparator implements Comparator<SolrTweet> {
+public class TwitterIdComparator implements Comparator<JTweet> {
 
     @Override
-    public int compare(SolrTweet t1, SolrTweet t2) {
+    public int compare(JTweet t1, JTweet t2) {
         long o1 = t1.getTwitterId();
         long o2 = t2.getTwitterId();
         if (o2 > o1)

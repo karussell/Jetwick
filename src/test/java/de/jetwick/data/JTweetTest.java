@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package de.jetwick.solr;
+package de.jetwick.data;
 
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
@@ -25,14 +27,14 @@ import static org.junit.Assert.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SolrTweetTest {
+public class JTweetTest {
 
     @Test
     public void testIsRetweet() {
         assertTrue(createTweet(1, "RT @testuser").isRetweet());
         assertFalse(createTweet(1, "asseRT").isRetweet());
 
-        SolrUser usera = new SolrUser("usera");
+        JUser usera = new JUser("usera");
         assertFalse(createTweet(2L, "rt @usera: bla text").isRetweetOf(createTweet(1, "text", usera)));
         assertTrue(createTweet(2L, "bla rt @usera: text").isRetweetOf(createTweet(1, "text", usera)));
         assertTrue(createTweet(2L, "rt @usera: text bla").isRetweetOf(createTweet(1, "text", usera)));
@@ -45,18 +47,18 @@ public class SolrTweetTest {
     @Test
     public void testAutoReverse() {
         // replies <-> inReplyOf
-        SolrTweet tw1 = createTweet(1L, "test1");
-        SolrTweet tw2 = createTweet(2L, "test2");
+        JTweet tw1 = createTweet(1L, "test1");
+        JTweet tw2 = createTweet(2L, "test2");
         tw1.addReply(tw2);
         assertEquals(tw1, tw2.getInReplyOf());
         assertEquals(1L, tw2.getInReplyTwitterId());
 
         // fromUser <-> ownTweets
-        SolrUser user = new SolrUser("peter");
+        JUser user = new JUser("peter");
         user.addOwnTweet(tw1);
         assertEquals(user, tw1.getFromUser());
 
-        user = new SolrUser("peter");
+        user = new JUser("peter");
         tw1 = createTweet(1L, "test1");
         tw1.setFromUser(user);
         assertEquals(tw1, user.getOwnTweets().iterator().next());
@@ -65,12 +67,12 @@ public class SolrTweetTest {
     @Test
     public void testRemoveDuplicatesAndSort() {
         // assert sort id and non duplicate id
-        List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+        List<JTweet> tweets = new ArrayList<JTweet>();
         tweets.add(createTweet(1L, "test1"));
         tweets.add(createTweet(5L, "test2"));
         tweets.add(createTweet(2L, "test3"));
         tweets.add(createTweet(1L, "test4"));
-        SolrTweet.sortAndDeduplicate(tweets);
+        JTweet.sortAndDeduplicate(tweets);
         assertEquals(3, tweets.size());
         assertEquals(5L, (long) tweets.get(0).getTwitterId());
         assertEquals(2L, (long) tweets.get(1).getTwitterId());
@@ -80,7 +82,7 @@ public class SolrTweetTest {
         tweets.clear();
         tweets.add(createTweet(1L, "test1"));
         tweets.add(createTweet(2L, "test1"));
-        SolrTweet.sortAndDeduplicate(tweets);
+        JTweet.sortAndDeduplicate(tweets);
         assertEquals(1, tweets.size());
         assertEquals(2L, (long) tweets.get(0).getTwitterId());
 
@@ -91,7 +93,7 @@ public class SolrTweetTest {
         tweets.add(createTweet(3L, "test4"));
         tweets.add(createTweet(11L, "test5"));
         tweets.add(createTweet(10L, "test4"));
-        SolrTweet.sortAndDeduplicate(tweets);
+        JTweet.sortAndDeduplicate(tweets);
         // do not remove the text if there is a tweet in-between (here 5L)
         assertEquals(5, tweets.size());
         tweets.clear();
@@ -100,7 +102,7 @@ public class SolrTweetTest {
         tweets.add(createTweet(11L, "test3"));
         tweets.add(createTweet(9L, "test2"));
         tweets.add(createTweet(10L, "test2"));
-        SolrTweet.sortAndDeduplicate(tweets);
+        JTweet.sortAndDeduplicate(tweets);
         assertEquals(3, tweets.size());
         assertEquals(11L, (long) tweets.get(0).getTwitterId());
         assertEquals(10L, (long) tweets.get(1).getTwitterId());
@@ -117,10 +119,10 @@ public class SolrTweetTest {
         assertEquals("text", createTweet(1L, "rt @user: text").extractRTText());
     }
 
-    SolrTweet createTweet(long id, String text) {
-        return new SolrTweet(id, text, new SolrUser("tmp"));
+    JTweet createTweet(long id, String text) {
+        return new JTweet(id, text, new JUser("tmp"));
     }
-    SolrTweet createTweet(long id, String text, SolrUser user) {
-        return new SolrTweet(id, text, user);
+    JTweet createTweet(long id, String text, JUser user) {
+        return new JTweet(id, text, user);
     }
 }

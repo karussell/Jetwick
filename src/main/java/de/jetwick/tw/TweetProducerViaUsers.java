@@ -16,10 +16,10 @@
 package de.jetwick.tw;
 
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.JetwickQuery;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.UserQuery;
+import de.jetwick.es.JetwickQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
+import de.jetwick.es.UserQuery;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.StopWatch;
@@ -60,7 +60,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
     }
 
     public boolean innerRun() {
-        Set<SolrUser> users = new LinkedHashSet<SolrUser>();
+        Set<JUser> users = new LinkedHashSet<JUser>();
         long counts = userSearch.countAll();
         int ROWS = 100;
         // paging
@@ -88,7 +88,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
         }
 
         logger.info("Found:" + users.size() + " users in user index");
-        for (SolrUser authUser : users) {
+        for (JUser authUser : users) {
             if (!isValidUser(authUser))
                 continue;
 
@@ -137,10 +137,10 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
             // regularly feed tweets of friends from authenticated user           
             try {
                 StopWatch watch = new StopWatch("friends").start();
-                Set<SolrTweet> tweets = new LinkedHashSet<SolrTweet>();
+                Set<JTweet> tweets = new LinkedHashSet<JTweet>();
                 ue.setLastId(ue.getTwitterSearch().getHomeTimeline(tweets, 99, ue.getLastId()));
                 if (tweets.size() > 0) {
-                    for (SolrTweet tw : tweets) {
+                    for (JTweet tw : tweets) {
                         if (tw.getFromUser().getScreenName().equalsIgnoreCase(authUser.getScreenName()))
                             tw.makePersistent();
                     }
@@ -173,7 +173,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                 initTwitter4JInstance(twitterToken, twitterTokenSecret);
     }
 
-    protected boolean isValidUser(SolrUser u) {
+    protected boolean isValidUser(JUser u) {
         if (u.getTwitterToken() == null || u.getTwitterTokenSecret() == null) {
             logger.warn("Skipped user:" + u.getScreenName() + " - no token or secret!");
             return false;
@@ -183,11 +183,11 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
 
     private static class UserEntry {
 
-        private SolrUser u;
+        private JUser u;
         private TwitterSearch ts;
         private long lastId = 0L;
 
-        public UserEntry(SolrUser u) {
+        public UserEntry(JUser u) {
             this.u = u;
         }
 
@@ -207,7 +207,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
             return ts;
         }
 
-        public SolrUser getUser() {
+        public JUser getUser() {
             return u;
         }
     }

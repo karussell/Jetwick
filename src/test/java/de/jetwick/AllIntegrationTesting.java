@@ -16,7 +16,7 @@
 
 package de.jetwick;
 
-import de.jetwick.solr.UserIndexResponseOrderTestClass;
+import de.jetwick.es.UserIndexResponseOrderTestClass;
 import de.jetwick.tw.TweetCollectorIntegrationTestClass;
 import de.jetwick.tw.TwitterSearchIntegrationTestClass;
 import de.jetwick.util.MiscIntegrationTestClass;

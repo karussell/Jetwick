@@ -15,16 +15,13 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.solr.SimilarQuery;
-import de.jetwick.solr.JetwickQuery;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.io.StringReader;
 import de.jetwick.data.UrlEntry;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.util.MyDate;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,12 +63,12 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testSearch() throws Exception {
-        SolrUser fromUser = new SolrUser("peter");
-        SolrTweet tw1 = new SolrTweet(1L, "this is a test!", fromUser);
+        JUser fromUser = new JUser("peter");
+        JTweet tw1 = new JTweet(1L, "this is a test!", fromUser);
 
-        SolrUser otherUser = new SolrUser("otherUser");
-        SolrTweet tw2 = new SolrTweet(2L, "Java is cool and stable!", otherUser);
-        SolrTweet tw3 = new SolrTweet(3L, "Java is stable!", otherUser);
+        JUser otherUser = new JUser("otherUser");
+        JTweet tw2 = new JTweet(2L, "Java is cool and stable!", otherUser);
+        JTweet tw3 = new JTweet(3L, "Java is stable!", otherUser);
         twSearch.update(tw1, false);
         twSearch.update(tw2, false);
         twSearch.update(tw3, true);
@@ -112,10 +109,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testSearchAnchors() throws Exception {
-        SolrUser peter = new SolrUser("peter");
-        SolrTweet tw1 = new SolrTweet(1L, "peter #java is cool!", peter);
-        SolrUser peter2 = new SolrUser("peter2");
-        SolrTweet tw2 = new SolrTweet(2L, "@peter java is cool!", peter2);
+        JUser peter = new JUser("peter");
+        JTweet tw1 = new JTweet(1L, "peter #java is cool!", peter);
+        JUser peter2 = new JUser("peter2");
+        JTweet tw2 = new JTweet(2L, "@peter java is cool!", peter2);
         twSearch.update(tw1, false);
         twSearch.update(tw2, true);
 
@@ -125,11 +122,11 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testCamelCase() throws Exception {
-        SolrTweet tw1 = new SolrTweet(1L, "peter iBood is cool!", new SolrUser("peter1"));
-        SolrTweet tw2 = new SolrTweet(2L, "ibood is cool!", new SolrUser("peter2"));
-        SolrTweet tw3 = new SolrTweet(3L, "peter iBOOD is cool!", new SolrUser("peter3"));
-        SolrTweet tw4 = new SolrTweet(4L, "Ibood is cool!", new SolrUser("peter4"));
-        SolrTweet tw5 = new SolrTweet(5L, "iBOOD.com", new SolrUser("peter5"));
+        JTweet tw1 = new JTweet(1L, "peter iBood is cool!", new JUser("peter1"));
+        JTweet tw2 = new JTweet(2L, "ibood is cool!", new JUser("peter2"));
+        JTweet tw3 = new JTweet(3L, "peter iBOOD is cool!", new JUser("peter3"));
+        JTweet tw4 = new JTweet(4L, "Ibood is cool!", new JUser("peter4"));
+        JTweet tw5 = new JTweet(5L, "iBOOD.com", new JUser("peter5"));
 
         twSearch.update(tw1, false);
         twSearch.update(tw2, false);
@@ -148,11 +145,11 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testSearchJavaScript() throws Exception {
         // keepwords.txt
-        SolrUser peter = new SolrUser("peter1");
-        SolrTweet tw1 = new SolrTweet(1L, "peter JavaScript is cool!", peter);
-        SolrUser peter2 = new SolrUser("peter2");
-        SolrTweet tw2 = new SolrTweet(2L, "java is cool!", peter2);
-        SolrTweet tw3 = new SolrTweet(3L, "peter javascript is cool!", new SolrUser("peter3"));
+        JUser peter = new JUser("peter1");
+        JTweet tw1 = new JTweet(1L, "peter JavaScript is cool!", peter);
+        JUser peter2 = new JUser("peter2");
+        JTweet tw2 = new JTweet(2L, "java is cool!", peter2);
+        JTweet tw3 = new JTweet(3L, "peter javascript is cool!", new JUser("peter3"));
         twSearch.update(tw1, false);
         twSearch.update(tw2, false);
         twSearch.update(tw3, true);
@@ -160,7 +157,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(1, twSearch.search("java").size());
         assertEquals("peter2", twSearch.search("java").iterator().next().getScreenName());
         assertEquals(2, twSearch.search("javascript").size());
-        Iterator<SolrUser> iter = twSearch.search("javascript").iterator();
+        Iterator<JUser> iter = twSearch.search("javascript").iterator();
         assertEquals("peter1", iter.next().getScreenName());
         assertEquals("peter3", iter.next().getScreenName());
     }
@@ -172,7 +169,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.update(createSolrTweet(day, "java is a test!", "peter"), false);
         twSearch.update(createSolrTweet(day2, "java is cool and stable!", "peter2"), true);
         JetwickQuery q = new TweetQuery("java").setSort("dt", "desc");
-        List<SolrUser> res = new ArrayList<SolrUser>();
+        List<JUser> res = new ArrayList<JUser>();
         twSearch.search(res, q);
         assertEquals(2, res.size());
         assertEquals(day2.getTime(), (long) res.get(0).getOwnTweets().iterator().next().getTwitterId());
@@ -185,27 +182,27 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testLoc() {
-        SolrUser user = new SolrUser("peter");
+        JUser user = new JUser("peter");
         user.setLocation("TEST");
-        SolrTweet tw;
-        tw = new SolrTweet(1L, "test tweet text", user);
+        JTweet tw;
+        tw = new JTweet(1L, "test tweet text", user);
         twSearch.update(tw, false);
-        tw = new SolrTweet(2L, "test tweet text2", user);
+        tw = new JTweet(2L, "test tweet text2", user);
         twSearch.update(tw, true);
-        List<SolrUser> res = new ArrayList<SolrUser>();
+        List<JUser> res = new ArrayList<JUser>();
         twSearch.search(res, new TweetQuery().addFilterQuery("loc", "TEST"));
         assertEquals(1, res.size());
         assertEquals(2, res.get(0).getOwnTweets().size());
 
-        user = new SolrUser("peter");
-        tw = new SolrTweet(3L, "test tweet text", user);
+        user = new JUser("peter");
+        tw = new JTweet(3L, "test tweet text", user);
         tw.setLocation("TEST3");
         twSearch.update(tw, false);
 
-        tw = new SolrTweet(4L, "test tweet text", user);
+        tw = new JTweet(4L, "test tweet text", user);
         tw.setLocation("TEST4");
         twSearch.update(tw, true);
-        res = new ArrayList<SolrUser>();
+        res = new ArrayList<JUser>();
         twSearch.search(res, new TweetQuery().addFilterQuery("loc", "TEST3"));
         assertEquals(1, res.size());
         assertEquals(1, res.get(0).getOwnTweets().size());
@@ -216,8 +213,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         // do not throw exception
         twSearch.delete(Collections.EMPTY_LIST);
 
-        SolrUser otherUser = new SolrUser("otherUser");
-        SolrTweet tw2 = new SolrTweet(2L, "java is cool and stable!", otherUser);
+        JUser otherUser = new JUser("otherUser");
+        JTweet tw2 = new JTweet(2L, "java is cool and stable!", otherUser);
         twSearch.update(tw2, false);
         twSearch.refresh();
         assertEquals(1, twSearch.search("java").size());
@@ -229,10 +226,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testGetReplies() {
-        SolrUser usera = new SolrUser("usera");
-        SolrTweet tw = new SolrTweet(1L, "this is a Test ", usera);
-        SolrUser userb = new SolrUser("userb");
-        SolrTweet tw2 = new SolrTweet(2L, "this is a Test ", userb);
+        JUser usera = new JUser("usera");
+        JTweet tw = new JTweet(1L, "this is a Test ", usera);
+        JUser userb = new JUser("userb");
+        JTweet tw2 = new JTweet(2L, "this is a Test ", userb);
         tw2.addReply(tw);
         twSearch.update(tw, true);
         twSearch.update(tw2, true);
@@ -247,10 +244,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testGetRetweets() {
-        SolrUser usera = new SolrUser("usera");
-        SolrTweet tw = new SolrTweet(1L, "this is a Test ", usera);
-        SolrUser userb = new SolrUser("userb");
-        SolrTweet tw2 = new SolrTweet(2L, "rt @usera: this is a Test ", userb);
+        JUser usera = new JUser("usera");
+        JTweet tw = new JTweet(1L, "this is a Test ", usera);
+        JUser userb = new JUser("userb");
+        JTweet tw2 = new JTweet(2L, "rt @usera: this is a Test ", userb);
         tw.addReply(tw2);
         twSearch.update(tw, false);
         twSearch.update(tw2, true);
@@ -264,20 +261,20 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testFindDuplicates() {
-        twSearch.update(new SolrTweet(1L, "wikileaks is not a wtf", new SolrUser("userA")), false);
-        twSearch.update(new SolrTweet(2L, "news about wikileaks", new SolrUser("userB")), false);
+        twSearch.update(new JTweet(1L, "wikileaks is not a wtf", new JUser("userA")), false);
+        twSearch.update(new JTweet(2L, "news about wikileaks", new JUser("userB")), false);
 
         // find dup is restricted to the last hour so use a current date
         MyDate dt = new MyDate();
-        SolrTweet tw3 = new SolrTweet(3L, "wtf means wikileaks task force", new SolrUser("userC")).setCreatedAt(dt.toDate());
-        SolrTweet tw4 = new SolrTweet(4L, "wtf wikileaks task force", new SolrUser("userD")).setCreatedAt(dt.plusMinutes(1).toDate());
-        SolrTweet tw5 = new SolrTweet(5L, "RT @userC: wtf means wikileaks task force", new SolrUser("userE")).setCreatedAt(dt.plusMinutes(1).toDate());
+        JTweet tw3 = new JTweet(3L, "wtf means wikileaks task force", new JUser("userC")).setCreatedAt(dt.toDate());
+        JTweet tw4 = new JTweet(4L, "wtf wikileaks task force", new JUser("userD")).setCreatedAt(dt.plusMinutes(1).toDate());
+        JTweet tw5 = new JTweet(5L, "RT @userC: wtf means wikileaks task force", new JUser("userE")).setCreatedAt(dt.plusMinutes(1).toDate());
         twSearch.update(Arrays.asList(tw3, tw4, tw5), new Date(0));
         assertEquals("should be empty. should NOT find tweet 4 because it is younger", 0, tw3.getDuplicates().size());
         assertEquals("should find tweet 3", 1, tw4.getDuplicates().size());
 
-        Map<Long, SolrTweet> map = new LinkedHashMap<Long, SolrTweet>();
-        SolrTweet tw = new SolrTweet(10L, "wtf wikileaks task force", new SolrUser("peter")).setCreatedAt(dt.plusMinutes(1).toDate());
+        Map<Long, JTweet> map = new LinkedHashMap<Long, JTweet>();
+        JTweet tw = new JTweet(10L, "wtf wikileaks task force", new JUser("peter")).setCreatedAt(dt.plusMinutes(1).toDate());
         map.put(10L, tw);
         twSearch.findDuplicates(map);
         assertEquals("should find tweets 3 and 4", 2, tw.getDuplicates().size());
@@ -286,9 +283,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testSpamDuplicates() {
         MyDate dt = new MyDate();
-        SolrTweet tw1 = new SolrTweet(1L, "2488334. Increase your twitter followers now! Buy Twitter Followers", new SolrUser("userA")).setCreatedAt(dt.plusMinutes(1).toDate());
-        SolrTweet tw2 = new SolrTweet(2L, "349366. Increase your twitter followers now! Buy Twitter Followers", new SolrUser("userB")).setCreatedAt(dt.plusMinutes(1).toDate());
-        SolrTweet tw3 = new SolrTweet(31L, "2040312. Increase your twitter followers now! Buy Twitter Followers", new SolrUser("userC")).setCreatedAt(dt.plusMinutes(1).toDate());
+        JTweet tw1 = new JTweet(1L, "2488334. Increase your twitter followers now! Buy Twitter Followers", new JUser("userA")).setCreatedAt(dt.plusMinutes(1).toDate());
+        JTweet tw2 = new JTweet(2L, "349366. Increase your twitter followers now! Buy Twitter Followers", new JUser("userB")).setCreatedAt(dt.plusMinutes(1).toDate());
+        JTweet tw3 = new JTweet(31L, "2040312. Increase your twitter followers now! Buy Twitter Followers", new JUser("userC")).setCreatedAt(dt.plusMinutes(1).toDate());
         twSearch.update(Arrays.asList(tw1, tw2, tw3), new Date(0));
 
         assertEquals(0, tw1.getDuplicates().size());
@@ -298,7 +295,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testBatchUpdate() {
-        List<SolrTweet> list = new ArrayList<SolrTweet>();
+        List<JTweet> list = new ArrayList<JTweet>();
 
         list.add(createTweet(1L, "text", "usera"));
         list.add(createTweet(2L, "RT @usera: text", "userb"));
@@ -306,7 +303,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         list.add(createTweet(3L, "text2", "usera"));
         list.add(createTweet(4L, "hey I read your text", "userb").setInReplyTwitterId(3L));
 
-        Collection<SolrTweet> res = twSearch.update(list, new Date(0));
+        Collection<JTweet> res = twSearch.update(list, new Date(0));
         assertEquals(4, res.size());
 
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
@@ -334,11 +331,11 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.update(createTweet(3L, "C", "u3").setInReplyTwitterId(1L));
 
         // now check if C was properly connected with A and D
-        SolrTweet twC = twSearch.findByTwitterId(3L);
+        JTweet twC = twSearch.findByTwitterId(3L);
         assertEquals(1, twC.getReplyCount());
 
         // A should have C as reply
-        SolrTweet twA = twSearch.findByTwitterId(1L);
+        JTweet twA = twSearch.findByTwitterId(1L);
         assertEquals(1, twA.getReplyCount());
 
         // now check if B was properly connected with A
@@ -361,7 +358,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testDoNotSaveSecondUser() {
-        SolrTweet fTweet = createTweet(5, "@peter @karsten bla bli", "peter");
+        JTweet fTweet = createTweet(5, "@peter @karsten bla bli", "peter");
         twSearch.update(fTweet);
 
         assertNull(twSearch.findByUserName("karsten"));
@@ -379,7 +376,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testIdVsName() {
-        SolrTweet fTweet = createTweet(5, "@karsten bla bli", "peter");
+        JTweet fTweet = createTweet(5, "@karsten bla bli", "peter");
         twSearch.update(fTweet);
 
         fTweet = createTweet(6, "@peter bla bli", "karsten");
@@ -389,7 +386,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testNoDuplicateUser2() {
-        SolrTweet fTweet = createTweet(1, "@karsten bla bli", "peter");
+        JTweet fTweet = createTweet(1, "@karsten bla bli", "peter");
         twSearch.update(fTweet);
 
         fTweet = createTweet(2, "@Karsten bla bli", "Peter");
@@ -398,7 +395,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testNoDuplicateTweet() {
-        SolrTweet fTweet = createTweet(123, "@karsten bla bli", "peter");
+        JTweet fTweet = createTweet(123, "@karsten bla bli", "peter");
         twSearch.update(fTweet);
         twSearch.update(fTweet);
 
@@ -408,8 +405,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testUpdateTweetsWhichIsInfluencedFromActivationDepth() throws Exception {
-        SolrTweet tw1 = createTweet(1L, "tweet1", "peter");
-        SolrTweet tw2 = createTweet(2L, "tweet2", "peter");
+        JTweet tw1 = createTweet(1L, "tweet1", "peter");
+        JTweet tw2 = createTweet(2L, "tweet2", "peter");
 
         twSearch.update(tw1);
         twSearch.update(tw2);
@@ -424,7 +421,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testUpdateAndRemove() throws Exception {
-        SolrTweet tw1 = createTweet(1L, "@karsten hajo", "peter");
+        JTweet tw1 = createTweet(1L, "@karsten hajo", "peter");
         tw1.setCreatedAt(new MyDate().minusDays(2).toDate());
 
         twSearch.update(tw1);
@@ -432,9 +429,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals("@karsten hajo", twSearch.search("hajo").iterator().next().getOwnTweets().iterator().next().getText());
         assertEquals(1, twSearch.findByUserName("peter").getOwnTweets().size());
 
-        SolrTweet tw = createTweet(2L, "test", "peter");
+        JTweet tw = createTweet(2L, "test", "peter");
         tw.setCreatedAt(new Date());
-        Collection<SolrTweet> res = twSearch.update(Arrays.asList(tw),
+        Collection<JTweet> res = twSearch.update(Arrays.asList(tw),
                 new MyDate().minusDays(1).toDate());
         assertEquals(1, res.size());
         assertEquals(1, twSearch.countAll());
@@ -514,7 +511,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testDoNotAddOldTweets() {
-        SolrTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
+        JTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
         tw.setCreatedAt(new MyDate().minusDays(2).toDate());
         assertEquals(0, twSearch.update(Arrays.asList(tw),
                 new MyDate().minusDays(1).toDate()).size());
@@ -522,7 +519,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testAddOldTweetsIfPersistent() {
-        SolrTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
+        JTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
         Date dt = new MyDate().minusDays(2).toDate();
         tw.setUpdatedAt(dt);
         tw.setCreatedAt(dt);
@@ -540,47 +537,47 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testDontRemoveOldIfPersistent() throws Exception {
-        SolrTweet tw2 = createTweet(2L, "RT @userA: bla bli blu", "userB");
+        JTweet tw2 = createTweet(2L, "RT @userA: bla bli blu", "userB");
         Date dt = new MyDate().minusDays(2).toDate();
         tw2.setUpdatedAt(dt);
         tw2.setCreatedAt(dt);
         assertEquals(1, twSearch.update(tw2).size());
         assertNotNull(twSearch.findByTwitterId(2L).getUpdatedAt());
 
-        SolrTweet tw3 = createTweet(3L, "another tweet grabbed from search", "userB");
+        JTweet tw3 = createTweet(3L, "another tweet grabbed from search", "userB");
         tw3.setCreatedAt(new Date());
-        Collection<SolrTweet> res = twSearch.update(Arrays.asList(tw3), new MyDate().minusDays(1).toDate());
+        Collection<JTweet> res = twSearch.update(Arrays.asList(tw3), new MyDate().minusDays(1).toDate());
         assertEquals(1, res.size());
     }
 
     @Test
     public void testComplexUpdate() throws Exception {
-        SolrTweet tw1 = createTweet(1L, "bla bli blu", "userA");
+        JTweet tw1 = createTweet(1L, "bla bli blu", "userA");
         tw1.setCreatedAt(new MyDate().minusDays(2).toDate());
 
-        SolrTweet tw2 = createTweet(2L, "rt @usera: bla bli blu", "userB");
+        JTweet tw2 = createTweet(2L, "rt @usera: bla bli blu", "userB");
         tw2.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
 
-        SolrTweet tw3 = createTweet(3L, "rt @usera: bla bli blu", "userC");
+        JTweet tw3 = createTweet(3L, "rt @usera: bla bli blu", "userC");
         tw3.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
 
-        SolrTweet tw4 = createTweet(4L, "rt @usera: bla bli blu", "userD");
+        JTweet tw4 = createTweet(4L, "rt @usera: bla bli blu", "userD");
         tw4.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
 
-        Collection<SolrTweet> res = twSearch.privateUpdate(Arrays.asList(tw1, tw2, tw3, tw4));
+        Collection<JTweet> res = twSearch.privateUpdate(Arrays.asList(tw1, tw2, tw3, tw4));
         assertEquals(1, twSearch.findByUserName("usera").getOwnTweets().size());
         assertEquals(3, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(4, res.size());
 
         // we do not sort the tweets anylonger so that 104 could be also a retweet of:
 //        SolrTweet tw100 = createTweet(100L, "newtext", "usera");
-        SolrTweet tw101 = createTweet(101L, "newtext two", "usera");
+        JTweet tw101 = createTweet(101L, "newtext two", "usera");
         tw101.setCreatedAt(new Date());
-        SolrTweet tw102 = createTweet(102L, "newbla one", "userd");
+        JTweet tw102 = createTweet(102L, "newbla one", "userd");
         tw102.setCreatedAt(new Date());
-        SolrTweet tw103 = createTweet(103L, "newbla two", "userd");
+        JTweet tw103 = createTweet(103L, "newbla two", "userd");
         tw103.setCreatedAt(new Date());
-        SolrTweet tw104 = createTweet(104L, "rt @usera: newtext two", "userc");
+        JTweet tw104 = createTweet(104L, "rt @usera: newtext two", "userc");
         tw104.setCreatedAt(new MyDate(tw101.getCreatedAt()).plusMinutes(1).toDate());
 
         res = twSearch.update(Arrays.asList(tw101, tw102, tw103, tw104), new MyDate().minusDays(1).toDate());
@@ -596,7 +593,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testDoNotThrowQueryParserException() {
-        SolrTweet tw = createTweet(1L, "rt @jenny2s: -- Earth, Wind & Fire - September  (From \"Live In Japan\")"
+        JTweet tw = createTweet(1L, "rt @jenny2s: -- Earth, Wind & Fire - September  (From \"Live In Japan\")"
                 + " http://www.youtube.com/watch?v=hy-huQAMPQA via @youtube --- HAPPY SEPTEMBER !!", "usera");
         twSearch.update(tw);
     }
@@ -710,7 +707,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testReadUrlEntries() throws IOException {
-        SolrTweet tw = new SolrTweet(1L, "text", new SolrUser("peter"));
+        JTweet tw = new JTweet(1L, "text", new JUser("peter"));
         List<UrlEntry> entries = new ArrayList<UrlEntry>();
 
         UrlEntry urlEntry = new UrlEntry(0, 20, "http://test.de/bla");
@@ -750,7 +747,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         map.put("dest_domain_1_s","resolved-domain.de");
         map.put("dest_title_1_s","ResolvedTitel");
         
-        SolrTweet tw2 = twSearch.readDoc(map, "1");
+        JTweet tw2 = twSearch.readDoc(map, "1");
         assertEquals(1, tw2.getUrlEntries().size());
         Iterator<UrlEntry> iter = tw2.getUrlEntries().iterator();
         urlEntry = iter.next();
@@ -763,7 +760,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testSameUrlTitleButDifferentUrl() throws IOException {
-        SolrTweet tw1 = new SolrTweet(1L, "text", new SolrUser("peter"));
+        JTweet tw1 = new JTweet(1L, "text", new JUser("peter"));
         List<UrlEntry> entries = new ArrayList<UrlEntry>();
         UrlEntry urlEntry = new UrlEntry(2, 18, "http://fulltest.de/url2");
         urlEntry.setResolvedDomain("resolved-domain.de");
@@ -771,7 +768,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         entries.add(urlEntry);
         tw1.setUrlEntries(entries);
 
-        SolrTweet tw2 = new SolrTweet(1L, "text2", new SolrUser("peter2"));
+        JTweet tw2 = new JTweet(1L, "text2", new JUser("peter2"));
         entries = new ArrayList<UrlEntry>();
         urlEntry = new UrlEntry(2, 18, "http://fulltest.de/urlNext");
         urlEntry.setResolvedDomain("resolved-domain.de");
@@ -784,7 +781,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testAdSearch() throws Exception {
-        SolrTweet tw = createNowTweet(1L, "text jetwick @jetwick", "peter");
+        JTweet tw = createNowTweet(1L, "text jetwick @jetwick", "peter");
         tw.setRt(1);
         tw.setQuality(100);
         twSearch.update(Arrays.asList(tw));
@@ -821,15 +818,15 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testGetMoreTweets() throws IOException {
         // fill index with 2 tweets and 1 user
-        SolrTweet tw2;
+        JTweet tw2;
         twSearch.update(Arrays.asList(
                 createTweet(1L, "test", "peter"),
                 tw2 = createTweet(2L, "text", "peter")));
 
-        Map<Long, SolrTweet> alreadyExistingTw = new LinkedHashMap<Long, SolrTweet>();
+        Map<Long, JTweet> alreadyExistingTw = new LinkedHashMap<Long, JTweet>();
         alreadyExistingTw.put(2L, tw2);
-        Map<String, SolrUser> users = new LinkedHashMap<String, SolrUser>();
-        SolrUser u = new SolrUser("peter");
+        Map<String, JUser> users = new LinkedHashMap<String, JUser>();
+        JUser u = new JUser("peter");
         users.put("peter", u);
 
         // return the tweet (1L) which is not already in the map!
@@ -864,11 +861,11 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(3L, "testnot this", "peter"),
                 createTweet(4L, "test this", "peternot")));
         Collection<String> users = Arrays.asList("peter", "tester");
-        Collection<SolrTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").createFriendsQuery(users)));
+        Collection<JTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").createFriendsQuery(users)));
 
         assertEquals(2, coll.size());
         int counter = 0;
-        for (SolrTweet tw : coll) {
+        for (JTweet tw : coll) {
             if (tw.getTwitterId() == 1L)
                 counter++;
             else if (tw.getTwitterId() == 2L)
@@ -891,13 +888,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.deleteAll(resindex);
 
         twSearch.bulkUpdate(Arrays.asList(
-                new SolrTweet(1L, "hey cool one", new SolrUser("peter")),
-                new SolrTweet(2L, "two! another one", new SolrUser("test"))), index1);
+                new JTweet(1L, "hey cool one", new JUser("peter")),
+                new JTweet(2L, "two! another one", new JUser("test"))), index1);
 
         twSearch.bulkUpdate(Arrays.asList(
-                new SolrTweet(3L, "second index. one", new SolrUser("people")),
-                new SolrTweet(4L, "snd index! two", new SolrUser("k")),
-                new SolrTweet(5L, "snd index! third", new SolrUser("k"))), index2);
+                new JTweet(3L, "second index. one", new JUser("people")),
+                new JTweet(4L, "snd index! two", new JUser("k")),
+                new JTweet(5L, "snd index! third", new JUser("k"))), index2);
 
         twSearch.mergeIndices(Arrays.asList(index1, index2), resindex, 10, true, null);
 
@@ -914,10 +911,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.deleteAll(index1);
         twSearch.deleteAll(index2);
 
-        List<SolrTweet> list = new ArrayList<SolrTweet>();
-        SolrUser user2 = new SolrUser("peter2");
+        List<JTweet> list = new ArrayList<JTweet>();
+        JUser user2 = new JUser("peter2");
         for (int i = 0; i < 2; i++) {
-            list.add(new SolrTweet(i, "nice day", user2));
+            list.add(new JTweet(i, "nice day", user2));
         }
         twSearch.bulkUpdate(list, index1, true);
         assertEquals(2, twSearch.countAll(index1));
@@ -948,27 +945,27 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.deleteAll(resindex);
 
         // this update makes a problem later on, when searching on index1
-        twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser"))), index1, true);
+        twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser"))), index1, true);
 
-        List<SolrTweet> list = new ArrayList<SolrTweet>();
-        SolrUser user = new SolrUser("peter");
+        List<JTweet> list = new ArrayList<JTweet>();
+        JUser user = new JUser("peter");
         for (int i = 0; i < 100; i++) {
-            list.add(new SolrTweet(i, "hey cool one", user));
+            list.add(new JTweet(i, "hey cool one", user));
         }
-        SolrUser user2 = new SolrUser("peter2");
+        JUser user2 = new JUser("peter2");
         for (int i = 100; i < 200; i++) {
-            list.add(new SolrTweet(i, "nice day", user2));
+            list.add(new JTweet(i, "nice day", user2));
         }
         twSearch.bulkUpdate(list, index1, true);
         // identical tweets -> TODO do or don't update?
-        List<SolrTweet> list2 = new ArrayList<SolrTweet>();
+        List<JTweet> list2 = new ArrayList<JTweet>();
         for (int i = 0; i < 100; i++) {
-            list2.add(new SolrTweet(i, "[updated] hey cool one", user));
+            list2.add(new JTweet(i, "[updated] hey cool one", user));
         }
         // different tweets
-        SolrUser user3 = new SolrUser("peter3");
+        JUser user3 = new JUser("peter3");
         for (int i = 300; i < 400; i++) {
-            list2.add(new SolrTweet(i, "what's going on?", user3));
+            list2.add(new JTweet(i, "what's going on?", user3));
         }
         twSearch.bulkUpdate(list2, index2, true);
 //        System.out.println("1:" + twSearch.countAll(index1) + " 2:" + twSearch.countAll(index2) + " res:" + twSearch.countAll(resindex));
@@ -997,10 +994,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         // don't remove index2 to make sure we grab really only from index1
 //        twSearch.deleteAll("index2");        
 
-        List<SolrTweet> list = new ArrayList<SolrTweet>();
-        SolrUser user = new SolrUser("peter");
+        List<JTweet> list = new ArrayList<JTweet>();
+        JUser user = new JUser("peter");
         for (int i = 0; i < 100; i++) {
-            list.add(new SolrTweet(i, "hey cool one", user));
+            list.add(new JTweet(i, "hey cool one", user));
         }
 
         twSearch.bulkUpdate(list, index1, true);
@@ -1031,8 +1028,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.deleteAll(index1);
         twSearch.deleteAll(index2);
 
-        twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser")).setRt(0)), index1, true);
-        twSearch.bulkUpdate(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("testuser")).setRt(2)), index2, true);
+        twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser")).setRt(0)), index1, true);
+        twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser")).setRt(2)), index2, true);
 
         SearchResponse rsp = twSearch.getClient().prepareSearch(index1, index2).
                 setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
@@ -1048,23 +1045,23 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(1, twSearch.collectTweets(twSearch.search(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "peter"))).size());
     }
 
-    SolrTweet createSolrTweet(MyDate dt, String twText, String user) {
-        return new SolrTweet(dt.getTime(), twText, new SolrUser(user)).setCreatedAt(dt.toDate());
+    JTweet createSolrTweet(MyDate dt, String twText, String user) {
+        return new JTweet(dt.getTime(), twText, new JUser(user)).setCreatedAt(dt.toDate());
     }
 
-    SolrTweet createTweet(long id, String twText, String user) {
-        return new SolrTweet(id, twText, new SolrUser(user)).setCreatedAt(new Date(id));
+    JTweet createTweet(long id, String twText, String user) {
+        return new JTweet(id, twText, new JUser(user)).setCreatedAt(new Date(id));
     }
 
-    SolrTweet createNowTweet(long id, String twText, String user) {
-        return new SolrTweet(id, twText, new SolrUser(user)).setCreatedAt(new Date());
+    JTweet createNowTweet(long id, String twText, String user) {
+        return new JTweet(id, twText, new JUser(user)).setCreatedAt(new Date());
     }
 
-    SolrTweet createOldTweet(long id, String twText, String user) {
+    JTweet createOldTweet(long id, String twText, String user) {
         return createTweet(id, twText, user).setCreatedAt(new Date(id));
     }
 
-    SolrTweet createTweet(MyDate dt, String twText, String user) {
+    JTweet createTweet(MyDate dt, String twText, String user) {
         return createTweet(dt.getTime(), twText, user).setCreatedAt(dt.toDate());
     }
 }

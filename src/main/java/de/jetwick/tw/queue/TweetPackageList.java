@@ -15,7 +15,7 @@
  */
 package de.jetwick.tw.queue;
 
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
@@ -26,22 +26,22 @@ import java.util.LinkedHashSet;
 public class TweetPackageList extends AbstractTweetPackage {
 
     private static final long serialVersionUID = 1L;
-    private Collection<SolrTweet> tweets;
+    private Collection<JTweet> tweets;
 
     public TweetPackageList(String name) {
         setName(name);
     }
 
-    public TweetPackageList init(int id, Collection<SolrTweet> tweets) {
+    public TweetPackageList init(int id, Collection<JTweet> tweets) {
         super.init(id, tweets == null ? 0 : tweets.size());
         if (tweets != null)
-            this.tweets = new LinkedHashSet<SolrTweet>(tweets);
+            this.tweets = new LinkedHashSet<JTweet>(tweets);
 
         return this;
     }
 
     @Override
-    public Collection<SolrTweet> getTweets() {
+    public Collection<JTweet> getTweets() {
         return tweets;
     }
 }

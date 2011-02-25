@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.data;
 
-import de.jetwick.data.YUser;
+import de.jetwick.es.SavedSearch;
 import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,10 +29,10 @@ import twitter4j.Tweet;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SolrUser extends YUser {
+public class JUser extends YUser {
 
     private static final long serialVersionUID = 1L;
-    private Collection<SolrTweet> ownTweets = new LinkedHashSet<SolrTweet>();
+    private Collection<JTweet> ownTweets = new LinkedHashSet<JTweet>();
     private Map<Long, SavedSearch> savedSearches = new LinkedHashMap<Long, SavedSearch>();
     private Date lastFriendsUpdate;
     private Collection<String> friends;
@@ -40,11 +40,11 @@ public class SolrUser extends YUser {
     /**
      * You'll need to call setTwitter4JInstance after this
      */
-    public SolrUser(String name) {
+    public JUser(String name) {
         super(name);
     }
 
-    public SolrUser init(Tweet tw) {
+    public JUser init(Tweet tw) {
         setProfileImageUrl(tw.getProfileImageUrl());
         setLocation(TwitterSearch.toStandardLocation(tw.getLocation()));
         return this;
@@ -66,11 +66,11 @@ public class SolrUser extends YUser {
         return savedSearches.values();
     }
 
-    public void addOwnTweet(SolrTweet tw) {
+    public void addOwnTweet(JTweet tw) {
         addOwnTweet(tw, true);
     }
 
-    public void addOwnTweet(SolrTweet tw, boolean reverse) {
+    public void addOwnTweet(JTweet tw, boolean reverse) {
         ownTweets.add(tw);
 //        dirtyOwnTweets = true;
 
@@ -78,11 +78,11 @@ public class SolrUser extends YUser {
             tw.setFromUser(this, false);
     }
 
-    public void deleteOwnTweet(SolrTweet tw) {
+    public void deleteOwnTweet(JTweet tw) {
         ownTweets.remove(tw);
     }
 
-    public Collection<SolrTweet> getOwnTweets() {
+    public Collection<JTweet> getOwnTweets() {
 //        if (dirtyOwnTweets) {
 //            SolrTweet.deduplicate(ownTweets);
 //            dirtyOwnTweets = false;
@@ -96,7 +96,7 @@ public class SolrUser extends YUser {
         return Collections.unmodifiableCollection(friends);
     }
 
-    public SolrUser setFriends(Collection<String> friends) {
+    public JUser setFriends(Collection<String> friends) {
         this.friends = friends;
         return this;
     }

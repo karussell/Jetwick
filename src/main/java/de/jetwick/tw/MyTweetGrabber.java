@@ -18,8 +18,8 @@ package de.jetwick.tw;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import de.jetwick.rmi.RMIClient;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.MaxBoundSet;
@@ -44,14 +44,14 @@ public class MyTweetGrabber implements Serializable {
     @Inject
     private Provider<RMIClient> rmiClient;
     private int tweetCount;
-    private Collection<SolrTweet> tweets;
+    private Collection<JTweet> tweets;
     @Inject
     private Provider<MaxBoundSet> lastSearches;
 
     public MyTweetGrabber() {
     }
 
-    public MyTweetGrabber init(Collection<SolrTweet> tweets, String query, String userName) {
+    public MyTweetGrabber init(Collection<JTweet> tweets, String query, String userName) {
         this.tweets = tweets;
         this.userName = userName;
         this.queryStr = query;
@@ -103,9 +103,9 @@ public class MyTweetGrabber implements Serializable {
                         try {
                             if (!isSearchDoneInLastMinutes("user:" + userName)) {
 //                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
-                                tweets = new LinkedBlockingQueue<SolrTweet>();
+                                tweets = new LinkedBlockingQueue<JTweet>();
                                 name = "grab user:" + userName;
-                                tweets.addAll(tweetSearch.getTweets(new SolrUser(userName), new ArrayList<SolrUser>(), tweetCount));
+                                tweets.addAll(tweetSearch.getTweets(new JUser(userName), new ArrayList<JUser>(), tweetCount));
                                 logger.info("add " + tweets.size() + " tweets from user search: " + userName);
                             }
                         } catch (TwitterException ex) {
@@ -116,7 +116,7 @@ public class MyTweetGrabber implements Serializable {
                         try {
                             if (!isSearchDoneInLastMinutes(queryStr)) {
 //                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
-                                tweets = new LinkedBlockingQueue<SolrTweet>();
+                                tweets = new LinkedBlockingQueue<JTweet>();
                                 name = "grab query:" + queryStr;
                                 tweetSearch.search(queryStr, tweets, tweetCount, 0);
                                 logger.info("added " + tweets.size() + " tweets via twitter search: " + queryStr);
@@ -149,19 +149,19 @@ public class MyTweetGrabber implements Serializable {
             @Override
             public void run() {
                 try {
-                    SolrUser user = new SolrUser(userName);
+                    JUser user = new JUser(userName);
                     int maxTweets = tweetCount;
                     tweetCount = 0;
                     int rows = 100;
                     setProgress(0);
                     logger.info("start archiving!");
                     for (int start = 0; start < maxTweets && !isCanceled(); start += rows) {
-                        Collection<SolrTweet> tmp = tweetSearch.getTweets(user, start, rows);
+                        Collection<JTweet> tmp = tweetSearch.getTweets(user, start, rows);
                         if (tmp.isEmpty())
                             continue;
                         try {
                             tweetCount += tmp.size();
-                            for (SolrTweet tw : tmp) {
+                            for (JTweet tw : tmp) {
                                 tw.makePersistent();
                             }
 

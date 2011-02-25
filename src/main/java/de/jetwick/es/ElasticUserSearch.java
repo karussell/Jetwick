@@ -20,12 +20,8 @@ import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.action.search.SearchResponse;
 import de.jetwick.config.Configuration;
-import de.jetwick.solr.JetwickQuery;
-import de.jetwick.solr.SavedSearch;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
-import de.jetwick.solr.UserQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TweetDetector;
 import de.jetwick.tw.cmd.StringFreqMap;
 import java.io.IOException;
@@ -90,16 +86,16 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return "user";
     }
 
-    void delete(SolrUser user, boolean commit) {
+    void delete(JUser user, boolean commit) {
         if (user.getScreenName() == null)
-            throw new NullPointerException("Null " + SolrUser.SCREEN_NAME + " is not allowed! User:" + user);
+            throw new NullPointerException("Null " + JUser.SCREEN_NAME + " is not allowed! User:" + user);
 
         deleteById(user.getScreenName());
         if (commit)
             refresh();
     }
 
-    public void update(Collection<SolrUser> users) {
+    public void update(Collection<JUser> users) {
         update(users, users.size());
     }
 
@@ -107,10 +103,10 @@ public class ElasticUserSearch extends AbstractElasticSearch {
      * This method pushes the specified user in the specified batch size to solr.
      * If it is configured it will retry if one batch is failing.
      */
-    public void update(Collection<SolrUser> users, int batchSize) {
+    public void update(Collection<JUser> users, int batchSize) {
         Collection<XContentBuilder> list = new ArrayList<XContentBuilder>();
 
-        for (SolrUser user : users) {
+        for (JUser user : users) {
             try {
                 XContentBuilder doc = createDoc(user);
                 if (doc != null)
@@ -123,11 +119,11 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
     }
 
-    public void update(SolrUser user, boolean optimize, boolean refresh) {
+    public void update(JUser user, boolean optimize, boolean refresh) {
         save(user, refresh);
     }
 
-    public void save(SolrUser user, boolean refresh) {
+    public void save(JUser user, boolean refresh) {
         try {
             XContentBuilder b = createDoc(user);
             if (b != null)
@@ -140,7 +136,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
     }
 
-    public XContentBuilder createDoc(SolrUser user) throws IOException {
+    public XContentBuilder createDoc(JUser user) throws IOException {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         // make sure that if we look for a specific user this user will show up first:
         b.field(SCREEN_NAME, user.getScreenName());
@@ -169,7 +165,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
 
         // some users were only mentioned by others ...
-        Collection<SolrTweet> tweets = user.getOwnTweets();
+        Collection<JTweet> tweets = user.getOwnTweets();
         if (tweets.size() > 0) {
             TweetDetector extractor = new TweetDetector(tweets);
             List<String> tagList = new ArrayList<String>();
@@ -180,7 +176,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
             b.field("tag", tagList);
 
             StringFreqMap langs = new StringFreqMap();
-            for (SolrTweet tw : tweets) {
+            for (JTweet tw : tweets) {
                 langs.inc(tw.getLanguage(), 1);
             }
 
@@ -194,9 +190,9 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return b;
     }
 
-    public SolrUser readDoc(Map<String, Object> doc, String idAsStr) {
+    public JUser readDoc(Map<String, Object> doc, String idAsStr) {
         String userName = idAsStr;
-        SolrUser user = new SolrUser(userName);
+        JUser user = new JUser(userName);
         user.setRealName((String) doc.get("realName"));
         user.setProfileImageUrl((String) doc.get("iconUrl"));
         user.setWebUrl((String) doc.get("webUrl"));
@@ -240,9 +236,9 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return user;
     }
 
-    public SolrUser findByTwitterToken(String token) {
+    public JUser findByTwitterToken(String token) {
         try {
-            Collection<SolrUser> res = collectUsers(search(new UserQuery().addFilterQuery("token_s", token)));
+            Collection<JUser> res = collectUsers(search(new UserQuery().addFilterQuery("token_s", token)));
             if (res.size() == 0)
                 return null;
             else if (res.size() == 1)
@@ -255,10 +251,10 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
     }
 
-    public SolrUser findByScreenName(String name) {
+    public JUser findByScreenName(String name) {
         try {
             name = name.toLowerCase();
-            Collection<SolrUser> res = collectUsers(search(new UserQuery().addFilterQuery(SCREEN_NAME, name)));
+            Collection<JUser> res = collectUsers(search(new UserQuery().addFilterQuery(SCREEN_NAME, name)));
             if (res.isEmpty())
                 return null;
             else if (res.size() == 1)
@@ -287,19 +283,19 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return search(new ArrayList(), query);
     }
 
-    public SearchResponse search(Collection<SolrUser> users, JetwickQuery query) {
+    public SearchResponse search(Collection<JUser> users, JetwickQuery query) {
         SearchRequestBuilder srb = client.prepareSearch(getIndexName());        
         SearchResponse response = query.initRequestBuilder(srb).execute().actionGet();
         users.addAll(collectUsers(response));
         return response;
     }
 
-    public Collection<SolrUser> collectUsers(SearchResponse rsp) {
+    public Collection<JUser> collectUsers(SearchResponse rsp) {
         SearchHit docs[] = rsp.getHits().getHits();
-        Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
+        Collection<JUser> users = new LinkedHashSet<JUser>();
 
         for (SearchHit sd : docs) {
-            SolrUser u = readDoc(sd.getSource(), sd.getId());
+            JUser u = readDoc(sd.getSource(), sd.getId());
             users.add(u);
         }
         return users;
@@ -307,15 +303,15 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     /** use createQuery + search instead */
     @Deprecated
-    Collection<SolrUser> search(String string) {
-        Set<SolrUser> ret = new LinkedHashSet<SolrUser>();
+    Collection<JUser> search(String string) {
+        Set<JUser> ret = new LinkedHashSet<JUser>();
         search(ret, string, 10, 0);
         return ret;
     }
 
     /** use createQuery + search instead */
     @Deprecated
-    long search(Collection<SolrUser> users, String qStr, int hitsPerPage, int page) {
+    long search(Collection<JUser> users, String qStr, int hitsPerPage, int page) {
         JetwickQuery query = new UserQuery(qStr);
         query.attachPagability(page, hitsPerPage);
         SearchResponse rsp = search(users, query);
@@ -326,15 +322,15 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         termMinFrequency = tmf;
     }
 
-    public void bulkUpdate(Collection<SolrUser> users, String indexName) throws IOException {
+    public void bulkUpdate(Collection<JUser> users, String indexName) throws IOException {
         bulkUpdate(users, indexName, false);
     }
 
-    public void bulkUpdate(Collection<SolrUser> users, String indexName, boolean refresh) throws IOException {
+    public void bulkUpdate(Collection<JUser> users, String indexName, boolean refresh) throws IOException {
         // now using bulk API instead of feeding each doc separate with feedDoc
         BulkRequestBuilder brb = client.prepareBulk();
         logger.info(users.toString());
-        for (SolrUser user : users) {
+        for (JUser user : users) {
             if (user.getScreenName() == null) {
                 logger.warn("Skipped user without screenName when bulkUpdate:" + user);
                 continue;

@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.es;
 
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.util.Helper;

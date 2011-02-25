@@ -15,13 +15,13 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.es.TweetQuery;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.config.Configuration;
 import de.jetwick.rmi.RMIClient;
-import de.jetwick.solr.JetwickQuery;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.es.JetwickQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.tw.queue.TweetPackage;
@@ -46,8 +46,8 @@ public class HomePageTest extends WicketPagesTestClass {
 
     private String uString;
     private String qString;
-    private List<SolrTweet> returnUserTweets;
-    private List<SolrTweet> returnSearchTweets;
+    private List<JTweet> returnUserTweets;
+    private List<JTweet> returnSearchTweets;
     private TweetPackage sentTweets;
 
     @Before
@@ -61,10 +61,10 @@ public class HomePageTest extends WicketPagesTestClass {
         sentTweets = null;
         uString = "";
         qString = "";
-        SolrUser u = new SolrUser("peter");
-        SolrUser u2 = new SolrUser("peter2");
-        returnUserTweets = Arrays.asList(new SolrTweet(3L, "java test2", u2), new SolrTweet(4L, "java pest2", u2));
-        returnSearchTweets = Arrays.asList(new SolrTweet(1L, "java test", u), new SolrTweet(2L, "java pest", u));
+        JUser u = new JUser("peter");
+        JUser u2 = new JUser("peter2");
+        returnUserTweets = Arrays.asList(new JTweet(3L, "java test2", u2), new JTweet(4L, "java pest2", u2));
+        returnSearchTweets = Arrays.asList(new JTweet(1L, "java test", u), new JTweet(2L, "java pest", u));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class HomePageTest extends WicketPagesTestClass {
         tester.startPage(new HomePage(query));
         tester.assertNoErrorMessage();
         
-        verify(search).search(new LinkedHashSet<SolrUser>(), query);
+        verify(search).search(new LinkedHashSet<JUser>(), query);
     }
 
     @Test
@@ -228,25 +228,25 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public SolrUser getUser() throws TwitterException {
-                return new SolrUser("testUser");
+            public JUser getUser() throws TwitterException {
+                return new JUser("testUser");
             }
 
             @Override
-            public long search(String term, Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
+            public long search(String term, Collection<JTweet> result, int tweets, long lastId) throws TwitterException {
                 qString = "#" + term;
                 result.addAll(returnSearchTweets);
                 return lastId;
             }
 
             @Override
-            public Collection<SolrTweet> searchAndGetUsers(String queryStr, Collection<SolrUser> result, int rows, int maxPage) throws TwitterException {
+            public Collection<JTweet> searchAndGetUsers(String queryStr, Collection<JUser> result, int rows, int maxPage) throws TwitterException {
                 qString = "#" + queryStr;
                 return returnSearchTweets;
             }
 
             @Override
-            public List<SolrTweet> getTweets(SolrUser user, Collection<SolrUser> result, int tweets) throws TwitterException {
+            public List<JTweet> getTweets(JUser user, Collection<JUser> result, int tweets) throws TwitterException {
                 uString = "#" + user.getScreenName();
                 return returnUserTweets;
             }

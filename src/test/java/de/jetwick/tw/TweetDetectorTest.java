@@ -16,8 +16,8 @@
 
 package de.jetwick.tw;
 
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -38,7 +38,7 @@ public class TweetDetectorTest {
 
     @Test
     public void testRun() {
-        List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+        List<JTweet> tweets = new ArrayList<JTweet>();
         tweets.add(createTweet(1, "term5 term2 term3 term4!"));
         tweets.add(createTweet(1, "term o"));
         tweets.add(createTweet(1, "TERM term6 Gehts?"));
@@ -53,7 +53,7 @@ public class TweetDetectorTest {
 
     @Test
     public void testSkipUser() {
-        List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+        List<JTweet> tweets = new ArrayList<JTweet>();
         tweets.add(createTweet(1L, "@userA term @userB term4!"));
         tweets.add(createTweet(2L, "@userA term o"));
         TweetDetector extractor = new TweetDetector(tweets);
@@ -69,7 +69,7 @@ public class TweetDetectorTest {
 
     @Test
     public void testUrlsInTerms() {
-        List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+        List<JTweet> tweets = new ArrayList<JTweet>();
         tweets.add(createTweet(1, "the god http://www.jetwick.com/hihiho/test.html <b>http</b>://<b>bit</b>.ly/9FZv5E"));
         List<Entry<String, Integer>> mostFrequentTerms = createExtractor(tweets).run().getSortedTerms();
 //        System.out.println(mostFrequentTerms);
@@ -78,7 +78,7 @@ public class TweetDetectorTest {
 
     @Test
     public void testTermsWithRemove() {
-        List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+        List<JTweet> tweets = new ArrayList<JTweet>();
         tweets.add(createTweet(1, "the god"));
         tweets.add(createTweet(2, "the thing"));
         tweets.add(createTweet(3, "it's now"));
@@ -131,7 +131,7 @@ public class TweetDetectorTest {
     @Test
     public void testLanguageDetection() {
         // skip the noise words and last terms for language detection:
-        List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+        List<JTweet> tweets = new ArrayList<JTweet>();
         tweets.add(createTweet(1, "das geht ja ab!"));
         Map<String, Integer> langs = createExtractor(tweets).run().getLanguages();
         assertEquals(3, langs.get(TweetDetector.DE).intValue());
@@ -139,15 +139,15 @@ public class TweetDetectorTest {
 
     @Test
     public void testTerms() {
-        SolrUser user = new SolrUser("Peter");
-        user.addOwnTweet(new SolrTweet(1, "test pest alpha", user));
-        user.addOwnTweet(new SolrTweet(2, "alpha", user));
+        JUser user = new JUser("Peter");
+        user.addOwnTweet(new JTweet(1, "test pest alpha", user));
+        user.addOwnTweet(new JTweet(2, "alpha", user));
 
         assertEquals(3, (int) createExtractor(user.getOwnTweets()).run().getSortedTerms().size());
         assertEquals(2, (int) createExtractor(user.getOwnTweets()).run().getSortedTerms().get(0).getValue());
     }
 
-    TweetDetector createExtractor(Collection<SolrTweet> tweets) {
+    TweetDetector createExtractor(Collection<JTweet> tweets) {
         return new TweetDetector(tweets);
     }
 //    @Test
@@ -168,7 +168,7 @@ public class TweetDetectorTest {
 //        assertEquals(2, new TweetDetector().setLanguages(langs).filterLanguages(-1).size());
 //    }
 
-    SolrTweet createTweet(long id, String twText) {
-        return new SolrTweet(id, twText, new SolrUser("tmp")).setCreatedAt(new Date(id));
+    JTweet createTweet(long id, String twText) {
+        return new JTweet(id, twText, new JUser("tmp")).setCreatedAt(new Date(id));
     }
 }

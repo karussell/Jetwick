@@ -25,9 +25,9 @@ import com.google.inject.Inject;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.TagDao;
 import de.jetwick.hib.HibTestClass;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
+import de.jetwick.es.TweetQuery;
 import de.jetwick.tw.queue.TweetPackage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,7 +91,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         // already existing tweets must not harm
         ElasticTweetSearch tweetSearch = tweetSearchTester.getTweetSearch();
         ElasticUserSearch userSearch = userSearchTester.getUserSearch();
-        tweetSearch.update(Arrays.asList(new SolrTweet(3L, "duplication tweet", new SolrUser("tmp"))));        
+        tweetSearch.update(Arrays.asList(new JTweet(3L, "duplication tweet", new JUser("tmp"))));        
 
         Credits cred = new Configuration().getTwitterSearchCredits();
         TwitterSearch tws = new TwitterSearch() {
@@ -103,19 +103,19 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
             }                        
 
             @Override
-            public long search(String q, Collection<SolrTweet> result, int tweets, long sinceId) {
-                SolrUser u = new SolrUser("timetabling");
-                SolrTweet tw1 = new SolrTweet(1L, "test", u);
+            public long search(String q, Collection<JTweet> result, int tweets, long sinceId) {
+                JUser u = new JUser("timetabling");
+                JTweet tw1 = new JTweet(1L, "test", u);
                 result.add(tw1);
 
-                tw1 = new SolrTweet(2L, "java test", u);
+                tw1 = new JTweet(2L, "java test", u);
                 result.add(tw1);
 
                 // this tweet will be ignored and so it won't be indexed!
-                tw1 = new SolrTweet(3L, "duplicate tweet", new SolrUser("anotheruser"));
+                tw1 = new JTweet(3L, "duplicate tweet", new JUser("anotheruser"));
                 result.add(tw1);
 
-                tw1 = new SolrTweet(4L, "reference a user: @timetabling", new SolrUser("user3"));
+                tw1 = new JTweet(4L, "reference a user: @timetabling", new JUser("user3"));
                 result.add(tw1);
 
                 assertEquals(4, result.size());
@@ -123,7 +123,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
             }
 
             @Override
-            public List<SolrTweet> getTweets(SolrUser user, Collection<SolrUser> users, int twPerPage) {
+            public List<JTweet> getTweets(JUser user, Collection<JUser> users, int twPerPage) {
                 return Collections.EMPTY_LIST;
             }
         };
@@ -164,11 +164,11 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
 //        u = userDao.findByName("timetabling");
 //        assertEquals(2, u.getOwnTweets().size());
 
-        List<SolrUser> res = new ArrayList<SolrUser>();
+        List<JUser> res = new ArrayList<JUser>();
         tweetSearch.search(res, new TweetQuery("java"));
         assertEquals(1, res.size());
 
-        Collection<SolrTweet> coll = tweetSearch.searchTweets(new TweetQuery("duplicate"));
+        Collection<JTweet> coll = tweetSearch.searchTweets(new TweetQuery("duplicate"));
         assertEquals(1, coll.size());        
         assertEquals("duplication tweet", coll.iterator().next().getText());        
         

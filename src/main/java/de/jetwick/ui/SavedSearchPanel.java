@@ -42,7 +42,7 @@ import org.elasticsearch.search.facet.Facet;
 import org.elasticsearch.search.facet.query.QueryFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static de.jetwick.solr.JetwickQuery.*;
+import static de.jetwick.es.JetwickQuery.*;
 
 /**
  *

@@ -16,7 +16,7 @@
 
 package de.jetwick.tw;
 
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -34,7 +34,7 @@ public class TweetUserExtractor extends Extractor {
     }
 
     @Override
-    public TweetUserExtractor setTweet(SolrTweet tweet) {
+    public TweetUserExtractor setTweet(JTweet tweet) {
         return (TweetUserExtractor) super.setTweet(tweet);
     }
 

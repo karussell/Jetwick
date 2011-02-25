@@ -15,8 +15,8 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,8 +39,8 @@ public class ResultsPanelTest extends WicketPagesTestClass {
         ResultsPanel panel = (ResultsPanel) tester.startPanel(ResultsPanel.class);
 
         panel.fillTranslateMap(Arrays.asList(
-                new SolrTweet(1L, "cars are great but are too expensive", new SolrUser("empty")),
-                new SolrTweet(2L, "autos sind toll aber überflüssig", new SolrUser("empty"))),
+                new JTweet(1L, "cars are great but are too expensive", new JUser("empty")),
+                new JTweet(2L, "autos sind toll aber überflüssig", new JUser("empty"))),
                 "de");
 
         assertTrue(panel.getTranslateMap().get(1L).contains("aber"));

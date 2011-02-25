@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.jetwick.solr;
+package de.jetwick.es;
 
 import org.elasticsearch.common.Base64;
 import de.jetwick.config.Configuration;

@@ -15,8 +15,8 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,17 +36,17 @@ public class OneLineAdPanel extends Panel {
 
     private Random rand = new Random();
     private ListView tweetView;
-    private ArrayList<SolrTweet> tweets = new ArrayList<SolrTweet>();
+    private ArrayList<JTweet> tweets = new ArrayList<JTweet>();
 
     public OneLineAdPanel(String id) {
         super(id);        
-        tweetView = new ListView<SolrTweet>("tweets", tweets) {
+        tweetView = new ListView<JTweet>("tweets", tweets) {
 
             @Override
-            protected void populateItem(ListItem<SolrTweet> item) {
-                SolrTweet tweet = item.getModelObject();
-                final SolrUser user = tweet.getFromUser();
-                final OneTweet oneTweetPanel = createOneTweetPanel("oneTweet").init(new Model<SolrTweet>(tweet), false);
+            protected void populateItem(ListItem<JTweet> item) {
+                JTweet tweet = item.getModelObject();
+                final JUser user = tweet.getFromUser();
+                final OneTweet oneTweetPanel = createOneTweetPanel("oneTweet").init(new Model<JTweet>(tweet), false);
                 Link showLatestTweets = new Link("profileUrl") {
 
                     @Override
@@ -65,14 +65,14 @@ public class OneLineAdPanel extends Panel {
         throw new UnsupportedOperationException("overwrite this");
     }
 
-    public void setAds(Collection<SolrTweet> adList) {
+    public void setAds(Collection<JTweet> adList) {
         tweets.clear();
         if (adList.size() > 0) {
             int index = rand.nextInt(adList.size());            
-            Iterator<SolrTweet> iter = adList.iterator();
-            SolrTweet prevTw = iter.next();
+            Iterator<JTweet> iter = adList.iterator();
+            JTweet prevTw = iter.next();
             for (int i = 0; iter.hasNext(); i++) {
-                SolrTweet tw = iter.next();
+                JTweet tw = iter.next();
                 if (i == index || tw.getRetweetCount() != prevTw.getRetweetCount()) {
                     tweets.add(prevTw);
                     break;

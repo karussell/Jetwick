@@ -16,7 +16,7 @@
 package de.jetwick.tw.cmd;
 
 import de.jetwick.data.UrlEntry;
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import de.jetwick.util.AnyExecutor;
 import de.jetwick.tw.TweetDetector;
 import java.util.Iterator;
@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 /**
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TermCreateCommand implements AnyExecutor<SolrTweet> {
+public class TermCreateCommand implements AnyExecutor<JTweet> {
 
     private boolean termRemoving = true;
 
@@ -46,7 +46,7 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
     }
 
     @Override
-    public SolrTweet execute(SolrTweet tw) {
+    public JTweet execute(JTweet tw) {
         // HINT: do only modify the current tweets' quality!
         double qual = tw.getQuality();
         calcTermsWithoutNoise(tw);
@@ -89,7 +89,7 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         return tw;
     }
 
-    public String detectLanguage(SolrTweet tweet, StringFreqMap languages) {
+    public String detectLanguage(JTweet tweet, StringFreqMap languages) {
         if (tweet.getLanguages().size() > 0) {
             List<Entry<String, Integer>> list = tweet.getLanguages().getSorted();
             int index = 0;
@@ -112,14 +112,14 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         return TweetDetector.UNKNOWN_LANG;
     }
 
-    public double checkSpamInExistingTweets(SolrTweet currentTweet,
+    public double checkSpamInExistingTweets(JTweet currentTweet,
             StringFreqMap mergedTerms, StringFreqMap mergedLangs) {
         double qual = currentTweet.getQuality();
 
         // TODO use jaccard index for url titles too!?
         StringFreqMap urlTitleMap = new StringFreqMap();
         StringFreqMap urlMap = new StringFreqMap();
-        for (SolrTweet older : currentTweet.getFromUser().getOwnTweets()) {
+        for (JTweet older : currentTweet.getFromUser().getOwnTweets()) {
             for (UrlEntry entry : older.getUrlEntries()) {
                 urlTitleMap.inc(entry.getResolvedTitle(), 1);
                 urlMap.inc(entry.getResolvedUrl(), 1);
@@ -127,7 +127,7 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         }
 
         boolean sameUrl = false;
-        for (SolrTweet older : currentTweet.getFromUser().getOwnTweets()) {
+        for (JTweet older : currentTweet.getFromUser().getOwnTweets()) {
             if (older == currentTweet)
                 continue;
 
@@ -151,11 +151,11 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
 
             if (ji >= 0.8) {
                 // nearly equal terms
-                qual *= SolrTweet.QUAL_BAD / 100.0;
+                qual *= JTweet.QUAL_BAD / 100.0;
                 currentTweet.addQualAction("JB," + older.getTwitterId() + ",");
             } else if (ji >= 0.6 && currentTweet.getQualReductions() < 3) {
                 // e.g. if 3 of 4 terms occur in both tweets
-                qual *= SolrTweet.QUAL_LOW / 100.0;
+                qual *= JTweet.QUAL_LOW / 100.0;
                 currentTweet.addQualAction("JL," + older.getTwitterId() + ",");
             }
 
@@ -165,12 +165,12 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
                     if (titleCounts != null) {
                         if ((titleCounts == 2 || titleCounts == 3) && currentTweet.getQualReductions() < 3) {
                             sameUrl = true;
-                            qual *= SolrTweet.QUAL_LOW / 100.0;
+                            qual *= JTweet.QUAL_LOW / 100.0;
                             currentTweet.addQualAction("TL," + older.getTwitterId() + ",");
                         } else if (titleCounts > 3) {
                             sameUrl = true;
                             // tweeted about the identical url title!
-                            qual *= SolrTweet.QUAL_BAD / 100.0;
+                            qual *= JTweet.QUAL_BAD / 100.0;
                             currentTweet.addQualAction("TB," + older.getTwitterId() + ",");
                         }
                     } else
@@ -182,12 +182,12 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
                         if (urlCounts != null) {
                             if ((urlCounts == 2 || urlCounts == 3) && currentTweet.getQualReductions() < 3) {
                                 sameUrl = true;
-                                qual *= SolrTweet.QUAL_LOW / 100.0;
+                                qual *= JTweet.QUAL_LOW / 100.0;
                                 currentTweet.addQualAction("UL," + older.getTwitterId() + ",");
                             } else if (urlCounts > 3) {
                                 sameUrl = true;
                                 // tweeted about the identical url title!
-                                qual *= SolrTweet.QUAL_BAD / 100.0;
+                                qual *= JTweet.QUAL_BAD / 100.0;
                                 currentTweet.addQualAction("UB," + older.getTwitterId() + ",");
                             }
                         }
@@ -204,7 +204,7 @@ public class TermCreateCommand implements AnyExecutor<SolrTweet> {
         return a / b;
     }
 
-    public void calcTermsWithoutNoise(SolrTweet tw) {
+    public void calcTermsWithoutNoise(JTweet tw) {
         if (tw.getTextTerms().size() > 0)
             return;
 

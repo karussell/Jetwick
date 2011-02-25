@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.solr.JetwickQuery;
 import de.jetwick.util.Helper;
 import java.util.Collection;
 import java.util.Map;

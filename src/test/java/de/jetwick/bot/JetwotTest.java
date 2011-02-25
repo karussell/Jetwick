@@ -16,9 +16,9 @@
 package de.jetwick.bot;
 
 import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.solr.JetwickQuery;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.es.JetwickQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class JetwotTest {
 
     public JetwotTest() {
     }   
-    private List<SolrTweet> todoTweets = new ArrayList<SolrTweet>();
+    private List<JTweet> todoTweets = new ArrayList<JTweet>();
     private List<Long> retweeted = new ArrayList<Long>();
     private Jetwot bot;
 
@@ -69,7 +69,7 @@ public class JetwotTest {
                     }
 
                     @Override
-                    public List<SolrTweet> collectTweets(SearchResponse rsp) {
+                    public List<JTweet> collectTweets(SearchResponse rsp) {
                         return todoTweets;
                     }
                 };
@@ -80,8 +80,8 @@ public class JetwotTest {
 
     @Test
     public void testMain() {
-        todoTweets.add(new SolrTweet(1L, "test too short", new SolrUser("test")).setRt(2));
-        todoTweets.add(new SolrTweet(2L, "test this is not too short bercasu we addded a lot of unknown noise words", new SolrUser("test")).setRt(2));
+        todoTweets.add(new JTweet(1L, "test too short", new JUser("test")).setRt(2));
+        todoTweets.add(new JTweet(2L, "test this is not too short bercasu we addded a lot of unknown noise words", new JUser("test")).setRt(2));
 
         bot.start(1, 0);
 
@@ -91,8 +91,8 @@ public class JetwotTest {
 
     @Test
     public void testAvoidSimilarRetweets() {
-        todoTweets.add(new SolrTweet(1L, "Dear kids, There is NO Santa Claus. Those presents are from your parents. \"With love, WikiLeaks\"", new SolrUser("ihackinjosh")).setRt(5));
-        todoTweets.add(new SolrTweet(2L, "Dear Kids, There is no Santa. Those presents are from your parents. Sincerely, Wikileaks. http://lil.as/1Nu (via @sapnabhavnani)", new SolrUser("dearblankplease")).setRt(4));
+        todoTweets.add(new JTweet(1L, "Dear kids, There is NO Santa Claus. Those presents are from your parents. \"With love, WikiLeaks\"", new JUser("ihackinjosh")).setRt(5));
+        todoTweets.add(new JTweet(2L, "Dear Kids, There is no Santa. Those presents are from your parents. Sincerely, Wikileaks. http://lil.as/1Nu (via @sapnabhavnani)", new JUser("dearblankplease")).setRt(4));
 
         bot.start(2, 0);
 

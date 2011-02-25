@@ -25,9 +25,9 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
-import de.jetwick.solr.JetwickQuery;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.es.JetwickQuery;
+import de.jetwick.data.JUser;
+import de.jetwick.es.TweetQuery;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
@@ -193,7 +193,7 @@ public class Util {
         JetwickQuery query = new TweetQuery();        
         long maxPage = 1;
         int hitsPerPage = 300;
-        Set<SolrUser> users = new LinkedHashSet<SolrUser>();
+        Set<JUser> users = new LinkedHashSet<JUser>();
         Runnable optimizeOnExit = new Runnable() {
 
             @Override
@@ -221,7 +221,7 @@ public class Util {
                 logger.info("Set numFound to " + rsp.getHits().getTotalHits());
             }
 
-            for (SolrUser user : users) {
+            for (JUser user : users) {
                 userSearch.save(user, false);
             }
             userCounter += users.size();
@@ -245,10 +245,10 @@ public class Util {
         Credits credits = config.getTwitterSearchCredits();
         TwitterSearch tw4j = new TwitterSearch().setConsumer(credits.getConsumerKey(), credits.getConsumerSecret());
         tw4j.initTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
-        tw4j.getFollowers(user, new AnyExecutor<SolrUser>() {
+        tw4j.getFollowers(user, new AnyExecutor<JUser>() {
 
             @Override
-            public SolrUser execute(SolrUser o) {
+            public JUser execute(JUser o) {
 //                if (set.contains(o.getScreenName()))
                 set.add(o.getScreenName());
                 return null;

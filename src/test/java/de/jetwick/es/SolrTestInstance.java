@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.jetwick.solr;
+package de.jetwick.es;
 
 import java.io.File;
 

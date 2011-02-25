@@ -17,7 +17,7 @@ package de.jetwick.ui;
 
 import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import java.util.Collection;
 import javax.servlet.http.Cookie;
@@ -47,7 +47,7 @@ public class MySession extends WebSession {
      * @see DefaultModule
      */
     private TwitterSearch twitterSearch;
-    private SolrUser user = null;
+    private JUser user = null;
     private boolean twitterSearchInitialized = false;
     private boolean sessionTimedOut = false;
 
@@ -94,11 +94,11 @@ public class MySession extends WebSession {
         }
     }
 
-    public SolrUser getUser() {
+    public JUser getUser() {
         return user;
     }
 
-    private void setUser(SolrUser user) {
+    private void setUser(JUser user) {
         this.user = user;
         dirty();
     }
@@ -130,14 +130,14 @@ public class MySession extends WebSession {
             logger.info("new twitter4j initialized for user:" + twitterUser.getScreenName());
 
             // get current saved searches and update with current twitter infos
-            SolrUser tmpUser = uSearch.findByTwitterToken(token.getToken());
+            JUser tmpUser = uSearch.findByTwitterToken(token.getToken());
             if (tmpUser == null) {
                 logger.info("token for " + twitterUser.getScreenName() + " not found in user index");
                 // token will be removed on logout so get saved searches from uindex
                 tmpUser = uSearch.findByScreenName(twitterUser.getScreenName());
                 if (tmpUser == null) {
                     logger.info("user " + twitterUser.getScreenName() + " not found in user index");
-                    tmpUser = new SolrUser(twitterUser.getScreenName());
+                    tmpUser = new JUser(twitterUser.getScreenName());
                 }
             }
 
@@ -162,7 +162,7 @@ public class MySession extends WebSession {
     public void logout(ElasticUserSearch uSearch, WebResponse response) {
         response.clearCookie(new Cookie(TwitterSearch.COOKIE, ""));
 
-        SolrUser tmpUser = getUser();
+        JUser tmpUser = getUser();
         if (tmpUser != null) {
             logger.info("[stats] user logout:" + tmpUser.getScreenName());
             tmpUser.setTwitterToken(null);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.es;
 
 import org.elasticsearch.search.facet.termsstats.TermsStatsFacet.ComparatorType;
 import de.jetwick.util.StrEntry;

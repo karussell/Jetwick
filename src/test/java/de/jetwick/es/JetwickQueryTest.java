@@ -13,8 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.es;
 
+import de.jetwick.es.JetwickQuery;
+import de.jetwick.es.SimilarQuery;
+import de.jetwick.es.TweetQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import java.io.IOException;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -40,12 +45,12 @@ public class JetwickQueryTest {
     @Test
     public void testSimilarQuery() {
         SimilarQuery q = new SimilarQuery(
-                new SolrTweet(1L, "Test test jAva http://blabli", new SolrUser("tmp")), false);
+                new JTweet(1L, "Test test jAva http://blabli", new JUser("tmp")), false);
 
         assertTrue(q.calcTerms().contains("test"));
         assertTrue(q.calcTerms().contains("java"));
         assertFalse("query mustn't contain links or parts of links", q.calcTerms().contains("http"));
-        q = new SimilarQuery(new SolrTweet(1L, "RT @user: test", new SolrUser("tmp")), false);
+        q = new SimilarQuery(new JTweet(1L, "RT @user: test", new JUser("tmp")), false);
         assertFalse("query mustn't contain user", q.calcTerms().contains("user"));
     }
 

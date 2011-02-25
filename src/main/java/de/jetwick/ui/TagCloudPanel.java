@@ -16,7 +16,7 @@
 package de.jetwick.ui;
 
 import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.solr.JetwickQuery;
+import de.jetwick.es.JetwickQuery;
 import de.jetwick.util.MapEntry;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.es;
 
+import de.jetwick.data.JTweet;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.TokenizerFromSet;
 import de.jetwick.tw.cmd.TermCreateCommand;
@@ -44,13 +45,13 @@ public class SimilarQuery extends TweetQuery {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private double mmBorder = 0.7;
     private int hours = 12;
-    private SolrTweet tweet;
+    private JTweet tweet;
 
     /* for tests */
     public SimilarQuery() {
     }
 
-    public SimilarQuery(SolrTweet tweet, boolean facets) {
+    public SimilarQuery(JTweet tweet, boolean facets) {
         super(facets);
         this.tweet = tweet;
         if (this.tweet == null)

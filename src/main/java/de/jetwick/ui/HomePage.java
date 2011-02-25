@@ -21,12 +21,12 @@ import com.google.inject.Provider;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.JetwickQuery;
-import de.jetwick.solr.SavedSearch;
-import de.jetwick.solr.SimilarQuery;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.es.JetwickQuery;
+import de.jetwick.es.SavedSearch;
+import de.jetwick.es.SimilarQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
+import de.jetwick.es.TweetQuery;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
@@ -334,7 +334,7 @@ public class HomePage extends WebPage {
                 TweetQuery q = new TweetQuery(true);
                 q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE, name);
                 try {
-                    List<SolrTweet> tweets = getTweetSearch().collectTweets(getTweetSearch().search(q.setSize(1)));
+                    List<JTweet> tweets = getTweetSearch().collectTweets(getTweetSearch().search(q.setSize(1)));
                     if (tweets.size() > 0 && tweets.get(0).getUrlEntries().size() > 0) {
                         // TODO there could be more than 1 url!
                         UrlEntry entry = tweets.get(0).getUrlEntries().iterator().next();
@@ -351,7 +351,7 @@ public class HomePage extends WebPage {
 
             @Override
             public void onClick(AjaxRequestTarget target, long ssId) {
-                SolrUser user = getMySession().getUser();
+                JUser user = getMySession().getUser();
                 SavedSearch ss = user.getSavedSearch(ssId);
                 if (ss != null) {
                     doSearch(ss.getQuery(), 0, true);
@@ -363,7 +363,7 @@ public class HomePage extends WebPage {
 
             @Override
             public void onRemove(AjaxRequestTarget target, long ssId) {
-                SolrUser user = getMySession().getUser();
+                JUser user = getMySession().getUser();
                 user.removeSavedSearch(ssId);
                 uindexProvider.get().save(user, true);
                 updateSSCounts(target);
@@ -372,7 +372,7 @@ public class HomePage extends WebPage {
             @Override
             public void onSave(AjaxRequestTarget target, long ssId) {
                 SavedSearch ss = new SavedSearch(ssId, lastQuery);
-                SolrUser user = getMySession().getUser();
+                JUser user = getMySession().getUser();
                 user.addSavedSearch(ss);
                 uindexProvider.get().save(user, true);
                 updateSSCounts(target);
@@ -381,7 +381,7 @@ public class HomePage extends WebPage {
             @Override
             public void updateSSCounts(AjaxRequestTarget target) {
                 try {
-                    SolrUser user = getMySession().getUser();
+                    JUser user = getMySession().getUser();
                     if (user != null) {
                         update(getTweetSearch().updateSavedSearches(user.getSavedSearches()));
                         if (target != null)
@@ -562,13 +562,13 @@ public class HomePage extends WebPage {
             }
 
             @Override
-            public Collection<SolrTweet> onTweetClick(long id, boolean retweet) {
+            public Collection<JTweet> onTweetClick(long id, boolean retweet) {
                 logger.info("[stats] search replies of:" + id + " retweet:" + retweet);
                 return getTweetSearch().searchReplies(id, retweet);
             }
 
             @Override
-            public void onFindSimilar(SolrTweet tweet, AjaxRequestTarget target) {
+            public void onFindSimilar(JTweet tweet, AjaxRequestTarget target) {
                 JetwickQuery query = new SimilarQuery(tweet, true);
                 logger.info("[stats] similar search:" + query.toString());
                 doSearch(query, 0, false);
@@ -576,8 +576,8 @@ public class HomePage extends WebPage {
             }
 
             @Override
-            public Collection<SolrTweet> onInReplyOfClick(long id) {
-                SolrTweet tw = getTweetSearch().findByTwitterId(id);
+            public Collection<JTweet> onInReplyOfClick(long id) {
+                JTweet tw = getTweetSearch().findByTwitterId(id);
                 logger.info("[stats] search tweet:" + id + " " + tw);
                 if (tw != null)
                     return Arrays.asList(tw);
@@ -597,7 +597,7 @@ public class HomePage extends WebPage {
             public void onHtmlExport() {
                 if (lastQuery != null) {
                     PrinterPage printerPage = new PrinterPage();
-                    List<SolrTweet> tweets = twindexProvider.get().searchTweets(lastQuery);
+                    List<JTweet> tweets = twindexProvider.get().searchTweets(lastQuery);
                     printerPage.setResults(tweets);
                     setResponsePage(printerPage);
                 }
@@ -701,7 +701,7 @@ public class HomePage extends WebPage {
         if (!instantSearch)
             lastQuery = query;
 
-        Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
+        Collection<JUser> users = new LinkedHashSet<JUser>();
         query.attachPagability(page, hitsPerPage);
         long start = System.currentTimeMillis();
         long totalHits = 0;
@@ -715,7 +715,7 @@ public class HomePage extends WebPage {
         }
 
         resultsPanel.clear();
-        Collection<SolrTweet> tweets = null;
+        Collection<JTweet> tweets = null;
         String msg = "";
         if (totalHits > 0) {
             float time = (System.currentTimeMillis() - start) / 100.0f;
@@ -738,7 +738,7 @@ public class HomePage extends WebPage {
                 try {
                     if (getTwitterSearch().getRateLimitFromCache() > TwitterSearch.LIMIT) {
                         if (!userName.isEmpty()) {
-                            tweets = getTwitterSearch().getTweets(new SolrUser(userName), users, TWEETS_IF_NO_HIT);
+                            tweets = getTwitterSearch().getTweets(new JUser(userName), users, TWEETS_IF_NO_HIT);
                         } else
                             tweets = getTwitterSearch().searchAndGetUsers(queryString, users, TWEETS_IF_NO_HIT, 1);
                     }
@@ -790,7 +790,7 @@ public class HomePage extends WebPage {
             resultsPanel.setSort(null, null);
         
         resultsPanel.setTweetsPerUser(-1);
-        for (SolrUser user : users) {
+        for (JUser user : users) {
             resultsPanel.add(user);
         }
 
@@ -801,7 +801,7 @@ public class HomePage extends WebPage {
         logger.info(addIP("Finished Constructing UI."));
     }
 
-    public QueueThread queueTweets(Collection<SolrTweet> tweets,
+    public QueueThread queueTweets(Collection<JTweet> tweets,
             String qs, String userName) {
         return grabber.init(tweets, qs, userName).setTweetsCount(TWEETS_IF_HIT).
                 setTwitterSearch(getTwitterSearch()).queueTweetPackage();

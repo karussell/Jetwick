@@ -17,7 +17,7 @@ package de.jetwick.tw;
 
 import com.google.inject.Inject;
 import de.jetwick.data.UrlEntry;
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.Helper;
@@ -121,7 +121,7 @@ public class TweetUrlResolver extends MyThread {
                                 continue;
                             }
 
-                            for (SolrTweet tw : pkg.getTweets()) {
+                            for (JTweet tw : pkg.getTweets()) {
                                 allTweets.addAndGet(1);
                                 UrlExtractor extractor = createExtractor();
                                 for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {

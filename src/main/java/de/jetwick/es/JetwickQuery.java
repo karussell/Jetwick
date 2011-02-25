@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.es;
 
+import de.jetwick.data.JTweet;
 import java.util.Collection;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -538,7 +539,7 @@ public abstract class JetwickQuery implements Serializable {
     }
 
     public JetwickQuery addNoSpamFilter() {
-        addFilterQuery(QUALITY, "[" + (SolrTweet.QUAL_SPAM + 1) + " TO *]");
+        addFilterQuery(QUALITY, "[" + (JTweet.QUAL_SPAM + 1) + " TO *]");
         return this;
     }
 

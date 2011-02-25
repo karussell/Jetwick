@@ -15,7 +15,7 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.JetwickQuery;
+import de.jetwick.es.JetwickQuery;
 import org.elasticsearch.search.facet.Facet;
 import org.elasticsearch.search.facet.Facets;
 import org.elasticsearch.action.search.SearchResponse;

@@ -15,7 +15,7 @@
  */
 package de.jetwick.tw;
 
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import de.jetwick.tw.cmd.StringFreqMap;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -44,12 +44,12 @@ public class TweetDetector {
     public static final String SP = "sp";
     public static final String FR = "fr";
     public static final String PT = "pt";
-    private Collection<SolrTweet> tweets;
+    private Collection<JTweet> tweets;
     private int termMaxCount = 6;
     private StringFreqMap languages = new StringFreqMap();
     private StringFreqMap terms = new StringFreqMap();
 
-    public TweetDetector(Collection<SolrTweet> tweets) {
+    public TweetDetector(Collection<JTweet> tweets) {
         this.tweets = tweets;
     }
 
@@ -104,7 +104,7 @@ public class TweetDetector {
     public TweetDetector run() {
         languages.clear();
         Map<String, Integer> termMap = new LinkedHashMap<String, Integer>();
-        for (SolrTweet tweet : tweets) {
+        for (JTweet tweet : tweets) {
             termMap.clear();
             oneTweet(termMap, languages, tweet);
 
@@ -127,7 +127,7 @@ public class TweetDetector {
         return this;
     }
 
-    private void oneTweet(Map<String, Integer> termMap, Map<String, Integer> langMap, SolrTweet tweet) {
+    private void oneTweet(Map<String, Integer> termMap, Map<String, Integer> langMap, JTweet tweet) {
         oneTweet(termMap, langMap, tweet.getText().toLowerCase());
     }
 
@@ -141,7 +141,7 @@ public class TweetDetector {
             if (term.length() < 2 || term.length() > 70 || term.startsWith("@"))
                 continue;
 
-            Set<String> detectedLangs = SolrTweet.LANG_DET_WORDS.get(term);
+            Set<String> detectedLangs = JTweet.LANG_DET_WORDS.get(term);
             if (langMap != null && detectedLangs != null) {
                 // skip the last term for language detection
                 if (counter < tmpTerms.length) {
@@ -158,7 +158,7 @@ public class TweetDetector {
                 }
             }
 
-            Set<String> noiseWordLangs = SolrTweet.NOISE_WORDS.get(term);
+            Set<String> noiseWordLangs = JTweet.NOISE_WORDS.get(term);
             if (termMap != null && noiseWordLangs == null) {
                 Integer integ = termMap.put(term, 1);
                 if (integ != null)

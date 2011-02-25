@@ -16,8 +16,8 @@
 package de.jetwick.tw;
 
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
@@ -70,16 +70,16 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
                     break MAIN;
             }
 
-            LinkedBlockingDeque<SolrTweet> tmp = new LinkedBlockingDeque<SolrTweet>();
+            LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
             int TWEETS_PER_USER = 5;
             int USER_PER_PKG = 40;
             for (int userCounter = 0; userCounter < USER_PER_PKG; userCounter++) {
-                SolrUser user = new SolrUser("user " + userCounter * USER_PER_PKG + counter);
+                JUser user = new JUser("user " + userCounter * USER_PER_PKG + counter);
 
                 for (int i = 0; i < TWEETS_PER_USER; i++) {
                     // make id random because otherwise all tweets will be overwritten 
                     // and not added for a new collector start
-                    SolrTweet tw = new SolrTweet(Math.abs(rand.nextLong()),
+                    JTweet tw = new JTweet(Math.abs(rand.nextLong()),
                             createRandomWord(3) + " " + createRandomWord(4),
                             user);
                     int retweet = (int) Math.round(Math.abs(rand.nextGaussian() * 10));

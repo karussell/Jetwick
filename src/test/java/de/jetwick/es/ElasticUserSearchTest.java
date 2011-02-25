@@ -19,10 +19,8 @@ import java.util.Collections;
 import java.util.Arrays;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
-import de.jetwick.solr.SavedSearch;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.UserQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -50,7 +48,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testDelete() throws Exception {
-        SolrUser user = new SolrUser("karsten");
+        JUser user = new JUser("karsten");
 
         userSearch.save(user, true);
         assertEquals(1, userSearch.search("karsten").size());
@@ -62,19 +60,19 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testUpdate() throws Exception {
         assertEquals(0, userSearch.search("karsten").size());
-        SolrUser user = new SolrUser("karsten");
+        JUser user = new JUser("karsten");
 
         userSearch.save(user, true);
         assertEquals(1, userSearch.search("karsten").size());
 
-        user = new SolrUser("karsten");
+        user = new JUser("karsten");
         user.setDescription("test");
         userSearch.save(user, true);
 
         assertEquals(1, userSearch.search("test").size());
 
-        user = new SolrUser("peter");
-        new SolrTweet(4, "users without a tweet get indexed!", user);
+        user = new JUser("peter");
+        new JTweet(4, "users without a tweet get indexed!", user);
         userSearch.update(user, true, true);
 
         assertEquals(1, userSearch.search("peter").size());
@@ -82,7 +80,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testUpdate2() throws Exception {
-        SolrUser user = new SolrUser("karsten");
+        JUser user = new JUser("karsten");
         user.addSavedSearch(new SavedSearch(1, new UserQuery("test")));
         user.addSavedSearch(new SavedSearch(2, new UserQuery("test2")));
         userSearch.save(user, true);
@@ -93,10 +91,10 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testUpdateBatch() throws Exception {
-        Set<SolrUser> list = new LinkedHashSet<SolrUser>();
-        SolrUser user = new SolrUser("karsten");
+        Set<JUser> list = new LinkedHashSet<JUser>();
+        JUser user = new JUser("karsten");
         list.add(user);
-        SolrUser user2 = new SolrUser("peter");
+        JUser user2 = new JUser("peter");
         list.add(user2);
         userSearch.update(list, 2);
         userSearch.refresh();
@@ -179,19 +177,19 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testUnderscoreInName() throws Exception {
-        SolrUser karsten = new SolrUser("karsten");
+        JUser karsten = new JUser("karsten");
         karsten.setDescription("hooping hooping nice solr");
         userSearch.save(karsten, false);
 
-        SolrUser korland = new SolrUser("g_korland");
+        JUser korland = new JUser("g_korland");
         korland.setDescription("hooping hooping solr nice");
         userSearch.save(korland, true);
 
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();        
+        Collection<JUser> list = new LinkedHashSet<JUser>();        
         userSearch.search(list, "g_korland", 10, 0);
         assertEquals(1, list.size());
         
-        list = new LinkedHashSet<SolrUser>();
+        list = new LinkedHashSet<JUser>();
         userSearch.search(list, "hooping", 10, 0);
         assertEquals(2, list.size());       
     }
@@ -199,13 +197,13 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testPaging()  {
         for (int i = 0; i < 5; i++) {
-            SolrUser karsten = new SolrUser("karsten" + i);
+            JUser karsten = new JUser("karsten" + i);
             karsten.setDescription("hooping hooping nice solr");
             userSearch.save(karsten, false);
         }
         userSearch.refresh();
 
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
+        Collection<JUser> list = new LinkedHashSet<JUser>();
         assertEquals(5, userSearch.search(list, "hooping", 3, 0));
         assertEquals(3, list.size());
         list.clear();
@@ -215,25 +213,25 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testUserFind()  {
-        SolrUser karsten = new SolrUser("karsten");
-        karsten.addOwnTweet(new SolrTweet(1, "hooping hooping", karsten));
-        karsten.addOwnTweet(new SolrTweet(2, "nice solr", karsten));
+        JUser karsten = new JUser("karsten");
+        karsten.addOwnTweet(new JTweet(1, "hooping hooping", karsten));
+        karsten.addOwnTweet(new JTweet(2, "nice solr", karsten));
         userSearch.save(karsten, true);
 
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
+        Collection<JUser> list = new LinkedHashSet<JUser>();
         assertEquals(1, userSearch.search(list, "karsten", 3, 0));
         assertEquals(1, list.size());
 
-        list = new LinkedHashSet<SolrUser>();
+        list = new LinkedHashSet<JUser>();
         assertEquals(0, userSearch.search(list, "kasten", 3, 0));
         assertEquals(0, list.size());
     }
     
     @Test
     public void testFindByScreenname()  {
-        SolrUser karsten = new SolrUser("karsten");
-        karsten.addOwnTweet(new SolrTweet(1, "hooping hooping", karsten));
-        karsten.addOwnTweet(new SolrTweet(2, "nice solr", karsten));
+        JUser karsten = new JUser("karsten");
+        karsten.addOwnTweet(new JTweet(1, "hooping hooping", karsten));
+        karsten.addOwnTweet(new JTweet(2, "nice solr", karsten));
         userSearch.save(karsten, true);
         
         assertNotNull(userSearch.findByScreenName("karsten"));
@@ -245,14 +243,14 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     public void testFacetSearch()  {
         userSearch.setTermMinFrequency(0);
 
-        SolrUser karsten = new SolrUser("karsten");
-        new SolrTweet(1L, "test test", karsten);
-        new SolrTweet(2L, "help help java", karsten);
+        JUser karsten = new JUser("karsten");
+        new JTweet(1L, "test test", karsten);
+        new JTweet(2L, "help help java", karsten);
         userSearch.save(karsten, false);
 
-        SolrUser peter = new SolrUser("peter");
-        new SolrTweet(3L, "test test", peter);
-        new SolrTweet(4L, "bla bli java", peter);
+        JUser peter = new JUser("peter");
+        new JTweet(3L, "test test", peter);
+        new JTweet(4L, "bla bli java", peter);
         userSearch.save(peter, true);
 
         // now createTags: test, java, ...        
@@ -261,7 +259,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         UserQuery query = new UserQuery("java");
         query.addFilterQuery("tag", "test");
 
-        Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
+        Collection<JUser> list = new LinkedHashSet<JUser>();
         SearchResponse rsp = userSearch.search(list, query);
         
         // found 2 users which have java as tags
@@ -284,11 +282,11 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testGetQueryTerms() throws Exception {
-        SolrUser user = new SolrUser("karsten");
+        JUser user = new JUser("karsten");
         user.addSavedSearch(new SavedSearch(1, new UserQuery("peter test")));
         user.addSavedSearch(new SavedSearch(2, new UserQuery("peter tester")));
         userSearch.save(user, false);
-        user = new SolrUser("peter");
+        user = new JUser("peter");
         user.addSavedSearch(new SavedSearch(3, new UserQuery("peter test")));
         user.addSavedSearch(new SavedSearch(4, new UserQuery("karsten tester")));
         userSearch.save(user, true);
@@ -302,9 +300,9 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     
      @Test
     public void testFriends() throws Exception {
-         SolrUser user = new SolrUser("peter").setFriends(Arrays.asList("test", "tester"));
-         SolrUser user2 = new SolrUser("karsten").setFriends(Collections.EMPTY_LIST);
-         SolrUser user3 = new SolrUser("johannes").setFriends(null);
+         JUser user = new JUser("peter").setFriends(Arrays.asList("test", "tester"));
+         JUser user2 = new JUser("karsten").setFriends(Collections.EMPTY_LIST);
+         JUser user3 = new JUser("johannes").setFriends(null);
          userSearch.save(user, false);
          userSearch.save(user2, false);
          userSearch.save(user3, true);

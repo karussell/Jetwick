@@ -21,11 +21,11 @@ import com.google.inject.Module;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import static de.jetwick.es.ElasticTweetSearch.*;
-import de.jetwick.solr.JetwickQuery;
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.es.JetwickQuery;
+import de.jetwick.es.TweetQuery;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.cmd.TermCreateCommand;
@@ -78,7 +78,7 @@ public class Jetwot {
     protected ElasticTweetSearch tweetSearch;
     protected TwitterSearch tw4j;
     private int minRT = 25;
-    private MaxBoundSet<SolrTweet> tweetCache = new MaxBoundSet<SolrTweet>(50, 100).setMaxAge(3 * 24 * 3600 * 1000L);
+    private MaxBoundSet<JTweet> tweetCache = new MaxBoundSet<JTweet>(50, 100).setMaxAge(3 * 24 * 3600 * 1000L);
     private TermCreateCommand command = new TermCreateCommand();
     private Random rand = new Random();
 
@@ -92,7 +92,7 @@ public class Jetwot {
         tw4j.initTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
 
         try {
-            for (SolrTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<SolrUser>(), 20)) {
+            for (JTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<JUser>(), 20)) {
                 command.calcTermsWithoutNoise(tw);
                 addToCaches(tw);
             }
@@ -106,14 +106,14 @@ public class Jetwot {
 
         for (int i = 0; cycles < 0 || i < cycles; i++) {
             logger.info("tweet cache:" + tweetCache.size());
-            Collection<SolrTweet> newSearchedTweets = search();
-            SolrTweet selectedTweet = null;
+            Collection<JTweet> newSearchedTweets = search();
+            JTweet selectedTweet = null;
 
-            for (SolrTweet newSearchTw : newSearchedTweets) {
+            for (JTweet newSearchTw : newSearchedTweets) {
                 command.calcTermsWithoutNoise(newSearchTw);
                 if (newSearchTw.getTextTerms().size() >= 4) {
                     float maxJc = -1;
-                    for (SolrTweet twInCache : tweetCache.values()) {
+                    for (JTweet twInCache : tweetCache.values()) {
                         float jcIndex = (float) TermCreateCommand.calcJaccardIndex(twInCache.getTextTerms(), newSearchTw.getTextTerms());
                         if (maxJc < jcIndex)
                             maxJc = jcIndex;
@@ -171,7 +171,7 @@ public class Jetwot {
         }
     }
 
-    public Collection<SolrTweet> search() {
+    public Collection<JTweet> search() {
         JetwickQuery query = new TweetQuery(). // should be not too old
                 addFilterQuery(DATE, "[" + new MyDate().minusDays(6).toLocalString() + " TO *]").
                 // should be high quality
@@ -204,7 +204,7 @@ public class Jetwot {
         return this;
     }
 
-    protected void addToCaches(SolrTweet selectedTweet) {
+    protected void addToCaches(JTweet selectedTweet) {
         tweetCache.add(selectedTweet);
     }
 }

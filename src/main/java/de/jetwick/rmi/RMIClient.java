@@ -20,8 +20,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import java.rmi.RemoteException;
@@ -67,7 +67,7 @@ public class RMIClient implements CommunicationService {
         Injector injector = Guice.createInjector(module);
         RMIClient rmiProvider = injector.getInstance(RMIClient.class);
         rmiProvider.send(injector.getInstance(TweetPackageList.class).init(0,
-                Arrays.asList(new SolrTweet(1L, "test", new SolrUser("peter")))));
+                Arrays.asList(new JTweet(1L, "test", new JUser("peter")))));
     }
 
     @Override

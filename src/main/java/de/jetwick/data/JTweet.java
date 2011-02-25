@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.data;
 
-import de.jetwick.data.TwitterIdComparator;
-import de.jetwick.data.UrlEntry;
 import de.jetwick.tw.TweetDetector;
 import de.jetwick.tw.Twitter4JTweet;
 import de.jetwick.tw.cmd.StringFreqMap;
@@ -41,7 +39,7 @@ import twitter4j.Tweet;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SolrTweet implements Serializable {
+public class JTweet implements Serializable {
 
     private static final long serialVersionUID = 1L;
     public static final Comparator tweetIdComparator = new TwitterIdComparator();
@@ -58,14 +56,14 @@ public class SolrTweet implements Serializable {
     private Integer version;
     private final long twitterId;
     private String text;
-    private Set<SolrTweet> replies = new LinkedHashSet<SolrTweet>();
+    private Set<JTweet> replies = new LinkedHashSet<JTweet>();
     private int retweetCount;
     private boolean retweet = false;
     private boolean daemon = false;
     private Date createdAt;
     private Date updatedAt;
-    private SolrUser fromUser;
-    private SolrTweet inReplyOf;
+    private JUser fromUser;
+    private JTweet inReplyOf;
     private long inReplyTwitterId = -1L;
     private String location;
     private StringFreqMap textTerms = new StringFreqMap();
@@ -83,17 +81,20 @@ public class SolrTweet implements Serializable {
     /**
      * You'll need to call init after that constructor
      */
-    public SolrTweet(Tweet tw, SolrUser fromUser) {
+    public JTweet(Tweet tw, JUser fromUser) {
         this(tw);
         setFromUser(fromUser);
     }
 
-    public SolrTweet(long id, String text, SolrUser fromUser) {
+    public JTweet(long id, String text, JUser fromUser) {
         this(id, text, new Date());
         setFromUser(fromUser);
     }
 
-    SolrTweet(long id, String text, Date createdAt) {
+    /**
+     * for tests only
+     */
+    public JTweet(long id, String text, Date createdAt) {
         quality = QUAL_MAX;
         this.twitterId = id;
         setText_(text);
@@ -103,7 +104,10 @@ public class SolrTweet implements Serializable {
             urlEntries = new ArrayList<UrlEntry>();
     }
 
-    SolrTweet(Tweet tw) {
+    /**
+     * for tests only
+     */
+    public JTweet(Tweet tw) {
         this(tw.getId(), tw.getText(), tw.getCreatedAt());
 
         // if tweet was retrieved via Status object
@@ -136,7 +140,7 @@ public class SolrTweet implements Serializable {
 
     public String getLowerCaseText() {
         if (lowerCaseText == null)
-            lowerCaseText = getText().toLowerCase();        
+            lowerCaseText = getText().toLowerCase();
 
         return lowerCaseText;
     }
@@ -177,7 +181,7 @@ public class SolrTweet implements Serializable {
         return inReplyTwitterId;
     }
 
-    public SolrTweet setInReplyTwitterId(long inReplyTwitterId) {
+    public JTweet setInReplyTwitterId(long inReplyTwitterId) {
         this.inReplyTwitterId = inReplyTwitterId;
         return this;
     }
@@ -190,7 +194,7 @@ public class SolrTweet implements Serializable {
         return createdAt;
     }
 
-    public SolrTweet setCreatedAt(Date createdAt) {
+    public JTweet setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
         return this;
     }
@@ -202,7 +206,7 @@ public class SolrTweet implements Serializable {
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
-    
+
     public void makePersistent() {
         setUpdatedAt(new Date());
     }
@@ -214,18 +218,18 @@ public class SolrTweet implements Serializable {
         return updatedAt != null;
     }
 
-    public void setFromUser(SolrUser fromUser, boolean reverse) {
+    public void setFromUser(JUser fromUser, boolean reverse) {
         this.fromUser = fromUser;
         if (reverse)
             fromUser.addOwnTweet(this, false);
     }
 
-    public SolrTweet setFromUser(SolrUser fromUser) {
+    public JTweet setFromUser(JUser fromUser) {
         setFromUser(fromUser, true);
         return this;
     }
 
-    public SolrUser getFromUser() {
+    public JUser getFromUser() {
         return fromUser;
     }
 
@@ -233,7 +237,7 @@ public class SolrTweet implements Serializable {
         this.reply = rp;
     }
 
-    public SolrTweet addReply(SolrTweet tw) {
+    public JTweet addReply(JTweet tw) {
         replies.add(tw);
         tw.setInReplyOf(this);
         return this;
@@ -244,11 +248,11 @@ public class SolrTweet implements Serializable {
         return reply + replies.size();
     }
 
-    public SolrTweet getInReplyOf() {
+    public JTweet getInReplyOf() {
         return inReplyOf;
     }
 
-    public void setInReplyOf(SolrTweet inReplyOf) {
+    public void setInReplyOf(JTweet inReplyOf) {
         this.inReplyOf = inReplyOf;
         if (inReplyOf == null)
             inReplyTwitterId = -1L;
@@ -256,7 +260,7 @@ public class SolrTweet implements Serializable {
             inReplyTwitterId = inReplyOf.getTwitterId();
     }
 
-    public SolrTweet setRt(int rt) {
+    public JTweet setRt(int rt) {
         this.retweetCount = rt;
         return this;
     }
@@ -264,7 +268,7 @@ public class SolrTweet implements Serializable {
     public int getRetweetCount() {
         // TODO better design! (do not mix count and replies)
         int tmp = 0;
-        for (SolrTweet tw : replies) {
+        for (JTweet tw : replies) {
             if (tw.isRetweet())
                 tmp++;
         }
@@ -299,7 +303,7 @@ public class SolrTweet implements Serializable {
         return getText().substring(index1 + 1).trim();
     }
 
-    public boolean isRetweetOf(SolrTweet tw) {
+    public boolean isRetweetOf(JTweet tw) {
         // e.g. return true if this.text == RT @userA: text
         // to lower case is necessary because the case of the fromUser isn't important
         if (!isRetweet())
@@ -311,7 +315,7 @@ public class SolrTweet implements Serializable {
 //        return thisT.matches(".*rt @" + tw.getFromUser() + ":? " + extT + ".*");
     }
 
-    public SolrTweet setDaemon(boolean daemon) {
+    public JTweet setDaemon(boolean daemon) {
         this.daemon = daemon;
         return this;
     }
@@ -337,7 +341,7 @@ public class SolrTweet implements Serializable {
     }
 
     public boolean isSpam() {
-        return quality < SolrTweet.QUAL_SPAM && quality >= 0;
+        return quality < JTweet.QUAL_SPAM && quality >= 0;
     }
 
     /**
@@ -369,13 +373,13 @@ public class SolrTweet implements Serializable {
      * greater ids will win and identical text is only skipped if there is no
      * tweet in-between. see the test case
      */
-    public static void deduplicate(List<SolrTweet> list) {
+    public static void deduplicate(List<JTweet> list) {
         // now remove tweets if they have the identical twitterId or text.
         // the standard hashCode/equals are based on the twitterId only
-        Iterator<SolrTweet> iter = list.iterator();
-        SolrTweet prevTweet = null;
+        Iterator<JTweet> iter = list.iterator();
+        JTweet prevTweet = null;
         while (iter.hasNext()) {
-            SolrTweet tw = iter.next();
+            JTweet tw = iter.next();
             if (prevTweet != null && (tw.getTwitterId().equals(prevTweet.getTwitterId())
                     || tw.getText().equals(prevTweet.getText()))) {
                 iter.remove();
@@ -384,7 +388,7 @@ public class SolrTweet implements Serializable {
         }
     }
 
-    public static void sortAndDeduplicate(List<SolrTweet> list) {
+    public static void sortAndDeduplicate(List<JTweet> list) {
         Collections.sort(list, tweetIdComparator);
         deduplicate(list);
     }
@@ -399,7 +403,7 @@ public class SolrTweet implements Serializable {
         if (obj == null || getClass() != obj.getClass())
             return false;
 
-        return this.twitterId == ((SolrTweet) obj).twitterId;
+        return this.twitterId == ((JTweet) obj).twitterId;
     }
 
     @Override
@@ -518,7 +522,7 @@ public class SolrTweet implements Serializable {
 
     public static void importNoiseFrom(Map<String, Set<String>> words, String lang) {
         try {
-            List<String> list = Helper.readFile(Helper.createBuffReader(SolrTweet.class.getResourceAsStream("noise_words_" + lang + ".txt")));
+            List<String> list = Helper.readFile(Helper.createBuffReader(JTweet.class.getResourceAsStream("noise_words_" + lang + ".txt")));
             addFrom(words, lang, list);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -527,7 +531,7 @@ public class SolrTweet implements Serializable {
 
     public static void importFrom(Map<String, Set<String>> words, String lang) {
         try {
-            List<String> list = Helper.readFile(Helper.createBuffReader(SolrTweet.class.getResourceAsStream("lang_det_" + lang + ".txt")));
+            List<String> list = Helper.readFile(Helper.createBuffReader(JTweet.class.getResourceAsStream("lang_det_" + lang + ".txt")));
             addFrom(words, lang, list);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

@@ -22,9 +22,9 @@ import de.jetwick.data.UrlEntry;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
 import de.jetwick.es.ElasticTweetSearchTest;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
+import de.jetwick.es.TweetQuery;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.AnyExecutor;
 import java.util.ArrayList;
@@ -93,13 +93,13 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
 
     @Test
     public void testNormalAccountAgainstSpam() throws TwitterException {
-        List<SolrTweet> list = new ArrayList<SolrTweet>();
-        list = twitterSearch.getTweets(new SolrUser("berniecezee2573"), 100);
-        for (SolrTweet tw : list) {
+        List<JTweet> list = new ArrayList<JTweet>();
+        list = twitterSearch.getTweets(new JUser("berniecezee2573"), 100);
+        for (JTweet tw : list) {
             for (UrlEntry entry : new FakeUrlExtractor().setText(tw.getText()).run().getUrlEntries()) {
                 tw.addUrlEntry(entry);
             }
-            SolrTweet tw2 = new TermCreateCommand().execute(tw);
+            JTweet tw2 = new TermCreateCommand().execute(tw);
             System.out.println(tw2.getQuality() + " " + tw2.getQualDebug() + " " + tw2.getText());
         }
     }
@@ -113,11 +113,11 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
 
     @Test
     public void getFollowers() throws TwitterException {
-        final Collection<SolrUser> coll = new ArrayList<SolrUser>();
-        twitterSearch.getFriends("wiedumir", new AnyExecutor<SolrUser>() {
+        final Collection<JUser> coll = new ArrayList<JUser>();
+        twitterSearch.getFriends("wiedumir", new AnyExecutor<JUser>() {
 
             @Override
-            public SolrUser execute(SolrUser u) {
+            public JUser execute(JUser u) {
                 coll.add(u);
                 return u;
             }
@@ -133,9 +133,9 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
 //        System.out.println("get 30 homeline tweets:" + size);
         assertTrue(size >= 25);
 
-        BlockingQueue<SolrTweet> coll = new LinkedBlockingQueue<SolrTweet>();
+        BlockingQueue<JTweet> coll = new LinkedBlockingQueue<JTweet>();
         twitterSearch.getHomeTimeline(coll, 10, 0);
-        for (SolrTweet tw : coll) {
+        for (JTweet tw : coll) {
             assertNotNull(tw.getFromUser().getProfileImageUrl());
         }
     }
@@ -143,9 +143,9 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void statsOfAUser() throws TwitterException {
         TwitterSearch st = twitterSearch;
-        List<SolrTweet> tweets = st.getTweets(new SolrUser("timetabling"), 20);
-        List<SolrTweet> newTweets = new ArrayList();
-        for (SolrTweet tw : tweets) {
+        List<JTweet> tweets = st.getTweets(new JUser("timetabling"), 20);
+        List<JTweet> newTweets = new ArrayList();
+        for (JTweet tw : tweets) {
             assertNotNull(tw.getFromUser());
             assertNotNull(tw.getFromUser().getProfileImageUrl());
             newTweets.add(tw);
@@ -162,24 +162,24 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void testSearch() throws TwitterException {
         TwitterSearch st = twitterSearch;
-        Set<SolrTweet> resList = new LinkedHashSet<SolrTweet>();
+        Set<JTweet> resList = new LinkedHashSet<JTweet>();
         YTag tag = new YTag("java");
         st.search(tag.getTerm(), resList, 200, tag.getLastId());
-        for (SolrTweet tw : resList) {
+        for (JTweet tw : resList) {
             assertNotNull(tw.getFromUser().getProfileImageUrl());
         }
         assertTrue(resList.size() > 190);
 
         Set<Long> ids = new LinkedHashSet<Long>();
-        for (SolrTweet tw : resList) {
+        for (JTweet tw : resList) {
             ids.add(tw.getTwitterId());
         }
 
 //        System.out.println("size:" + ids.size());
         assertTrue(ids.size() > 190);
 
-        List<SolrTweet> other = new ArrayList<SolrTweet>();
-        for (SolrTweet tw : resList) {
+        List<JTweet> other = new ArrayList<JTweet>();
+        for (JTweet tw : resList) {
             if (!ids.remove(tw.getTwitterId()))
                 other.add(tw);
         }
@@ -225,7 +225,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         TweetQuery q = new TweetQuery("").createFriendsQuery(f);
 
         // create tweet to map some indirectly mapped (not defined) fields like dt
-        twSearchTester.getTweetSearch().update(Arrays.asList(new SolrTweet(1L, "test", new SolrUser("user"))));
+        twSearchTester.getTweetSearch().update(Arrays.asList(new JTweet(1L, "test", new JUser("user"))));
 
         // should not throw an exception
         twSearchTester.getTweetSearch().search(q);

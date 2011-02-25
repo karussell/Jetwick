@@ -17,7 +17,7 @@ package de.jetwick.tw;
 
 import de.jetwick.util.Helper;
 import de.jetwick.data.UrlEntry;
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -37,12 +37,12 @@ import org.slf4j.LoggerFactory;
 public class Extractor {
 
     private Logger logger = LoggerFactory.getLogger(Extractor.class);
-    protected SolrTweet tweet;
+    protected JTweet tweet;
     protected String text;
     protected Map<Integer, UrlEntry> urlMap = new LinkedHashMap<Integer, UrlEntry>();
     protected StringBuilder sb;
 
-    public Extractor setTweet(SolrTweet tweet) {
+    public Extractor setTweet(JTweet tweet) {
         this.tweet = tweet;
         Collection<UrlEntry> coll = tweet.getUrlEntries();
         for (UrlEntry e : coll) {

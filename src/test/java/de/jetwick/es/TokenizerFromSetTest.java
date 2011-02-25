@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.solr.SimilarQuery;
 import java.util.Collection;
 import org.apache.lucene.analysis.Tokenizer;
 import java.util.Arrays;

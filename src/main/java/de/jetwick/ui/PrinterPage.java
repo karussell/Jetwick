@@ -16,7 +16,7 @@
 
 package de.jetwick.ui;
 
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import de.jetwick.tw.Extractor;
 import de.jetwick.util.Helper;
 import java.util.ArrayList;
@@ -30,14 +30,14 @@ import org.apache.wicket.markup.html.list.ListView;
 
 public class PrinterPage extends WebPage {
 
-    private List<SolrTweet> results = new ArrayList<SolrTweet>();
+    private List<JTweet> results = new ArrayList<JTweet>();
 
     public PrinterPage() {
         add(new ListView("users", results) {
 
             @Override
             public void populateItem(final ListItem item) {
-                final SolrTweet tw = (SolrTweet) item.getModelObject();
+                final JTweet tw = (JTweet) item.getModelObject();
 
                 item.add(new ExternalLink("userName", "http://jetwick.com/?user="
                         + Helper.urlEncode(tw.getFromUser().getScreenName()),
@@ -53,7 +53,7 @@ public class PrinterPage extends WebPage {
         });
     }
 
-    public void setResults(Collection<SolrTweet> tweets) {
+    public void setResults(Collection<JTweet> tweets) {
         results.clear();
         results.addAll(tweets);
     }

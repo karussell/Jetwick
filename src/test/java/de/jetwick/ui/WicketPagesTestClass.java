@@ -15,7 +15,7 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.es.TweetQuery;
 import java.util.Collection;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -24,7 +24,7 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
@@ -84,7 +84,7 @@ public class WicketPagesTestClass {
                 //new InternalSearchHit(1, "1", "tweet", source, fields);
                 InternalSearchResponse iRsp = new InternalSearchResponse(
                         new InternalSearchHits(new InternalSearchHit[0], 0, 0), new InternalFacets(new ArrayList()), true);
-                when(twSearch.search((Collection<SolrUser>) any(), (TweetQuery) any())).
+                when(twSearch.search((Collection<JUser>) any(), (TweetQuery) any())).
                         thenReturn(new SearchResponse(iRsp, "", 4, 4, 1L, new ShardSearchFailure[0]));
 
                 bind(ElasticTweetSearch.class).toInstance(twSearch);
@@ -124,8 +124,8 @@ public class WicketPagesTestClass {
             }
 
             @Override
-            public SolrUser getUser() throws TwitterException {
-                return new SolrUser("testUser");
+            public JUser getUser() throws TwitterException {
+                return new JUser("testUser");
             }
         }.setConsumer("", "");
     }

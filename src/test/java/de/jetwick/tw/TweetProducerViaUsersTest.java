@@ -16,11 +16,11 @@
 package de.jetwick.tw;
 
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import java.util.Collection;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JUser;
 import de.jetwick.util.AnyExecutor;
 import org.junit.Before;
 import de.jetwick.es.ElasticUserSearchTest;
@@ -62,7 +62,7 @@ public class TweetProducerViaUsersTest {
 
     @Test
     public void testRun() {
-        getUserSearch().update(new SolrUser("test"), true, true);
+        getUserSearch().update(new JUser("test"), true, true);
 
         final TwitterSearch mockedTwitter = new TwitterSearch() {
 
@@ -72,15 +72,15 @@ public class TweetProducerViaUsersTest {
             }
 
             @Override
-            public void getFriends(String userName, AnyExecutor<SolrUser> executor) {
-                executor.execute(new SolrUser("friend1oftest"));
-                executor.execute(new SolrUser("friend2oftest"));
+            public void getFriends(String userName, AnyExecutor<JUser> executor) {
+                executor.execute(new JUser("friend1oftest"));
+                executor.execute(new JUser("friend2oftest"));
             }
 
             @Override
-            public long getHomeTimeline(Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
-                result.add(new SolrTweet(1L, "test tweet", new SolrUser("timetabling")));
-                result.add(new SolrTweet(2L, "cool, this tweet will auto persist", new SolrUser("test")));
+            public long getHomeTimeline(Collection<JTweet> result, int tweets, long lastId) throws TwitterException {
+                result.add(new JTweet(1L, "test tweet", new JUser("timetabling")));
+                result.add(new JTweet(2L, "cool, this tweet will auto persist", new JUser("test")));
                 return 2L;
             }
         };
@@ -93,7 +93,7 @@ public class TweetProducerViaUsersTest {
             }
 
             @Override
-            protected boolean isValidUser(SolrUser u) {
+            protected boolean isValidUser(JUser u) {
                 return true;
             }
 
@@ -106,8 +106,8 @@ public class TweetProducerViaUsersTest {
         producer.run(1);
 
         assertEquals(1, producer.getQueue().size());
-        Iterator<SolrTweet> iter = producer.getQueue().poll().getTweets().iterator();
-        SolrTweet tw = iter.next();
+        Iterator<JTweet> iter = producer.getQueue().poll().getTweets().iterator();
+        JTweet tw = iter.next();
         assertEquals("test tweet", tw.getText());
         assertFalse(tw.isPersistent());
         assertTrue(iter.next().isPersistent());

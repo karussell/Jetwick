@@ -18,7 +18,7 @@ package de.jetwick.ui;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import java.util.Collection;
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.ajax.markup.html.AjaxLazyLoadPanel;
@@ -55,7 +55,7 @@ public class OneLineAdLazyLoadPanel extends AjaxLazyLoadPanel {
     @Override
     public Component getLazyLoadComponent(String markupId) {
         OneLineAdPanel adPanel = createAdPanel(markupId);
-        Collection<SolrTweet> ads = null;
+        Collection<JTweet> ads = null;
         try {
             ads = adsProvider.get().searchAds(searchQuery);
         } catch (Exception ex) {

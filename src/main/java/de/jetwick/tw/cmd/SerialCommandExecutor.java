@@ -16,7 +16,7 @@
 
 package de.jetwick.tw.cmd;
 
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import de.jetwick.util.AnyExecutor;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,9 +27,9 @@ import java.util.Collection;
 public class SerialCommandExecutor {
 
     private ArrayList<AnyExecutor> list = new ArrayList<AnyExecutor>();
-    private Collection<SolrTweet> tweets;
+    private Collection<JTweet> tweets;
 
-    public SerialCommandExecutor(Collection<SolrTweet> tweets) {
+    public SerialCommandExecutor(Collection<JTweet> tweets) {
         this.tweets = tweets;
     }
 
@@ -45,9 +45,9 @@ public class SerialCommandExecutor {
         return this;
     }
 
-    public Collection<SolrTweet> execute() {
+    public Collection<JTweet> execute() {
         for (AnyExecutor cmd : list) {
-            for (SolrTweet tw : tweets) {
+            for (JTweet tw : tweets) {
                 cmd.execute(tw);
             }
         }

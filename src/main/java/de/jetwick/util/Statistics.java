@@ -30,9 +30,9 @@ import de.jetwick.data.YUser;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.hib.HibernateUtil;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
-import de.jetwick.solr.TweetQuery;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
+import de.jetwick.es.TweetQuery;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -110,7 +110,7 @@ public class Statistics {
             if ("true".equals(argStr))
                 argStr = "**:*";
 
-            List<SolrUser> list = new ArrayList<SolrUser>();
+            List<JUser> list = new ArrayList<JUser>();
             long ret = tweetSearch.search(list, new TweetQuery(argStr, false)).
                     getHits().getTotalHits();
             logger.info("Found: " + ret + " users. Returned: " + list.size());
@@ -121,7 +121,7 @@ public class Statistics {
         // specify file via exportNoiseWords=stopwords.txt
         argStr = map.get("exportNoiseWords");
         if (argStr != null) {
-            write(new TreeSet<String>(SolrTweet.NOISE_WORDS.keySet()), argStr);
+            write(new TreeSet<String>(JTweet.NOISE_WORDS.keySet()), argStr);
             return;
         }
 
@@ -180,7 +180,7 @@ public class Statistics {
 
             argStr = map.get("readStopAndClear");
             if (argStr != null)
-                readStopwords(SolrTweet.class.getResourceAsStream("noise_words_pt.txt"));//noise_words_fr.txt, lang_det_sp.txt
+                readStopwords(JTweet.class.getResourceAsStream("noise_words_pt.txt"));//noise_words_fr.txt, lang_det_sp.txt
 
             argStr = map.get("translate");
             if (argStr != null)
@@ -301,7 +301,7 @@ public class Statistics {
     }
 
     public void translate(Language lang) throws Exception {
-        List<String> list = Helper.readFile(Helper.createBuffReader(SolrTweet.class.getResourceAsStream("lang_det_en.txt")));
+        List<String> list = Helper.readFile(Helper.createBuffReader(JTweet.class.getResourceAsStream("lang_det_en.txt")));
         Set<String> res = new TreeSet<String>();
         Set<String> cache = new LinkedHashSet<String>();
         int charCounter = 0;

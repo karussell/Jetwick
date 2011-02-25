@@ -15,7 +15,7 @@
  */
 package de.jetwick.tw.queue;
 
-import de.jetwick.solr.SolrTweet;
+import de.jetwick.data.JTweet;
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -31,7 +31,7 @@ import java.util.Collection;
  */
 public interface TweetPackage extends Serializable {
 
-    public Collection<SolrTweet> getTweets();
+    public Collection<JTweet> getTweets();
 
     int getSize();
 

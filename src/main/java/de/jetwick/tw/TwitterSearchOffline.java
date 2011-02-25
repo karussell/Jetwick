@@ -15,8 +15,8 @@
  */
 package de.jetwick.tw;
 
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.util.AnyExecutor;
 import java.util.Collection;
 import org.slf4j.Logger;
@@ -59,13 +59,13 @@ public class TwitterSearchOffline extends TwitterSearch {
     }
 
     @Override
-    public void getFriends(String userName, AnyExecutor<SolrUser> executor) {
-        executor.execute(new SolrUser("timetabling"));
-        executor.execute(new SolrUser("dzone"));
+    public void getFriends(String userName, AnyExecutor<JUser> executor) {
+        executor.execute(new JUser("timetabling"));
+        executor.execute(new JUser("dzone"));
     }        
     
     @Override
-    public long search(String term, Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
+    public long search(String term, Collection<JTweet> result, int tweets, long lastId) throws TwitterException {
         throw new UnsupportedOperationException("use online version for searching!");
     }
 }

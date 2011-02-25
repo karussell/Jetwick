@@ -18,8 +18,8 @@ package de.jetwick.ui;
 import com.google.api.translate.Language;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.ui.util.LabeledLink;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class ResultsPanel extends Panel {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private ListView userView;
-    private List<SolrUser> users = new ArrayList<SolrUser>();
+    private List<JUser> users = new ArrayList<JUser>();
     private String queryMessage;
     private String queryMessageWarn;
     private String query;
@@ -73,7 +73,7 @@ public class ResultsPanel extends Panel {
     private boolean translateAll = false;
     private int hitsPerPage;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
-    private Map<Long, SolrTweet> allTweets = new LinkedHashMap<Long, SolrTweet>();
+    private Map<Long, JTweet> allTweets = new LinkedHashMap<Long, JTweet>();
     // for test only
 
     public ResultsPanel(String id) {
@@ -167,7 +167,7 @@ public class ResultsPanel extends Panel {
 
             @Override
             public void populateItem(final ListItem item) {
-                final SolrUser user = (SolrUser) item.getModelObject();
+                final JUser user = (JUser) item.getModelObject();
                 String twitterUrl = Helper.TURL + "/" + user.getScreenName();
 
                 String name = user.getScreenName();
@@ -193,10 +193,10 @@ public class ResultsPanel extends Panel {
                 item.add(new ExternalLink("latestTw", twitterUrl, "twitter.com/" + name));
                 item.add(showLatestTweets.add(new ContextImage("profileImg", user.getProfileImageUrl())));
 
-                final List<SolrTweet> tweets = new ArrayList<SolrTweet>();
+                final List<JTweet> tweets = new ArrayList<JTweet>();
                 int counter = 0;
 
-                for (SolrTweet tw : user.getOwnTweets()) {
+                for (JTweet tw : user.getOwnTweets()) {
                     if (tweetsPerUser > 0 && counter >= tweetsPerUser)
                         break;
 
@@ -253,7 +253,7 @@ public class ResultsPanel extends Panel {
             }
 
             @Override
-            public Collection<SolrTweet> onReplyClick(long id, boolean retweet) {
+            public Collection<JTweet> onReplyClick(long id, boolean retweet) {
                 return onTweetClick(id, retweet);
             }
 
@@ -263,18 +263,18 @@ public class ResultsPanel extends Panel {
             }
 
             @Override
-            public void onFindSimilarClick(SolrTweet tweet, AjaxRequestTarget target) {
+            public void onFindSimilarClick(JTweet tweet, AjaxRequestTarget target) {
                 ResultsPanel.this.onFindSimilar(tweet, target);
             }
 
             @Override
-            public Collection<SolrTweet> onInReplyOfClick(long id) {
+            public Collection<JTweet> onInReplyOfClick(long id) {
                 return ResultsPanel.this.onInReplyOfClick(id);
             }
         }.setLanguage(lang);
     }
 
-    public void fillTranslateMap(Collection<SolrTweet> tweets, String toLang) {
+    public void fillTranslateMap(Collection<JTweet> tweets, String toLang) {
         Map<Integer, Long> index2Id = new LinkedHashMap<Integer, Long>();
         String[] texts = new String[tweets.size()];
         Language[] froms = new Language[tweets.size()];
@@ -282,9 +282,9 @@ public class ResultsPanel extends Panel {
 
         try {
             Language toLanguage = Language.fromString(toLang);
-            Iterator<SolrTweet> iter = tweets.iterator();
+            Iterator<JTweet> iter = tweets.iterator();
             for (int i = 0; i < texts.length; i++) {
-                SolrTweet tweet = iter.next();
+                JTweet tweet = iter.next();
                 index2Id.put(i, tweet.getTwitterId());
                 texts[i] = tweet.getText();
                 froms[i] = Language.AUTO_DETECT;
@@ -310,7 +310,7 @@ public class ResultsPanel extends Panel {
     public void onUserClick(String userName, String query) {
     }
 
-    public void onFindSimilar(SolrTweet tweet, AjaxRequestTarget target) {
+    public void onFindSimilar(JTweet tweet, AjaxRequestTarget target) {
     }
 
     public void onSortClicked(AjaxRequestTarget target, String sortKey, String sortVal) {
@@ -323,11 +323,11 @@ public class ResultsPanel extends Panel {
     public void onHtmlExport() {
     }
 
-    public Collection<SolrTweet> onTweetClick(long id, boolean retweet) {
+    public Collection<JTweet> onTweetClick(long id, boolean retweet) {
         return Collections.EMPTY_LIST;
     }
 
-    public Collection<SolrTweet> onInReplyOfClick(long id) {
+    public Collection<JTweet> onInReplyOfClick(long id) {
         return Collections.EMPTY_LIST;
     }
 
@@ -352,7 +352,7 @@ public class ResultsPanel extends Panel {
         tweetsPerUser = twPerUser;
     }
 
-    public void add(SolrUser u) {
+    public void add(JUser u) {
         users.add(u);
     }
 

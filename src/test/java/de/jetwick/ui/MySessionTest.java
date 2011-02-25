@@ -17,7 +17,7 @@ package de.jetwick.ui;
 
 import de.jetwick.tw.Twitter4JUser;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import javax.servlet.http.Cookie;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -44,7 +44,7 @@ public class MySessionTest extends WicketPagesTestClass {
         super.setUp();
     }
 
-    ElasticUserSearch newMockUserSearch(SolrUser user) {
+    ElasticUserSearch newMockUserSearch(JUser user) {
         ElasticUserSearch s = mock(ElasticUserSearch.class);
         when(s.findByTwitterToken("normalToken")).thenReturn(user);
         return s;
@@ -66,7 +66,7 @@ public class MySessionTest extends WicketPagesTestClass {
         MySession session = (MySession) tester.getWicketSession();
         WebRequest req = mock(WebRequest.class);
         when(req.getCookie(TwitterSearch.COOKIE)).thenReturn(new Cookie(TwitterSearch.COOKIE, "normalToken"));
-        session.init(req, newMockUserSearch(new SolrUser("testuser")));
+        session.init(req, newMockUserSearch(new JUser("testuser")));
         assertEquals("testuser", session.getUser().getScreenName());
     }
 
@@ -75,7 +75,7 @@ public class MySessionTest extends WicketPagesTestClass {
         MySession session = (MySession) tester.getWicketSession();
         WebRequest req = mock(WebRequest.class);
         when(req.getCookie(TwitterSearch.COOKIE)).thenReturn(new Cookie("tokenWrong", null));
-        session.init(req, newMockUserSearch(new SolrUser("testuser")));
+        session.init(req, newMockUserSearch(new JUser("testuser")));
         assertNull(session.getUser());
     }
 
@@ -88,7 +88,7 @@ public class MySessionTest extends WicketPagesTestClass {
         when(ts.getTwitterUser()).thenReturn(new Twitter4JUser("testuser"));
 
         WebResponse resp = mock(WebResponse.class);
-        SolrUser user = new SolrUser("testuser");
+        JUser user = new JUser("testuser");
         ElasticUserSearch uSearch = newMockUserSearch(user);
         session.setTwitterSearch(ts);
         Cookie cookie = session.setTwitterSearch(new AccessToken("normalToken", "tSec"), uSearch, resp);

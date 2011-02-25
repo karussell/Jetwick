@@ -17,8 +17,8 @@ package de.jetwick.tw;
 
 import de.jetwick.util.AnyExecutor;
 import de.jetwick.data.YUser;
-import de.jetwick.solr.SolrTweet;
-import de.jetwick.solr.SolrUser;
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -185,12 +185,12 @@ public class TwitterSearch implements Serializable {
         }
     }
 
-    public SolrUser getUser() throws TwitterException {
+    public JUser getUser() throws TwitterException {
         return getUser(twitter.getScreenName());
     }
 
-    public SolrUser getUser(String screenName) throws TwitterException {
-        SolrUser user = new SolrUser(screenName);
+    public JUser getUser(String screenName) throws TwitterException {
+        JUser user = new JUser(screenName);
         updateUserInfo(Arrays.asList(user));
         return user;
     }
@@ -360,13 +360,13 @@ public class TwitterSearch implements Serializable {
     // The specific number of requests a client is able to make to the Search API for a given hour is not released.
     // The number is quite a bit higher and we feel it is both liberal and sufficient for most applications.
     // The since_id parameter will be removed from the next_page element as it is not supported for pagination.
-    public long search(String term, Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
-        Map<String, SolrUser> userMap = new LinkedHashMap<String, SolrUser>();
+    public long search(String term, Collection<JTweet> result, int tweets, long lastId) throws TwitterException {
+        Map<String, JUser> userMap = new LinkedHashMap<String, JUser>();
         return search(term, result, userMap, tweets, lastId);
     }
 
-    long search(String term, Collection<SolrTweet> result,
-            Map<String, SolrUser> userMap, int tweets, long lastId) throws TwitterException {
+    long search(String term, Collection<JTweet> result,
+            Map<String, JUser> userMap, int tweets, long lastId) throws TwitterException {
         long maxId = lastId;
         long sinceId = lastId;
 
@@ -406,13 +406,13 @@ public class TwitterSearch implements Serializable {
                     breakPaging = true;
                 else {
                     String userName = twe.getFromUser().toLowerCase();
-                    SolrUser user = userMap.get(userName);
+                    JUser user = userMap.get(userName);
                     if (user == null) {
-                        user = new SolrUser(userName).init(twe);
+                        user = new JUser(userName).init(twe);
                         userMap.put(userName, user);
                     }
 
-                    result.add(new SolrTweet(twe, user));
+                    result.add(new JTweet(twe, user));
                 }
             }
 
@@ -427,10 +427,10 @@ public class TwitterSearch implements Serializable {
     /**
      * @deprecated use the search method
      */
-    public Collection<SolrTweet> searchAndGetUsers(String term, Collection<SolrUser> result,
+    public Collection<JTweet> searchAndGetUsers(String term, Collection<JUser> result,
             int tweets, int maxPage) throws TwitterException {
-        Set<SolrTweet> solrTweets = new LinkedHashSet<SolrTweet>();
-        Map<String, SolrUser> userMap = new LinkedHashMap<String, SolrUser>();
+        Set<JTweet> solrTweets = new LinkedHashSet<JTweet>();
+        Map<String, JUser> userMap = new LinkedHashMap<String, JUser>();
         result.addAll(userMap.values());
         return solrTweets;
     }
@@ -493,10 +493,10 @@ public class TwitterSearch implements Serializable {
         return Collections.EMPTY_LIST;
     }
 
-    public List<SolrTweet> getTweets(SolrUser user, Collection<SolrUser> users,
+    public List<JTweet> getTweets(JUser user, Collection<JUser> users,
             int twPerPage) throws TwitterException {
-        Map<String, SolrUser> map = new LinkedHashMap<String, SolrUser>();
-        List<SolrTweet> userTweets = getTweets(user, twPerPage);
+        Map<String, JUser> map = new LinkedHashMap<String, JUser>();
+        List<JTweet> userTweets = getTweets(user, twPerPage);
         users.addAll(map.values());
         return userTweets;
     }
@@ -513,8 +513,8 @@ public class TwitterSearch implements Serializable {
     /**
      * You will only be able to access the latest 3200 statuses from a user's timeline
      */
-    List<SolrTweet> getTweets(SolrUser user, int tweets) throws TwitterException {
-        List<SolrTweet> res = new ArrayList<SolrTweet>();
+    List<JTweet> getTweets(JUser user, int tweets) throws TwitterException {
+        List<JTweet> res = new ArrayList<JTweet>();
         int p = 0;
         int pages = 1;
 
@@ -525,8 +525,8 @@ public class TwitterSearch implements Serializable {
         return res;
     }
 
-    public List<SolrTweet> getTweets(SolrUser user, int start, int tweets) throws TwitterException {
-        List<SolrTweet> res = new ArrayList<SolrTweet>();
+    public List<JTweet> getTweets(JUser user, int start, int tweets) throws TwitterException {
+        List<JTweet> res = new ArrayList<JTweet>();
         int currentPage = start / tweets;
 
         if (tweets > 100)
@@ -539,7 +539,7 @@ public class TwitterSearch implements Serializable {
             try {
                 for (Status st : twitter.getUserTimeline(user.getScreenName(), new Paging(currentPage + 1, tweets, 1))) {
                     Tweet tw = toTweet(st);
-                    res.add(new SolrTweet(tw, user.init(tw)));
+                    res.add(new JTweet(tw, user.init(tw)));
                 }
                 break;
             } catch (TwitterException ex) {
@@ -566,11 +566,11 @@ public class TwitterSearch implements Serializable {
     /**
      * This method only returns up to 800 statuses, including retweets.
      */
-    public long getHomeTimeline(Collection<SolrTweet> result, int tweets, long lastId) throws TwitterException {
+    public long getHomeTimeline(Collection<JTweet> result, int tweets, long lastId) throws TwitterException {
         if (lastId <= 0)
             lastId = 1;
 
-        Map<String, SolrUser> userMap = new LinkedHashMap<String, SolrUser>();
+        Map<String, JUser> userMap = new LinkedHashMap<String, JUser>();
         int hitsPerPage = 100;
         long maxId = lastId;
         long sinceId = lastId;
@@ -595,13 +595,13 @@ public class TwitterSearch implements Serializable {
 
                 Tweet tw = toTweet(st);
                 String userName = tw.getFromUser().toLowerCase();
-                SolrUser user = userMap.get(userName);
+                JUser user = userMap.get(userName);
                 if (user == null) {
-                    user = new SolrUser(userName).init(tw);
+                    user = new JUser(userName).init(tw);
                     userMap.put(userName, user);
                 }
 
-                result.add(new SolrTweet(tw, user));
+                result.add(new JTweet(tw, user));
             }
 
             // sinceId could force us to leave earlier than defined by maxPages
@@ -645,15 +645,15 @@ public class TwitterSearch implements Serializable {
         // -> stream.filter(new FilterQuery(new int[]{1, 2, 3,}));
     }
 
-    public void getFollowers(String user, AnyExecutor<SolrUser> anyExecutor) {
+    public void getFollowers(String user, AnyExecutor<JUser> anyExecutor) {
         getFriendsOrFollowers(user, anyExecutor, false);
     }
 
-    public void getFriends(String userName, AnyExecutor<SolrUser> executor) {
+    public void getFriends(String userName, AnyExecutor<JUser> executor) {
         getFriendsOrFollowers(userName, executor, true);
     }
 
-    private void getFriendsOrFollowers(String userName, AnyExecutor<SolrUser> executor, boolean friends) {
+    private void getFriendsOrFollowers(String userName, AnyExecutor<JUser> executor, boolean friends) {
         long cursor = -1;
         while (true) {
             int rate;
@@ -710,7 +710,7 @@ public class TwitterSearch implements Serializable {
                             if (user.getScreenName().trim().isEmpty())
                                 continue;
 
-                            SolrUser jUser = new SolrUser(user.getScreenName());
+                            JUser jUser = new JUser(user.getScreenName());
                             jUser.updateFieldsBy(user);
                             executor.execute(jUser);
                         }

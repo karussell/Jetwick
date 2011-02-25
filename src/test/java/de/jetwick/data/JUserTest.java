@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jetwick.solr;
+package de.jetwick.data;
 
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -22,16 +24,16 @@ import static org.junit.Assert.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SolrUserTest {
+public class JUserTest {
 
-    public SolrUserTest() {
+    public JUserTest() {
     }
 
     @Test
     public void testOwnTweets() {
-        SolrUser user = new SolrUser("Peter");
-        new SolrTweet(1, "1", user);
-        new SolrTweet(1, "1", user);
+        JUser user = new JUser("Peter");
+        new JTweet(1, "1", user);
+        new JTweet(1, "1", user);
         assertEquals(1, user.getOwnTweets().size());
         assertEquals(user, user.getOwnTweets().iterator().next().getFromUser());
     }
