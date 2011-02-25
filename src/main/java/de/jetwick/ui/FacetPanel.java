@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.solr.JetwickQuery;
 import org.elasticsearch.search.facet.Facet;
 import org.elasticsearch.search.facet.Facets;
 import org.elasticsearch.action.search.SearchResponse;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
@@ -107,7 +107,7 @@ public class FacetPanel extends Panel {
 
                         @Override
                         public void onClick(AjaxRequestTarget target) {
-                            onFacetChange(target, entry.getKey(), true);
+                            onRemoveAllFilter(target, entry.getKey());
                         }
                     }.add(new AttributeAppender("title", new Model("Remove all filters from '" + dtVal + "'"), " ")));
                 } else
@@ -117,16 +117,13 @@ public class FacetPanel extends Panel {
 
                     @Override
                     protected void populateItem(ListItem li) {
-                        FacetHelper h = (FacetHelper) li.getModelObject();                        
-
-                        final String filter = h.getFilter();                        
-                        final boolean selected = alreadyFiltered.contains(filter);
-
+                        final FacetHelper h = (FacetHelper) li.getModelObject();
+                        final boolean selected = alreadyFiltered.contains(h.getFilter());
                         Link link = new IndicatingAjaxFallbackLink("filterValueLink") {
 
                             @Override
                             public void onClick(AjaxRequestTarget target) {
-                                onFacetChange(target, filter, !selected);
+                                onFacetChange(target, h.key, h.value, !selected);
                             }
                         };
                         // change style if filter is selected
@@ -163,7 +160,7 @@ public class FacetPanel extends Panel {
         return null;
     }
 
-    public void update(SearchResponse rsp, SolrQuery query) {
+    public void update(SearchResponse rsp, JetwickQuery query) {
         normalFacetFields.clear();
         if (rsp != null) {
             for (Entry<String, List<FacetHelper>> entry : createFacetsFields(rsp)) {
@@ -173,13 +170,15 @@ public class FacetPanel extends Panel {
             }
         }
         alreadyFiltered = new LinkedHashSet<String>();
-        if (query.getFilterQueries() != null)
-            for (String f : query.getFilterQueries()) {
-                alreadyFiltered.add(f);
-            }
+        for (Entry<String, Object> e : query.getFilterQueries()) {
+            alreadyFiltered.add(e.getKey() + ":" + e.getValue());
+        }
     }
 
-    public void onFacetChange(AjaxRequestTarget target, String filter, boolean selected) {
+    public void onFacetChange(AjaxRequestTarget target, String key, Object val, boolean selected) {
+    }
+
+    public void onRemoveAllFilter(AjaxRequestTarget target, String key) {
     }
 
     public boolean isAlreadyFiltered(String filter) {

@@ -167,13 +167,13 @@ public class OneTweet extends Panel {
         if (tweet.getReplyCount() == tweet.getRetweetCount())
             replyLink.setVisible(false);
 
-//        add(new AjaxFallbackLink("similarLink") {
-//
-//            @Override
-//            public void onClick(AjaxRequestTarget target) {
-//                onFindSimilarClick(tweet, target);
-//            }
-//        });
+        add(new AjaxFallbackLink("similarLink") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                onFindSimilarClick(tweet, target);
+            }
+        });
 
         add(new IndicatingAjaxFallbackLink("translateLink") {
 

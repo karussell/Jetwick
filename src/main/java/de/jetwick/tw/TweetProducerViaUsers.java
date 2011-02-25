@@ -16,8 +16,10 @@
 package de.jetwick.tw;
 
 import de.jetwick.es.ElasticUserSearch;
+import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.UserQuery;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.StopWatch;
@@ -25,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,8 +66,8 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
         // paging
         for (int i = 0; i < counts / ROWS + 1; i++) {
             // prefer last logged in users
-            SolrQuery q = new SolrQuery().setStart(i * ROWS).setRows(ROWS).
-                    setSortField(ElasticUserSearch.CREATED_AT, SolrQuery.ORDER.desc);
+            JetwickQuery q = new UserQuery().setFrom(i * ROWS).setSize(ROWS).
+                    setSort(ElasticUserSearch.CREATED_AT, "desc");
             try {
                 userSearch.search(users, q);
             } catch (Exception ex) {

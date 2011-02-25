@@ -15,10 +15,10 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.solr.JetwickQuery;
 import de.jetwick.util.Helper;
 import java.util.Collection;
 import java.util.Map;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
@@ -26,7 +26,6 @@ import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -166,11 +165,7 @@ public abstract class AbstractElasticSearch {
         DeleteResponse response = client.prepareDelete(getIndexName(), getIndexType(), id).
                 execute().
                 actionGet();
-    }
-
-    public void attachPagability(SolrQuery query, int page, int hitsPerPage) {
-        query.setStart(page * hitsPerPage).setRows(hitsPerPage);
-    }
+    }   
 
     public void deleteAll() {
         deleteAll(getIndexName());

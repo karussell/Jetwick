@@ -15,14 +15,12 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.solr.JetwickQuery;
 import de.jetwick.ui.util.DefaultFocusBehaviour;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
@@ -30,7 +28,6 @@ import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTe
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.Radio;
 import org.apache.wicket.markup.html.form.RadioGroup;
-import org.apache.wicket.markup.html.form.StatelessForm;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
@@ -64,7 +61,7 @@ public class SearchBox extends Panel {
             selectedIndex = 0;
 
         final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));        
-        form = new StatelessForm("searchform") {
+        form = new Form("searchform") {
 
             @Override
             public void onSubmit() {
@@ -166,9 +163,9 @@ public class SearchBox extends Panel {
 //        form.add(new ExternalLink("tweetQuery", hrefModel));                
     }
 
-    public void init(SolrQuery solrQuery) {
-        this.query = JetwickQuery.extractNonNullQueryString(solrQuery);
-        this.userName = JetwickQuery.extractUserName(solrQuery);
+    public void init(String q, String u) {
+        query = q;
+        userName = u;
     }
 
     public String getUserName() {

@@ -26,7 +26,6 @@ import java.util.Queue;
 import java.util.Stack;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,7 +65,7 @@ public class TweetProducerTest extends HibTestClass {
     }
 
     @Test
-    public void testInitTagsNoException() throws SolrServerException {
+    public void testInitTagsNoException() {
         TweetProducerViaSearch twProd = getInstance(TweetProducerViaSearch.class);
         twProd.updateTagInTA(new YTag("test"), 6);
         ElasticUserSearch uSearch = mock(ElasticUserSearch.class);

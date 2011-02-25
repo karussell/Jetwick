@@ -88,7 +88,7 @@ public class JSDateFilter extends Panel {
                 Label bar = new Label("itemSpan");
                 AttributeAppender app = new AttributeAppender("title", new Model(entry.count + " tweets"), " ");
                 bar.add(app).add(new AttributeAppender("style", new Model("height:" + (int) (zoomer * entry.count) + "px"), " "));
-                final boolean selected = isAlreadyFiltered(entry.getFilter());
+                final boolean selected = isAlreadyFiltered(entry.key, entry.value);
                 Link link = new /*Indicating*/ AjaxFallbackLink("itemLink") {
 
                     @Override
@@ -118,7 +118,7 @@ public class JSDateFilter extends Panel {
     protected void onFacetChange(AjaxRequestTarget target, String filter, Boolean selected) {
     }
 
-    protected boolean isAlreadyFiltered(String filter) {
+    protected boolean isAlreadyFiltered(String key, Object value) {
         return false;
     }
 
@@ -131,8 +131,7 @@ public class JSDateFilter extends Panel {
         if (rsp == null)
             return;
 
-        totalHits = rsp.getHits().getTotalHits();
-        if (rsp != null) {
+        if (rsp != null && rsp.facets() != null) {
             RangeFacet rf = rsp.facets().facet(ElasticTweetSearch.DATE_FACET);
             if (rf != null) {
                 for (RangeFacet.Entry e : rf.entries()) {
@@ -164,6 +163,7 @@ public class JSDateFilter extends Panel {
             if (h.count > max)
                 max = h.count;
         }
+        totalHits = rsp.hits().getTotalHits();
     }
 
     public List<FacetHelper> getFacetList() {

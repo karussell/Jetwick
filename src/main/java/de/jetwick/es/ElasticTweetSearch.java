@@ -28,6 +28,7 @@ import org.elasticsearch.search.SearchHits;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.JetwickQuery;
+import de.jetwick.solr.SimilarQuery;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
@@ -50,7 +51,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
@@ -90,7 +90,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String QUALITY = "quality_i";
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
-    public static final String KEY_USER = "user:";
+//    public static final String KEY_USER = "user:";
     public static final String USER = "user";
     public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String FILTER_NO_DUPS = DUP_COUNT + ":0";
@@ -162,27 +162,14 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    /**
-     * @deprecated use new ElasticSearch requestBuilder to pass into the query method
-     */
-    SearchResponse queryOldSolr(SolrQuery query) {
-        SearchRequestBuilder srb = client.prepareSearch(getIndexName());
-        new Solr2ElasticTweet().createElasticQuery(query, srb);
-        SearchResponse response = srb.execute().actionGet();
-        return response;
+    public SearchResponse query(JetwickQuery query) {
+        return query(query, getIndexName());
     }
 
-    public TweetESQuery createQuery() {
-        return createQuery(getIndexName());
-    }
-
-    public TweetESQuery createQuery(String indexName) {
-        // TODO use multiple indices here
-        return new TweetESQuery(client.prepareSearch(indexName));
-    }
-
-    public SearchResponse query(TweetESQuery query) {
-        return query.getRequestBuilder().execute().actionGet();
+    public SearchResponse query(JetwickQuery query, String index) {
+        SearchRequestBuilder srb = client.prepareSearch(index);
+        query.initRequestBuilder(srb);
+        return srb.execute().actionGet();
     }
 
     public XContentBuilder createDoc(SolrTweet tw) throws IOException {
@@ -350,56 +337,54 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
      *    and determine the correct filterquery!
      * 3. return created solrquery (added sort 'oldest'!)
      */
-    public SolrQuery createFindOriginQuery(SolrQuery oldQuery, String tag, int minResults) {
+    public JetwickQuery createFindOriginQuery(JetwickQuery oldQuery, String tag, int minResults) {
         if (tag.isEmpty())
-            return new JetwickQuery("");
+            return new TweetQuery("");
 
         try {
-            SolrQuery q;
-            if (oldQuery == null) {
-                q = new SolrQuery(tag);
-            } else {
-                // TODO remove 8 hour filter? or remove all date filter?
-                // q.removeFilterQuery(FILTER_ENTRY_LATEST_DT);
+            JetwickQuery q;
+            if (oldQuery == null)
+                q = new TweetQuery(tag);
+            else
                 q = oldQuery.getCopy().setQuery(tag);
-            }
 
             // copy current state of q into resQuery!
-            SolrQuery resQuery = q.getCopy();
+            JetwickQuery resQuery = q.getCopy();
 
             // more fine grained information about retweets
             Map<String, Integer> orderedFQ = new LinkedHashMap<String, Integer>();
-            orderedFQ.put(RT_COUNT + ":[16 TO *]", 16);
-            orderedFQ.put(RT_COUNT + ":[11 TO 15]", 11);
-            orderedFQ.put(RT_COUNT + ":[6 TO 10]", 6);
-            orderedFQ.put(RT_COUNT + ":[1 TO 5]", 1);
-            orderedFQ.put(RT_COUNT + ":0", 0);
+            orderedFQ.put("[16 TO *]", 16);
+            orderedFQ.put("[11 TO 15]", 11);
+            orderedFQ.put("[6 TO 10]", 6);
+            orderedFQ.put("[1 TO 5]", 1);
+            orderedFQ.put("0", 0);
 
-            q.setFacet(true).setRows(0).addFilterQuery(IS_RT + ":\"false\"");
+            q.setSize(0).addFilterQuery(IS_RT, false);
             for (String facQ : orderedFQ.keySet()) {
-                q.addFacetQuery(facQ);
+                q.addFacetQuery(RT_COUNT, facQ);
             }
 
             SearchResponse rsp = search(q);
             long results = rsp.getHits().getTotalHits();
             if (results == 0)
-                return new JetwickQuery(tag);
+                return new TweetQuery(tag);
 
-            resQuery.addFilterQuery(IS_RT + ":\"false\"");
-            TweetQuery.setSort(resQuery, "dt asc");
+            resQuery.addFilterQuery(IS_RT, false);
+            resQuery.setSort(DATE, "asc");
 
             long counter = 0;
             for (Entry<String, Integer> entry : orderedFQ.entrySet()) {
-                FilterFacet ff = rsp.getFacets().facet(entry.getKey());
+                FilterFacet ff = rsp.getFacets().facet(RT_COUNT + ":" + entry.getKey());
+//                System.out.println("facets:" + ff.count());
                 counter += ff.count();
                 if (counter >= minResults) {
                     if (entry.getValue() > 0)
-                        resQuery.addFilterQuery(RT_COUNT + ":[" + entry.getValue() + " TO *]");
+                        resQuery.addFilterQuery(RT_COUNT, "[" + entry.getValue() + " TO *]");
                     break;
                 }
             }
 
-            return TweetQuery.attachFacetibility(resQuery);
+            return resQuery;//.attachFacetibility();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -411,40 +396,15 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         return user;
     }
 
-    /**
-     * @deprecated use new ElasticSearch requestBuilder to pass into search method
-     */
-    public SearchResponse search(SolrQuery query) {
+    public SearchResponse search(JetwickQuery query) {
         return search(new ArrayList(), query);
     }
 
-    /**
-     * @deprecated use new ElasticSearch requestBuilder to pass into search method
-     */
-    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) {
-        SearchResponse rsp = queryOldSolr(query);
-        SearchHit[] docs = rsp.getHits().getHits();
-        Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
-        for (SearchHit sd : docs) {
-//            System.out.println(sd.getExplanation().toString());
-            SolrUser u = readDoc(sd.getSource(), sd.getId()).getFromUser();
-            SolrUser uOld = usersMap.get(u.getScreenName());
-            if (uOld == null)
-                usersMap.put(u.getScreenName(), u);
-            else
-                uOld.addOwnTweet(u.getOwnTweets().iterator().next());
-        }
-
-        users.addAll(usersMap.values());
-        return rsp;
+    public SearchResponse search(Collection<SolrUser> users, JetwickQuery query) {
+        return search(users, query(query));
     }
 
-    public SearchResponse search(TweetESQuery request) {
-        return search(new ArrayList(), request);
-    }
-
-    public SearchResponse search(Collection<SolrUser> users, TweetESQuery request) {
-        SearchResponse rsp = query(request);
+    public SearchResponse search(Collection<SolrUser> users, SearchResponse rsp) {
         SearchHit[] docs = rsp.getHits().getHits();
         Map<String, SolrUser> usersMap = new LinkedHashMap<String, SolrUser>();
         for (SearchHit sd : docs) {
@@ -463,8 +423,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
     public Collection<SolrTweet> searchReplies(long id, boolean retweet) {
         try {
-            SolrQuery sq = new SolrQuery().addFilterQuery("crt_b:" + retweet).addFilterQuery(INREPLY_ID + ":" + id);
-            SearchResponse rsp = queryOldSolr(sq);
+            JetwickQuery sq = new TweetQuery(true).addFilterQuery("crt_b", retweet).addFilterQuery(INREPLY_ID, id);
+            SearchResponse rsp = query(sq);
             return collectTweets(rsp);
         } catch (Exception ex) {
             logger.error("Error while searchReplies", ex);
@@ -510,12 +470,11 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 if (counts > 0)
                     idStr.append(" OR ");
                 counts++;
-                idStr.append("_id:");
                 idStr.append(tw.getTwitterId());
             }
 
             // get existing tweets and users                
-            SolrQuery query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counts);
+            JetwickQuery query = new TweetQuery().addFilterQuery("_id", idStr.toString()).setSize(counts);
             SearchResponse rsp = search(query);
             SearchHits docs = rsp.getHits();
 
@@ -640,7 +599,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 continue;
 
             //  fetch 10 tweets if less than 5 tweets are in the cache            
-            SolrQuery query = new SolrQuery().addFilterQuery("user:" + us.getScreenName()).setRows(10);
+            JetwickQuery query = new TweetQuery().addFilterQuery("user", us.getScreenName()).setSize(10);
             try {
                 SearchResponse rsp = search(query);
                 SearchHits docs = rsp.getHits();
@@ -720,7 +679,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             // connect retweets to tweets only searchTweetsDays old
 
             try {
-                SearchResponse qrsp = queryOldSolr(new SolrQuery("\"" + tw.extractRTText() + "\"").addFilterQuery("user:" + toUserStr).setRows(10));
+                SearchResponse qrsp = query(new TweetQuery("\"" + tw.extractRTText() + "\"", false).addFilterQuery("user", toUserStr).setSize(10));
                 List<SolrTweet> existingTw = collectTweets(qrsp);
 
                 for (SolrTweet tmp : existingTw) {
@@ -771,8 +730,6 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                     updatedTweets.add(tmp);
                 }
             } else {
-                replyIdStr.append(INREPLY_ID);
-                replyIdStr.append(":");
                 replyIdStr.append(tw.getTwitterId());
                 replyIdStr.append(" OR ");
             }
@@ -788,7 +745,6 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
                 }
             } else {
                 counter++;
-                idStr.append("_id:");
                 idStr.append(tw.getInReplyTwitterId());
                 idStr.append(" OR ");
             }
@@ -798,13 +754,13 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             // get tweets which replies our input tweets
             // INREPLY_ID:"tweets[i].id"            
             if (replyIdStr.length() > 0) {
-                SolrQuery query = new SolrQuery().addFilterQuery(replyIdStr.toString()).setRows(origTweets.size());
+                JetwickQuery query = new TweetQuery().addFilterQuery(INREPLY_ID, replyIdStr.toString()).setSize(origTweets.size());
                 findRepliesForOriginalTweets(query, origTweets, updatedTweets);
             }
 
             // get original tweets where we have replies            
             if (idStr.length() > 0) {
-                SolrQuery query = new SolrQuery().addFilterQuery(idStr.toString()).setRows(counter);
+                JetwickQuery query = new TweetQuery().addFilterQuery("_id", idStr.toString()).setSize(counter);
                 selectOriginalTweetsWithReplies(query, origTweets.values(), updatedTweets);
             }
         } catch (Exception ex) {
@@ -812,11 +768,11 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    protected void findRepliesForOriginalTweets(SolrQuery query, Map<Long, SolrTweet> tweets,
+    protected void findRepliesForOriginalTweets(JetwickQuery query, Map<Long, SolrTweet> tweets,
             Collection<SolrTweet> updatedTweets) {
 
         Map<Long, SolrTweet> replyMap = new LinkedHashMap<Long, SolrTweet>();
-        SearchResponse rsp = queryOldSolr(query);
+        SearchResponse rsp = query(query);
         SearchHits docs = rsp.getHits();
 
         for (SearchHit sd : docs) {
@@ -835,10 +791,10 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    protected void selectOriginalTweetsWithReplies(SolrQuery query, Collection<SolrTweet> tweets,
+    protected void selectOriginalTweetsWithReplies(JetwickQuery query, Collection<SolrTweet> tweets,
             Collection<SolrTweet> updatedTweets) {
 
-        SearchResponse rsp = queryOldSolr(query);
+        SearchResponse rsp = query(query);
         SearchHits docs = rsp.getHits();
         Map<Long, SolrTweet> origMap = new LinkedHashMap<Long, SolrTweet>();
         for (SearchHit sd : docs) {
@@ -864,10 +820,10 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
         try {
             // ensure that reply.user has not already a tweet in orig.replies   
-            SolrQuery q = new SolrQuery().addFilterQuery(INREPLY_ID + ":" + orig.getTwitterId()).
-                    addFilterQuery("-_id:" + reply.getTwitterId()).
-                    addFilterQuery("user:" + reply.getFromUser().getScreenName());
-            if (queryOldSolr(q).getHits().getTotalHits() > 0)
+            JetwickQuery q = new TweetQuery().addFilterQuery(INREPLY_ID, orig.getTwitterId()).
+                    addFilterQuery("-_id", reply.getTwitterId()).
+                    addFilterQuery("user", reply.getFromUser().getScreenName());
+            if (query(q).getHits().getTotalHits() > 0)
                 return false;
 
             orig.addReply(reply);
@@ -901,7 +857,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    public Collection<String> getUserChoices(SolrQuery lastQ, String input) {
+    public Collection<String> getUserChoices(JetwickQuery lastQ, String input) {
         try {
             if (input.length() < 1)
                 return Collections.emptyList();
@@ -911,7 +867,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             SearchRequestBuilder srb = client.prepareSearch(getIndexName());
             srb.setQuery(QueryBuilders.fieldQuery(USER, input + "*"));
             List<SolrUser> users = new ArrayList<SolrUser>();
-            search(users, new TweetESQuery(srb, false));
+            search(users, new TweetQuery(false));
             Set<String> res = new TreeSet<String>();
             for (SolrUser u : users) {
                 if (u.getScreenName().startsWith(input))
@@ -928,7 +884,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    public Collection<String> getQueryChoices(SolrQuery lastQ, String input) {
+    public Collection<String> getQueryChoices(JetwickQuery lastQ, String input) {
         try {
             if (input.length() < 2)
                 return Collections.emptyList();
@@ -946,30 +902,24 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             } else
                 existingTerms.add(secPart);
 
-            if (lastQ == null)
-                lastQ = new TweetQuery(firstPart) {
-
-                    @Override
-                    public TweetQuery attachFacetibility() {
-                        return this;
-                    }
-                };
-            else {
+            if (lastQ == null) {
+                lastQ = new TweetQuery(firstPart, false);
+            } else {
                 lastQ = lastQ.getCopy().setQuery(firstPart);
                 // remove any date restrictions
-                JetwickQuery.removeFilterQueries(lastQ, "dt");
-                JetwickQuery.removeFacets(lastQ);
+                lastQ.removeFilterQueries(DATE);
+                lastQ.removeFacets();
             }
 
             SearchRequestBuilder srb = client.prepareSearch(getIndexName());
-            new Solr2ElasticTweet().createElasticQuery(lastQ, srb);
-            TermsFacetBuilder tfb = FacetBuilders.termsFacet(TAG).field(TAG);
+            lastQ.initRequestBuilder(srb);
 
+            TermsFacetBuilder tfb = FacetBuilders.termsFacet(TAG).field(TAG);
             if (!secPart.trim().isEmpty())
                 tfb.regex(secPart + ".*", Pattern.DOTALL);
 
             srb.addFacet(tfb);
-            SearchResponse rsp = search(new TweetESQuery(srb, false));
+            SearchResponse rsp = search(new ArrayList<SolrUser>(), srb.execute().actionGet());
             Set<String> res = new TreeSet<String>();
             TermsFacet tf = rsp.facets().facet(TAG);
             if (tf != null) {
@@ -1001,7 +951,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         try {
             List<SolrUser> list = new ArrayList<SolrUser>();
             // get all tweets of the user so set rows large ...            
-            search(list, new SolrQuery().addFilterQuery("user:" + uName.toLowerCase()).setRows(10));
+            search(list, new TweetQuery().addFilterQuery("user", uName.toLowerCase()).setSize(10));
 
             if (list.isEmpty())
                 return null;
@@ -1012,7 +962,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    public List<SolrTweet> searchTweets(SolrQuery q) {
+    public List<SolrTweet> searchTweets(JetwickQuery q) {
         try {
             return collectTweets(search(q));
         } catch (Exception ex) {
@@ -1020,7 +970,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    public String getTweetsAsString(SolrQuery q) {
+    public String getTweetsAsString(JetwickQuery q) {
         StringBuilder sb = new StringBuilder();
         List<SolrTweet> tweets = searchTweets(q);
         String separator = ",";
@@ -1045,12 +995,12 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         MyDate now = new MyDate();
         // NOW/DAY-3DAYS
         MyDate from = new MyDate().castToDay().minusDays(2);
-        search(users, new SolrQuery(query).addFilterQuery("tw:#jetwick").
+        search(users, new TweetQuery(query, false).addFilterQuery(TWEET_TEXT, "#jetwick").
                 //                addFilterQuery(RT_COUNT + ":[1 TO *]").
-                addFilterQuery(QUALITY + ":[90 TO 100]").
-                addFilterQuery(IS_RT + ":false").
-                addFilterQuery(DATE + ":[" + from.toLocalString() + " TO " + now.toLocalString() + "]").
-                setSortField(RT_COUNT, SolrQuery.ORDER.desc));
+                addFilterQuery(QUALITY, "[90 TO 100]").
+                addFilterQuery(IS_RT, "false").
+                addFilterQuery(DATE, "[" + from.toLocalString() + " TO " + now.toLocalString() + "]").
+                setSort(RT_COUNT, "desc"));
 
         Set<SolrTweet> res = new LinkedHashSet<SolrTweet>();
         for (SolrUser u : users) {
@@ -1063,19 +1013,16 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public Collection<SolrTweet> findDuplicates(Map<Long, SolrTweet> tweets) {
         final Set<SolrTweet> updatedTweets = new LinkedHashSet<SolrTweet>();
         TermCreateCommand termCommand = new TermCreateCommand();
-
-
         double JACC_BORDER = 0.7;
         for (SolrTweet currentTweet : tweets.values()) {
             if (currentTweet.isRetweet())
                 continue;
 
-            TweetESQuery reqBuilder = createQuery().createSimilarQuery(currentTweet).addLatestDateFilter(12);
+            JetwickQuery reqBuilder = new SimilarQuery(currentTweet, false).addLatestDateFilter(24);
             if (currentTweet.getTextTerms().size() < 3)
                 continue;
 
             int dups = 0;
-
             try {
                 // find dups in index
                 for (SolrTweet simTweet : collectTweets(search(reqBuilder))) {
@@ -1115,8 +1062,19 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         return updatedTweets;
     }
 
-    public SearchResponse updateSavedSearches(Collection<SavedSearch> savedSearches) {
-        return search(createQuery().createSavedSearchesQuery(savedSearches));
+    public SearchResponse updateSavedSearches(final Collection<SavedSearch> savedSearches) {
+        JetwickQuery q = new TweetQuery() {
+
+            @Override
+            protected void processFacetQueries(SearchRequestBuilder srb) {
+                for (SavedSearch ss : savedSearches) {
+                    srb.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + "_" + ss.getId(),
+                            QueryBuilders.queryString(ss.calcFacetQuery())));
+                }
+            }
+        }.setFrom(0).setSize(0);
+
+        return search(q);
     }
 
     /**
@@ -1129,9 +1087,9 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             refresh(intoIndex);
         }
 
-        for (String fromIndex : indexList) {            
-            SearchRequestBuilder srb = client.prepareSearch(fromIndex).                    
-                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).                   
+        for (String fromIndex : indexList) {
+            SearchRequestBuilder srb = client.prepareSearch(fromIndex).
+                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
                     setSearchType(SearchType.SCAN).
                     setScroll(TimeValue.timeValueMinutes(30));
             if (additionalFilter != null)
@@ -1141,24 +1099,24 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             try {
                 long total = rsp.hits().totalHits();
                 String scrollId = rsp.scrollId();
-                int collectedResults = 0;                
+                int collectedResults = 0;
                 while (true) {
-                    StopWatch queryWatch = new StopWatch().start();                    
+                    StopWatch queryWatch = new StopWatch().start();
 //                    System.out.println("NOW!!!");
                     rsp = client.prepareSearchScroll(scrollId).
-                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();                    
+                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
                     long currentResults = rsp.hits().totalHits();
-                    if(currentResults == 0)
+                    if (currentResults == 0)
                         break;
-                    
+
                     queryWatch.stop();
                     Collection tweets = collectTweets(rsp);
                     StopWatch updateWatch = new StopWatch().start();
                     bulkUpdate(tweets, intoIndex);
                     updateWatch.stop();
-                    collectedResults += currentResults;                    
-                    logger.info("Progress " + collectedResults +"/" + total + " fromIndex=" +
-                            fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
+                    collectedResults += currentResults;
+                    logger.info("Progress " + collectedResults + "/" + total + " fromIndex="
+                            + fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
                 }
                 logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
             } catch (Exception ex) {

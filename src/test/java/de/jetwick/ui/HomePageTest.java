@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.solr.TweetQuery;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.config.Configuration;
 import de.jetwick.rmi.RMIClient;
@@ -29,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.util.tester.FormTester;
 import org.junit.Before;
@@ -85,7 +85,7 @@ public class HomePageTest extends WicketPagesTestClass {
     public void testNormalSearch() throws Exception {
 //        setUp();
         ElasticTweetSearch search = getInstance(ElasticTweetSearch.class);                
-        SolrQuery query = new SolrQuery("timetabling");
+        JetwickQuery query = new TweetQuery("timetabling");
         tester.startPage(new HomePage(query));
         tester.assertNoErrorMessage();
         
@@ -150,10 +150,10 @@ public class HomePageTest extends WicketPagesTestClass {
         HomePage page = getInstance(HomePage.class);
 
         // query and user are null and hits == 0 => no background thread is created
-        page.init(new SolrQuery(), new PageParameters(), 0, false);
+        page.init(new TweetQuery(), new PageParameters(), 0, false);
         assertNull(page.getQueueThread());
 
-        page.doSearch(new SolrQuery(), 0, false, true);
+        page.doSearch(new TweetQuery(), 0, false, true);
         assertNull(page.getQueueThread());
         assertEquals("", uString);
         assertEquals("", qString);
@@ -164,13 +164,13 @@ public class HomePageTest extends WicketPagesTestClass {
         HomePage page = getInstance(HomePage.class);
         PageParameters pp = new PageParameters();
         pp.put("until", "2011-02-01");
-        SolrQuery q = page.createQuery(pp);
-        assertEquals("dt:[2011-02-01T00:00:00Z TO *]", JetwickQuery.getFirstFilterQuery(q, "dt"));
+        JetwickQuery q = page.createQuery(pp);
+        assertEquals("[2011-02-01T00:00:00Z TO *]", q.getFirstFilterQuery("dt"));
 
         pp = new PageParameters();
         pp.put("until", "2011-02-01T00:00:00Z");
         q = page.createQuery(pp);
-        assertEquals("dt:[2011-02-01T00:00:00Z TO *]", JetwickQuery.getFirstFilterQuery(q, "dt"));
+        assertEquals("[2011-02-01T00:00:00Z TO *]", q.getFirstFilterQuery("dt"));
     }
 
     @Test
@@ -178,26 +178,26 @@ public class HomePageTest extends WicketPagesTestClass {
         HomePage page = getInstance(HomePage.class);
 
         // normal query fails but set twitterfallback = false
-        page.init(new SolrQuery("java"), new PageParameters(), 0, true);
+        page.init(new TweetQuery("java"), new PageParameters(), 0, true);
         page.getQueueThread().run();
         assertNotNull(sentTweets);
         assertEquals("", uString);
         assertEquals("#java", qString);
 
         // do not trigger background search for the same query
-        page.doSearch(new SolrQuery("java"), 0, true);
+        page.doSearch(new TweetQuery("java"), 0, true);
         assertNull(page.getQueueThread());
 
         // if only user search then set twitterFallback = true
         reset();
-        page.doSearch(new SolrQuery().addFilterQuery("user:test"), 0, true);
+        page.doSearch(new TweetQuery().addFilterQuery("user", "test"), 0, true);
         assertEquals("#test", uString);
         assertEquals("", qString);
         page.getQueueThread().run();
 
         // if 'normal query' AND 'user search' then set twitterFallback = false but trigger backgr. thread
         reset();
-        page.doSearch(new SolrQuery("java").addFilterQuery("user:test"), 0, true);
+        page.doSearch(new TweetQuery("java").addFilterQuery("user", "test"), 0, true);
         page.getQueueThread().join();
         assertEquals("#test", uString);
         assertEquals("", qString);

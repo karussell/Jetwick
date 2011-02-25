@@ -21,9 +21,9 @@ import com.google.inject.Provider;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.es.TweetESQuery;
 import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SavedSearch;
+import de.jetwick.solr.SimilarQuery;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;
@@ -31,7 +31,6 @@ import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
 import de.jetwick.ui.jschart.JSDateFilter;
 import de.jetwick.util.Helper;
-import de.jetwick.util.MyDate;
 import de.jetwick.wikipedia.WikipediaLazyLoadPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -40,7 +39,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.WebPage;
@@ -64,7 +62,7 @@ public class HomePage extends WebPage {
 
     private static final long serialVersionUID = 1L;
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private SolrQuery lastQuery;
+    private JetwickQuery lastQuery;
     private int hitsPerPage = 15;
     private FeedbackPanel feedbackPanel;
     private ResultsPanel resultsPanel;
@@ -101,7 +99,7 @@ public class HomePage extends WebPage {
     HomePage() {
     }
 
-    HomePage(SolrQuery q) {
+    HomePage(JetwickQuery q) {
         init(q, PageParameters.NULL, 0, false);
     }
 
@@ -167,7 +165,7 @@ public class HomePage extends WebPage {
         return tweetThread;
     }
 
-    public SolrQuery createQuery(PageParameters parameters) {
+    public JetwickQuery createQuery(PageParameters parameters) {
         // TODO M2.1 parameters.get("hits").toString can cause NPE!!
         String hitsStr = parameters.getString("hits");
         if (hitsStr != null) {
@@ -180,7 +178,7 @@ public class HomePage extends WebPage {
         }
 
         String idStr = parameters.getString("id");
-        SolrQuery q = null;
+        JetwickQuery q = null;
 
         if (idStr != null) {
             try {
@@ -188,7 +186,7 @@ public class HomePage extends WebPage {
                 if (index > 0 && index + 1 < idStr.length())
                     idStr = idStr.substring(index + 1);
 
-                q = JetwickQuery.createIdQuery(Long.parseLong(idStr));
+                q = new TweetQuery(true).createIdQuery(Long.parseLong(idStr));
             } catch (Exception ignore) {
             }
         }
@@ -220,7 +218,7 @@ public class HomePage extends WebPage {
             if (!fromDateStr.contains("T"))
                 fromDateStr += "T00:00:00Z";
 
-            q.addFilterQuery(ElasticTweetSearch.DATE + ":[" + fromDateStr + " TO *]");
+            q.addFilterQuery(ElasticTweetSearch.DATE, "[" + fromDateStr + " TO *]");
         }
 
         // front page/empty => sort against relevance
@@ -229,33 +227,31 @@ public class HomePage extends WebPage {
 
         String sort = parameters.getString("sort");
         if ("retweets".equals(sort))
-            JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");
+            q.setSort(ElasticTweetSearch.RT_COUNT, "desc");
         else if ("latest".equals(sort))
-            JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");
+            q.setSort(ElasticTweetSearch.DATE, "desc");
         else if ("oldest".equals(sort))
-            JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " asc");
+            q.setSort(ElasticTweetSearch.DATE, "asc");
         else if ("relevance".equals(sort))
-            JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
+            q.setSort(ElasticTweetSearch.RELEVANCE, "desc");
         else {
-            JetwickQuery.setSort(q, ElasticTweetSearch.RT_COUNT + " desc");
+            q.setSort(ElasticTweetSearch.RT_COUNT, "desc");
 
             if (!Helper.isEmpty(userName))
-                JetwickQuery.setSort(q, ElasticTweetSearch.DATE + " desc");
+                q.setSort(ElasticTweetSearch.DATE, "desc");
         }
 
         // front page: avoid slow queries for matchall query and filter against latest tweets only
-        if (queryStr.isEmpty() && q.getFilterQueries() == null && fromDateStr == null) {
+        if (queryStr.isEmpty() && q.getFilterQueries().isEmpty() && fromDateStr == null) {
             logger.info(addIP("[stats] q=''"));
-            q.addFilterQuery("dt:[" + new MyDate().minusHours(8).castToHour().toLocalString() + " TO *]");
+            q.addLatestDateFilter(8);
             if (Helper.isEmpty(sort))
-                JetwickQuery.setSort(q, ElasticTweetSearch.RELEVANCE + " desc");
+                q.setSort(ElasticTweetSearch.RELEVANCE, "desc");
         }
 
         String filter = parameters.getString("filter");        
         if (Helper.isEmpty(userName) && !"none".equals(filter)) {
-            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_SPAM);
-            q.addFilterQuery(ElasticTweetSearch.FILTER_NO_DUPS);
-            q.addFilterQuery(ElasticTweetSearch.FILTER_IS_NOT_RT);
+            q.addNoSpamFilter().addNoDupsFilter().addIsOriginalTweetFilter();            
         }
         return q;
     }
@@ -283,7 +279,7 @@ public class HomePage extends WebPage {
         }
     }
 
-    public void init(SolrQuery query, PageParameters parameters, int page, boolean twitterFallback) {
+    public void init(JetwickQuery query, PageParameters parameters, int page, boolean twitterFallback) {
         setStatelessHint(true);
         feedbackPanel = new FeedbackPanel("feedback");
         add(feedbackPanel.setOutputMarkupId(true));
@@ -315,16 +311,16 @@ public class HomePage extends WebPage {
 
             @Override
             protected void onUrlClick(AjaxRequestTarget target, String name) {
-                SolrQuery q;
+                JetwickQuery q;
                 if (lastQuery != null)
                     q = lastQuery;
                 else
-                    q = new TweetQuery();
+                    q = new TweetQuery(true);
 
                 if (name == null) {
-                    JetwickQuery.applyFacetChange(q, ElasticTweetSearch.FIRST_URL_TITLE, false);
+                    q.removeFilterQueries(ElasticTweetSearch.FIRST_URL_TITLE);
                 } else
-                    q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
+                    q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE, name);
 
                 doSearch(q, 0, true);
                 updateAfterAjax(target, false);
@@ -335,10 +331,10 @@ public class HomePage extends WebPage {
                 if (lastQuery == null || name == null || name.isEmpty())
                     return;
 
-                SolrQuery q = new TweetQuery();
-                q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE + ":\"" + name + "\"");
+                TweetQuery q = new TweetQuery(true);
+                q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE, name);
                 try {
-                    List<SolrTweet> tweets = getTweetSearch().collectTweets(getTweetSearch().search(q.setRows(1)));
+                    List<SolrTweet> tweets = getTweetSearch().collectTweets(getTweetSearch().search(q.setSize(1)));
                     if (tweets.size() > 0 && tweets.get(0).getUrlEntries().size() > 0) {
                         // TODO there could be more than 1 url!
                         UrlEntry entry = tweets.get(0).getUrlEntries().iterator().next();
@@ -424,7 +420,7 @@ public class HomePage extends WebPage {
 
             @Override
             public void onShowTweets(AjaxRequestTarget target, String userName) {
-                doSearch((TweetQuery) new TweetQuery().addUserFilter(userName), 0, false);
+                doSearch(new TweetQuery(true).addUserFilter(userName), 0, false);
                 HomePage.this.updateAfterAjax(target, true);
             }
 
@@ -476,10 +472,24 @@ public class HomePage extends WebPage {
 
         facetPanel = new FacetPanel("filterPanel") {
 
+            public void onRemoveAllFilter(AjaxRequestTarget target, String key) {
+                if (lastQuery != null)
+                    lastQuery.removeFilterQueries(key);
+                else {
+                    logger.error("last query cannot be null but was! ... when clicking on facets!?");
+                    return;
+                }
+
+                doOldSearch(0);
+                updateAfterAjax(target, false);
+            }
             @Override
-            public void onFacetChange(AjaxRequestTarget target, String filterQuery, boolean selected) {
+            public void onFacetChange(AjaxRequestTarget target, String key, Object val, boolean selected) {
                 if (lastQuery != null) {
-                    JetwickQuery.applyFacetChange(lastQuery, filterQuery, selected);
+                    if(selected)
+                        lastQuery.addFilterQuery(key, val);
+                    else
+                        lastQuery.removeFilterQuery(key, val);
                 } else {
                     logger.error("last query cannot be null but was! ... when clicking on facets!?");
                     return;
@@ -497,12 +507,11 @@ public class HomePage extends WebPage {
             protected void onFacetChange(AjaxRequestTarget target, String filter, Boolean selected) {
                 if (lastQuery != null) {
                     if (selected == null) {
-                        JetwickQuery.removeFilterQueries(lastQuery, filter);
-                    } else if (selected) {
-//                        getTweetSearch().expandFilterQuery(lastQuery, filter, true);
-                        JetwickQuery.replaceFilterQuery(lastQuery, filter, true);
+                        lastQuery.removeFilterQueries(filter);
+                    } else if (selected) {                       
+                        lastQuery.replaceFilterQuery(filter);
                     } else
-                        JetwickQuery.reduceFilterQuery(lastQuery, filter);
+                        lastQuery.reduceFilterQuery(filter);
                 } else {
                     logger.error("last query cannot be null but was! ... when clicking on facets!?");
                     return;
@@ -513,9 +522,9 @@ public class HomePage extends WebPage {
             }
 
             @Override
-            protected boolean isAlreadyFiltered(String filter) {
+            protected boolean isAlreadyFiltered(String key, Object val) {
                 if (lastQuery != null)
-                    return JetwickQuery.containsFilter(lastQuery, filter);                
+                    return lastQuery.containsFilter(key, val);                
 
                 return false;
             }
@@ -533,9 +542,9 @@ public class HomePage extends WebPage {
         resultsPanel = new ResultsPanel("results", language) {
 
             @Override
-            public void onSortClicked(AjaxRequestTarget target, String sortStr) {
+            public void onSortClicked(AjaxRequestTarget target, String sortKey, String sortVal) {
                 if (lastQuery != null) {
-                    JetwickQuery.setSort(lastQuery, sortStr);
+                    lastQuery.setSort(sortKey, sortVal);
                     doSearch(lastQuery, 0, false);
                     updateAfterAjax(target, false);
                 }
@@ -560,9 +569,9 @@ public class HomePage extends WebPage {
 
             @Override
             public void onFindSimilar(SolrTweet tweet, AjaxRequestTarget target) {
-                TweetESQuery query = getTweetSearch().createQuery().createSimilarQuery(tweet);
+                JetwickQuery query = new SimilarQuery(tweet, true);
                 logger.info("[stats] similar search:" + query.toString());
-//                doSearch(query, 0, false);
+                doSearch(query, 0, false);
                 updateAfterAjax(target, false);
             }
 
@@ -612,8 +621,8 @@ public class HomePage extends WebPage {
 
             @Override
             protected void onSelectionChange(AjaxRequestTarget target, String newValue) {
-                SolrQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
-                JetwickQuery.applyFacetChange(tmpQ, ElasticTweetSearch.DATE, true);
+                JetwickQuery tmpQ = lastQuery.getCopy().setQuery(newValue);
+                tmpQ.removeFilterQueries(ElasticTweetSearch.DATE);
                 doSearch(tmpQ, 0, false, true);
                 updateAfterAjax(target, false);
             }
@@ -631,7 +640,7 @@ public class HomePage extends WebPage {
                 if(friends.isEmpty()) {                    
                     info("You recently logged in. Please try again in 2 minutes to use friend search.");
                 } else {
-                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends);
+                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends).setSort(ElasticTweetSearch.RT_COUNT, "desc");
                     page = 0;
                     twitterFallback = false;
                 }
@@ -653,15 +662,15 @@ public class HomePage extends WebPage {
         doSearch(lastQuery, page, false);
     }
 
-    public void doSearch(SolrQuery query, int page, boolean twitterFallback) {
+    public void doSearch(JetwickQuery query, int page, boolean twitterFallback) {
         doSearch(query, page, twitterFallback, false);
     }
 
-    public void doSearch(SolrQuery query, int page, boolean twitterFallback, boolean instantSearch) {
+    public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {
         String queryString = searchBox.getQuery();
         if (!instantSearch) {
             // change text field
-            searchBox.init(query);
+            searchBox.init(query.extractNonNullQueryString(), query.extractUserName());
             queryString = searchBox.getQuery();
         } else {
             queryString = query.getQuery();
@@ -678,24 +687,22 @@ public class HomePage extends WebPage {
         // do not trigger background searchAndGetUsers if this query is the identical
         // to the last searchAndGetUsers or if it is an instant searchAndGetUsers
         if (instantSearch || lastQuery != null
-                && queryString.equals(JetwickQuery.extractNonNullQueryString(lastQuery))
-                && userName.equals(JetwickQuery.extractUserName(lastQuery)))
+                && queryString.equals(lastQuery.extractNonNullQueryString())
+                && userName.equals(lastQuery.extractUserName()))
             startBGThread = false;
 
         // do not trigger twitter searchAndGetUsers if a searchAndGetUsers through a users' tweets is triggered
         if (!userName.isEmpty() && !queryString.isEmpty())
             twitterFallback = false;
 
-        if (JetwickQuery.containsFilterKey(query, "id"))
+        if (query.containsFilterKey("id"))
             twitterFallback = false;
 
         if (!instantSearch)
             lastQuery = query;
 
         Collection<SolrUser> users = new LinkedHashSet<SolrUser>();
-
-        getTweetSearch().attachPagability(query, page, hitsPerPage);
-
+        query.attachPagability(page, hitsPerPage);
         long start = System.currentTimeMillis();
         long totalHits = 0;
         SearchResponse rsp = null;
@@ -718,7 +725,7 @@ public class HomePage extends WebPage {
             if (queryString.isEmpty()) {
                 if (userName.isEmpty()) {
                     // something is wrong with our index because q='' and user='' should give us all docs!
-                    logger.error(addIP("[stats] 0 results for q='' using news!"));
+                    logger.warn(addIP("[stats] 0 results for q='' using news!"));
                     queryString = "news";
                     startBGThread = false;
                 } else
@@ -777,7 +784,11 @@ public class HomePage extends WebPage {
 
         dateFilter.update(rsp);
 
-        resultsPanel.setSort(query.getSortField());
+        if(!query.getSortFields().isEmpty()) {            
+            resultsPanel.setSort(query.getSortFields().get(0).getKey(), query.getSortFields().get(0).getValue());
+        } else
+            resultsPanel.setSort(null, null);
+        
         resultsPanel.setTweetsPerUser(-1);
         for (SolrUser user : users) {
             resultsPanel.add(user);

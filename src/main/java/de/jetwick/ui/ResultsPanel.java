@@ -65,7 +65,8 @@ public class ResultsPanel extends Panel {
     private String query;
     private String user;
     private int tweetsPerUser;
-    private String sort;
+    private String _sortKey;
+    private String _sortVal;
     private LabeledLink findOriginLink;
     private LabeledLink translateAllLink;
     private Map<Long, String> translateMap = new LinkedHashMap<Long, String>();
@@ -157,10 +158,10 @@ public class ResultsPanel extends Panel {
         };
 
         add(translateAllLink);
-        add(createSortLink("sortRelevance", ElasticTweetSearch.RELEVANCE + " desc"));
-        add(createSortLink("sortRetweets", ElasticTweetSearch.RT_COUNT + " desc"));
-        add(createSortLink("sortLatest", ElasticTweetSearch.DATE + " desc"));
-        add(createSortLink("sortOldest", ElasticTweetSearch.DATE + " asc"));
+        add(createSortLink("sortRelevance", ElasticTweetSearch.RELEVANCE, "desc"));
+        add(createSortLink("sortRetweets", ElasticTweetSearch.RT_COUNT, "desc"));
+        add(createSortLink("sortLatest", ElasticTweetSearch.DATE, "desc"));
+        add(createSortLink("sortOldest", ElasticTweetSearch.DATE, "asc"));
 
         userView = new ListView("users", users) {
 
@@ -312,7 +313,7 @@ public class ResultsPanel extends Panel {
     public void onFindSimilar(SolrTweet tweet, AjaxRequestTarget target) {
     }
 
-    public void onSortClicked(AjaxRequestTarget target, String sortStr) {
+    public void onSortClicked(AjaxRequestTarget target, String sortKey, String sortVal) {
     }
 
     public String getTweetsAsString() {
@@ -368,12 +369,15 @@ public class ResultsPanel extends Panel {
     public void setHitsPerPage(int hits) {
         hitsPerPage = hits;
     }
-
-    public void setSort(String sortString) {        
-        if (sortString == null || sortString.isEmpty())
-            sort = ElasticTweetSearch.RELEVANCE + " desc";
-        else
-            sort = sortString;
+    
+    public void setSort(String sortKey, String sortVal) {        
+        if (sortKey == null || sortKey.isEmpty()) {
+            _sortKey = ElasticTweetSearch.RELEVANCE;
+            _sortVal = "desc";
+        } else {
+            _sortKey = sortKey;
+            _sortVal = sortVal;
+        }
     }
 
     public Link createHitLink(final int hits) {
@@ -400,20 +404,20 @@ public class ResultsPanel extends Panel {
         return link;
     }
 
-    public AjaxFallbackLink createSortLink(String id, final String sorting) {
+    public AjaxFallbackLink createSortLink(String id, final String sortKey, final String sortVal) {
         AjaxFallbackLink link = new AjaxFallbackLink(id) {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
                 if (target != null)
-                    onSortClicked(target, sorting);
+                    onSortClicked(target, sortKey, sortVal);
             }
         };
         link.add(new AttributeAppender("class", new Model() {
 
             @Override
             public Serializable getObject() {
-                return sorting.equals(sort) ? "selected" : "";
+                return sortKey.equals(_sortKey) && sortVal.equals(_sortVal) ? "selected" : "";
             }
         }, " "));
 

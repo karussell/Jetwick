@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.solr.TweetQuery;
 import java.util.Collection;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -28,7 +29,6 @@ import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.Application;
 import org.apache.wicket.guice.GuiceComponentInjector;
 import org.apache.wicket.util.tester.WicketTester;
@@ -84,7 +84,7 @@ public class WicketPagesTestClass {
                 //new InternalSearchHit(1, "1", "tweet", source, fields);
                 InternalSearchResponse iRsp = new InternalSearchResponse(
                         new InternalSearchHits(new InternalSearchHit[0], 0, 0), new InternalFacets(new ArrayList()), true);
-                when(twSearch.search((Collection<SolrUser>) any(), (SolrQuery) any())).
+                when(twSearch.search((Collection<SolrUser>) any(), (TweetQuery) any())).
                         thenReturn(new SearchResponse(iRsp, "", 4, 4, 1L, new ShardSearchFailure[0]));
 
                 bind(ElasticTweetSearch.class).toInstance(twSearch);

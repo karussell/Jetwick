@@ -130,7 +130,6 @@ public class TweetConsumer extends MyThread {
         }
 
         int maxTrials = 1;
-
         for (int trial = 1; trial <= maxTrials; trial++) {
             try {
                 Collection<SolrTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());

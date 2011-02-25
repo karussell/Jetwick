@@ -24,6 +24,7 @@ import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SavedSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.TweetQuery;
 import de.jetwick.solr.UserQuery;
 import de.jetwick.tw.TweetDetector;
 import de.jetwick.tw.cmd.StringFreqMap;
@@ -35,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.common.params.MoreLikeThisParams;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -48,7 +47,6 @@ import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.search.facet.terms.TermsFacet;
-import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,7 +217,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
                 // backward compatibility
                 break;
 
-            SolrQuery q = JetwickQuery.parse(qString);
+            TweetQuery q = TweetQuery.parseQuery(qString);
             SavedSearch ss = new SavedSearch(counter, q);
             ss.setLastQueryDate(Helper.toDateNoNPE((String) doc.get("ss_" + counter + "_last_dt")));
             user.addSavedSearch(ss);
@@ -242,31 +240,9 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return user;
     }
 
-    public SolrQuery createMltQuery(String queryStr) {
-        UserQuery query = new UserQuery();
-
-        // this does not work:
-//        query.setQuery(queryStr).
-//                setQueryType("standard").
-//                set(MoreLikeThisParams.QF, SCREEN_NAME).
-//                set(MoreLikeThisParams.MLT, "true").
-
-        query.setQuery(SCREEN_NAME + ":" + queryStr).
-                setQueryType("/" + MoreLikeThisParams.MLT).
-                set(MoreLikeThisParams.SIMILARITY_FIELDS, "bio", "tag").
-                set(MoreLikeThisParams.MIN_WORD_LEN, 2).
-                set(MoreLikeThisParams.MIN_DOC_FREQ, 1).
-                // don't return the user itself
-                set(MoreLikeThisParams.MATCH_INCLUDE, false);
-
-        // the following param could be a nice addition: show the user which terms are similar:
-//         MoreLikeThisParams.INTERESTING_TERMS
-        return query;
-    }
-
     public SolrUser findByTwitterToken(String token) {
         try {
-            Collection<SolrUser> res = collectUsers(search(new SolrQuery().addFilterQuery("token_s:" + token)));
+            Collection<SolrUser> res = collectUsers(search(new UserQuery().addFilterQuery("token_s", token)));
             if (res.size() == 0)
                 return null;
             else if (res.size() == 1)
@@ -282,7 +258,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
     public SolrUser findByScreenName(String name) {
         try {
             name = name.toLowerCase();
-            Collection<SolrUser> res = collectUsers(search(new SolrQuery().addFilterQuery(SCREEN_NAME + ":" + name)));
+            Collection<SolrUser> res = collectUsers(search(new UserQuery().addFilterQuery(SCREEN_NAME, name)));
             if (res.isEmpty())
                 return null;
             else if (res.size() == 1)
@@ -295,9 +271,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
     }
 
-    // TODO facet pagination
     public Collection<String> getQueryTerms() {
-        SearchResponse rsp = search(new SolrQuery().setFacet(true).addFacetField(QUERY_TERMS).setFacetMinCount(1));
+        SearchResponse rsp = search(new UserQuery().addFacetField(QUERY_TERMS));
         TermsFacet tf = (TermsFacet) rsp.getFacets().facet(QUERY_TERMS);
         Collection<String> res = new ArrayList<String>();
         if (tf.entries() != null)
@@ -308,14 +283,13 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return res;
     }
 
-    public SearchResponse search(SolrQuery query) {
+    public SearchResponse search(JetwickQuery query) {
         return search(new ArrayList(), query);
     }
 
-    public SearchResponse search(Collection<SolrUser> users, SolrQuery query) {
-        SearchRequestBuilder srb = client.prepareSearch(getIndexName());
-        new Solr2ElasticUser().createElasticQuery(query, srb);
-        SearchResponse response = srb.execute().actionGet();
+    public SearchResponse search(Collection<SolrUser> users, JetwickQuery query) {
+        SearchRequestBuilder srb = client.prepareSearch(getIndexName());        
+        SearchResponse response = query.initRequestBuilder(srb).execute().actionGet();
         users.addAll(collectUsers(response));
         return response;
     }
@@ -342,8 +316,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
     /** use createQuery + search instead */
     @Deprecated
     long search(Collection<SolrUser> users, String qStr, int hitsPerPage, int page) {
-        SolrQuery query = new UserQuery(qStr);
-        attachPagability(query, page, hitsPerPage);
+        JetwickQuery query = new UserQuery(qStr);
+        query.attachPagability(page, hitsPerPage);
         SearchResponse rsp = search(users, query);
         return rsp.getHits().totalHits();
     }

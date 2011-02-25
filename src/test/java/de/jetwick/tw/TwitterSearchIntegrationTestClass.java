@@ -22,7 +22,6 @@ import de.jetwick.data.UrlEntry;
 import de.jetwick.data.YTag;
 import de.jetwick.data.YUser;
 import de.jetwick.es.ElasticTweetSearchTest;
-import de.jetwick.es.TweetESQuery;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import de.jetwick.solr.TweetQuery;

@@ -26,9 +26,6 @@ import de.jetwick.solr.UserQuery;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.elasticsearch.search.facet.termsstats.TermsStatsFacet;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -86,8 +83,8 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testUpdate2() throws Exception {
         SolrUser user = new SolrUser("karsten");
-        user.addSavedSearch(new SavedSearch(1, new SolrQuery("test")));
-        user.addSavedSearch(new SavedSearch(2, new SolrQuery("test2")));
+        user.addSavedSearch(new SavedSearch(1, new UserQuery("test")));
+        user.addSavedSearch(new SavedSearch(2, new UserQuery("test2")));
         userSearch.save(user, true);
         assertEquals(1, userSearch.search("karsten").size());
         user = userSearch.search("karsten").iterator().next();
@@ -176,7 +173,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 //
 //    @Test
 //    public void testIsMlt() {
-//        SolrQuery query = userSearch.createMltQuery("peter");
+//        UserQuery query = userSearch.createMltQuery("peter");
 //        assertTrue(userSearch.isMlt(query));
 //    }
 
@@ -200,7 +197,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
-    public void testPaging() throws SolrServerException {
+    public void testPaging()  {
         for (int i = 0; i < 5; i++) {
             SolrUser karsten = new SolrUser("karsten" + i);
             karsten.setDescription("hooping hooping nice solr");
@@ -217,7 +214,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
-    public void testUserFind() throws SolrServerException {
+    public void testUserFind()  {
         SolrUser karsten = new SolrUser("karsten");
         karsten.addOwnTweet(new SolrTweet(1, "hooping hooping", karsten));
         karsten.addOwnTweet(new SolrTweet(2, "nice solr", karsten));
@@ -233,7 +230,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     }
     
     @Test
-    public void testFindByScreenname() throws SolrServerException {
+    public void testFindByScreenname()  {
         SolrUser karsten = new SolrUser("karsten");
         karsten.addOwnTweet(new SolrTweet(1, "hooping hooping", karsten));
         karsten.addOwnTweet(new SolrTweet(2, "nice solr", karsten));
@@ -245,7 +242,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
-    public void testFacetSearch() throws SolrServerException {
+    public void testFacetSearch()  {
         userSearch.setTermMinFrequency(0);
 
         SolrUser karsten = new SolrUser("karsten");
@@ -260,9 +257,9 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
         // now createTags: test, java, ...        
 
-        // one can even use solrQuery.set("f.myField.facet.limit",10)
-        SolrQuery query = new UserQuery("java");
-        query.addFilterQuery("tag:test");
+        // one can even use UserQuery.set("f.myField.facet.limit",10)
+        UserQuery query = new UserQuery("java");
+        query.addFilterQuery("tag", "test");
 
         Collection<SolrUser> list = new LinkedHashSet<SolrUser>();
         SearchResponse rsp = userSearch.search(list, query);
@@ -275,12 +272,12 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
         // more filter queries
         list.clear();
-        query.addFilterQuery("tag:help");
+        query.addFilterQuery("tag", "help");
         userSearch.search(list, query);
         assertEquals(1, list.size());
 
         list.clear();
-        query.addFilterQuery("tag:z");
+        query.addFilterQuery("tag", "z");
         userSearch.search(list, query);
         assertEquals(0, list.size());
     }
@@ -288,12 +285,12 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testGetQueryTerms() throws Exception {
         SolrUser user = new SolrUser("karsten");
-        user.addSavedSearch(new SavedSearch(1, new SolrQuery("peter test")));
-        user.addSavedSearch(new SavedSearch(2, new SolrQuery("peter tester")));
+        user.addSavedSearch(new SavedSearch(1, new UserQuery("peter test")));
+        user.addSavedSearch(new SavedSearch(2, new UserQuery("peter tester")));
         userSearch.save(user, false);
         user = new SolrUser("peter");
-        user.addSavedSearch(new SavedSearch(3, new SolrQuery("peter test")));
-        user.addSavedSearch(new SavedSearch(4, new SolrQuery("karsten tester")));
+        user.addSavedSearch(new SavedSearch(3, new UserQuery("peter test")));
+        user.addSavedSearch(new SavedSearch(4, new UserQuery("karsten tester")));
         userSearch.save(user, true);
 
         Collection<String> coll = userSearch.getQueryTerms();

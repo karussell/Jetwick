@@ -20,25 +20,40 @@
  */
 package de.jetwick.solr;
 
+import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
+
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class UserQuery extends JetwickQuery {
 
+    private static final long serialVersionUID = 1L;
     public UserQuery() {
     }
 
     public UserQuery(String queryStr) {
-        super(queryStr);
+        super(queryStr, true);
     }
 
     @Override
     public UserQuery attachFacetibility() {
-        return (UserQuery) setFacet(true).
-                setFacetSort("count").
-                setFacetMinCount(1).
-                setFacetLimit(15).
-                addFacetField("tag").addFacetField("lang");
+        return (UserQuery) addFacetField("tag").addFacetField("lang");
+    }
+        
+    @Override
+    protected XContentQueryBuilder createQuery(String queryStr) {
+        XContentQueryBuilder qb;
+        if (queryStr == null || queryStr.isEmpty())
+            qb = QueryBuilders.matchAllQuery();
+        else {
+            // fields can also contain patterns like so name.* to match more fields
+            return QueryBuilders.queryString(escapeQuery(queryStr)).
+                    field("name", 10).field("tag", 2).field("bio").field("realName").
+                    allowLeadingWildcard(false).useDisMax(true);
+//            return QueryBuilders.termQuery("name", queryStr);
+        }
+        return qb;
     }
 }

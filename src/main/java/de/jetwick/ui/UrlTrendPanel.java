@@ -16,13 +16,13 @@
 package de.jetwick.ui;
 
 import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.solr.JetwickQuery;
 import de.jetwick.ui.util.LabeledLink;
 import de.jetwick.util.Helper;
 import de.jetwick.util.MapEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.behavior.AttributeAppender;
@@ -135,7 +135,7 @@ public class UrlTrendPanel extends Panel {
     protected void onDirectUrlClick(AjaxRequestTarget target, String name) {
     }
 
-    public void update(SearchResponse rsp, SolrQuery query) {
+    public void update(SearchResponse rsp, JetwickQuery query) {
         cssString = "";
         counter = 0;
         filter.clear();
@@ -143,22 +143,21 @@ public class UrlTrendPanel extends Panel {
 
         urls.clear();
         if (rsp != null) {
-            if (query.getFilterQueries() != null)
-                for (String str : query.getFilterQueries()) {
-                    if (str.startsWith(ElasticTweetSearch.FIRST_URL_TITLE + ":"))
-                        filter.set(0, true);
-                }
+            for (Entry<String, Object> e : query.getFilterQueries()) {
+                if (e.getKey().equals(ElasticTweetSearch.FIRST_URL_TITLE))
+                    filter.set(0, true);
+            }
 
-            TermsStatsFacet tf = (TermsStatsFacet) rsp.getFacets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
-//            TermsFacet tf = (TermsFacet) rsp.getFacets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
-            if (tf != null)
-                for (TermsStatsFacet.Entry e : tf.entries()) {
-//                for (TermsFacet.Entry e : tf.entries()) {
-                    String str = e.getTerm();
-                    // although we avoid indexing empty title -> its save to do it again ;-)
-                    if (!str.isEmpty())
-                        urls.add(new MapEntry<String, Long>(str, (long) e.count()));
-                }
+            if (rsp.facets() != null) {
+                TermsStatsFacet tf = (TermsStatsFacet) rsp.facets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
+                if (tf != null)
+                    for (TermsStatsFacet.Entry e : tf.entries()) {
+                        String str = e.getTerm();
+                        // although we avoid indexing empty title -> its save to do it again ;-)
+                        if (!str.isEmpty())
+                            urls.add(new MapEntry<String, Long>(str, (long) e.count()));
+                    }
+            }
         }
         setVisible(urls.size() > 0);
     }

@@ -64,7 +64,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.apache.solr.common.util.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -762,21 +761,21 @@ public class Helper {
         return val;
     }
 
-    /**
-     * copied from org/apache/solr/update/processor/SignatureUpdateProcessorFactory.java
-     * @param signature
-     * @return
-     */
-    public static String sigToString(byte[] signature) {
-        char[] arr = new char[signature.length << 1];
-        for (int i = 0; i < signature.length; i++) {
-            int b = signature[i];
-            int idx = i << 1;
-            arr[idx] = StrUtils.HEX_DIGITS[(b >> 4) & 0xf];
-            arr[idx + 1] = StrUtils.HEX_DIGITS[b & 0xf];
-        }
-        return new String(arr);
-    }
+//    /**
+//     * copied from org/apache/solr/update/processor/SignatureUpdateProcessorFactory.java
+//     * @param signature
+//     * @return
+//     */
+//    public static String sigToString(byte[] signature) {
+//        char[] arr = new char[signature.length << 1];
+//        for (int i = 0; i < signature.length; i++) {
+//            int b = signature[i];
+//            int idx = i << 1;
+//            arr[idx] = StrUtils.HEX_DIGITS[(b >> 4) & 0xf];
+//            arr[idx + 1] = StrUtils.HEX_DIGITS[b & 0xf];
+//        }
+//        return new String(arr);
+//    }
 
     public static String[] toStringArray(Collection<String> coll) {
         return coll.toArray(new String[coll.size()]);

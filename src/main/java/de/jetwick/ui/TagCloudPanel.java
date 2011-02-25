@@ -16,6 +16,7 @@
 package de.jetwick.ui;
 
 import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.solr.JetwickQuery;
 import de.jetwick.util.MapEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
@@ -95,7 +95,7 @@ public class TagCloudPanel extends Panel {
         return (int) (10.0 * count / max);
     }
 
-    public void update(SearchResponse rsp, SolrQuery query) {
+    public void update(SearchResponse rsp, JetwickQuery query) {
         tags.clear();
         Set<String> terms = new HashSet<String>();
         if (query.getQuery() != null)

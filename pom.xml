@@ -12,7 +12,6 @@
     <properties>
         <slf4j.version>1.6.0</slf4j.version>
         <jetty.version>6.1.24</jetty.version>        
-        <solr.version>1.4.1</solr.version>
         <wicket.version>1.4.9</wicket.version>
         <!--<wicket.version>1.5-M2.1</wicket.version>-->
 
@@ -40,12 +39,6 @@
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
             <version>2.1.11</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.solr</groupId>
-            <artifactId>solr-solrj</artifactId>
-            <version>${solr.version}</version>
         </dependency>
         
         <!-- Grab from source: git clone git://github.com/elasticsearch/elasticsearch.git             

@@ -15,7 +15,6 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.es.TweetESQuery;
 import de.jetwick.ui.util.FacetHelper;
 
 import java.util.ArrayList;
@@ -41,10 +40,9 @@ import org.apache.wicket.util.time.Duration;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.facet.Facet;
 import org.elasticsearch.search.facet.query.QueryFacet;
-import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static de.jetwick.es.TweetESQuery.*;
+import static de.jetwick.solr.JetwickQuery.*;
 
 /**
  *
@@ -62,7 +60,7 @@ public class SavedSearchPanel extends Panel {
         super(id);
 
         tr.put(SAVED_SEARCHES, "Saved Searches");
-        Link saveSearch = new AjaxFallbackLink("saveSearch") {
+        Link saveSearch = new IndicatingAjaxFallbackLink("saveSearch") {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
@@ -71,7 +69,7 @@ public class SavedSearchPanel extends Panel {
         };
         add(saveSearch);
 
-        AjaxFallbackLink link = new AjaxFallbackLink("saveInfo") {
+        AjaxFallbackLink link = new IndicatingAjaxFallbackLink("saveInfo") {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
@@ -180,7 +178,7 @@ public class SavedSearchPanel extends Panel {
                     if(!(f instanceof QueryFacet)) 
                         continue;
                     
-                    int firstIndex = f.getName().indexOf(SAVED_SEARCHES + ":");
+                    int firstIndex = f.getName().indexOf(SAVED_SEARCHES + "_");
                     if (firstIndex < 0)
                         continue;
 

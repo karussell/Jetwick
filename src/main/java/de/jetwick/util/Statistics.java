@@ -70,9 +70,7 @@ public class Statistics {
         new Statistics().start(map);
     }
     @Inject
-    private ElasticTweetSearch tweetSearch;
-    @Inject
-    private ElasticUserSearch uSearch;
+    private ElasticTweetSearch tweetSearch;    
     @Inject
     private TagDao tagDao;
     @Inject
@@ -113,7 +111,7 @@ public class Statistics {
                 argStr = "**:*";
 
             List<SolrUser> list = new ArrayList<SolrUser>();
-            long ret = tweetSearch.search(list, new TweetQuery(argStr)).
+            long ret = tweetSearch.search(list, new TweetQuery(argStr, false)).
                     getHits().getTotalHits();
             logger.info("Found: " + ret + " users. Returned: " + list.size());
             print(list);

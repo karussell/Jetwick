@@ -19,23 +19,23 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
 import java.util.Date;
-import org.apache.solr.client.solrj.SolrQuery;
+import java.util.Map.Entry;
 
 /**
  * @author Peter Karich, jetwick_@_pannous_._info
  */
 public class SavedSearch implements Serializable {
 
-    private static final long serialVersionUID = 1L;    
-    private SolrQuery query;
+    private static final long serialVersionUID = 1L;
+    private JetwickQuery query;
     private Date lastQueryDate;
     private final long id;
 
-    public SavedSearch(long id, SolrQuery query) {
+    public SavedSearch(long id, JetwickQuery query) {
         this.id = id;
         this.query = query.getCopy();
-        JetwickQuery.removeFilterQueries(this.query, ElasticTweetSearch.DATE);
-        JetwickQuery.removeFacets(this.query);
+        this.query.removeFilterQueries(ElasticTweetSearch.DATE);
+        this.query.removeFacets();
     }
 
     public Date getLastQueryDate() {
@@ -46,22 +46,23 @@ public class SavedSearch implements Serializable {
         this.lastQueryDate = lastQueryDate;
     }
 
-    public SolrQuery getCleanQuery() {
+    public JetwickQuery getCleanQuery() {
         return query;
     }
 
-    public SolrQuery getQuery() {
-        SolrQuery tmpQ = query.getCopy();
-        TweetQuery.attachFacetibility(tmpQ);
+    public JetwickQuery getQuery() {
+        JetwickQuery tmpQ = query.getCopy();
+        tmpQ.attachFacetibility();
         if (lastQueryDate != null)
-            tmpQ.addFilterQuery(getLastQueryDateFilter());
+            tmpQ.addFilterQuery(ElasticTweetSearch.DATE, getLastQueryDateFilter());
+
         lastQueryDate = new Date();
         return tmpQ;
     }
 
     public String getName() {
         String qStr = query.getQuery();
-        String userFilter = JetwickQuery.getUserFilter(query);
+        String userFilter = query.getUserFilter();
         if (userFilter != null) {
             if (qStr == null)
                 qStr = "";
@@ -110,32 +111,33 @@ public class SavedSearch implements Serializable {
         // recognize lang, quality and crt_b
         if (query.getFilterQueries() != null) {
             int counter = 0;
-            for (String fq : query.getFilterQueries()) {
+            for (Entry<String, Object> fq : query.getFilterQueries()) {
                 // apply only lastQueryDate
-                if (fq.startsWith(ElasticTweetSearch.DATE + ":"))
+                if (fq.getKey().equals(ElasticTweetSearch.DATE))
                     continue;
-                if (fq.startsWith(ElasticTweetSearch.FIRST_URL_TITLE + ":"))
+                if (fq.getKey().equals(ElasticTweetSearch.FIRST_URL_TITLE))
                     continue;
 
                 // Infinity cannot be passed to boolean query
-                fq = fq.replaceAll("Infinity\\]", "*]");
-                fq = fq.replaceAll("\\[-Infinity", "*]");
+                String val = fq.getValue().toString();
+                val = val.replaceAll("Infinity\\]", "*]");
+                val = val.replaceAll("\\[-Infinity", "*]");
 
                 if (counter == 0)
                     facetQuery = "(" + facetQuery + ")";
 
-                facetQuery += " AND " + fq;
+                facetQuery += " AND " + fq.getKey() + ":" + fq.getValue().toString();
                 counter++;
             }
         }
         if (lastQueryDate != null)
-            facetQuery += " AND " + getLastQueryDateFilter();
+            facetQuery += " AND " + ElasticTweetSearch.DATE + ":" + getLastQueryDateFilter();
 
         return facetQuery;
     }
 
-    private String getLastQueryDateFilter() {        
-        return ElasticTweetSearch.DATE + ":[" + Helper.toLocalDateTime(lastQueryDate) + " TO *]";
+    private String getLastQueryDateFilter() {
+        return "[" + Helper.toLocalDateTime(lastQueryDate) + " TO *]";
     }
 
     @Override

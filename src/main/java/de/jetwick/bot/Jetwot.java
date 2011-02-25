@@ -24,6 +24,8 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
 import static de.jetwick.es.ElasticTweetSearch.*;
+import de.jetwick.solr.JetwickQuery;
+import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.cmd.TermCreateCommand;
@@ -35,7 +37,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
@@ -171,20 +172,20 @@ public class Jetwot {
     }
 
     public Collection<SolrTweet> search() {
-        SolrQuery query = new SolrQuery(). // should be not too old
-                addFilterQuery(DATE + ":[" + new MyDate().minusDays(6).toLocalString() + " TO *]").
+        JetwickQuery query = new TweetQuery(). // should be not too old
+                addFilterQuery(DATE, "[" + new MyDate().minusDays(6).toLocalString() + " TO *]").
                 // should be high quality
-                addFilterQuery(QUALITY + ":[90 TO *]").
+                addFilterQuery(QUALITY, "[90 TO *]").
                 // should be the first tweet with this content
-                addFilterQuery(DUP_COUNT + ":0").
+                addFilterQuery(DUP_COUNT, 0).
                 // only tweets which were already tweeted minRT-times
-                addFilterQuery(RT_COUNT + ":[" + minRT + " TO *]").
+                addFilterQuery(RT_COUNT, "[" + minRT + " TO *]").
                 // only original tweets
-                addFilterQuery(IS_RT + ":false").
+                addFilterQuery(IS_RT, false).
                 // for english our spam + dup detection works ok
-                addFilterQuery("lang:(en OR de OR sp)").
-                setSortField(RT_COUNT, SolrQuery.ORDER.desc).
-                setRows(50);
+                addFilterQuery("lang", "(en OR de OR sp)").
+                setSort(RT_COUNT, "desc").
+                setSize(50);
 
         logger.info(query.toString());
         int TRIALS = 2;

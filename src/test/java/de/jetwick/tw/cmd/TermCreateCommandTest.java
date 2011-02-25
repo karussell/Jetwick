@@ -15,7 +15,8 @@
  */
 package de.jetwick.tw.cmd;
 
-import de.jetwick.es.TweetESQuery;
+import de.jetwick.solr.JetwickQuery;
+import de.jetwick.solr.SimilarQuery;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.solr.SolrTweet;
 import de.jetwick.solr.SolrUser;
@@ -28,7 +29,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -61,7 +61,7 @@ public class TermCreateCommandTest {
     }
 
     @Test
-    public void testQuality() throws SolrServerException {
+    public void testQuality() {
         SolrTweet tw1 = createSolrTweet(1L, "@lwr32 #JAVA! "
                 + "#COFFEE! #JAVA! #COFFEE! #JAVA! #COFFEE! #JAVA! #COFFEE! #JAVA! #COFFEE! #JAVA! #COFFEE! #JAVA! #COFFEE! #JAVA!", "usera");
         SolrTweet tw2 = createSolrTweet(2L, "@meggytron JAH-VA! java java java java "
@@ -347,12 +347,5 @@ public class TermCreateCommandTest {
 //                counter++;
 //        }
 //        assertTrue("At least on signature should be identical for tweet2 and tweet3", counter > 0);
-//    }
-
-    @Test
-    public void testFindDuplicateQuery() {
-        SolrTweet tw = new SolrTweet(1L, ">‎​Dear children there is no Santa. those presents are from your parents. Love, WikiLeaks. /via @frasereC4", new SolrUser("tmp"));
-        TweetESQuery q = new TweetESQuery().createSimilarQuery(tw);
-        System.out.println(q.toString());
-    }
+//    }    
 }

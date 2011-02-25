@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.util;
 
 import java.io.Serializable;
@@ -54,5 +53,27 @@ public class MapEntry<K, V> implements Map.Entry<K, V>, Serializable {
     @Override
     public String toString() {
         return getKey() + ", " + getValue();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final MapEntry<K, V> other = (MapEntry<K, V>) obj;
+        if (this.key != other.key && (this.key == null || !this.key.equals(other.key)))
+            return false;
+        if (this.value != other.value && (this.value == null || !this.value.equals(other.value)))
+            return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 19 * hash + (this.key != null ? this.key.hashCode() : 0);
+        hash = 19 * hash + (this.value != null ? this.value.hashCode() : 0);
+        return hash;
     }
 }

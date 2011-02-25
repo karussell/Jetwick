@@ -13,22 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui.jschart;
 
-import de.jetwick.ui.util.FacetHelper;
+import java.lang.reflect.Constructor;
+import de.jetwick.es.ElasticTweetSearch;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.facet.range.RangeFacet.Entry;
+import org.elasticsearch.search.facet.range.RangeFacet;
 import de.jetwick.ui.WicketPagesTestClass;
+import de.jetwick.ui.util.FacetHelper;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.solr.client.solrj.response.FacetField;
-import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.facet.Facet;
+import org.elasticsearch.search.facet.Facets;
+import org.elasticsearch.search.facet.range.InternalRangeFacet;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -40,47 +45,61 @@ public class JSDateFilterTest extends WicketPagesTestClass {
     }
 
     @Test
-    public void testDateFacets() {
-        FacetField ff = new FacetField("dt", "+1DAY", new Date());
-        String key1 = "2010-08-13T00:00:00Z TO 2010-08-13T00:00:00Z/DAY+1DAY";
-        ff.add(key1, 2);
-        final Map<String, Integer> facetQueries = new HashMap<String, Integer>();
-        
-        // TODO ES
-//        facetQueries.put(ElasticTweetSearch.FILTER_ENTRY_LATEST_DT, 123);
+    public void testDateFacets() throws Exception {
+        RangeFacet.Entry entries[] = new RangeFacet.Entry[2];        
+        entries[0] = newEntry("-Infinity", "xy");        
+        entries[1] = newEntry("xy", "Infinity");
+        final RangeFacet rf = new InternalRangeFacet(ElasticTweetSearch.DATE_FACET, entries);
 
-        final List<FacetField> df = new ArrayList<FacetField>();
-        df.add(ff);
-        
-        // TODO ES
-//        QueryResponse qr = new QueryResponse() {
-//
-//            @Override
-//            public SolrDocumentList getResults() {
-//                SolrDocumentList list = new SolrDocumentList();
-//                list.add(new SolrDocument());
-//                return list;
-//            }
-//
-//            @Override
-//            public List<FacetField> getFacetDates() {
-//                return df;
-//            }
-//
-//            @Override
-//            public Map<String, Integer> getFacetQuery() {
-//                return facetQueries;
-//            }
-//        };
-//
-//        JSDateFilter panel = (JSDateFilter) tester.startPanel(JSDateFilter.class);
-//        panel.update(qr);
-//        List<FacetHelper> dfh = panel.getFacetList();
-//        assertEquals("older", dfh.get(2).displayName);
-//        assertEquals("08-13", dfh.get(1).displayName);
-//        assertEquals("[" + key1 + " TO " + key1 + "/DAY+1DAY]", dfh.get(1).value);
-//
-//        assertEquals("last 8h", dfh.get(0).displayName);                
-        //assertEquals(ElasticTweetSearch.FILTER_VALUE_LATEST_DT, dfh.get(0).value);
+        SearchHits sh = mock(SearchHits.class);
+        when(sh.getTotalHits()).thenReturn(10L);
+
+        SearchResponse sr = mock(SearchResponse.class);
+        when(sr.hits()).thenReturn(sh);
+        when(sr.facets()).thenReturn(new Facets() {
+
+            @Override
+            public List<Facet> facets() {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
+            public Map<String, Facet> getFacets() {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
+            public Map<String, Facet> facetsAsMap() {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
+            public <T extends Facet> T facet(Class< T> facetType, String name) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
+            public <T extends Facet> T facet(String name) {
+                return (T) rf;
+            }
+
+            @Override
+            public Iterator<Facet> iterator() {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        });
+        JSDateFilter panel = (JSDateFilter) tester.startPanel(JSDateFilter.class);
+        panel.update(sr);
+        List<FacetHelper> dfh = panel.getFacetList();
+
+        assertEquals("last 8h", dfh.get(1).displayName);
+        assertEquals("older", dfh.get(0).displayName);                
+    }
+
+    private Entry newEntry(String from, String to) {
+        RangeFacet.Entry e = mock(RangeFacet.Entry.class);
+        when(e.getFromAsString()).thenReturn(from);
+        when(e.getToAsString()).thenReturn(to);
+        return e;
     }
 }

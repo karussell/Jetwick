@@ -25,7 +25,9 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
+import de.jetwick.solr.JetwickQuery;
 import de.jetwick.solr.SolrUser;
+import de.jetwick.solr.TweetQuery;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.MyTweetGrabber;
 import de.jetwick.tw.TwitterSearch;
@@ -35,8 +37,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.xcontent.ExistsFilterBuilder;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
@@ -58,7 +58,7 @@ public class Util {
     private int userCounter;
     private Configuration config = new Configuration();
 
-    public static void main(String[] args) throws SolrServerException {
+    public static void main(String[] args) {
         Map<String, String> map = Helper.parseArguments(args);
 
         Util util = new Util();
@@ -131,7 +131,7 @@ public class Util {
         logger.info("Successfully finished deleteAll");
     }
 
-    private void copyStaticTweets() throws SolrServerException {
+    private void copyStaticTweets() {
         Module module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
         Provider<RMIClient> rmiProvider = injector.getProvider(RMIClient.class);
@@ -139,8 +139,9 @@ public class Util {
         TwitterSearch twSearch = injector.getInstance(TwitterSearch.class);
         twSearch.initTwitter4JInstance(cfg.getTwitterSearchCredits().getToken(), cfg.getTwitterSearchCredits().getTokenSecret());
         ElasticTweetSearch fromUserSearch = new ElasticTweetSearch(injector.getInstance(Configuration.class));
-        SolrQuery query = new SolrQuery().addFilterQuery(ElasticTweetSearch.UPDATE_DT + ":[* TO *]");
-        query.setFacet(true).addFacetField("user").setFacetLimit(2000).setRows(0).setFacetSort("count");
+        JetwickQuery query = new TweetQuery().addFilterQuery(ElasticTweetSearch.UPDATE_DT, "[* TO *]");
+        // TODO set facetlimit to 2000
+        query.addFacetField("user").setSize(0);
         SearchResponse rsp = fromUserSearch.search(query);
 
         TermsFacet tf = (TermsFacet) rsp.getFacets().facet("user");
@@ -189,8 +190,7 @@ public class Util {
 
     public void fillFrom(final String fromUrl) {
         ElasticTweetSearch fromTweetSearch = new ElasticTweetSearch(fromUrl, null, null);
-        SolrQuery query = new SolrQuery().setQuery("*:*");
-        query.setQueryType("simple");
+        JetwickQuery query = new TweetQuery();        
         long maxPage = 1;
         int hitsPerPage = 300;
         Set<SolrUser> users = new LinkedHashSet<SolrUser>();
@@ -205,7 +205,7 @@ public class Util {
         Runtime.getRuntime().addShutdownHook(new Thread(optimizeOnExit));
 
         for (int page = 0; page < maxPage; page++) {
-            fromTweetSearch.attachPagability(query, page, hitsPerPage);
+            query.attachPagability(page, hitsPerPage);
             users.clear();
 
             SearchResponse rsp;
@@ -234,7 +234,7 @@ public class Util {
         }
     }
 
-    public void showFollowers(String user) throws SolrServerException {
+    public void showFollowers(String user) {
 //        ElasticUserSearch uSearch = createUserSearch();
 //        Set<SolrUser> jetwickUsers = new LinkedHashSet<SolrUser>();
 //        uSearch.search(jetwickUsers, new SolrQuery().setRows(10000));
