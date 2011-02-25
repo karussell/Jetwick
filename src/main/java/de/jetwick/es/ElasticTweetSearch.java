@@ -1065,7 +1065,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             protected void processFacetQueries(SearchRequestBuilder srb) {
                 for (SavedSearch ss : savedSearches) {
                     srb.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + "_" + ss.getId(),
-                            QueryBuilders.queryString(ss.calcFacetQuery())));
+                            QueryBuilders.queryString(ss.calcFacetQuery()).useDisMax(true).
+                            field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0)));
                 }
             }
         }.setFrom(0).setSize(0);

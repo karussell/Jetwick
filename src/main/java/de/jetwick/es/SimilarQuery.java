@@ -16,8 +16,6 @@
 package de.jetwick.es;
 
 import de.jetwick.data.JTweet;
-import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.es.TokenizerFromSet;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.Helper;
 import java.io.IOException;
