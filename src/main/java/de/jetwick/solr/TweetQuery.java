@@ -62,7 +62,6 @@ public class TweetQuery extends JetwickQuery {
     public SearchRequestBuilder initRequestBuilder(SearchRequestBuilder srb) {
         // the dateFilter should not apply to the date facets!
         dateFilter = null;
-
         srb = super.initRequestBuilder(srb);
 
         if (dateFilter != null)

@@ -95,14 +95,17 @@ public abstract class JetwickQuery implements Serializable {
 
         XContentQueryBuilder qb = createQuery(getQuery());
         qb = processFilterQueries(qb);
-        for (String ff : getFacetFields()) {
-            srb.addFacet(fromFacetField(ff));
-        }
-
+        processFacetFields(srb);
         processFacetQueries(srb);
         srb.setQuery(qb);
 
         return srb;
+    }
+    
+    public void processFacetFields(SearchRequestBuilder srb) {
+        for (String ff : getFacetFields()) {
+            srb.addFacet(fromFacetField(ff));
+        }
     }
 
     protected void processFacetQueries(SearchRequestBuilder srb) {

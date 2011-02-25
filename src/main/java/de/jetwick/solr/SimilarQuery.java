@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Peter Karich, jetwick_@_pannous_._info
  */
-public class SimilarQuery extends JetwickQuery {
+public class SimilarQuery extends TweetQuery {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private double mmBorder = 0.7;
@@ -57,6 +57,8 @@ public class SimilarQuery extends JetwickQuery {
             throw new IllegalArgumentException("Tweet cannot be null");
 
         new TermCreateCommand().calcTermsWithoutNoise(tweet);
+        getFilterQueries().clear();
+        addFilterQuery(ElasticTweetSearch.IS_RT, false);
     }
 
     public int getHours() {
@@ -93,7 +95,21 @@ public class SimilarQuery extends JetwickQuery {
     }
 
     @Override
-    public SearchRequestBuilder initRequestBuilder(SearchRequestBuilder srb) {
+    public SearchRequestBuilder initRequestBuilder(SearchRequestBuilder srb) {        
+        srb = super.initRequestBuilder(srb);
+        return srb;
+    }
+
+    @Override
+    protected XContentQueryBuilder createQuery(String queryStr) {
+        // use configured stemmer, but querying seems to be slower!
+//        BoolQueryBuilder bqb = QueryBuilders.boolQuery().minimumNumberShouldMatch(minMatchNumber);
+//        for (Entry<String, Integer> entry : terms) {
+//            bqb.should(QueryBuilders.queryString(ElasticTweetSearch.TWEET_TEXT + ":" + Solr2ElasticTweet.escapeQuery(entry.getKey())));
+//        }
+//
+//        qb = bqb;        
+
         Collection<Entry<String, Integer>> terms = getTerms();
         int minMatchNumber = (int) Math.round(terms.size() * mmBorder);
         // maximal 6 terms
@@ -103,23 +119,9 @@ public class SimilarQuery extends JetwickQuery {
 
         // do we need to escape the terms when querying?
         Collection<String> coll = doSnowballTermsStemming(terms);
-
-        XContentQueryBuilder qb = QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT,
+        return QueryBuilders.termsQuery(ElasticTweetSearch.TWEET_TEXT,
                 Helper.toStringArray(coll)).
                 minimumMatch(minMatchNumber);
-
-        // use configured stemmer, but querying seems to be slower!
-//        BoolQueryBuilder bqb = QueryBuilders.boolQuery().minimumNumberShouldMatch(minMatchNumber);
-//        for (Entry<String, Integer> entry : terms) {
-//            bqb.should(QueryBuilders.queryString(ElasticTweetSearch.TWEET_TEXT + ":" + Solr2ElasticTweet.escapeQuery(entry.getKey())));
-//        }
-//
-//        qb = bqb;        
-
-        addFilterQuery(ElasticTweetSearch.IS_RT, false);        
-        qb = processFilterQueries(qb);
-        srb.setQuery(qb);
-        return srb;
     }
 
     private Collection<String> doSnowballTermsStemming(Collection<Entry<String, Integer>> terms) {

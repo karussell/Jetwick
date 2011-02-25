@@ -92,7 +92,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
 //    public static final String KEY_USER = "user:";
     public static final String USER = "user";
-    public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
+//    public static final String FILTER_IS_NOT_RT = IS_RT + ":\"false\"";
     public static final String FILTER_NO_DUPS = DUP_COUNT + ":0";
     public static final String FILTER_ONLY_DUPS = DUP_COUNT + ":[1 TO *]";
     public static final String FILTER_NO_URL_ENTRY = URL_COUNT + ":0";
@@ -998,7 +998,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         search(users, new TweetQuery(query, false).addFilterQuery(TWEET_TEXT, "#jetwick").
                 //                addFilterQuery(RT_COUNT + ":[1 TO *]").
                 addFilterQuery(QUALITY, "[90 TO 100]").
-                addFilterQuery(IS_RT, "false").
+                addFilterQuery(IS_RT, false).
                 addFilterQuery(DATE, "[" + from.toLocalString() + " TO " + now.toLocalString() + "]").
                 setSort(RT_COUNT, "desc"));
 

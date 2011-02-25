@@ -381,7 +381,7 @@ div.wicket-aa ul li.selected {
     border-bottom: 1px solid gray;        
 }
 
-#resultslist-header .sorting {    
+#resultslist-header .translate-all {    
     float: right;    
 }
 
@@ -440,6 +440,7 @@ div.wicket-aa ul li.selected {
 }
 
 .tweet-text {
+/*    font-size: 1em;*/
     /* default is larger which is better font-size: 0.9em; */
     /* avoid too lengthy words destroying our layout */
     word-wrap: break-word;
@@ -563,7 +564,7 @@ div.wicket-aa ul li.selected {
 .rep-link a { color: black; }
 
 .more-tweets {
-    font-size: 0.6em;
+    font-size: 0.5em;
     padding: 0px 5px 0 10px;
 }
 
