@@ -17,7 +17,6 @@ package de.jetwick.data;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -47,9 +46,9 @@ public class JTagTest {
         set.add(new JTag("Test2"));
         assertEquals(2, set.size());
 
-        set = new TreeSet<JTag>();
-        set.add(new JTag("Test"));
-        set.add(new JTag("Test2"));
-        assertEquals(2, set.size());
+//        set = new TreeSet<JTag>();
+//        set.add(new JTag("Test"));
+//        set.add(new JTag("Test2"));
+//        assertEquals(2, set.size());
     }
 }
