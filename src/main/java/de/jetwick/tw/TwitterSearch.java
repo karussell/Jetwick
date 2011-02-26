@@ -16,7 +16,6 @@
 package de.jetwick.tw;
 
 import de.jetwick.util.AnyExecutor;
-import de.jetwick.data.YUser;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import java.io.Serializable;
@@ -450,14 +449,14 @@ public class TwitterSearch implements Serializable {
      * @param users should be maximal 100 users
      * @return the latest tweets of the users
      */
-    public Collection<? extends Tweet> updateUserInfo(List<? extends YUser> users) {
+    public Collection<? extends Tweet> updateUserInfo(List<? extends JUser> users) {
         int counter = 0;
         String arr[] = new String[users.size()];
 
         // responseList of twitter.lookup has not the same order as arr has!!
-        Map<String, YUser> userMap = new LinkedHashMap<String, YUser>();
+        Map<String, JUser> userMap = new LinkedHashMap<String, JUser>();
 
-        for (YUser u : users) {
+        for (JUser u : users) {
             arr[counter++] = u.getScreenName();
             userMap.put(u.getScreenName(), u);
         }
@@ -469,7 +468,7 @@ public class TwitterSearch implements Serializable {
                 List<Tweet> tweets = new ArrayList<Tweet>();
                 for (int ii = 0; ii < res.size(); ii++) {
                     User user = res.get(ii);
-                    YUser yUser = userMap.get(user.getScreenName().toLowerCase());
+                    JUser yUser = userMap.get(user.getScreenName().toLowerCase());
                     if (yUser == null)
                         continue;
 

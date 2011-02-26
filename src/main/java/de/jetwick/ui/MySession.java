@@ -106,7 +106,7 @@ public class MySession extends WebSession {
     public boolean hasLoggedIn() {
         return getUser() != null;
     }
-
+    
     /**
      * Use only if specified ts is already initialized
      */

@@ -16,10 +16,6 @@
 
 package de.jetwick.data;
 
-import java.util.Collection;
-import de.jetwick.util.Helper;
-import java.util.Date;
-import java.util.Iterator;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -27,29 +23,30 @@ import static org.junit.Assert.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class YUserTest {
+public class JTagTest {
 
-    public YUserTest() {
+    @Test
+    public void testOptimizeQueryFrequency() {
+        JTag st = new JTag("java");
+        st.optimizeQueryFrequency(10);
+        assertTrue(st.getQueryInterval() > 1000);
+        st.optimizeQueryFrequency(1);
+        assertTrue(st.getQueryInterval() > 1000);
+        st.optimizeQueryFrequency(100);
+        assertTrue(st.getQueryInterval() > 1000);
+        st.optimizeQueryFrequency(1000);
+        assertTrue(st.getQueryInterval() > 1000);
     }
 
     @Test
-    public void testCtor() {
-        assertEquals("peter", new YUser("Peter").getScreenName());
-    }
-
-    @Test
-    public void testCanBeUpdated() {
-        YUser user = new YUser("Peter");
-
-        assertTrue(user.isOutOfDate());
-
-        user.setUpdateAt(new Date());
-        assertFalse(user.isOutOfDate());
-
-        user.setUpdateAt(Helper.plusDays(new Date(), -8));
-        assertTrue(user.isOutOfDate());
-
-        user.setUpdateAt(Helper.plusDays(new Date(), -7));
-        assertFalse(user.isOutOfDate());
+    public void testCompare() {
+        JTag tag1 = new JTag("java");
+        tag1.optimizeQueryFrequency(100);
+        tag1.setLastMillis(System.currentTimeMillis());
+        JTag tag2 = new JTag("solr");
+        tag2.optimizeQueryFrequency(1);
+        tag2.setLastMillis(System.currentTimeMillis());
+        
+        assertTrue(tag2.compareTo(tag1) > 0);
     }
 }

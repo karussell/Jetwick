@@ -20,27 +20,19 @@ import com.google.api.translate.Translate;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.config.DefaultModule;
-import de.jetwick.data.TagDao;
-import de.jetwick.data.UserDao;
-import de.jetwick.data.YTag;
-import de.jetwick.data.YUser;
+import de.jetwick.data.JTag;
 import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.hib.HibernateUtil;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
+import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.TweetQuery;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -70,13 +62,9 @@ public class Statistics {
         new Statistics().start(map);
     }
     @Inject
-    private ElasticTweetSearch tweetSearch;    
+    private ElasticTweetSearch tweetSearch;
     @Inject
-    private TagDao tagDao;
-    @Inject
-    private UserDao userDao;
-    @Inject
-    private Provider<WorkManager> wmProvider;
+    private ElasticTagSearch tagSearch;
 
     public Statistics() {
         Module module = new DefaultModule();
@@ -84,18 +72,7 @@ public class Statistics {
     }
 
     public void start(Map<String, String> map) throws Exception {
-        // now process config for stuff which does NOT require the DB
-        String argStr = map.get("createSchema");
-        if (argStr != null) {
-            if ("liquibase".equals(argStr)) {
-                HibernateUtil.recreateSchemaFromLiquibase(map.get("file"));
-            } else
-                HibernateUtil.recreateSchemaFromMapping();
-
-            return;
-        }
-
-        argStr = map.get("optimize");
+        String argStr = map.get("optimize");
         if (argStr != null) {
             int segments = 1;
             logger.info("Start optimizing for twindex");
@@ -125,148 +102,41 @@ public class Statistics {
             return;
         }
 
-        WorkManager workManager = wmProvider.get();
-        workManager.beginWork();
-        try {
-            argStr = map.get("deleteEmptyUsers");
-            if (argStr != null) {
-                System.out.println("try to delete " + userDao.countEmptyUsers() + " empty users!");
-                Set<String> removeUserList = new LinkedHashSet<String>();
-                for (YUser u : userDao.findEmptyUsers()) {
-                    removeUserList.add(u.getScreenName());
-                    userDao.delete(u);
-                }
-            }
+        argStr = map.get("importTags");
+        if (argStr != null)
+            importTags(map.get("tagFile"));
 
-//            argStr = map.get("deleteUsers");
-//            if (argStr != null) {
-//                Set<String> removeUserList;
-//                if (argStr.equals("true")) {
-//                    logger.info("Now deleting from user black list!");
-//                    StringCleaner cleaner = new StringCleaner(config.getUserBlacklist());
-//                    removeUserList = cleaner.getBlacklist();
-//                } else
-//                    removeUserList = new LinkedHashSet<String>(Arrays.asList(argStr.split(",")));
-//
-//                tweetSearch.deleteUsers(removeUserList);
-//                tweetSearch.refresh();
-//                logger.info("RESTART tweet collector! Deleted: " + removeUserList);
-//            }
+        argStr = map.get("readStopAndClear");
+        if (argStr != null)
+            readStopwords(JTweet.class.getResourceAsStream("noise_words_pt.txt"));//noise_words_fr.txt, lang_det_sp.txt
 
-            argStr = map.get("printUsersFromDB");
-            if (argStr != null) {
-                for (String userStr : argStr.split(",")) {
-                    YUser u = userDao.findByName(userStr.toLowerCase());
-                    System.out.println("\n" + u.getScreenName() + "\n");
-                }
-            }
-
-            argStr = map.get("print");
-            if (argStr != null)
-                statistics(argStr, userDao, tagDao);
-
-            argStr = map.get("deleteTag");
-            if (argStr != null) {
-                List<String> list = Arrays.asList(argStr.split(" "));
-                logger.info("Delete: " + list);
-                for (String str : list) {
-                    tagDao.deleteByName(str);
-                }
-            }
-
-            argStr = map.get("exportTags");
-            if (argStr != null)
-                exportTags(map.get("tagFile"));
-
-            argStr = map.get("readStopAndClear");
-            if (argStr != null)
-                readStopwords(JTweet.class.getResourceAsStream("noise_words_pt.txt"));//noise_words_fr.txt, lang_det_sp.txt
-
-            argStr = map.get("translate");
-            if (argStr != null)
-                translate(Language.PORTUGUESE);
-
-            argStr = map.get("importTags");
-            if (argStr != null)
-                importTags(map.get("tagFile"));
-
-//            argStr = map.get("getUserInfo");
-//            if (argStr != null)
-//                getUserInfo(argStr);
-        } finally {
-            workManager.endWork();
-        }
-    }
-
-    private void sout(Object o) {
-        System.out.println(o);
-    }
-
-    private void sout1(Object o) {
-        System.out.print(o);
-    }
-
-    public void statistics(String user, UserDao userDao, TagDao tagDao) {
-        YUser oneUser = userDao.findByName(user);
-
-        if (oneUser != null) {
-            sout(user + ":");
-//            sout("  user.ownTweets:" + oneUser.getOwnTweets().size());
-//            sout("  tweetsOf:" + userDao.getTweetsOf(oneUser.getScreenName()).size());
-//            sout("");
-        }
-        StringBuilder sb = new StringBuilder();
-//        tweetSearch.getInfo(sb);
-//        sout(sb);
-        sout("\n====== DB ======\n");
-        sb = new StringBuilder();
-        userDao.getInfo(sb);
-        sout(sb);
-        tagDao.getInfo(sb);
-        sout("\n===== Tags =====\n");
-
-        for (YTag t : tagDao.findAll()) {
-            sout1(t.getTerm());
-            sout1("\t");
-            sout1(t.getSearchCounter());
-            sout1("\t");
-            sout1(t.getLastId());
-            sout1("\t");
-            sout1(t.getQueryInterval());
-            sout("\n");
-        }
-    }
-
-    public void importTags(String file) throws IOException {
-        Set<String> newTags = new TreeSet<String>();
-        for (String str : Helper.readFile(file)) {
-            if (str.trim().length() > 1)
-                newTags.add(str.trim());
-        } // do only delete those where we don't have a new one
-        // do only update tags which are new
-        for (YTag tag : tagDao.findAll()) {
-            if (!newTags.contains(tag.getTerm()))
-                tagDao.deleteByName(tag.getTerm());
-            else
-                newTags.remove(tag.getTerm());
-        }
-
-        tagDao.addAll(newTags);
-    }
-
-    public void exportTags(String file) throws IOException {
-        BufferedWriter writer = Helper.createBuffWriter(new File(file));
-        for (YTag tag : tagDao.findAll()) {
-            writer.append(tag.getTerm());
-            writer.append("\n");
-        }
-        writer.close();
+        argStr = map.get("translate");
+        if (argStr != null)
+            translate(Language.PORTUGUESE);
     }
 
     public void print(List list) {
         for (Object o : list) {
             System.out.println(o);
         }
+    }    
+    
+    public void importTags(String file) throws IOException {
+        Set<String> newTags = new TreeSet<String>();
+        for (String str : Helper.readFile(file)) {
+            if (str.trim().length() > 1)
+                newTags.add(str.trim().toLowerCase());
+        } // do only delete those where we don't have a new one
+        // do only update tags which are new
+        for (JTag tag : tagSearch.findAll(0, 1000)) {
+            if (!newTags.contains(tag.getTerm()))
+                tagSearch.deleteByName(tag.getTerm());
+            else
+                newTags.remove(tag.getTerm());
+        }
+
+        tagSearch.addAll(newTags, false);
+        logger.info("Imported tag:" + newTags.size() + " all tags:" + tagSearch.findAll(0, 1000).size());
     }
 
     public void write(Set<String> words, String file) throws Exception {

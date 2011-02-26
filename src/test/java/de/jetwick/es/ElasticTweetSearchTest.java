@@ -51,7 +51,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 //    private Logger logger = LoggerFactory.getLogger(getClass());
     private static ElasticTweetSearch twSearch;
 
-    public ElasticTweetSearch getTweetSearch() {
+    public ElasticTweetSearch getSearch() {
         return twSearch;
     }
 
@@ -492,9 +492,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testDoNotAllowSelfRetweets() throws Exception {
         twSearch.update(createTweet(1L, "bla bli blu", "userA"));
-        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userA"));
+        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userA"));        
+        twSearch.update(createTweet(3L, "RT @userA: bla bli blu", "userb"));
 
-        assertEquals(0, twSearch.findByTwitterId(1L).getReplyCount());
+        assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
     }
 
     @Test
@@ -702,7 +703,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(1, ((TermsStatsFacet) rsp.facets().facet("tag")).getEntries().size());
 
         rsp = twSearch.search(new TweetQuery().addFilterQuery("tag", "atom"));
-        assertEquals(2, twSearch.collectTweets(rsp).size());
+        assertEquals(2, twSearch.collectObjects(rsp).size());
     }
 
     @Test
@@ -861,7 +862,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(3L, "testnot this", "peter"),
                 createTweet(4L, "test this", "peternot")));
         Collection<String> users = Arrays.asList("peter", "tester");
-        Collection<JTweet> coll = twSearch.collectTweets(twSearch.search(new TweetQuery("test").createFriendsQuery(users)));
+        Collection<JTweet> coll = twSearch.collectObjects(twSearch.search(new TweetQuery("test").createFriendsQuery(users)));
 
         assertEquals(2, coll.size());
         int counter = 0;
@@ -975,7 +976,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(300, twSearch.countAll(resindex));
 
         SearchResponse rsp = twSearch.query(new TweetQuery().setSize(1000), resindex);
-        assertEquals(300, twSearch.collectTweets(twSearch.search(new ArrayList(), rsp)).size());
+        assertEquals(300, twSearch.collectObjects(twSearch.search(new ArrayList(), rsp)).size());
     }
 
     @Test
@@ -1033,7 +1034,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         SearchResponse rsp = twSearch.getClient().prepareSearch(index1, index2).
                 setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
-        assertEquals(2, twSearch.collectTweets(rsp).size());
+        assertEquals(2, twSearch.collectObjects(rsp).size());
     }
 
     @Test
@@ -1042,7 +1043,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 createTweet(1L, "test this", "peter"),
                 createTweet(4L, "test this", "peter_not")));
 
-        assertEquals(1, twSearch.collectTweets(twSearch.search(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "peter"))).size());
+        assertEquals(1, twSearch.collectObjects(twSearch.search(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "peter"))).size());
     }
 
     JTweet createSolrTweet(MyDate dt, String twText, String user) {

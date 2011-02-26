@@ -39,7 +39,7 @@ import twitter4j.Tweet;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class JTweet implements Serializable {
+public class JTweet implements DbObject, Serializable {
 
     private static final long serialVersionUID = 1L;
     public static final Comparator tweetIdComparator = new TwitterIdComparator();
@@ -576,5 +576,10 @@ public class JTweet implements Serializable {
 
     public void addDuplicate(long twId) {
         duplicates.add(twId);
+    }
+
+    @Override
+    public String getId() {
+        return Long.toString(getTwitterId());
     }
 }

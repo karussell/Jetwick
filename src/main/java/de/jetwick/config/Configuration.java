@@ -183,24 +183,7 @@ public class Configuration {
         String key = "jetwick.twitter4j.jetwot.";
         return new Credits(get(key + "token"), get(key + "tokenSecret"),
                 get(key + "consumerKey"), get(key + "consumerSecret"));
-    }
-
-    public String getHibernateUser() {
-        String user = get("jetwick.hibernate.user");
-        if (user == null)
-            return "sa";
-        return user;
-    }
-
-    /**
-     * Do NOT use an empty passwort for production!
-     */
-    public String getHibernatePassword() {
-        String pw = get("jetwick.hibernate.password", true);
-        if (pw == null)
-            return "";
-        return pw;
-    }
+    }    
 
     protected String get(String key) {
         return get(key, false);

@@ -15,7 +15,7 @@
  */
 package de.jetwick.ui;
 
-import de.jetwick.data.YUser;
+import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import org.apache.wicket.PageParameters;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class CallbackHelper {
         return twitterSearch.oAuthOnCallBack(oAuthVerifier);
     }
 
-    public static String getMessage(YUser user) {
+    public static String getMessage(JUser user) {
         String realName = "";
         if (user.getRealName() != null)
             realName = user.getRealName().toLowerCase();

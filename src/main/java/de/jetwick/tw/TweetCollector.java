@@ -18,16 +18,13 @@ package de.jetwick.tw;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.wideplay.warp.persist.WorkManager;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
-import de.jetwick.data.TagDao;
+import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
 import de.jetwick.tw.queue.TweetPackage;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +36,11 @@ public class TweetCollector {
 
     // twClient.getTrend() ...  20 tweets per min
     // RT                  ... 100 tweets per sec (as of 9.5.2010)
-    public static List<String> DEFAULT_ST = Arrays.asList("##timetabling", "RT",
-            "java", "algorithm", "solr",
-            "lucene", "netbeans", "db4o", "java", "javascript", "javafx", "dzone",
-            "oracle", "open source", "google", "obama",
-            "wicket", "wikileaks", "world cup", "news");
+//    public static List<String> DEFAULT_ST = Arrays.asList("RT",
+//            "java", "algorithm", "solr",
+//            "lucene", "netbeans", "db4o", "java", "javascript", "javafx", "dzone",
+//            "oracle", "open source", "google", "obama",
+//            "wicket", "wikileaks", "world cup", "news");
     private static Logger logger = LoggerFactory.getLogger(TweetCollector.class);
     private static Thread.UncaughtExceptionHandler excHandler = new Thread.UncaughtExceptionHandler() {
 
@@ -70,14 +67,8 @@ public class TweetCollector {
         TwitterSearch tws = injector.getInstance(TwitterSearch.class);
         ElasticTweetSearch tweetSearch = injector.getInstance(ElasticTweetSearch.class);
         ElasticUserSearch userSearch = injector.getInstance(ElasticUserSearch.class);
-        Configuration cfg = injector.getInstance(Configuration.class);
-
-        // add at least the default tags      
-        WorkManager manager = injector.getInstance(WorkManager.class);
-        manager.beginWork();
-        TagDao tagDao = injector.getInstance(TagDao.class);
-        tagDao.addAll(DEFAULT_ST);
-        manager.endWork();
+        ElasticTagSearch tagSearch = injector.getInstance(ElasticTagSearch.class);
+        Configuration cfg = injector.getInstance(Configuration.class);        
 
         // producer's -> queue1 -> resolve url (max threads) -> queue2 -> feed solr (min time, max tweets)
         //              /\
@@ -90,6 +81,7 @@ public class TweetCollector {
         twProducer.setMaxFill(2 * tweetsPerBatch);
         twProducer.setTwitterSearch(tws); 
         twProducer.setUserSearch(userSearch);        
+        twProducer.setTagSearch(tagSearch);   
 
         BlockingQueue<TweetPackage> queue1 = twProducer.getQueue();
         

@@ -15,8 +15,8 @@
  */
 package de.jetwick.data;
 
-import de.jetwick.data.JTweet;
-import de.jetwick.data.JUser;
+import de.jetwick.util.Helper;
+import java.util.Date;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -27,6 +27,27 @@ import static org.junit.Assert.*;
 public class JUserTest {
 
     public JUserTest() {
+    }
+
+    @Test
+    public void testCtor() {
+        assertEquals("peter", new JUser("Peter").getScreenName());
+    }
+
+    @Test
+    public void testCanBeUpdated() {
+        JUser user = new JUser("Peter");
+
+        assertTrue(user.isOutOfDate());
+
+        user.setUpdateAt(new Date());
+        assertFalse(user.isOutOfDate());
+
+        user.setUpdateAt(Helper.plusDays(new Date(), -8));
+        assertTrue(user.isOutOfDate());
+
+        user.setUpdateAt(Helper.plusDays(new Date(), -7));
+        assertFalse(user.isOutOfDate());
     }
 
     @Test

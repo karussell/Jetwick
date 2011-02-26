@@ -22,5 +22,5 @@ package de.jetwick.data;
  */
 public interface DbObject {
 
-    Long getId();
+    String getId();
 }

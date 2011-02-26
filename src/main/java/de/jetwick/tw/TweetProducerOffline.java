@@ -15,6 +15,7 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
@@ -116,6 +117,11 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
 
     @Override
     public void setUserSearch(ElasticUserSearch userSearch) {
+        // skip
+    }
+
+    @Override
+    public void setTagSearch(ElasticTagSearch tagSearch) {
         // skip
     }
 }

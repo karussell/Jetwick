@@ -49,6 +49,9 @@ public class ElasticNode {
 
         ElasticUserSearch uSearch = new ElasticUserSearch(node.client());
         uSearch.saveCreateIndex();
+        
+        ElasticTagSearch tagSearch = new ElasticTagSearch(node.client());
+        tagSearch.saveCreateIndex();
 
         Thread.currentThread().join();
     }

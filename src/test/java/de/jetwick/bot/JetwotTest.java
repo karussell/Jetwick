@@ -69,7 +69,7 @@ public class JetwotTest {
                     }
 
                     @Override
-                    public List<JTweet> collectTweets(SearchResponse rsp) {
+                    public List<JTweet> collectObjects(SearchResponse rsp) {
                         return todoTweets;
                     }
                 };

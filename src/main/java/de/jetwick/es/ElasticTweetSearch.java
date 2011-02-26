@@ -15,9 +15,7 @@
  */
 package de.jetwick.es;
 
-import org.elasticsearch.common.unit.TimeValue;
 import java.util.regex.Pattern;
-import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.query.xcontent.NotFilterBuilder;
 import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.filter.FilterFacet;
@@ -47,19 +45,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
-import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
@@ -72,7 +65,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Peter Karich, jetwick_@_pannous_._info
  */
-public class ElasticTweetSearch extends AbstractElasticSearch {
+public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
 
     public static final String TWEET_TEXT = "tw";
     public static final String DATE = "dt";
@@ -244,6 +237,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         return b;
     }
 
+    @Override
     public JTweet readDoc(Map<String, Object> source, String idAsStr) {
         // if we use in mapping: "_source" : {"enabled" : false}
         // we need to include all fields in query to use doc.getFields() 
@@ -421,25 +415,12 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         try {
             JetwickQuery sq = new TweetQuery(true).addFilterQuery("crt_b", retweet).addFilterQuery(INREPLY_ID, id);
             SearchResponse rsp = query(sq);
-            return collectTweets(rsp);
+            return collectObjects(rsp);
         } catch (Exception ex) {
             logger.error("Error while searchReplies", ex);
             return Collections.EMPTY_SET;
         }
-    }
-
-    void update(JTweet tweet, boolean refresh) {
-        try {
-            XContentBuilder b = createDoc(tweet);
-            if (b != null)
-                feedDoc(Long.toString(tweet.getTwitterId()), b);
-
-            if (refresh)
-                refresh();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    }    
 
     Collection<JTweet> update(JTweet tmpTweets) {
         return privateUpdate(Arrays.asList(tmpTweets));
@@ -558,32 +539,6 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }
     }
 
-    public void bulkUpdate(Collection<JTweet> tweets, String indexName) throws IOException {
-        bulkUpdate(tweets, indexName, false);
-    }
-
-    public void bulkUpdate(Collection<JTweet> tweets, String indexName, boolean refresh) throws IOException {
-        // now using bulk API instead of feeding each doc separate with feedDoc
-        BulkRequestBuilder brb = client.prepareBulk();
-        for (JTweet tw : tweets) {
-            if (tw.getTwitterId() == null) {
-                logger.warn("Skipped tweet without twitterid when bulkUpdate:" + tw);
-                continue;
-            }
-
-            String id = Long.toString(tw.getTwitterId());
-            XContentBuilder source = createDoc(tw);
-            brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
-            brb.setRefresh(refresh);
-        }
-        if (brb.numberOfActions() > 0) {
-//            System.out.println("actions:" + brb.numberOfActions());
-            BulkResponse rsp = brb.execute().actionGet();
-            if (rsp.hasFailures())
-                logger.error("Error while bulkUpdate:" + rsp.buildFailureMessage());
-        }
-    }
-
     /**
      * For every user there should be at least 5 tweets to make spam detection
      * more efficient
@@ -671,13 +626,18 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
      * add relation to existing/original tweet
      */
     public JTweet connectToOrigTweet(JTweet tw, String toUserStr) {
-        if (tw.isRetweet() && JTweet.isDefaultInReplyId(tw.getInReplyTwitterId())) {
-            // connect retweets to tweets only searchTweetsDays old
-
+        if (tw.isRetweet() && JTweet.isDefaultInReplyId(tw.getInReplyTwitterId())) {            
+            // do not connect if retweeted user == user who retweets  
+            if (toUserStr.equals(tw.getFromUser().getScreenName()))
+                return null;
+            
             try {
-                SearchResponse qrsp = query(new TweetQuery("\"" + tw.extractRTText() + "\"", false).addFilterQuery("user", toUserStr).setSize(10));
-                List<JTweet> existingTw = collectTweets(qrsp);
-
+                // connect retweets to tweets only searchTweetsDays old
+                SearchResponse rsp = query(new TweetQuery("\""+tw.extractRTText()+"\"").                        
+                        addFilterQuery(USER, toUserStr).
+                        addFilterQuery(IS_RT, false).
+                        setSize(10));
+                List<JTweet> existingTw = collectObjects(rsp);
                 for (JTweet tmp : existingTw) {
                     boolean isRetweet = tw.isRetweetOf(tmp);
                     if (isRetweet) {
@@ -828,22 +788,11 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             logger.error("couldn't add reply to:" + orig, ex);
             return false;
         }
-    }
-
-    public List<JTweet> collectTweets(SearchResponse rsp) {
-        SearchHits docs = rsp.getHits();
-        List<JTweet> list = new ArrayList<JTweet>();
-
-        for (SearchHit sd : docs) {
-            list.add(readDoc(sd.getSource(), sd.getId()));
-        }
-
-        return list;
-    }
+    }    
 
     public JTweet findByTwitterId(Long twitterId) {
         try {
-            GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), "" + twitterId).
+            GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), Long.toString(twitterId)).
                     execute().actionGet();
             if (rsp.getSource() == null)
                 return null;
@@ -960,7 +909,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
 
     public List<JTweet> searchTweets(JetwickQuery q) {
         try {
-            return collectTweets(search(q));
+            return collectObjects(search(q));
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -1021,7 +970,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
             int dups = 0;
             try {
                 // find dups in index
-                for (JTweet simTweet : collectTweets(search(reqBuilder))) {
+                for (JTweet simTweet : collectObjects(search(reqBuilder))) {
                     if (simTweet.getTwitterId().equals(currentTweet.getTwitterId()))
                         continue;
 
@@ -1072,56 +1021,5 @@ public class ElasticTweetSearch extends AbstractElasticSearch {
         }.setFrom(0).setSize(0);
 
         return search(q);
-    }
-
-    /**
-     * All indices has to be created before!
-     */
-    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh,
-            XContentFilterBuilder additionalFilter) {
-        if (forceRefresh) {
-            refresh(indexList);
-            refresh(intoIndex);
-        }
-
-        for (String fromIndex : indexList) {
-            SearchRequestBuilder srb = client.prepareSearch(fromIndex).
-                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
-                    setSearchType(SearchType.SCAN).
-                    setScroll(TimeValue.timeValueMinutes(30));
-            if (additionalFilter != null)
-                srb.setFilter(additionalFilter);
-            SearchResponse rsp = srb.execute().actionGet();
-
-            try {
-                long total = rsp.hits().totalHits();
-                String scrollId = rsp.scrollId();
-                int collectedResults = 0;
-                while (true) {
-                    StopWatch queryWatch = new StopWatch().start();
-//                    System.out.println("NOW!!!");
-                    rsp = client.prepareSearchScroll(scrollId).
-                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
-                    long currentResults = rsp.hits().totalHits();
-                    if (currentResults == 0)
-                        break;
-
-                    queryWatch.stop();
-                    Collection tweets = collectTweets(rsp);
-                    StopWatch updateWatch = new StopWatch().start();
-                    bulkUpdate(tweets, intoIndex);
-                    updateWatch.stop();
-                    collectedResults += currentResults;
-                    logger.info("Progress " + collectedResults + "/" + total + " fromIndex="
-                            + fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
-                }
-                logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
-            } catch (Exception ex) {
-                logger.error("Failed to copy data from index " + fromIndex + " into " + intoIndex + ".", ex);
-            }
-        }
-
-        if (forceRefresh)
-            refresh(intoIndex);
     }
 }

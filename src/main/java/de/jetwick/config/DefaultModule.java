@@ -19,6 +19,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import de.jetwick.es.AbstractElasticSearch;
 import de.jetwick.es.ElasticNode;
+import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
@@ -48,22 +49,10 @@ public class DefaultModule extends AbstractModule {
         installTweetProducer();
         installLastSearches();
         installTwitterModule();
-        installSearchModule();
-        installDbPasswords();
-        installDbModule();
+        installSearchModule();     
         installRMIModule();
         installUrlCleaner();
-    }
-
-    public void installDbPasswords() {
-        logger.info("db user:" + config.getHibernateUser());
-        System.setProperty("hibernate.connection.username", config.getHibernateUser());
-        System.setProperty("hibernate.connection.password", config.getHibernatePassword());
-    }
-
-    public void installDbModule() {
-        install(new HibModule());
-    }
+    }    
 
     public void installSearchModule() {
         // TODO shouldn't fail when node is not available!!??
@@ -76,6 +65,9 @@ public class DefaultModule extends AbstractModule {
 
         ElasticUserSearch userSearch = new ElasticUserSearch(client);
         bind(ElasticUserSearch.class).toInstance(userSearch);
+        
+        ElasticTagSearch tagSearch = new ElasticTagSearch(client);        
+        bind(ElasticTagSearch.class).toInstance(tagSearch);
     }
 
     public void installRMIModule() {

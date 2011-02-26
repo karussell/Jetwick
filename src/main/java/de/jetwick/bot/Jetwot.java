@@ -191,7 +191,7 @@ public class Jetwot {
         int TRIALS = 2;
         for (int trial = 0; trial < TRIALS; trial++) {
             try {
-                return tweetSearch.collectTweets(tweetSearch.search(query));
+                return tweetSearch.collectObjects(tweetSearch.search(query));
             } catch (Exception ex) {
                 logger.error(trial + "| Couldn't query twindex: " + ex.getMessage());
             }

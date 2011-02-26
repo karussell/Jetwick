@@ -36,7 +36,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     private static ElasticUserSearch userSearch;
 //    private Logger logger = LoggerFactory.getLogger(getClass());
 
-    public ElasticUserSearch getUserSearch() {
+    public ElasticUserSearch getSearch() {
         return userSearch;
     }
 

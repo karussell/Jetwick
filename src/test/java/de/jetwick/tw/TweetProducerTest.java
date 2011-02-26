@@ -15,11 +15,11 @@
  */
 package de.jetwick.tw;
 
+import org.junit.AfterClass;
 import de.jetwick.es.ElasticUserSearch;
-import com.google.inject.Inject;
-import de.jetwick.data.TagDao;
-import de.jetwick.data.YTag;
-import de.jetwick.hib.HibTestClass;
+import de.jetwick.JetwickTestClass;
+import de.jetwick.data.JTag;
+import de.jetwick.es.ElasticTagSearchTest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Queue;
@@ -28,6 +28,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -36,48 +37,60 @@ import static org.mockito.Mockito.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetProducerTest extends HibTestClass {
+public class TweetProducerTest extends JetwickTestClass {
 
-    @Inject
-    private TagDao tagDao;
-
+    private ElasticTagSearchTest tagSearchTester = new ElasticTagSearchTest();
+    private TweetProducerViaSearch twProd;
+    
     public TweetProducerTest() {
     }
+    
+    @BeforeClass
+    public static void beforeClass() {
+        ElasticTagSearchTest.beforeClass();
+    }
 
+    @AfterClass
+    public static void afterClass() {
+        ElasticTagSearchTest.afterClass();
+    }
+    
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
+        tagSearchTester.setUp();
+        twProd = getInstance(TweetProducerViaSearch.class);
+        twProd.setTagSearch(tagSearchTester.getSearch());
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
+        tagSearchTester.tearDown();
     }
 
     @Test
     public void testUpdateAndInitTag() {
-        // make sure that updateTag is in a transaction        
-        TweetProducerViaSearch twProd = getInstance(TweetProducerViaSearch.class);
-        twProd.updateTagInTA(new YTag("test"), 6);
-        assertTrue(tagDao.findByName("test").getQueryInterval() < 10 * YTag.DEFAULT_Q_I);
+        // make sure that updateTag is in a transaction                
+        twProd.updateTag(new JTag("test"), 6);
+        assertTrue(tagSearchTester.getSearch().findByName("test").getQueryInterval() < 10 * JTag.DEFAULT_Q_I);
     }
 
     @Test
-    public void testInitTagsNoException() {
-        TweetProducerViaSearch twProd = getInstance(TweetProducerViaSearch.class);
-        twProd.updateTagInTA(new YTag("test"), 6);
+    public void testInitTagsNoException() {        
+        twProd.updateTag(new JTag("test"), 6);
         ElasticUserSearch uSearch = mock(ElasticUserSearch.class);
         when(uSearch.getQueryTerms()).thenReturn(Arrays.asList("Test"));
         twProd.setUserSearch(uSearch);
-        Collection<YTag> tags = twProd.initTags();
+        Collection<JTag> tags = twProd.initTags();
 
-        for (YTag tag : tags) {
-            twProd.updateTagInTA(tag, 5);
+        for (JTag tag : tags) {
+            twProd.updateTag(tag, 5);
         }
 
-        twProd.updateTagInTA(new YTag("anotherone"), 6);
+        twProd.updateTag(new JTag("anotherone"), 6);
     }
 
     @Test

@@ -15,13 +15,10 @@
  */
 package de.jetwick.tw;
 
-import com.google.inject.Inject;
-import com.wideplay.warp.persist.Transactional;
-import com.wideplay.warp.persist.WorkManager;
-import de.jetwick.data.TagDao;
-import de.jetwick.data.YTag;
+import de.jetwick.data.JTag;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.data.JTweet;
+import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
@@ -32,7 +29,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
@@ -45,16 +41,12 @@ import twitter4j.TwitterException;
 public class TweetProducerViaSearch extends MyThread implements TweetProducer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    @Inject
-    private TagDao tagDao;
     protected BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
-    private PriorityQueue<YTag> tags = new PriorityQueue<YTag>();
+    private PriorityQueue<JTag> tags = new PriorityQueue<JTag>();
     protected TwitterSearch twSearch;
+    protected ElasticTagSearch tagSearch;
     protected ElasticUserSearch userSearch;
     protected int maxFill = 2000;
-    
-    @Inject
-    private WorkManager manager;    
     private long feededTweets = 0;
     private long start = System.currentTimeMillis();
 
@@ -81,78 +73,67 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
         Helper.enableUserAgentOverwrite();
 
         long findNewTagsTime = -1;
-        manager.beginWork();
-        try {
-            MAIN:
-            while (!isInterrupted()) {
-
-                if (tags.isEmpty()) {
-                    initTags();
-                    if (tags.size() == 0) {
-                        logger.warn("No tags found in db! Exit");
-                        break;
-                    }
-
-                    if (findNewTagsTime > 0 && System.currentTimeMillis() - findNewTagsTime < 2000) {
-                        // wait 2 to 60 seconds. depends on the demand
-                        int sec = Math.max(2, (int) tags.peek().getWaitingSeconds() + 1);
-                        logger.info("all tags are pausing. wait " + sec + " seconds ");
-                        myWait(sec);
-                    }
-
-                    findNewTagsTime = System.currentTimeMillis();
+        MAIN:
+        while (!isInterrupted()) {
+            if (tags.isEmpty()) {
+                initTags();
+                if (tags.size() == 0) {
+                    logger.warn("No tags found in db! Exit");
+                    break;
                 }
 
-                YTag tag = tags.poll();
-                if (tag != null && tag.nextQuery()) {
-                    // do not add more tweets to the pipe if consumer cannot process it
-                    int count = 0;
-                    while (true) {
-                        count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
-                        if (count < maxFill)
-                            break;
-
-                        logger.info("... WAITING! " + count + " are too many tweets from twitter4j searching!");
-                        if (!myWait(20))
-                            break MAIN;
-                    }
-
-                    float waitInSeconds = 2f;
-                    try {
-                        long maxId = 0;
-                        LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
-                        maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
-
-                        int hits = tmp.size();
-                        tag.setLastId(maxId);
-                        feededTweets += hits;
-                        float tweetsPerSec = feededTweets / ((System.currentTimeMillis() - start) / 1000.0f);
-                        logger.info("tweets/sec:" + tweetsPerSec + " \tqueue= " + count + " \t + "
-                                + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
-
-                        tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
-
-                        if (!tag.isTransient()) {
-                            // TODO save only if indexing to solr was successful -> pkg.isIndexed()
-                            updateTagInTA(tag, hits);
-                        }
-                    } catch (TwitterException ex) {
-                        waitInSeconds = 1f;
-                        logger.warn("Couldn't finish search for tag '" + tag.getTerm() + "': " + ex.getMessage());
-                        if (ex.exceededRateLimitation())
-                            waitInSeconds = ex.getRetryAfter();
-                    } catch (StaleObjectStateException ex) {
-                        initTags();
-                    }
-
-                    if (!myWait(waitInSeconds))
-                        break;
+                if (findNewTagsTime > 0 && System.currentTimeMillis() - findNewTagsTime < 2000) {
+                    // wait 2 to 60 seconds. depends on the demand
+                    int sec = Math.max(2, (int) tags.peek().getWaitingSeconds() + 1);
+                    logger.info("all tags are pausing. wait " + sec + " seconds ");
+                    myWait(sec);
                 }
+
+                findNewTagsTime = System.currentTimeMillis();
             }
-        } finally {
-            manager.endWork();
-        }
 
+            JTag tag = tags.poll();
+            if (tag != null && tag.nextQuery()) {
+                // do not add more tweets to the pipe if consumer cannot process it
+                int count = 0;
+                while (true) {
+                    count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
+                    if (count < maxFill)
+                        break;
+
+                    logger.info("... WAITING! " + count + " are too many tweets from twitter4j searching!");
+                    if (!myWait(20))
+                        break MAIN;
+                }
+
+                float waitInSeconds = 2f;
+                try {
+                    long maxId = 0;
+                    LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
+                    maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
+
+                    int hits = tmp.size();
+                    tag.setLastId(maxId);
+                    feededTweets += hits;
+                    float tweetsPerSec = feededTweets / ((System.currentTimeMillis() - start) / 1000.0f);
+                    logger.info("tweets/sec:" + tweetsPerSec + " \tqueue= " + count + " \t + "
+                            + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
+
+                    tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
+
+                    // TODO save only if indexing to solr was successful -> pkg.isIndexed()
+                    updateTag(tag, hits);                    
+                } catch (TwitterException ex) {
+                    waitInSeconds = 1f;
+                    logger.warn("Couldn't finish search for tag '" + tag.getTerm() + "': " + ex.getMessage());
+                    if (ex.exceededRateLimitation())
+                        waitInSeconds = ex.getRetryAfter();              
+                }
+
+                if (!myWait(waitInSeconds))
+                    break;
+            }
+        }
         logger.info(getName() + " successfully finished");
     }
 
@@ -166,15 +147,14 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
         this.twSearch = tws;
     }
 
-    @Transactional
-    public void updateTagInTA(YTag tag, int hits) {
+    public void updateTag(JTag tag, int hits) {
         tag.optimizeQueryFrequency(hits);
-        tagDao.save(tag);
+        tagSearch.update(tag);
     }
 
-    Collection<YTag> initTags() {
-        Map<String, YTag> tmp = new LinkedHashMap<String, YTag>();
-        for (YTag tag : tagDao.findAllSorted()) {
+    Collection<JTag> initTags() {
+        Map<String, JTag> tmp = new LinkedHashMap<String, JTag>();
+        for (JTag tag : tagSearch.findSorted(0, 1000)) {
             tmp.put(tag.getTerm(), tag);
         }
         try {
@@ -182,9 +162,9 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
             int counter = 0;
             for (String str : userQueryTerms) {
                 str = str.toLowerCase();
-                YTag tag = tmp.get(str);
+                JTag tag = tmp.get(str);
                 if (tag == null) {
-                    tmp.put(str, new YTag(str));
+                    tmp.put(str, new JTag(str));
                     counter++;
                 }
             }
@@ -193,7 +173,7 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
             logger.error("Couldn't query user index to feed tweet index with user queries:" + ex.getMessage());
         }
 
-        tags = new PriorityQueue<YTag>(tmp.values());
+        tags = new PriorityQueue<JTag>(tmp.values());
         logger.info("Using " + tags.size() + " tags. first tag is: " + tags.peek());
         return tags;
     }
@@ -201,5 +181,9 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
     @Override
     public void setUserSearch(ElasticUserSearch userSearch) {
         this.userSearch = userSearch;
+    }
+
+    public void setTagSearch(ElasticTagSearch tagSearch) {
+        this.tagSearch = tagSearch;
     }
 }

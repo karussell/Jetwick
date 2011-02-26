@@ -13,15 +13,12 @@
         <slf4j.version>1.6.0</slf4j.version>
         <jetty.version>6.1.24</jetty.version>        
         <wicket.version>1.4.9</wicket.version>
-        <!--<wicket.version>1.5-M2.1</wicket.version>-->
-
-        <dn.version>2.0.4</dn.version>
-        <hibernate.version>3.5.1-Final</hibernate.version>        
+        <!--<wicket.version>1.5-M2.1</wicket.version>-->        
+                
+        <!-- Grab from source: git clone git://github.com/elasticsearch/elasticsearch.git             
+             Then do: ./gradlew clean install
+          -->
         <es.version>0.16.0-SNAPSHOT</es.version>        
-<!--        <es.version>0.14.1</es.version>-->
-        <!-- <lucene.version>3.0.3</lucene.version> -->
-        <liquibase.version>1.9.4</liquibase.version>
-        <liquibase.plugin.version>1.9.5.0</liquibase.plugin.version>
         <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -41,9 +38,6 @@
             <version>2.1.11</version>
         </dependency>
         
-        <!-- Grab from source: git clone git://github.com/elasticsearch/elasticsearch.git             
-             Then do: ./gradlew clean install
-          -->
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
@@ -77,45 +71,8 @@
             <version>${wicket.version}</version>
         </dependency>
         
-        <dependency>
-            <groupId>com.wideplay.warp</groupId>
-            <artifactId>warp-persist</artifactId>
-            <version>2.0-20090214</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <version>${hibernate.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-annotations</artifactId>
-            <version>${hibernate.version}</version>
-        </dependency>
-
-        <!-- we need liquibase on the path to recreate the schema on the fly -->
-        <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-            <version>${liquibase.version}</version>
-        </dependency>
-
-        <!-- optional jars are also necessary -->
-        <dependency>
-            <groupId>javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.8.0.GA</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>1.2.137</version>
-        </dependency>
-
-        <!-- we need this, otherwise warp persist cannot be run from cmd line -->
-        <dependency>
+        <!-- e.g. for cookie class -->
+         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
             <version>2.5</version>
@@ -280,22 +237,7 @@
                     <webDefaultXml>src/main/resources/webdefault.xml</webDefaultXml>
                     -->
                 </configuration>
-            </plugin>
-            <!-- we need a more recent liquibase version!
-            <plugin>
-                <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-plugin</artifactId>
-                <version>${liquibase.plugin.version}</version>
-                <configuration>
-                    <propertyFile>src/main/resources/liquibase.properties</propertyFile>
-                    <verbose>true</verbose>
-                    <logLevel>ALL</logLevel>
-                    -
-                    <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
-                    -
-                </configuration>
-            </plugin>
-            -->
+            </plugin>           
         </plugins>
     </build>
 

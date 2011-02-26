@@ -32,16 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
-import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +43,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class ElasticUserSearch extends AbstractElasticSearch {
+public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
     private static final String QUERY_TERMS = "ss_qterms_mv_s";
@@ -136,6 +129,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         }
     }
 
+    @Override
     public XContentBuilder createDoc(JUser user) throws IOException {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         // make sure that if we look for a specific user this user will show up first:
@@ -190,6 +184,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
         return b;
     }
 
+    @Override
     public JUser readDoc(Map<String, Object> doc, String idAsStr) {
         String userName = idAsStr;
         JUser user = new JUser(userName);
@@ -238,8 +233,8 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     public JUser findByTwitterToken(String token) {
         try {
-            Collection<JUser> res = collectUsers(search(new UserQuery().addFilterQuery("token_s", token)));
-            if (res.size() == 0)
+            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery("token_s", token)));
+            if (res.isEmpty())
                 return null;
             else if (res.size() == 1)
                 return res.iterator().next();
@@ -254,7 +249,7 @@ public class ElasticUserSearch extends AbstractElasticSearch {
     public JUser findByScreenName(String name) {
         try {
             name = name.toLowerCase();
-            Collection<JUser> res = collectUsers(search(new UserQuery().addFilterQuery(SCREEN_NAME, name)));
+            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery(SCREEN_NAME, name)));
             if (res.isEmpty())
                 return null;
             else if (res.size() == 1)
@@ -286,20 +281,9 @@ public class ElasticUserSearch extends AbstractElasticSearch {
     public SearchResponse search(Collection<JUser> users, JetwickQuery query) {
         SearchRequestBuilder srb = client.prepareSearch(getIndexName());        
         SearchResponse response = query.initRequestBuilder(srb).execute().actionGet();
-        users.addAll(collectUsers(response));
+        users.addAll(collectObjects(response));
         return response;
-    }
-
-    public Collection<JUser> collectUsers(SearchResponse rsp) {
-        SearchHit docs[] = rsp.getHits().getHits();
-        Collection<JUser> users = new LinkedHashSet<JUser>();
-
-        for (SearchHit sd : docs) {
-            JUser u = readDoc(sd.getSource(), sd.getId());
-            users.add(u);
-        }
-        return users;
-    }
+    }   
 
     /** use createQuery + search instead */
     @Deprecated
@@ -320,75 +304,5 @@ public class ElasticUserSearch extends AbstractElasticSearch {
 
     void setTermMinFrequency(int tmf) {
         termMinFrequency = tmf;
-    }
-
-    public void bulkUpdate(Collection<JUser> users, String indexName) throws IOException {
-        bulkUpdate(users, indexName, false);
-    }
-
-    public void bulkUpdate(Collection<JUser> users, String indexName, boolean refresh) throws IOException {
-        // now using bulk API instead of feeding each doc separate with feedDoc
-        BulkRequestBuilder brb = client.prepareBulk();
-        logger.info(users.toString());
-        for (JUser user : users) {
-            if (user.getScreenName() == null) {
-                logger.warn("Skipped user without screenName when bulkUpdate:" + user);
-                continue;
-            }
-
-            String id = user.getScreenName();
-            XContentBuilder source = createDoc(user);
-            brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
-            brb.setRefresh(refresh);
-        }
-        if (brb.numberOfActions() > 0) {
-//            System.out.println("actions:" + brb.numberOfActions());
-            BulkResponse rsp = brb.execute().actionGet();
-            if (rsp.hasFailures())
-                logger.error("Error while bulkUpdate:" + rsp.buildFailureMessage());
-        }
-    }
-
-    /**
-     * All indices has to be created before!
-     */
-    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh,
-            XContentFilterBuilder additionalFilter) {
-        if (forceRefresh) {
-            refresh(indexList);
-            refresh(intoIndex);
-        }
-
-        for (String fromIndex : indexList) {
-            SearchRequestBuilder srb = client.prepareSearch(fromIndex).                    
-                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).                   
-                    setSearchType(SearchType.SCAN).
-                    setScroll(TimeValue.timeValueMinutes(30));
-            if (additionalFilter != null)
-                srb.setFilter(additionalFilter);
-            SearchResponse rsp = srb.execute().actionGet();
-            try {
-                long total = rsp.hits().totalHits();
-                int collectedResults = 0;                
-                String scrollId = rsp.scrollId();                
-                while (true) {
-                    rsp = client.prepareSearchScroll(scrollId).
-                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();                    
-                    int currentResults = rsp.hits().hits().length;
-                    if(currentResults == 0)
-                        break;
-
-                    Collection users = collectUsers(rsp);
-                    bulkUpdate(users, intoIndex);
-                    collectedResults += currentResults;                    
-                }
-                logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
-            } catch (Exception ex) {
-                logger.error("Failed to copy data from index " + fromIndex + " into " + intoIndex + ".", ex);
-            }
-        }
-
-        if (forceRefresh)
-            refresh(intoIndex);
     }
 }

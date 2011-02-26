@@ -15,16 +15,15 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.JetwickTestClass;
+import de.jetwick.es.ElasticTagSearchTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.es.ElasticUserSearchTest;
-import com.google.inject.Inject;
 import de.jetwick.config.Configuration;
-import de.jetwick.data.TagDao;
-import de.jetwick.hib.HibTestClass;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import de.jetwick.es.TweetQuery;
@@ -46,13 +45,12 @@ import static org.junit.Assert.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetCollectorIntegrationTestClass extends HibTestClass {
+public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
 
     // TODO later: @Inject
     private ElasticUserSearchTest userSearchTester = new ElasticUserSearchTest();
     private ElasticTweetSearchTest tweetSearchTester = new ElasticTweetSearchTest();
-    @Inject
-    private TagDao tagDao;
+    private ElasticTagSearchTest tagSearchTester = new ElasticTagSearchTest();    
 
     @BeforeClass
     public static void beforeClass() {
@@ -63,11 +61,12 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
     public static void afterClass() {
         ElasticTweetSearchTest.afterClass();
     }
-
+    
     @Override
     @Before
     public void setUp() throws Exception {
-        super.setUp();      
+        super.setUp();
+        tagSearchTester.setUp();
         userSearchTester.setUp();
         tweetSearchTester.setUp();
     }
@@ -76,6 +75,7 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
+        tagSearchTester.tearDown();
         userSearchTester.tearDown();
         tweetSearchTester.tearDown();
     }
@@ -86,11 +86,11 @@ public class TweetCollectorIntegrationTestClass extends HibTestClass {
         Thread.UncaughtExceptionHandler excHandler = createExceptionMapHandler(exceptionMap);
 
         // fill DB with default tags
-        tagDao.addAll(Arrays.asList("java"));
+        tagSearchTester.getSearch().addAll(Arrays.asList("java"), true);
 
         // already existing tweets must not harm
-        ElasticTweetSearch tweetSearch = tweetSearchTester.getTweetSearch();
-        ElasticUserSearch userSearch = userSearchTester.getUserSearch();
+        ElasticTweetSearch tweetSearch = tweetSearchTester.getSearch();
+        ElasticUserSearch userSearch = userSearchTester.getSearch();
         tweetSearch.update(Arrays.asList(new JTweet(3L, "duplication tweet", new JUser("tmp"))));        
 
         Credits cred = new Configuration().getTwitterSearchCredits();

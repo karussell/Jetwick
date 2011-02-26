@@ -62,7 +62,7 @@ public class TweetConsumerTest extends JetwickTestClass {
         tester.setUp();
         super.setUp();
         tweetConsumer = getInstance(TweetConsumer.class);
-        tweetConsumer.setTweetSearch(tester.getTweetSearch());
+        tweetConsumer.setTweetSearch(tester.getSearch());
     }
 
     @After
@@ -78,7 +78,7 @@ public class TweetConsumerTest extends JetwickTestClass {
 
             @Override
             public void installSearchModule() {
-                bind(ElasticTweetSearch.class).toInstance(tester.getTweetSearch());
+                bind(ElasticTweetSearch.class).toInstance(tester.getSearch());
             }            
         };
     }        

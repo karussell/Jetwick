@@ -15,8 +15,12 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.data.DbObject;
 import de.jetwick.util.Helper;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -29,16 +33,27 @@ import org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
+import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +61,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public abstract class AbstractElasticSearch {
+public abstract class AbstractElasticSearch<T extends DbObject> {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
     protected Client client;
@@ -68,11 +83,25 @@ public abstract class AbstractElasticSearch {
         tmp.addTransportAddress(new InetSocketTransportAddress(url, port));
         return tmp;
     }
-    
+
     public abstract String getIndexName();
+
     public abstract void setIndexName(String indexName);
+
     public abstract String getIndexType();
 
+    public void update(T obj, boolean refresh) {
+        try {
+            XContentBuilder b = createDoc(obj);
+            if (b != null)
+                feedDoc(obj.getId(), b);
+
+            if (refresh)
+                refresh();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public boolean indexExists(String indexName) {
         // make sure node is up to create the index otherwise we get: blocked by: [1/not recovered from gateway];
@@ -98,7 +127,7 @@ public abstract class AbstractElasticSearch {
 
     public void saveCreateIndex(String name, boolean log) {
 //         if (!indexExists(name)) {
-        try {            
+        try {
             createIndex(name);
             if (log)
                 logger.info("Created index: " + name);
@@ -144,7 +173,7 @@ public abstract class AbstractElasticSearch {
     public long countAll() {
         return countAll(getIndexName());
     }
-    
+
     public long countAll(String... indices) {
         CountResponse response = client.prepareCount(indices).
                 setQuery(QueryBuilders.matchAllQuery()).
@@ -164,18 +193,18 @@ public abstract class AbstractElasticSearch {
         DeleteResponse response = client.prepareDelete(getIndexName(), getIndexType(), id).
                 execute().
                 actionGet();
-    }   
+    }
 
     public void deleteAll() {
         deleteAll(getIndexName());
     }
-    
+
     public void deleteAll(String indexName) {
         //client.prepareIndex().setOpType(OpType.)
         //there is an index delete operation
         // http://www.elasticsearch.com/docs/elasticsearch/rest_api/admin/indices/delete_index/
 
-        client.prepareDeleteByQuery(indexName).               
+        client.prepareDeleteByQuery(indexName).
                 setQuery(QueryBuilders.matchAllQuery()).
                 execute().actionGet();
         refresh(indexName);
@@ -184,14 +213,13 @@ public abstract class AbstractElasticSearch {
     public OptimizeResponse optimize() {
         return optimize(getIndexName(), 1);
     }
-    
+
     public OptimizeResponse optimize(String indexName, int optimizeToSegmentsAfterUpdate) {
-        return client.admin().indices().optimize(new OptimizeRequest(indexName).
-                maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
+        return client.admin().indices().optimize(new OptimizeRequest(indexName).maxNumSegments(optimizeToSegmentsAfterUpdate)).actionGet();
     }
-        
+
     public void deleteIndex(String indexName) {
-        client.admin().indices().delete(new DeleteIndexRequest(indexName)).actionGet();    
+        client.admin().indices().delete(new DeleteIndexRequest(indexName)).actionGet();
     }
 
     public void addIndexAlias(String indexName, String alias) {
@@ -204,5 +232,96 @@ public abstract class AbstractElasticSearch {
         String str = "Cluster:" + rsp.getClusterName() + ". Active nodes:";
         str += rsp.getNodesMap().keySet();
         logger.info(str);
+    }
+
+    public List<T> collectObjects(SearchResponse rsp) {
+        SearchHits docs = rsp.getHits();
+        List<T> list = new ArrayList<T>();
+
+        for (SearchHit sd : docs) {
+            list.add(readDoc(sd.getSource(), sd.getId()));
+        }
+
+        return list;
+    }
+
+    public abstract T readDoc(Map<String, Object> source, String idAsStr);
+
+    public abstract XContentBuilder createDoc(T tw) throws IOException;
+
+    /**
+     * All indices has to be created before!
+     */
+    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh,
+            XContentFilterBuilder additionalFilter) {
+        if (forceRefresh) {
+            refresh(indexList);
+            refresh(intoIndex);
+        }
+
+        for (String fromIndex : indexList) {
+            SearchRequestBuilder srb = client.prepareSearch(fromIndex).
+                    setQuery(QueryBuilders.matchAllQuery()).setSize(hitsPerPage).
+                    setSearchType(SearchType.SCAN).
+                    setScroll(TimeValue.timeValueMinutes(30));
+            if (additionalFilter != null)
+                srb.setFilter(additionalFilter);
+            SearchResponse rsp = srb.execute().actionGet();
+
+            try {
+                long total = rsp.hits().totalHits();
+                String scrollId = rsp.scrollId();
+                int collectedResults = 0;
+                while (true) {
+                    StopWatch queryWatch = new StopWatch().start();
+//                    System.out.println("NOW!!!");
+                    rsp = client.prepareSearchScroll(scrollId).
+                            setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
+                    long currentResults = rsp.hits().totalHits();
+                    if (currentResults == 0)
+                        break;
+
+                    queryWatch.stop();
+                    Collection tweets = collectObjects(rsp);
+                    StopWatch updateWatch = new StopWatch().start();
+                    bulkUpdate(tweets, intoIndex);
+                    updateWatch.stop();
+                    collectedResults += currentResults;
+                    logger.info("Progress " + collectedResults + "/" + total + " fromIndex="
+                            + fromIndex + " update:" + updateWatch.totalTime().getSeconds() + " query:" + queryWatch.totalTime().getSeconds());
+                }
+                logger.info("Finished copying of index:" + fromIndex + ". Total:" + total + " collected:" + collectedResults);
+            } catch (Exception ex) {
+                logger.error("Failed to copy data from index " + fromIndex + " into " + intoIndex + ".", ex);
+            }
+        }
+
+        if (forceRefresh)
+            refresh(intoIndex);
+    }
+
+    public void bulkUpdate(Collection<T> objects, String indexName) throws IOException {
+        bulkUpdate(objects, indexName, false);
+    }
+
+    public void bulkUpdate(Collection<T> objects, String indexName, boolean refresh) throws IOException {
+        // now using bulk API instead of feeding each doc separate with feedDoc
+        BulkRequestBuilder brb = client.prepareBulk();
+        for (T o : objects) {
+            if (o.getId() == null) {
+                logger.warn("Skipped tweet without twitterid when bulkUpdate:" + o);
+                continue;
+            }
+
+            XContentBuilder source = createDoc(o);
+            brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(o.getId()).source(source));
+            brb.setRefresh(refresh);
+        }
+        if (brb.numberOfActions() > 0) {
+//            System.out.println("actions:" + brb.numberOfActions());
+            BulkResponse rsp = brb.execute().actionGet();
+            if (rsp.hasFailures())
+                logger.error("Error while bulkUpdate:" + rsp.buildFailureMessage());
+        }
     }
 }

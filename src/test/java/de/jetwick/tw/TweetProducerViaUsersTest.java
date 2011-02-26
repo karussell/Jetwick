@@ -57,7 +57,7 @@ public class TweetProducerViaUsersTest {
     }
 
     private ElasticUserSearch getUserSearch() {
-        return tester.getUserSearch();
+        return tester.getSearch();
     }
 
     @Test

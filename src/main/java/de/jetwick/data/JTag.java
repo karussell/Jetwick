@@ -18,71 +18,42 @@ package de.jetwick.data;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-@Entity
-@Table(name = "ytag", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"term"})})
-public class YTag implements DbObject, Serializable, Comparable<YTag> {
+public class JTag implements DbObject, Serializable, Comparable<JTag> {
 
     private static final long serialVersionUID = 1L;
 
-    public static List<YTag> createList(List<String> terms) {
-        List<YTag> list = new ArrayList<YTag>(terms.size());
+    public static List<JTag> createList(List<String> terms) {
+        List<JTag> list = new ArrayList<JTag>(terms.size());
         for (String term : terms) {
-            list.add(new YTag(term));
+            list.add(new JTag(term));
         }
 
         return list;
     }
     public static final String TERM = "term";
     public static final long DEFAULT_Q_I = 5 * 1000L;
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-    @Version
-    private Integer version;
     private String term;
     private Long lastId = 0L;
     private Long queryInterval = DEFAULT_Q_I;
     private Long lastMillis = 0L;
-    private Long searchCounter = 0L;
-    private boolean transientFlag;
+    private Long searchCounter = 0L;    
 
-    public YTag() {
+    public JTag() {
     }
 
-    public YTag(String term) {
+    public JTag(String term) {
         this.term = term.toLowerCase();
     }
 
-    public YTag(String term, long maxId, long queryInterval) {
+    public JTag(String term, long maxId, long queryInterval) {
         this(term);
         this.lastId = maxId;
         this.queryInterval = queryInterval;
-    }
-
-    @Override
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Integer getVersion() {
-        return version;
     }
 
     public void setLastId(long maxId) {
@@ -101,7 +72,7 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
         return term;
     }
 
-    public YTag setQueryInterval(long queryInterval) {
+    public JTag setQueryInterval(long queryInterval) {
         this.queryInterval = queryInterval;
         return this;
     }
@@ -148,7 +119,7 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
 //                + "; adjusted to " + Math.round(queryInterval / 1000f));
     }
 
-    public void update(YTag st) {
+    public void update(JTag st) {
         lastId = st.lastId;
         queryInterval = st.queryInterval;
         lastMillis = st.lastMillis;
@@ -161,15 +132,6 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
 
     public Long getSearchCounter() {
         return searchCounter;
-    }
-
-    public boolean isTransient() {
-        return transientFlag;
-    }
-
-    public YTag setTransient(boolean transientFlag) {
-        this.transientFlag = transientFlag;
-        return this;
     }
 
     /**
@@ -192,7 +154,7 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
     }
 
     @Override
-    public int compareTo(YTag o) {
+    public int compareTo(JTag o) {
         float tmp1 = o.getWaitingSeconds();
         float tmp2 = getWaitingSeconds();
         if (tmp1 > tmp2)
@@ -201,5 +163,10 @@ public class YTag implements DbObject, Serializable, Comparable<YTag> {
             return 1;
         else
             return 0;
+    }
+
+    @Override
+    public String getId() {
+        return getTerm();
     }
 }

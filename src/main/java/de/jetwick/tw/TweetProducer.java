@@ -15,6 +15,7 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.tw.queue.TweetPackage;
 import java.util.concurrent.BlockingQueue;
@@ -39,4 +40,6 @@ public interface TweetProducer extends Runnable {
      * For initialization of all the tags
      */
     void setUserSearch(ElasticUserSearch userSearch);
+
+    void setTagSearch(ElasticTagSearch tagSearch);
 }

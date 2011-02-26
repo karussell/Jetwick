@@ -249,9 +249,9 @@ public class HomePage extends WebPage {
                 q.setSort(ElasticTweetSearch.RELEVANCE, "desc");
         }
 
-        String filter = parameters.getString("filter");        
+        String filter = parameters.getString("filter");
         if (Helper.isEmpty(userName) && !"none".equals(filter)) {
-            q.addNoSpamFilter().addNoDupsFilter().addIsOriginalTweetFilter();            
+            q.addNoSpamFilter().addNoDupsFilter().addIsOriginalTweetFilter();
         }
         return q;
     }
@@ -334,7 +334,7 @@ public class HomePage extends WebPage {
                 TweetQuery q = new TweetQuery(true);
                 q.addFilterQuery(ElasticTweetSearch.FIRST_URL_TITLE, name);
                 try {
-                    List<JTweet> tweets = getTweetSearch().collectTweets(getTweetSearch().search(q.setSize(1)));
+                    List<JTweet> tweets = getTweetSearch().collectObjects(getTweetSearch().search(q.setSize(1)));
                     if (tweets.size() > 0 && tweets.get(0).getUrlEntries().size() > 0) {
                         // TODO there could be more than 1 url!
                         UrlEntry entry = tweets.get(0).getUrlEntries().iterator().next();
@@ -483,10 +483,11 @@ public class HomePage extends WebPage {
                 doOldSearch(0);
                 updateAfterAjax(target, false);
             }
+
             @Override
             public void onFacetChange(AjaxRequestTarget target, String key, Object val, boolean selected) {
                 if (lastQuery != null) {
-                    if(selected)
+                    if (selected)
                         lastQuery.addFilterQuery(key, val);
                     else
                         lastQuery.removeFilterQuery(key, val);
@@ -508,7 +509,7 @@ public class HomePage extends WebPage {
                 if (lastQuery != null) {
                     if (selected == null) {
                         lastQuery.removeFilterQueries(filter);
-                    } else if (selected) {                       
+                    } else if (selected) {
                         lastQuery.replaceFilterQuery(filter);
                     } else
                         lastQuery.reduceFilterQuery(filter);
@@ -524,7 +525,7 @@ public class HomePage extends WebPage {
             @Override
             protected boolean isAlreadyFiltered(String key, Object val) {
                 if (lastQuery != null)
-                    return lastQuery.containsFilter(key, val);                
+                    return lastQuery.containsFilter(key, val);
 
                 return false;
             }
@@ -570,6 +571,11 @@ public class HomePage extends WebPage {
             @Override
             public void onFindSimilar(JTweet tweet, AjaxRequestTarget target) {
                 JetwickQuery query = new SimilarQuery(tweet, true);
+                if (tweet.getTextTerms().size() == 0) {
+                    warn("Try a different tweet. This tweet is too short.");
+                    return;
+                }
+
                 logger.info("[stats] similar search:" + query.toString());
                 doSearch(query, 0, false);
                 updateAfterAjax(target, false);
@@ -637,7 +643,7 @@ public class HomePage extends WebPage {
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             if (getMySession().hasLoggedIn()) {
                 Collection<String> friends = getMySession().getFriends(uindexProvider.get());
-                if(friends.isEmpty()) {                    
+                if (friends.isEmpty()) {
                     info("You recently logged in. Please try again in 2 minutes to use friend search.");
                 } else {
                     query = new TweetQuery(query.getQuery()).createFriendsQuery(friends).setSort(ElasticTweetSearch.RT_COUNT, "desc");
@@ -784,11 +790,11 @@ public class HomePage extends WebPage {
 
         dateFilter.update(rsp);
 
-        if(!query.getSortFields().isEmpty()) {            
+        if (!query.getSortFields().isEmpty()) {
             resultsPanel.setSort(query.getSortFields().get(0).getKey(), query.getSortFields().get(0).getValue());
         } else
             resultsPanel.setSort(null, null);
-        
+
         resultsPanel.setTweetsPerUser(-1);
         for (JUser user : users) {
             resultsPanel.add(user);

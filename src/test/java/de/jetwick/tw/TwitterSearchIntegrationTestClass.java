@@ -19,8 +19,7 @@ import com.google.inject.Inject;
 import de.jetwick.JetwickTestClass;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
-import de.jetwick.data.YTag;
-import de.jetwick.data.YUser;
+import de.jetwick.data.JTag;
 import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
@@ -80,10 +79,10 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     @Test
     public void testUserUpdate() {
         TwitterSearch st = twitterSearch;
-        List<YUser> users = new ArrayList<YUser>();
-        YUser user1 = new YUser("pannous");
+        List<JUser> users = new ArrayList<JUser>();
+        JUser user1 = new JUser("pannous");
         users.add(user1);
-        YUser user2 = new YUser("timetabling");
+        JUser user2 = new JUser("timetabling");
         users.add(user2);
 
         st.updateUserInfo(users);
@@ -163,7 +162,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     public void testSearch() throws TwitterException {
         TwitterSearch st = twitterSearch;
         Set<JTweet> resList = new LinkedHashSet<JTweet>();
-        YTag tag = new YTag("java");
+        JTag tag = new JTag("java");
         st.search(tag.getTerm(), resList, 200, tag.getLastId());
         for (JTweet tw : resList) {
             assertNotNull(tw.getFromUser().getProfileImageUrl());
@@ -225,9 +224,9 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         TweetQuery q = new TweetQuery("").createFriendsQuery(f);
 
         // create tweet to map some indirectly mapped (not defined) fields like dt
-        twSearchTester.getTweetSearch().update(Arrays.asList(new JTweet(1L, "test", new JUser("user"))));
+        twSearchTester.getSearch().update(Arrays.asList(new JTweet(1L, "test", new JUser("user"))));
 
         // should not throw an exception
-        twSearchTester.getTweetSearch().search(q);
+        twSearchTester.getSearch().search(q);
     }
 }
