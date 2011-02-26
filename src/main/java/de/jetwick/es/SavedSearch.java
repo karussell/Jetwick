@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
 import java.util.Date;
@@ -90,23 +89,19 @@ public class SavedSearch implements Serializable {
         //fq   => user:(timetabling)
 
         // in tweet index we are using dismax so transform into OR query
-        String qStr = "";
-        if (query.getQuery() != null) {
-            int counter = 0;
-            for (String term : query.getQuery().split(" ")) {
-                if (counter > 0)
-                    qStr += " AND ";
-
-                qStr += term;
-                counter++;
-            }
-        }
+        StringBuilder qString = new StringBuilder();
+        if (query.getQuery() != null)
+            qString.append(query.getQuery());
+        
         String facetQuery = "";
-        if (qStr.isEmpty())
+        if (qString.length() == 0)
             facetQuery += "*:*";
-        else
+        else {
+            // since we use query QueryBuilders.queryString + dismax in updateSaveSearches
+            // this is not necessary here:
             //facetQuery += "tw:(" + qStr + ") OR dest_title_t:(" + qStr + ")";
-            facetQuery += qStr;
+            facetQuery += qString.toString();
+        }
 
         // recognize lang, quality and crt_b
         if (query.getFilterQueries() != null) {

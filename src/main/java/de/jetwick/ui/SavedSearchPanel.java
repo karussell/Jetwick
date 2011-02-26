@@ -217,6 +217,7 @@ public class SavedSearchPanel extends Panel {
     }
 
     public void update(SearchResponse rsp) {
+        // TODO what if updateSaveSearches failed???
         savedSearches.clear();
         if (rsp != null) {
             for (FacetHelper helper : createFacetsFields(rsp)) {

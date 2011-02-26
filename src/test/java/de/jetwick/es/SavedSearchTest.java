@@ -15,9 +15,6 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.es.SavedSearch;
-import de.jetwick.es.TweetQuery;
-import java.util.List;
 import de.jetwick.util.Helper;
 import java.util.Date;
 import org.junit.Test;
@@ -34,16 +31,22 @@ public class SavedSearchTest {
 
     @Test
     public void testQuery() {
-        assertEquals("java, user:\"peter\"", new SavedSearch(1, new TweetQuery("java").addFilterQuery("user", "\"peter\"")).getName());
-        assertEquals("user:\"peter\"", new SavedSearch(1, new TweetQuery().addFilterQuery("user", "\"peter\"")).getName());
-        assertEquals("java, user:\"peter rich\"", new SavedSearch(1, new TweetQuery("java").addFilterQuery("user", "\"peter rich\"")).getName());
-        assertEquals("java termin, user:\"peter test\"", new SavedSearch(1, new TweetQuery("java termin").addFilterQuery("user", "\"peter test\"")).getName());
+        assertEquals("java, user:\"peter\"", new SavedSearch(1,
+                new TweetQuery("java").addFilterQuery("user", "\"peter\"")).getName());
+        assertEquals("user:\"peter\"", new SavedSearch(1,
+                new TweetQuery().addFilterQuery("user", "\"peter\"")).getName());
+        assertEquals("java, user:\"peter rich\"", new SavedSearch(1,
+                new TweetQuery("java").addFilterQuery("user", "\"peter rich\"")).getName());
+        assertEquals("java termin, user:\"peter test\"", new SavedSearch(1,
+                new TweetQuery("java termin").addFilterQuery("user", "\"peter test\"")).getName());               
     }
 
     @Test
     public void testGetQueryWithoutDateFilter() {
-        assertEquals(0, new SavedSearch(1, new TweetQuery().addFilterQuery("dt", "[1 TO 2]")).getCleanQuery().getFilterQueries().size());
-        assertEquals(1, new SavedSearch(1, new TweetQuery().addFilterQuery("dt", "[1 TO 2]").
+        assertEquals(0, new SavedSearch(1,
+                new TweetQuery().addFilterQuery("dt", "[1 TO 2]")).getCleanQuery().getFilterQueries().size());
+        assertEquals(1, new SavedSearch(1,
+                new TweetQuery().addFilterQuery("dt", "[1 TO 2]").
                 addFilterQuery("xy", "ab")).getCleanQuery().getFilterQueries().size());
     }
 
@@ -52,12 +55,19 @@ public class SavedSearchTest {
         assertEndsWith("*:*", new SavedSearch(1, new TweetQuery()).calcFacetQuery());
         assertEndsWith("*:*", new SavedSearch(1, new TweetQuery("")).calcFacetQuery());
         assertEndsWith("peter", new SavedSearch(1, new TweetQuery("peter ")).calcFacetQuery());
-        assertEndsWith("peter AND pan", new SavedSearch(1, new TweetQuery("peter pan")).calcFacetQuery());
+        assertEndsWith("peter pan", new SavedSearch(1, new TweetQuery("peter pan")).calcFacetQuery());
 
-        assertEndsWith("(peter AND pan) AND test:x",
+        assertEndsWith("(peter pan) AND test:x",
                 new SavedSearch(1, new TweetQuery("peter pan").addFilterQuery("test", "x")).calcFacetQuery());
-        assertEndsWith("(peter AND pan) AND test:x AND test2:y",
-                new SavedSearch(1, new TweetQuery("peter pan").addFilterQuery("test", "x").addFilterQuery("test2", "y")).calcFacetQuery());
+        assertEndsWith("(peter pan) AND test:x AND test2:y",
+                new SavedSearch(1, new TweetQuery("peter pan").addFilterQuery("test", "x").
+                addFilterQuery("test2", "y")).calcFacetQuery());
+        
+        assertEquals("solr  lucene", new SavedSearch(1,
+                new TweetQuery("solr  lucene")).calcFacetQuery());
+        
+        assertEquals("solr OR lucene", new SavedSearch(1,
+                new TweetQuery("solr OR lucene")).calcFacetQuery());
     }
 
     @Test
