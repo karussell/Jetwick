@@ -78,6 +78,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(1, twSearch.searchTweets(new TweetQuery("this test")).size());
         assertEquals(2, twSearch.searchTweets(new TweetQuery("java stable")).size());
         assertEquals(1, twSearch.searchTweets(new TweetQuery("java cool stable")).size());
+        assertEquals(2, twSearch.searchTweets(new TweetQuery("java")).size());
+        assertEquals(3, twSearch.searchTweets(new TweetQuery("java OR test")).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery("java -cool")).size());
     }
 
     @Test

@@ -646,7 +646,8 @@ public class HomePage extends WebPage {
                 if (friends.isEmpty()) {
                     info("You recently logged in. Please try again in 2 minutes to use friend search.");
                 } else {
-                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends).setSort(ElasticTweetSearch.RT_COUNT, "desc");
+                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends).
+                            setSort(ElasticTweetSearch.DATE, "desc");
                     page = 0;
                     twitterFallback = false;
                 }
