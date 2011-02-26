@@ -153,7 +153,7 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
 
             if (ss.getQueryTerm() != null && !ss.getQueryTerm().isEmpty()) {
                 // for tweetProducer (pick important via facets) and stats:
-                b.field(QUERY_TERMS, ss.getQueryTerm().toLowerCase());
+                b.field(QUERY_TERMS, ss.getQueryTerm());
             }
             counter++;
         }

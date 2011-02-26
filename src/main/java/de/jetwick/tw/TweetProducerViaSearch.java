@@ -160,8 +160,7 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
         try {
             Collection<String> userQueryTerms = userSearch.getQueryTerms();
             int counter = 0;
-            for (String str : userQueryTerms) {
-                str = str.toLowerCase();
+            for (String str : userQueryTerms) {                
                 JTag tag = tmp.get(str);
                 if (tag == null) {
                     tmp.put(str, new JTag(str));

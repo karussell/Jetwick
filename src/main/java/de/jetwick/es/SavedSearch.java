@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import de.jetwick.data.JTag;
 import de.jetwick.util.Helper;
 import java.io.Serializable;
 import java.util.Date;
@@ -33,6 +34,7 @@ public class SavedSearch implements Serializable {
     public SavedSearch(long id, JetwickQuery query) {
         this.id = id;
         this.query = query.getCopy();
+        this.query.setQuery(JTag.toLowerCaseOnlyOnTerms(this.query.getQuery()));
         this.query.removeFilterQueries(ElasticTweetSearch.DATE);
         this.query.removeFacets();
     }

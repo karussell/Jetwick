@@ -15,6 +15,8 @@
  */
 package de.jetwick.data;
 
+import java.util.PriorityQueue;
+import java.util.TreeSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.junit.Test;
@@ -40,15 +42,31 @@ public class JTagTest {
     }
 
     @Test
+    public void testTransform() {
+        assertEquals("solr", JTag.toLowerCaseOnlyOnTerms("solR"));
+        assertEquals("solr or lucene", JTag.toLowerCaseOnlyOnTerms("solR Or Lucene"));
+        assertEquals("solr OR lucene", JTag.toLowerCaseOnlyOnTerms("solR OR Lucene"));
+    }
+
+    @Test
     public void testColllection() {
         Set<JTag> set = new LinkedHashSet<JTag>();
         set.add(new JTag("Test"));
         set.add(new JTag("Test2"));
         assertEquals(2, set.size());
 
-//        set = new TreeSet<JTag>();
-//        set.add(new JTag("Test"));
-//        set.add(new JTag("Test2"));
-//        assertEquals(2, set.size());
+        PriorityQueue q = new PriorityQueue<JTag>();
+        q.add(new JTag("test"));
+        q.add(new JTag("pest"));
+        assertEquals(2, q.size());
+        assertNotNull(q.poll());
+        assertNotNull(q.poll());
+        assertNull(q.poll());
+
+        // THIS IS UGLY
+        set = new TreeSet<JTag>();
+        set.add(new JTag("Test"));
+        set.add(new JTag("Test2"));
+        assertEquals(1, set.size());
     }
 }

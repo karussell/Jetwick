@@ -16,25 +16,14 @@
 package de.jetwick.data;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class JTag implements DbObject, Serializable {
+public class JTag implements DbObject, Serializable, Comparable<JTag> {
 
     private static final long serialVersionUID = 1L;
-
-    public static List<JTag> createList(List<String> terms) {
-        List<JTag> list = new ArrayList<JTag>(terms.size());
-        for (String term : terms) {
-            list.add(new JTag(term));
-        }
-
-        return list;
-    }
     public static final String TERM = "term";
     public static final long DEFAULT_Q_I = 5 * 1000L;
     private String term;
@@ -47,7 +36,7 @@ public class JTag implements DbObject, Serializable {
     }
 
     public JTag(String term) {
-        this.term = term.toLowerCase();
+        this.term = term;
     }
 
     public JTag(String term, long maxId, long queryInterval) {
@@ -153,10 +142,42 @@ public class JTag implements DbObject, Serializable {
     public String toString() {
         return term + " " + getWaitingSeconds();
     }
-    
+
     @Override
     public String getId() {
         return getTerm();
+    }
+
+    /**
+     * toLowerCase only on none keywords
+     */
+    public static String toLowerCaseOnlyOnTerms(String str) {
+        StringBuilder sb = new StringBuilder();
+        int counter = 0;
+        for (String t : str.split(" ")) {
+            if (counter > 0)
+                sb.append(" ");
+
+            if (t.equals("OR") || t.equals("AND"))
+                sb.append(t);
+            else
+                sb.append(t.toLowerCase());
+
+            counter++;
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public int compareTo(JTag o) {
+        float tmp1 = o.getWaitingSeconds();
+        float tmp2 = getWaitingSeconds();
+        if (tmp1 > tmp2)
+            return -1;
+        else if (tmp1 < tmp2)
+            return 1;
+        else
+            return 0;
     }
 
     @Override

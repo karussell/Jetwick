@@ -151,7 +151,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     }
 
     public JTag findByName(String term) {
-        term = term.toLowerCase();
+        term = JTag.toLowerCaseOnlyOnTerms(term);
         List<JTag> res = collectObjects(query(
                 QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
                 FilterBuilders.termFilter("_id", term))));
