@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.data;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.TreeSet;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -39,14 +41,15 @@ public class JTagTest {
     }
 
     @Test
-    public void testCompare() {
-        JTag tag1 = new JTag("java");
-        tag1.optimizeQueryFrequency(100);
-        tag1.setLastMillis(System.currentTimeMillis());
-        JTag tag2 = new JTag("solr");
-        tag2.optimizeQueryFrequency(1);
-        tag2.setLastMillis(System.currentTimeMillis());
-        
-        assertTrue(tag2.compareTo(tag1) > 0);
+    public void testColllection() {
+        Set<JTag> set = new LinkedHashSet<JTag>();
+        set.add(new JTag("Test"));
+        set.add(new JTag("Test2"));
+        assertEquals(2, set.size());
+
+        set = new TreeSet<JTag>();
+        set.add(new JTag("Test"));
+        set.add(new JTag("Test2"));
+        assertEquals(2, set.size());
     }
 }

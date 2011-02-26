@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class JTag implements DbObject, Serializable, Comparable<JTag> {
+public class JTag implements DbObject, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,7 +41,7 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     private Long lastId = 0L;
     private Long queryInterval = DEFAULT_Q_I;
     private Long lastMillis = 0L;
-    private Long searchCounter = 0L;    
+    private Long searchCounter = 0L;
 
     public JTag() {
     }
@@ -56,8 +56,9 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         this.queryInterval = queryInterval;
     }
 
-    public void setLastId(long maxId) {
+    public JTag setLastId(long maxId) {
         this.lastId = maxId;
+        return this;
     }
 
     public long getLastId() {
@@ -152,21 +153,28 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     public String toString() {
         return term + " " + getWaitingSeconds();
     }
-
-    @Override
-    public int compareTo(JTag o) {
-        float tmp1 = o.getWaitingSeconds();
-        float tmp2 = getWaitingSeconds();
-        if (tmp1 > tmp2)
-            return -1;
-        else if (tmp1 < tmp2)
-            return 1;
-        else
-            return 0;
-    }
-
+    
     @Override
     public String getId() {
         return getTerm();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final JTag other = (JTag) obj;
+        if ((this.term == null) ? (other.term != null) : !this.term.equals(other.term))
+            return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 97 * hash + (this.term != null ? this.term.hashCode() : 0);
+        return hash;
     }
 }

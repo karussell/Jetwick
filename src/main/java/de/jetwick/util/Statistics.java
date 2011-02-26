@@ -105,6 +105,10 @@ public class Statistics {
         argStr = map.get("importTags");
         if (argStr != null)
             importTags(map.get("tagFile"));
+        
+        argStr = map.get("clearPropertiesOfTags");
+        if (argStr != null)
+            clearPropertiesOfTags();
 
         argStr = map.get("readStopAndClear");
         if (argStr != null)
@@ -135,10 +139,23 @@ public class Statistics {
                 newTags.remove(tag.getTerm());
         }
 
-        tagSearch.addAll(newTags, false);
+        tagSearch.addAll(newTags, true);
+        tagSearch.optimize();
         logger.info("Imported tag:" + newTags.size() + " all tags:" + tagSearch.findAll(0, 1000).size());
     }
 
+    public void clearPropertiesOfTags() throws IOException {
+        Set<JTag> newTags = new LinkedHashSet<JTag>();
+        int counter = 0;        
+        for (JTag tag : tagSearch.findAll(0, 1000)) {
+            counter ++;
+            newTags.add(tag.setLastId(0).setQueryInterval(1000));            
+        }        
+        tagSearch.bulkUpdate(newTags, tagSearch.getIndexName(), true);
+        tagSearch.optimize();
+        logger.info(counter + " Updated:" + newTags.size() + " tags " + newTags);
+    }
+    
     public void write(Set<String> words, String file) throws Exception {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Helper.UTF8));
         writer.write("# Written from YTweet via Statistics class! " + new Date());
@@ -206,4 +223,5 @@ public class Statistics {
             System.out.println(str);
         }
     }
+
 }

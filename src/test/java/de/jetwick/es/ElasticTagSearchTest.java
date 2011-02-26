@@ -45,7 +45,7 @@ public class ElasticTagSearchTest extends AbstractElasticSearchTester {
     public void testSave() {
         tagSearch.update(new JTag("Test"));
         assertEquals("test", tagSearch.findByName("tesT").getTerm());
-    }
+    }    
     
     @Test
     public void testAddAll() throws IOException {
