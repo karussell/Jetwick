@@ -15,6 +15,8 @@
  */
 package de.jetwick.tw;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import de.jetwick.JetwickTestClass;
 import de.jetwick.es.ElasticTagSearchTest;
 import org.junit.AfterClass;
@@ -132,6 +134,7 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
         tweetProducer.setTwitterSearch(tws);
         tweetProducer.setUserSearch(userSearch);
+        tweetProducer.setTagSearch(tagSearchTester.getSearch());
         Thread tweetProducerThread = new Thread(tweetProducer);
         tweetProducerThread.setUncaughtExceptionHandler(excHandler);
         tweetProducerThread.start();
@@ -157,12 +160,9 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         tweetConsumer.interrupt();
         checkExceptions(exceptionMap);
 
-//        YUser u = userDao.findByName("timetabling");
-//        assertEquals(2, u.getOwnTweets().size());
-//
-//        commitAndReopenDB();
-//        u = userDao.findByName("timetabling");
-//        assertEquals(2, u.getOwnTweets().size());
+        Set<JUser> users = new LinkedHashSet<JUser>();
+        tweetSearch.search(users, new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "timetabling"));
+        assertEquals(2, users.iterator().next().getOwnTweets().size());
 
         List<JUser> res = new ArrayList<JUser>();
         tweetSearch.search(res, new TweetQuery("java"));
