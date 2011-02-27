@@ -100,6 +100,8 @@ public class JetwickApp extends WebApplication {
 
         mountBookmarkablePage("about", About.class);
         mountBookmarkablePage("imprint", Imprint.class);
+        mountBookmarkablePage("mobile", MobilePage.class);
+        mountBookmarkablePage("m", MobilePage.class);        
         addComponentInstantiationListener(getGuiceInjector());
     }
 

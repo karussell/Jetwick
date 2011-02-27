@@ -1,0 +1,40 @@
+<!doctype html> 
+<html>
+    <head>        
+        <title wicket:id="title">Jetwick Twitter Search</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>  
+        <link type="image/png" rel="icon" href="favicon.ico"/>
+        <link rel="stylesheet" type="text/css" href="css/mobile.css"/>              
+    </head>
+    <body>
+        <div id="main">            
+            <form id="queryform" wicket:id="searchform">                                        
+                <input id="querybox" type="text" wicket:id="textField" class="text-field"
+                       name="q" title="Enter your query"/>                                                                                    
+                <input type="submit" value="Search" class="searchform-button"/>                            
+            </form>
+            <div>
+                <span class="msg" wicket:id="msg"/>
+            </div>
+
+            <div class="users">
+                <div wicket:id="users" class="user">
+                    <a class="user-name" wicket:id="userUrl"></a>
+                    <div class="tweets">
+                        <div wicket:id="tweets" class="tweet">
+                            <div wicket:id="tweet">
+                            </div>
+                            <div class="tweet-footer">
+                                <div wicket:id="retweets" class="retweets">
+                                </div>
+                                <div wicket:id="tweetDate" class="tweet-date">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>            
+        </div>
+    </body>
+</html>
+

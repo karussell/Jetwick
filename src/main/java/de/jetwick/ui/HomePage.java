@@ -87,14 +87,6 @@ public class HomePage extends WebPage {
     private static int TWEETS_IF_NO_HIT = 40;
     private String userName = "";
 
-    public TwitterSearch getTwitterSearch() {
-        return getMySession().getTwitterSearch();
-    }
-
-    public MySession getMySession() {
-        return (MySession) getSession();
-    }
-
     // for testing
     HomePage() {
     }
@@ -161,6 +153,14 @@ public class HomePage extends WebPage {
         return twindexProvider.get();
     }
 
+    public TwitterSearch getTwitterSearch() {
+        return getMySession().getTwitterSearch();
+    }
+
+    public MySession getMySession() {
+        return (MySession) getSession();
+    }
+    
     public Thread getQueueThread() {
         return tweetThread;
     }
