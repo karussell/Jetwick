@@ -15,6 +15,7 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.es.ElasticTagSearch;
 import org.junit.AfterClass;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.JetwickTestClass;
@@ -37,12 +38,12 @@ import static org.mockito.Mockito.*;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetProducerTest extends JetwickTestClass {
+public class TweetProducerViaSearchTest extends JetwickTestClass {
 
     private ElasticTagSearchTest tagSearchTester = new ElasticTagSearchTest();
     private TweetProducerViaSearch twProd;
     
-    public TweetProducerTest() {
+    public TweetProducerViaSearchTest() {
     }
     
     @BeforeClass
@@ -82,13 +83,21 @@ public class TweetProducerTest extends JetwickTestClass {
     public void testInitTagsNoException() {        
         twProd.updateTag(new JTag("test"), 6);
         ElasticUserSearch uSearch = mock(ElasticUserSearch.class);
-        when(uSearch.getQueryTerms()).thenReturn(Arrays.asList("Test"));
+        ElasticTagSearch tagSearch = mock(ElasticTagSearch.class);
+        when(uSearch.getQueryTerms()).thenReturn(Arrays.asList("test OR pest"));
+        when(tagSearch.findSorted(0, 1000)).thenReturn(Arrays.asList(new JTag("solr OR lucene")));
         twProd.setUserSearch(uSearch);
+        twProd.setTagSearch(tagSearch);
         Collection<JTag> tags = twProd.initTags();
 
+        assertEquals(2, tags.size());
+        String str ="";
         for (JTag tag : tags) {
+            str += tag.getTerm();
             twProd.updateTag(tag, 5);
         }
+        assertTrue(str.contains("test OR pest"));
+        assertTrue(str.contains("solr OR lucene"));
 
         twProd.updateTag(new JTag("anotherone"), 6);
     }

@@ -122,12 +122,12 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
                     tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
 
                     // TODO save only if indexing to solr was successful -> pkg.isIndexed()
-                    updateTag(tag, hits);                    
+                    updateTag(tag, hits);
                 } catch (TwitterException ex) {
                     waitInSeconds = 1f;
                     logger.warn("Couldn't finish search for tag '" + tag.getTerm() + "': " + ex.getMessage());
                     if (ex.exceededRateLimitation())
-                        waitInSeconds = ex.getRetryAfter();              
+                        waitInSeconds = ex.getRetryAfter();
                 }
 
                 if (!myWait(waitInSeconds))
@@ -154,13 +154,17 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
 
     Collection<JTag> initTags() {
         Map<String, JTag> tmp = new LinkedHashMap<String, JTag>();
-        for (JTag tag : tagSearch.findSorted(0, 1000)) {
-            tmp.put(tag.getTerm(), tag);
+        try {
+            for (JTag tag : tagSearch.findSorted(0, 1000)) {
+                tmp.put(tag.getTerm(), tag);
+            }
+        } catch (Exception ex) {
+            logger.info("Couldn't query tag index", ex);
         }
         try {
             Collection<String> userQueryTerms = userSearch.getQueryTerms();
             int counter = 0;
-            for (String str : userQueryTerms) {                
+            for (String str : userQueryTerms) {
                 JTag tag = tmp.get(str);
                 if (tag == null) {
                     tmp.put(str, new JTag(str));
@@ -182,6 +186,7 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
         this.userSearch = userSearch;
     }
 
+    @Override
     public void setTagSearch(ElasticTagSearch tagSearch) {
         this.tagSearch = tagSearch;
     }

@@ -129,7 +129,7 @@ public class Statistics {
         Set<String> newTags = new TreeSet<String>();
         for (String str : Helper.readFile(file)) {
             if (str.trim().length() > 1)
-                newTags.add(str.trim().toLowerCase());
+                newTags.add(JTag.toLowerCaseOnlyOnTerms(str.trim()));
         } // do only delete those where we don't have a new one
         // do only update tags which are new
         for (JTag tag : tagSearch.findAll(0, 1000)) {

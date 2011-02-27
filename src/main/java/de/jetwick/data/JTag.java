@@ -35,8 +35,8 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     public JTag() {
     }
 
-    public JTag(String term) {
-        this.term = term;
+    public JTag(String term) {        
+        this.term = toLowerCaseOnlyOnTerms(term);
     }
 
     public JTag(String term, long maxId, long queryInterval) {

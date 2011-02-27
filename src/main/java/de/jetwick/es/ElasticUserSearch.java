@@ -17,7 +17,6 @@ package de.jetwick.es;
 
 import de.jetwick.util.Helper;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.action.search.SearchResponse;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.JTweet;

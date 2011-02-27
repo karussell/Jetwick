@@ -186,11 +186,6 @@ public class JUser implements DbObject, Serializable {
         return screenName;
     }
 
-    // Should be used only for screen name fixing, because it acts as id!
-    public void setsCREENnAME(String sn) {
-        screenName = sn;
-    }
-
     public String getDescription() {
         return description;
     }
