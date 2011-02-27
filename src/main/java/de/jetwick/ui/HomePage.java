@@ -371,7 +371,6 @@ public class HomePage extends WebPage {
 
             @Override
             public void onSave(AjaxRequestTarget target, long ssId) {
-                logger.info("NOW:" + lastQuery.getQuery());
                 SavedSearch ss = new SavedSearch(ssId, lastQuery);
                 JUser user = getMySession().getUser();
                 user.addSavedSearch(ss);

@@ -143,7 +143,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
 
         try {
             for (JTweet tw : tws) {
-                deleteById(Long.toString(tw.getTwitterId()));
+                deleteById(tw.getId());
             }
 
         } catch (Exception ex) {
