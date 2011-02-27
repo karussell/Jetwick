@@ -15,6 +15,9 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import de.jetwick.data.JTweet;
 import java.util.Collection;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -36,10 +39,8 @@ import de.jetwick.util.StrEntry;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import static de.jetwick.es.ElasticTweetSearch.*;
@@ -58,7 +59,7 @@ public abstract class JetwickQuery implements Serializable {
     private String queryString;
     private List<StrEntry> sortFields = new ArrayList<StrEntry>();
     private List<Entry<String, Object>> filterQueries = new ArrayList<Entry<String, Object>>();
-    private Set<String> facetFields = new LinkedHashSet<String>();
+    private Map<String, Integer> facetFields = new LinkedHashMap<String, Integer>();
     private List<StrEntry> facetQueries = new ArrayList<StrEntry>();
     private boolean dateFacets = false;
 
@@ -102,10 +103,10 @@ public abstract class JetwickQuery implements Serializable {
 
         return srb;
     }
-    
+
     public void processFacetFields(SearchRequestBuilder srb) {
-        for (String ff : getFacetFields()) {
-            srb.addFacet(fromFacetField(ff));
+        for (Entry<String, Integer> ff : getFacetFields().entrySet()) {
+            srb.addFacet(fromFacetField(ff.getKey(), ff.getValue()));
         }
     }
 
@@ -137,8 +138,8 @@ public abstract class JetwickQuery implements Serializable {
         return filterQuery2Builder(entry.getKey(), entry.getValue());
     }
 
-    public AbstractFacetBuilder fromFacetField(String ff) {
-        return FacetBuilders.termsFacet(ff).field(ff);
+    public AbstractFacetBuilder fromFacetField(String ff, int limit) {
+        return FacetBuilders.termsFacet(ff).field(ff).size(limit);
     }
 
     public AbstractFacetBuilder fromFacetQuery(StrEntry e) {
@@ -240,7 +241,7 @@ public abstract class JetwickQuery implements Serializable {
             return FilterBuilders.termFilter(key, getTermValue(val));
     }
 
-    public static XContentFilterBuilder filters2Builder(Collection<String> filterStrings) {        
+    public static XContentFilterBuilder filters2Builder(Collection<String> filterStrings) {
         List<XContentFilterBuilder> filters = new ArrayList<XContentFilterBuilder>();
         for (String tmpFq : filterStrings) {
             String strs[] = tmpFq.split("\\:");
@@ -248,10 +249,10 @@ public abstract class JetwickQuery implements Serializable {
                 throw new UnsupportedOperationException("string split should result in 2 parts but didn't -> " + strs);
 
             filters.add(filterQuery2Builder(strs[0], strs[1]));
-        }        
+        }
         return FilterBuilders.orFilter(filters.toArray(new XContentFilterBuilder[filters.size()]));
     }
-    
+
     public boolean isDateFacets() {
         return dateFacets;
     }
@@ -288,9 +289,13 @@ public abstract class JetwickQuery implements Serializable {
         return this;
     }
 
-    public JetwickQuery addFacetField(String field) {
-        facetFields.add(field);
+    public JetwickQuery addFacetField(String field, Integer limit) {
+        facetFields.put(field, limit);
         return this;
+    }
+
+    public JetwickQuery addFacetField(String field) {
+        return addFacetField(field, 10);
     }
 
     public JetwickQuery removeFacets() {
@@ -503,8 +508,8 @@ public abstract class JetwickQuery implements Serializable {
             q.addFilterQuery(fq.getKey(), fq.getValue());
         }
 
-        for (String ff : getFacetFields()) {
-            q.addFacetField(ff);
+        for (Entry<String, Integer> ff : getFacetFields().entrySet()) {
+            q.addFacetField(ff.getKey(), ff.getValue());
         }
 
         for (Entry<String, String> fq : getFacetQueries()) {
@@ -525,7 +530,7 @@ public abstract class JetwickQuery implements Serializable {
         return facetQueries;
     }
 
-    public Set<String> getFacetFields() {
+    public Map<String, Integer> getFacetFields() {
         return facetFields;
     }
 
@@ -570,8 +575,8 @@ public abstract class JetwickQuery implements Serializable {
             res += "&fq=" + Helper.urlEncode(fq.getKey() + ":" + fq.getValue().toString());
         }
 
-        for (String ff : getFacetFields()) {
-            res += "&facet=" + Helper.urlEncode(ff);
+        for (Entry<String, Integer> ff : getFacetFields().entrySet()) {
+            res += "&facet=" + ff.getValue() + "|" + Helper.urlEncode(ff.getKey());
         }
 
         for (Entry<String, String> fq : getFacetQueries()) {
@@ -609,7 +614,17 @@ public abstract class JetwickQuery implements Serializable {
                     String strs[] = val.split("\\:");
                     q.addFacetQuery(strs[0], strs[1]);
                 } else if ("facet".equals(key)) {
-                    q.addFacetField(val);
+                    int index2 = val.indexOf("|");
+                    if (index2 < 0)
+                        q.addFacetField(val);
+                    else {
+                        int limit = 10;
+                        try {
+                            limit = Integer.parseInt(val.substring(0, index2));
+                        } catch (Exception ex) {
+                        }
+                        q.addFacetField(val.substring(index2 + 1), limit);
+                    }
                 } else if ("sort".equals(key)) {
                     String strs[] = val.split(" ");
                     q.setSort(strs[0], strs[1]);

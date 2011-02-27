@@ -155,7 +155,7 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
             b.field("ss_" + counter + "_last_dt", ss.getLastQueryDate());
 
             if (ss.getQueryTerm() != null && !ss.getQueryTerm().isEmpty()) {
-                // for tweetProducer (pick important via facets) and stats:
+                // for tweetProducer (pick via facets) and stats:
                 b.field(QUERY_TERMS, ss.getQueryTerm());
             }
             counter++;
@@ -269,7 +269,7 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
     }
 
     public Collection<String> getQueryTerms() {
-        SearchResponse rsp = search(new UserQuery().addFacetField(QUERY_TERMS));
+        SearchResponse rsp = search(new UserQuery().addFacetField(QUERY_TERMS, 1000));
         TermsFacet tf = (TermsFacet) rsp.getFacets().facet(QUERY_TERMS);
         Collection<String> res = new ArrayList<String>();
         if (tf.entries() != null)

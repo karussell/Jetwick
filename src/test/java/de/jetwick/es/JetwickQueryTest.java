@@ -57,7 +57,7 @@ public class JetwickQueryTest {
     @Test
     public void testParse() {
         JetwickQuery q = new TweetQuery("test").addFilterQuery("test", "xy").
-                setSort("blie", "desc").addFacetField("coolField");
+                setSort("blie", "desc").addFacetField("coolField").addFacetField("test", 20);
         TweetQuery newQ = TweetQuery.parseQuery(q.toString());
         assertEquals(q.toString(), newQ.toString());
         assertEquals(q, newQ);

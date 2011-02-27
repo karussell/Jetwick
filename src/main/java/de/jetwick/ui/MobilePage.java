@@ -72,6 +72,7 @@ public class MobilePage extends WebPage {
         TextField textField = new TextField("textField", new PropertyModel(this, "queryString"));
         form.add(textField);
 
+        remoteHost = getWebRequestCycle().getWebRequest().getHttpServletRequest().getRemoteHost();
         queryString = pp.getString("q");
         doSearch();
     }
@@ -89,7 +90,7 @@ public class MobilePage extends WebPage {
         try {
             rsp = getTweetSearch().search(users, query);
             totalHits = rsp.getHits().getTotalHits();
-            logger.info(addIP("[stats] " + totalHits + " hits for: " + query.toString()));
+            logger.info(addIP("[mstats] " + totalHits + " hits for: " + query.toString()));
         } catch (Exception ex) {
             logger.error("Error while searching " + query.toString(), ex);
         }

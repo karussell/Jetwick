@@ -105,15 +105,15 @@ public class TweetQuery extends JetwickQuery {
     }
 
     @Override
-    public AbstractFacetBuilder fromFacetField(String ff) {
+    public AbstractFacetBuilder fromFacetField(String ff, int limit) {
         AbstractFacetBuilder facetBuilder;
         if (ff.equals(ElasticTweetSearch.FIRST_URL_TITLE) || ff.equals(ElasticTweetSearch.TAG)) {
             // hmmh no real differences ... strange
-            facetBuilder = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.score").order(ComparatorType.TOTAL);//.size(15);
+            facetBuilder = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.score").order(ComparatorType.TOTAL).size(limit);
 //                    fb = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.relevance.value").order(ComparatorType.TOTAL);//.size(15);
 //                    fb = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.relevance.value").order(ComparatorType.COUNT).size(15);
         } else
-            facetBuilder = super.fromFacetField(ff);
+            facetBuilder = super.fromFacetField(ff, limit);
 
         if (dateFilter != null)
             facetBuilder.facetFilter(dateFilter);

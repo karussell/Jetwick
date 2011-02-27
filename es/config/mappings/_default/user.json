@@ -9,7 +9,7 @@
             "webUrl": { "type" : "string", "index" : "not_analyzed" },        
             "token_s": { "type" : "string", "index" : "not_analyzed" },        
             "tokenSecret_s": { "type" : "string", "index" : "not_analyzed" },        
-            "ss_*_query_s": { "type" : "string", "index" : "not_analyzed" }            
+            "ss_*_query_s": { "type" : "string", "index" : "not_analyzed" }           
         }
     }
 }

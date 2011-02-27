@@ -289,13 +289,23 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         user = new JUser("peter");
         user.addSavedSearch(new SavedSearch(3, new UserQuery("peter test")));
         user.addSavedSearch(new SavedSearch(4, new UserQuery("karsten tester")));
+        user.addSavedSearch(new SavedSearch(5, new UserQuery("karsten OR tester")));
+        user.addSavedSearch(new SavedSearch(6, new UserQuery("karsten Tester")));
+        user.addSavedSearch(new SavedSearch(7, new UserQuery("a1")));
+        user.addSavedSearch(new SavedSearch(8, new UserQuery("a2")));
+        user.addSavedSearch(new SavedSearch(9, new UserQuery("a3")));
+        user.addSavedSearch(new SavedSearch(10, new UserQuery("a4")));
+        user.addSavedSearch(new SavedSearch(11, new UserQuery("a5")));
+        user.addSavedSearch(new SavedSearch(12, new UserQuery("a6")));
+        user.addSavedSearch(new SavedSearch(13, new UserQuery("a7")));
         userSearch.save(user, true);
 
         Collection<String> coll = userSearch.getQueryTerms();
-        assertEquals(3, coll.size());
+        assertEquals(11, coll.size());
         assertTrue(coll.contains("peter test"));
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
+        assertTrue(coll.contains("karsten OR tester"));
     }    
     
      @Test
