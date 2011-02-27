@@ -133,7 +133,10 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         // make sure that if we look for a specific user this user will show up first:
         b.field(SCREEN_NAME, user.getScreenName());
-        b.field("twitterId", user.getTwitterId());
+        
+        if(user.getTwitterId() != null)
+            b.field("twitterId", user.getTwitterId());
+        
         b.field("realName", user.getRealName());
         b.field("iconUrl", user.getProfileImageUrl());
         b.field("webUrl", user.getWebUrl());

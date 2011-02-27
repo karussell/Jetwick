@@ -49,9 +49,11 @@ import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.mvel2.Operator;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
+import org.elasticsearch.index.query.xcontent.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.FacetBuilders;
@@ -887,7 +889,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
 
             return res;
         } catch (Exception ex) {
-            logger.error("Error while getQueryChoices:" + input + " " + lastQ, ex);
+            logger.error("Error while getQueryChoices:" + input + " " + lastQ + " -> Error:" + ex.getMessage());
             return Collections.emptyList();
         }
     }
@@ -1014,7 +1016,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             protected void processFacetQueries(SearchRequestBuilder srb) {
                 for (SavedSearch ss : savedSearches) {
                     srb.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + "_" + ss.getId(),
-                            QueryBuilders.queryString(ss.calcFacetQuery()).useDisMax(true).
+                            QueryBuilders.queryString(ss.calcFacetQuery()).useDisMax(true).defaultOperator(QueryStringQueryBuilder.Operator.AND).
                             field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0)));
                 }
             }
