@@ -51,15 +51,18 @@ public class SearchBox extends Panel {
     public SearchBox(String id) {
         this(id, null, null);
     }
+    
+    public void setSearchType(String type) {
+        if (type != null)
+            selectedIndex = SEARCHTYPES.indexOf(type);
+        else
+            selectedIndex = 0;
+    }
 
     public SearchBox(String id, final String loggedInUser, String searchTypeAsStr) {
         super(id);
 
-        if (searchTypeAsStr != null)
-            selectedIndex = SEARCHTYPES.indexOf(searchTypeAsStr);
-        else
-            selectedIndex = 0;
-
+        setSearchType(searchTypeAsStr);
         final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));        
         form = new Form("searchform") {
 

@@ -160,7 +160,7 @@ public class HomePage extends WebPage {
     public MySession getMySession() {
         return (MySession) getSession();
     }
-    
+
     public Thread getQueueThread() {
         return tweetThread;
     }
@@ -347,10 +347,15 @@ public class HomePage extends WebPage {
         };
         add(urlTrends.setOutputMarkupId(true));
 
+        final String searchType = parameters.getString("search");
         ssPanel = new SavedSearchPanel("savedSearches") {
 
             @Override
             public void onClick(AjaxRequestTarget target, long ssId) {
+                if (searchType != null && !searchType.isEmpty() && !SearchBox.ALL.equals(searchType)) {
+                    warn("Removed user filter when executing your saved search");
+                    searchBox.setSearchType(SearchBox.ALL);
+                }
                 JUser user = getMySession().getUser();
                 SavedSearch ss = user.getSavedSearch(ssId);
                 if (ss != null) {
@@ -612,8 +617,6 @@ public class HomePage extends WebPage {
         add(resultsPanel.setOutputMarkupId(true));
         add(wikiPanel = new WikipediaLazyLoadPanel("wikipanel"));
 
-
-        String searchType = parameters.getString("search");
         String tmpUserName = null;
         if (getMySession().hasLoggedIn())
             tmpUserName = getMySession().getUser().getScreenName();
