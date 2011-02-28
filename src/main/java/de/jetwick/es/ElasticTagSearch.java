@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
@@ -92,7 +93,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
 
     @Override
     public XContentBuilder createDoc(JTag tag) throws IOException {
-        XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();                
+        XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         b.field("lastId", tag.getLastId());
         b.field(Q_INTERVAL, tag.getQueryInterval());
         return b;
@@ -103,7 +104,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         String term = idAsStr;
         JTag tag = new JTag(term);
         tag.setLastId(((Number) doc.get("lastId")).longValue());
-        tag.setQueryInterval(((Number) doc.get(Q_INTERVAL)).longValue());        
+        tag.setQueryInterval(((Number) doc.get(Q_INTERVAL)).longValue());
         return tag;
     }
 
@@ -120,16 +121,16 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     }
 
     public SearchResponse query(XContentQueryBuilder queryBuilder) {
-        SearchRequestBuilder srb = client.prepareSearch(getIndexName());
+        SearchRequestBuilder srb = createSearchBuilder();
         srb.setQuery(queryBuilder);
         return srb.execute().actionGet();
     }
-    
+
     SearchRequestBuilder createSearchBuilder() {
-        return client.prepareSearch(getIndexName());
+        return client.prepareSearch(getIndexName()).setTypes(getIndexType());
     }
 
-    public Collection<JTag> findSorted(int from, int size) {        
+    public Collection<JTag> findSorted(int from, int size) {
         SearchRequestBuilder srb = createSearchBuilder();
         srb.addSort(Q_INTERVAL, SortOrder.ASC);
         srb.setQuery(QueryBuilders.matchAllQuery());
@@ -138,33 +139,29 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         return collectObjects(srb.execute().actionGet());
     }
 
-    public Collection<JTag> findAll(int from, int size) {        
+    public Collection<JTag> findAll(int from, int size) {
         SearchRequestBuilder srb = createSearchBuilder();
         srb.setQuery(QueryBuilders.matchAllQuery());
         srb.setFrom(from);
         srb.setSize(size);
-        return collectObjects(srb.execute().actionGet());        
+        return collectObjects(srb.execute().actionGet());
     }
-    
+
     public void update(JTag tag) {
         update(tag, true);
     }
 
     public JTag findByName(String term) {
         term = JTag.toLowerCaseOnlyOnTerms(term);
-        List<JTag> res = collectObjects(query(
-                QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
-                FilterBuilders.termFilter("_id", term))));
-        if(res.isEmpty())
+        GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), term).
+                execute().actionGet();
+        if (rsp.getSource() == null)
             return null;
-        else if(res.size() == 1)
-            return res.get(0);
-        else
-            throw new IllegalStateException("Found more than one tag for " + term);
+        return readDoc(rsp.getSource(), rsp.getId());
     }
 
     public void deleteByName(String term) {
-        DeleteByQueryRequestBuilder qb = client.prepareDeleteByQuery(getIndexName());
+        DeleteByQueryRequestBuilder qb = client.prepareDeleteByQuery(getIndexName()).setTypes(getIndexType());
         qb.setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.termFilter("_id", term)));
         client.deleteByQuery(qb.request());
     }
