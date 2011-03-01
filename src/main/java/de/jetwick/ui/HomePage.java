@@ -676,17 +676,14 @@ public class HomePage extends WebPage {
         doSearch(query, page, twitterFallback, false);
     }
 
-    public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {
-        String queryString = searchBox.getQuery();
+    public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {        
+        String queryString;
         if (!instantSearch) {
             // change text field
-            searchBox.init(query.extractNonNullQueryString(), query.extractUserName());
-            queryString = searchBox.getQuery();
-        } else {
-            queryString = query.getQuery();
-            if (queryString == null)
-                queryString = "";
+            searchBox.init(query.setEscape(false).getQuery(), query.extractUserName());        
         }
+        
+        queryString = query.setEscape(true).getQuery();
 
         // if query is lastQuery then user is saved in filter not in a pageParam
         String userName = searchBox.getUserName();
@@ -697,7 +694,7 @@ public class HomePage extends WebPage {
         // do not trigger background searchAndGetUsers if this query is the identical
         // to the last searchAndGetUsers or if it is an instant searchAndGetUsers
         if (instantSearch || lastQuery != null
-                && queryString.equals(lastQuery.extractNonNullQueryString())
+                && queryString.equals(lastQuery.getQuery())
                 && userName.equals(lastQuery.extractUserName()))
             startBGThread = false;
 
@@ -717,7 +714,7 @@ public class HomePage extends WebPage {
         long totalHits = 0;
         SearchResponse rsp = null;
         try {                        
-            rsp = getTweetSearch().search(users, query.escapeQuery());
+            rsp = getTweetSearch().search(users, query);
             totalHits = rsp.getHits().getTotalHits();
             logger.info(addIP("[stats] " + totalHits + " hits for: " + query.toString()));
         } catch (Exception ex) {

@@ -635,9 +635,9 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             
             try {
                 // connect retweets to tweets only searchTweetsDays old
-                SearchResponse rsp = query(new TweetQuery("\""+tw.extractRTText()+"\"").                        
+                SearchResponse rsp = query(new TweetQuery(JetwickQuery.escapeQuery(tw.extractRTText())).                        
                         addFilterQuery(USER, toUserStr).
-                        addFilterQuery(IS_RT, false).
+                        addFilterQuery(IS_RT, false).                        
                         setSize(10));
                 List<JTweet> existingTw = collectObjects(rsp);
                 for (JTweet tmp : existingTw) {

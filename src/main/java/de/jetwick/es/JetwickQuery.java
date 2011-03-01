@@ -56,6 +56,7 @@ public abstract class JetwickQuery implements Serializable {
     private int from;
     private int size = 10;
     private String queryString;
+    private boolean escape = false;
     private List<StrEntry> sortFields = new ArrayList<StrEntry>();
     private List<Entry<String, Object>> filterQueries = new ArrayList<Entry<String, Object>>();
     private Map<String, Integer> facetFields = new LinkedHashMap<String, Integer>();
@@ -252,6 +253,11 @@ public abstract class JetwickQuery implements Serializable {
         return FilterBuilders.orFilter(filters.toArray(new XContentFilterBuilder[filters.size()]));
     }
 
+    public JetwickQuery setEscape(boolean b) {
+        escape = b;
+        return this;
+    }
+
     public boolean isDateFacets() {
         return dateFacets;
     }
@@ -280,6 +286,12 @@ public abstract class JetwickQuery implements Serializable {
     }
 
     public String getQuery() {
+        if (queryString == null || queryString.length() == 0)
+            queryString = "";
+
+        if (escape)
+            return smartEscapeQuery(queryString);
+
         return queryString;
     }
 
@@ -358,14 +370,6 @@ public abstract class JetwickQuery implements Serializable {
         }
 
         return null;
-    }
-
-    public String extractNonNullQueryString() {
-        String visibleString = getQuery();
-        if (visibleString != null && visibleString.length() > 0)
-            return visibleString;
-
-        return "";
     }
 
     public String extractUserName() {
@@ -636,16 +640,11 @@ public abstract class JetwickQuery implements Serializable {
         return q;
     }
 
-    public JetwickQuery escapeQuery() {
-        setQuery(smartEscapeQuery(getQuery()));
-        return this;
-    }
-            
     public static String smartEscapeQuery(String str) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
-            if (c == '!' || c == '(' || c == ')' || c == ':' || c == '^' 
+            if (c == '!' || c == '(' || c == ')' || c == ':' || c == '^'
                     || c == '[' || c == ']' || c == '{' || c == '}' || c == '~'
                     || c == '?' || c == '|' || c == '&' || c == ';') {
                 sb.append('\\');
@@ -654,21 +653,22 @@ public abstract class JetwickQuery implements Serializable {
         }
         return sb.toString();
     }
-//    public static String escapeQuery(String str) {
-//        // copied from solrs' ClientUtils.escapeQueryChars        
-//        StringBuilder sb = new StringBuilder();
-//        for (int i = 0; i < str.length(); i++) {
-//            char c = str.charAt(i);
-//            if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
-//                    || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
-//                    || c == '*' || c == '?' || c == '|' || c == '&' || c == ';'
-//                    || Character.isWhitespace(c)) {
-//                sb.append('\\');
-//            }
-//            sb.append(c);
-//        }
-//        return sb.toString();
-//    }
+
+    public static String escapeQuery(String str) {
+        // copied from solrs' ClientUtils.escapeQueryChars        
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
+                    || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
+                    || c == '*' || c == '?' || c == '|' || c == '&' || c == ';'
+                    || Character.isWhitespace(c)) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
 
     @Override
     public boolean equals(Object obj) {

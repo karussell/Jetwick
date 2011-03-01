@@ -49,7 +49,7 @@ public class UserQuery extends JetwickQuery {
             qb = QueryBuilders.matchAllQuery();
         else {
             // fields can also contain patterns like so name.* to match more fields
-            return QueryBuilders.queryString(escapeQuery(queryStr)).
+            return QueryBuilders.queryString(smartEscapeQuery(queryStr)).
                     field("name", 10).field("tag", 2).field("bio").field("realName").
                     allowLeadingWildcard(false).useDisMax(true);
 //            return QueryBuilders.termQuery("name", queryStr);

@@ -105,13 +105,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         assertEquals(1, twSearch.search("java").size());
         assertEquals(1, twSearch.search("test").size());
-        assertEquals(1, twSearch.searchTweets(new TweetQuery("this test").escapeQuery()).size());
-        assertEquals(2, twSearch.searchTweets(new TweetQuery("java stable").escapeQuery()).size());
-        assertEquals(1, twSearch.searchTweets(new TweetQuery("java cool stable").escapeQuery()).size());
-        assertEquals(2, twSearch.searchTweets(new TweetQuery("java").escapeQuery()).size());
-        assertEquals(3, twSearch.searchTweets(new TweetQuery("java OR test").escapeQuery()).size());
-        assertEquals(1, twSearch.searchTweets(new TweetQuery("java -cool").escapeQuery()).size());
-        assertEquals(2, twSearch.searchTweets(new TweetQuery("stable!").escapeQuery()).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery("this test").setEscape(true)).size());
+        assertEquals(2, twSearch.searchTweets(new TweetQuery("java stable").setEscape(true)).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery("java cool stable").setEscape(true)).size());
+        assertEquals(2, twSearch.searchTweets(new TweetQuery("java").setEscape(true)).size());
+        assertEquals(3, twSearch.searchTweets(new TweetQuery("java OR test").setEscape(true)).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery("java -cool").setEscape(true)).size());
+        assertEquals(2, twSearch.searchTweets(new TweetQuery("stable!").setEscape(true)).size());
     }
 
     @Test
