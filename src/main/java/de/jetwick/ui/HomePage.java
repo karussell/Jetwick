@@ -716,8 +716,8 @@ public class HomePage extends WebPage {
         long start = System.currentTimeMillis();
         long totalHits = 0;
         SearchResponse rsp = null;
-        try {
-            rsp = getTweetSearch().search(users, query);
+        try {                        
+            rsp = getTweetSearch().search(users, query.escapeQuery());
             totalHits = rsp.getHits().getTotalHits();
             logger.info(addIP("[stats] " + totalHits + " hits for: " + query.toString()));
         } catch (Exception ex) {

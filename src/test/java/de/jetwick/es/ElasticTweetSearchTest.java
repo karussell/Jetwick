@@ -81,6 +81,37 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(2, twSearch.searchTweets(new TweetQuery("java")).size());
         assertEquals(3, twSearch.searchTweets(new TweetQuery("java OR test")).size());
         assertEquals(1, twSearch.searchTweets(new TweetQuery("java -cool")).size());
+        
+        try {
+            // throw error if contains unescaped lucene chars
+            twSearch.searchTweets(new TweetQuery("stable!"));
+            assertTrue(false);            
+        } catch(Exception ex) {
+            assertTrue(true);
+        }
+    }
+
+    @Test
+    public void testSmartEscapedSearch() throws Exception {
+        JUser fromUser = new JUser("peter");
+        JTweet tw1 = new JTweet(1L, "this is a test!", fromUser);
+
+        JUser otherUser = new JUser("otherUser");
+        JTweet tw2 = new JTweet(2L, "Java is cool and stable!", otherUser);
+        JTweet tw3 = new JTweet(3L, "Java is stable!", otherUser);
+        twSearch.update(tw1, false);
+        twSearch.update(tw2, false);
+        twSearch.update(tw3, true);
+
+        assertEquals(1, twSearch.search("java").size());
+        assertEquals(1, twSearch.search("test").size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery("this test").escapeQuery()).size());
+        assertEquals(2, twSearch.searchTweets(new TweetQuery("java stable").escapeQuery()).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery("java cool stable").escapeQuery()).size());
+        assertEquals(2, twSearch.searchTweets(new TweetQuery("java").escapeQuery()).size());
+        assertEquals(3, twSearch.searchTweets(new TweetQuery("java OR test").escapeQuery()).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery("java -cool").escapeQuery()).size());
+        assertEquals(2, twSearch.searchTweets(new TweetQuery("stable!").escapeQuery()).size());
     }
 
     @Test
@@ -495,7 +526,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testDoNotAllowSelfRetweets() throws Exception {
         twSearch.update(createTweet(1L, "bla bli blu", "userA"));
-        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userA"));        
+        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userA"));
         twSearch.update(createTweet(3L, "RT @userA: bla bli blu", "userb"));
 
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
@@ -730,9 +761,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         entries.add(urlEntry);
 
         tw.setUrlEntries(entries);
-        
-        XContentBuilder iDoc = twSearch.createDoc(tw);        
-        String str = iDoc.prettyPrint().string();                
+
+        XContentBuilder iDoc = twSearch.createDoc(tw);
+        String str = iDoc.prettyPrint().string();
 
         assertTrue(str.contains("\"url_pos_1_s\":\"2,18\""));
         assertTrue(str.contains("\"dest_url_1_s\":\"http://fulltest.de/bla\""));
@@ -748,9 +779,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         map.put("repl_i", 0);
         map.put("url_pos_1_s", "2,18");
         map.put("dest_url_1_s", "http://fulltest.de/bla");
-        map.put("dest_domain_1_s","resolved-domain.de");
-        map.put("dest_title_1_s","ResolvedTitel");
-        
+        map.put("dest_domain_1_s", "resolved-domain.de");
+        map.put("dest_title_1_s", "ResolvedTitel");
+
         JTweet tw2 = twSearch.readDoc(map, "1");
         assertEquals(1, tw2.getUrlEntries().size());
         Iterator<UrlEntry> iter = tw2.getUrlEntries().iterator();

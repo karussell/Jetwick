@@ -15,7 +15,6 @@
  */
 package de.jetwick.es;
 
-import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import de.jetwick.data.JTweet;
@@ -637,21 +636,39 @@ public abstract class JetwickQuery implements Serializable {
         return q;
     }
 
-    public static String escapeQuery(String str) {
-        // copied from solrs' ClientUtils.escapeQueryChars        
+    public JetwickQuery escapeQuery() {
+        setQuery(smartEscapeQuery(getQuery()));
+        return this;
+    }
+            
+    public static String smartEscapeQuery(String str) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
-            if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
-                    || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
-                    || c == '*' || c == '?' || c == '|' || c == '&' || c == ';'
-                    || Character.isWhitespace(c)) {
+            if (c == '!' || c == '(' || c == ')' || c == ':' || c == '^' 
+                    || c == '[' || c == ']' || c == '{' || c == '}' || c == '~'
+                    || c == '?' || c == '|' || c == '&' || c == ';') {
                 sb.append('\\');
             }
             sb.append(c);
         }
         return sb.toString();
     }
+//    public static String escapeQuery(String str) {
+//        // copied from solrs' ClientUtils.escapeQueryChars        
+//        StringBuilder sb = new StringBuilder();
+//        for (int i = 0; i < str.length(); i++) {
+//            char c = str.charAt(i);
+//            if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
+//                    || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
+//                    || c == '*' || c == '?' || c == '|' || c == '&' || c == ';'
+//                    || Character.isWhitespace(c)) {
+//                sb.append('\\');
+//            }
+//            sb.append(c);
+//        }
+//        return sb.toString();
+//    }
 
     @Override
     public boolean equals(Object obj) {
