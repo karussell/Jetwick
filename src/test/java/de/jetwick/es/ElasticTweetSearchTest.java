@@ -81,12 +81,12 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(2, twSearch.searchTweets(new TweetQuery("java")).size());
         assertEquals(3, twSearch.searchTweets(new TweetQuery("java OR test")).size());
         assertEquals(1, twSearch.searchTweets(new TweetQuery("java -cool")).size());
-        
+
         try {
             // throw error if contains unescaped lucene chars
             twSearch.searchTweets(new TweetQuery("stable!"));
-            assertTrue(false);            
-        } catch(Exception ex) {
+            assertTrue(false);
+        } catch (Exception ex) {
             assertTrue(true);
         }
     }
@@ -571,18 +571,28 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
-    public void testDontRemoveOldIfPersistent() throws Exception {
+    public void testDontRemoveOldIfPersistent() throws Exception {                
+        JTweet tw1 = createTweet(4L, "newbla next", "userc").setRt(100);
+        tw1.setCreatedAt(new MyDate().minusDays(2).toDate());        
+        
         JTweet tw2 = createTweet(2L, "RT @userA: bla bli blu", "userB");
         Date dt = new MyDate().minusDays(2).toDate();
         tw2.setUpdatedAt(dt);
-        tw2.setCreatedAt(dt);
-        assertEquals(1, twSearch.update(tw2).size());
-        assertNotNull(twSearch.findByTwitterId(2L).getUpdatedAt());
+        tw2.setCreatedAt(dt);        
+                
+        // until date is very old to let tweets going through
+        assertEquals(2, twSearch.update(Arrays.asList(tw2, tw1), new Date(0)).size());
+        assertEquals(2, twSearch.countAll());        
+        assertEquals(100, twSearch.findByTwitterId(4L).getRetweetCount());
+        assertNotNull(twSearch.findByTwitterId(2L).getUpdatedAt());        
 
         JTweet tw3 = createTweet(3L, "another tweet grabbed from search", "userB");
-        tw3.setCreatedAt(new Date());
-        Collection<JTweet> res = twSearch.update(Arrays.asList(tw3), new MyDate().minusDays(1).toDate());
-        assertEquals(1, res.size());
+        tw3.setCreatedAt(new MyDate().minusDays(2).toDate());        
+        Collection<JTweet> updatedTweets = twSearch.update(Arrays.asList(tw3), new MyDate().minusDays(1).toDate());        
+        assertEquals(0, updatedTweets.size());
+        assertEquals(2, twSearch.countAll());
+        assertTrue(twSearch.searchTweets(new TweetQuery()).contains(tw2));
+        assertTrue(twSearch.searchTweets(new TweetQuery()).contains(tw1));
     }
 
     @Test
@@ -599,10 +609,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw4 = createTweet(4L, "rt @usera: bla bli blu", "userD");
         tw4.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
 
-        Collection<JTweet> res = twSearch.privateUpdate(Arrays.asList(tw1, tw2, tw3, tw4));
+        Collection<JTweet> updatedTweets = twSearch.privateUpdate(Arrays.asList(tw1, tw2, tw3, tw4));
         assertEquals(1, twSearch.findByUserName("usera").getOwnTweets().size());
         assertEquals(3, twSearch.findByTwitterId(1L).getReplyCount());
-        assertEquals(4, res.size());
+        assertEquals(4, updatedTweets.size());
 
         // we do not sort the tweets anylonger so that 104 could be also a retweet of:
 //        SolrTweet tw100 = createTweet(100L, "newtext", "usera");
@@ -615,12 +625,12 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw104 = createTweet(104L, "rt @usera: newtext two", "userc");
         tw104.setCreatedAt(new MyDate(tw101.getCreatedAt()).plusMinutes(1).toDate());
 
-        res = twSearch.update(Arrays.asList(tw101, tw102, tw103, tw104), new MyDate().minusDays(1).toDate());
+        updatedTweets = twSearch.update(Arrays.asList(tw101, tw102, tw103, tw104),
+                new MyDate().minusDays(1).toDate());
         assertEquals(4, twSearch.countAll());
+        assertEquals(4, updatedTweets.size());
         assertEquals(1, twSearch.findByTwitterId(101L).getRetweetCount());
         assertEquals(1, twSearch.findByTwitterId(101L).getReplyCount());
-        assertEquals(4, res.size());
-        assertEquals(4, twSearch.countAll());
 
         // no tweet exists with that string
         assertEquals(0, twSearch.search("bla bli blu").size());

@@ -50,6 +50,14 @@
             <version>1.2</version>
         </dependency>
 
+<!--
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+        -->
+        
         <dependency>
             <groupId>org.apache.wicket</groupId>
             <artifactId>wicket</artifactId>
@@ -72,7 +80,7 @@
         </dependency>
         
         <!-- e.g. for cookie class -->
-         <dependency>
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
             <version>2.5</version>
@@ -89,6 +97,7 @@
             <version>${slf4j.version}</version>
             <scope>runtime</scope>
         </dependency>
+        
         <!-- use 1.2.14 instead of 1.2.16 because of
             java.lang.NullPointerException         at org.apache.log4j.helpers.ISO8601DateFormat.format(ISO8601DateFormat.java:70)
             -->

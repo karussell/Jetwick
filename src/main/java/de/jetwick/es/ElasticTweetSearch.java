@@ -49,12 +49,12 @@ import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.mvel2.Operator;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.xcontent.FilterBuilders;
 import org.elasticsearch.index.query.xcontent.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
+import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
@@ -129,12 +129,15 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
     }
 
     public void deleteUntil(Date removeUntil) {
-        NotFilterBuilder f1 = FilterBuilders.notFilter(FilterBuilders.existsFilter(UPDATE_DT));
-        RangeFilterBuilder rfb = FilterBuilders.rangeFilter(DATE);
-        rfb.lte(new MyDate(removeUntil.getTime()).castToDay().toDate()).cache(true);
+        NotFilterBuilder notPersistentFilter = FilterBuilders.notFilter(FilterBuilders.existsFilter(UPDATE_DT));
+        XContentFilterBuilder fewRetweetsFilter = FilterBuilders.rangeFilter(RT_COUNT).lt(100).includeUpper(false);
+        RangeFilterBuilder tooOldFilter = FilterBuilders.rangeFilter(DATE);
+        tooOldFilter.lte(new MyDate(removeUntil.getTime()).castToDay().toDate()).cache(true);
+        XContentFilterBuilder filter = FilterBuilders.andFilter(tooOldFilter,
+                notPersistentFilter, fewRetweetsFilter);
 
-        DeleteByQueryResponse response2 = client.prepareDeleteByQuery(getIndexName()).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.andFilter(f1, rfb))).
+        client.prepareDeleteByQuery(getIndexName()).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), filter)).
                 execute().
                 actionGet();
     }
