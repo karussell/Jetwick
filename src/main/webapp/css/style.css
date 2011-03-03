@@ -17,7 +17,7 @@
 /*
   | external-refs-right               |
   |-----------------------------------|
-  |userpanel| searchform |            |
+  |userpanel| searchbox  |            |
   | left    | date-filter| info-panel |
   | filter  | resultlist | info-panel |
   |-----------------------------------|
@@ -182,7 +182,7 @@ body, p {
 
 .yourkitlogo { clear: both; }
 
-.jetwicklogo {
+.jetwicklogo {    
     float: left;
     padding: 0px 30px 0px 10px;    
 }
@@ -191,6 +191,8 @@ body, p {
 }
 .jetwicklogo img { 
     float: left;
+    padding-left: 40px;
+    margin-top: 3px; 
 }
 .subtitle {        
     float: left;
@@ -200,13 +202,66 @@ body, p {
     padding: 15px 0px 10px 20px;
 }
 
-.search-tweet-tf { 
-    width: 425px; 
+.searchbox .searchform-glue {       
+    clear: both;
+    right: 0;
+    position: relative;
+    padding-bottom: 40px;
+}
+
+.searchform button {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.searchform .searchform-button {        
+    margin: 0;
+    font-size: 12px;
+    background-color: white;
+    border: none;
+    height: 35px;    
+    width: 120px;
+    padding: 0;
+    cursor: pointer;
+    background-image: url("../img/jetwick-logo-right.png");
+    background-repeat: no-repeat;
+    z-index: 2;
+}
+
+.searchform .searchform-button-left {
+    top: 0;
+    left: 0;
+    margin: 0;
+    font-size: 12px;
+    background-color: white;
+    border: none;
+    height: 36px;    
+    width: 34px;
+    padding: 0;
+    cursor: pointer;
+    background-image: url("../img/jetwick-logo-left.png");
+    background-repeat: no-repeat;
+    z-index: 2;
+}
+
+.searchform-text {    
+    position: absolute;
+    top: 0;
+    left: 33px;
+    padding-left: 4px;
+    border-style: solid none;
+    border-top-color: #245e87;
+    border-bottom-color: #89bee3;
+    border-width: 3px;
+    width: 375px;
     font-size: 20px;
     height: 27px;    
     margin-bottom: 7px;
+    z-index: 1;
 }
-.search-user-tf {    
+
+.searchform-user {    
     width: 155px;
     border-left: none;
     border-top: none;
@@ -214,21 +269,13 @@ body, p {
     border-bottom: gray 1px groove;    
 }
 
-.searchform {      
-    padding: 3px 0px 2px 3px;        
-}
-.searchform-button {
-    font-size: 18px;
-    border: medium medium;
-    height: 32px;    
-    width: 85px;
-}
 #search-type-left {
     padding-left: 6px;
     padding-right: 8px;    
     font-size: 14px;        
 }
-.search-type {    
+.search-type { 
+    padding-top: 5px;
     font-size: 11px;    
 }
 
@@ -298,7 +345,9 @@ div.wicket-aa ul li.selected {
     margin-left: auto;
     margin-right: auto;
 }
-
+.searchform {
+    width: 530px;
+}
 .content {
     float: left;
     width: 530px;
@@ -440,7 +489,7 @@ div.wicket-aa ul li.selected {
 }
 
 .tweet-text {
-/*    font-size: 1em;*/
+    /*    font-size: 1em;*/
     /* default is larger which is better font-size: 0.9em; */
     /* avoid too lengthy words destroying our layout */
     word-wrap: break-word;

@@ -25,6 +25,7 @@ import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
+import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.Radio;
 import org.apache.wicket.markup.html.form.RadioGroup;
@@ -51,7 +52,7 @@ public class SearchBox extends Panel {
     public SearchBox(String id) {
         this(id, null, null);
     }
-    
+
     public void setSearchType(String type) {
         if (type != null)
             selectedIndex = SEARCHTYPES.indexOf(type);
@@ -63,14 +64,31 @@ public class SearchBox extends Panel {
         super(id);
 
         setSearchType(searchTypeAsStr);
-        final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));        
-        form = new Form("searchform") {
-
+        final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
+        
+        final Button bttn = new Button("submitbutton") {
+            
             @Override
             public void onSubmit() {
                 setResponsePage(getApplication().getHomePage(), getParams(query, selectedIndex, userName, loggedInUser));
             }
+        };    
+         final Button bttnLeft = new Button("submitbuttonleft") {
+            
+            @Override
+            public void onSubmit() {
+                bttn.onSubmit();
+            }
+        };        
+        form = new Form("searchform") {
+
+            @Override
+            public void onSubmit() {
+                bttn.onSubmit();
+            }
         };
+        form.add(bttn);
+        form.add(bttnLeft);        
         form.setMarkupId("queryform");
         add(form);
 
@@ -127,7 +145,7 @@ public class SearchBox extends Panel {
         rg.add(userTF);
         form.add(rg);
 
-        form.add(new BookmarkablePageLink("homelink", HomePage.class));
+        form.add(new BookmarkablePageLink("homelink", HomePage.class));              
 //        Model hrefModel = new Model() {
 //
 //            @Override
