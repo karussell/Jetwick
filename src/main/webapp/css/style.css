@@ -221,7 +221,7 @@ body, p {
     background-color: white;
     border: none;
     height: 35px;    
-    width: 120px;
+    width: 97px;
     padding: 0;
     cursor: pointer;
     background-image: url("../img/jetwick-logo-right.png");
@@ -254,7 +254,7 @@ body, p {
     border-top-color: #245e87;
     border-bottom-color: #89bee3;
     border-width: 3px;
-    width: 375px;
+    width: 400px;
     font-size: 20px;
     height: 27px;    
     margin-bottom: 7px;
