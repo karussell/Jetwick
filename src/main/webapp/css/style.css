@@ -250,15 +250,15 @@ body, p {
     top: 0;
     left: 33px;
     padding-left: 4px;
-    border-style: solid none;
-    border-top-color: #245e87;
-    border-bottom-color: #89bee3;
-    border-width: 3px;
+    border: none;    
+/*    wrong auto completion padding: 1px 10px 1px 10px;*/
     width: 400px;
+    padding-top: 2px;
+    padding-bottom: 3px;
     font-size: 20px;
-    height: 27px;    
-    margin-bottom: 7px;
+    height: 30px;
     z-index: 1;
+    background-image: url("../img/jetwick-logo-middle.png");
 }
 
 .searchform-user {    
