@@ -561,8 +561,10 @@ public class HomePage extends WebPage {
                 PageParameters p = new PageParameters();
                 if (queryStr != null && !queryStr.isEmpty())
                     p.add("q", queryStr);
-                if (userName != null)
+                if (userName != null) {
                     p.add("user", userName.trim());
+                    searchBox.setSearchType(SearchBox.USER);
+                }
 
                 doSearch(createQuery(p), 0, true);
             }
