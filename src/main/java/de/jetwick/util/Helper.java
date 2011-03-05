@@ -81,10 +81,11 @@ public class Helper {
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
     public static final String TURL = "http://twitter.com";
+    public static final String TSURL = "http://search.twitter.com/search?q=";
     public static final String JURL = "";
     public static final String UTF8 = "UTF8";
     private static final String localDateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.S'Z'";
-    private static final String simpleDateString = "HH:mm yyyy-MM-dd";
+    private static final String simpleDateString = "HH:mm yyyy-MM-dd";    
 
     public static DateFormat createLocalFormat() {
         DateFormat df = new SimpleDateFormat(localDateTimeFormatString);
@@ -245,10 +246,6 @@ public class Helper {
         return str;
     }
 
-    public static String toTwitterLink(String title, String url) {
-        return toLink(title, TURL + "/" + url);
-    }
-
     public static String toJetwickUser(String title, String user) {
         return toInternLink(title, JURL + "?user=" + user);
     }
@@ -262,18 +259,7 @@ public class Helper {
             url = "http://" + url;
 
         return "<a class=\"i-tw-link\" href=\"" + url + "\">" + title + "</a>";
-    }
-
-    public static String toLink(String title, String url) {
-        if (url.startsWith("www."))
-            url = "http://" + url;
-
-        String shortTitle = title;
-        if (title.length() > 50)
-            shortTitle = title.substring(0, 47) + "...";
-
-        return "<a title=\"" + title + "\" class=\"ex-tw-link\" target=\"_blank\" href=\"" + url + "\">" + shortTitle + "</a>";
-    }
+    }    
 
     public static Date plusDays(Date date, int days) {
         return new Date(date.getTime() + days * 24 * 3600 * 1000);

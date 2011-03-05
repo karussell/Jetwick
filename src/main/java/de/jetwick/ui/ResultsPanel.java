@@ -48,6 +48,10 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
+import org.odlabs.wiquery.core.commons.IWiQueryPlugin;
+import org.odlabs.wiquery.core.commons.WiQueryResourceManager;
+import org.odlabs.wiquery.core.javascript.JsStatement;
+import org.odlabs.wiquery.ui.dialog.util.DialogUtilsBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +59,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class ResultsPanel extends Panel {
+public class ResultsPanel extends Panel implements IWiQueryPlugin {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private ListView userView;
@@ -74,8 +78,10 @@ public class ResultsPanel extends Panel {
     private int hitsPerPage;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private Map<Long, JTweet> allTweets = new LinkedHashMap<Long, JTweet>();
-    // for test only
+    private Model<String> oneUserLink = new Model<String>("");
+    private Model<String> oneUserLabel = new Model<String>("");
 
+    // for test only
     public ResultsPanel(String id) {
         this(id, "en");
     }
@@ -161,15 +167,16 @@ public class ResultsPanel extends Panel {
         add(createSortLink("sortRelevance", ElasticTweetSearch.RELEVANCE, "desc"));
         add(createSortLink("sortRetweets", ElasticTweetSearch.RT_COUNT, "desc"));
         add(createSortLink("sortLatest", ElasticTweetSearch.DATE, "desc"));
-        add(createSortLink("sortOldest", ElasticTweetSearch.DATE, "asc"));
+        add(createSortLink("sortOldest", ElasticTweetSearch.DATE, "asc"));        
+    
+        add(new ExternalLink("latestTw", oneUserLink, oneUserLabel));
+        add(new DialogUtilsBehavior());
 
         userView = new ListView("users", users) {
 
             @Override
             public void populateItem(final ListItem item) {
                 final JUser user = (JUser) item.getModelObject();
-                String twitterUrl = Helper.TURL + "/" + user.getScreenName();
-
                 String name = user.getScreenName();
                 if (user.getRealName() != null)
                     name = user.getRealName() + "  (" + name + ")";
@@ -181,8 +188,7 @@ public class ResultsPanel extends Panel {
                         onUserClick(user.getScreenName(), null);
                     }
                 };
-                item.add(userNameLink);
-
+                item.add(userNameLink);                                		
                 Link showLatestTweets = new Link("profileUrl") {
 
                     @Override
@@ -190,12 +196,10 @@ public class ResultsPanel extends Panel {
                         onUserClick(user.getScreenName(), null);
                     }
                 };
-                item.add(new ExternalLink("latestTw", twitterUrl, "twitter.com/" + name));
                 item.add(showLatestTweets.add(new ContextImage("profileImg", user.getProfileImageUrl())));
 
                 final List<JTweet> tweets = new ArrayList<JTweet>();
                 int counter = 0;
-
                 for (JTweet tw : user.getOwnTweets()) {
                     if (tweetsPerUser > 0 && counter >= tweetsPerUser)
                         break;
@@ -336,6 +340,8 @@ public class ResultsPanel extends Panel {
         translateAll = false;
         translateMap.clear();
         users.clear();
+        oneUserLabel.setObject("");
+        oneUserLink.setObject("");
         queryMessage = "";
         queryMessageWarn = "";
     }
@@ -354,6 +360,13 @@ public class ResultsPanel extends Panel {
 
     public void add(JUser u) {
         users.add(u);
+        if (users.size() == 1) {
+            oneUserLabel.setObject(Helper.TURL + "/" + u.getScreenName());
+            oneUserLink.setObject(Helper.TURL + "/" + u.getScreenName());
+        } else {
+            oneUserLabel.setObject("");
+            oneUserLink.setObject("");
+        }
     }
 
     public void setQuery(String visibleString) {
@@ -369,8 +382,8 @@ public class ResultsPanel extends Panel {
     public void setHitsPerPage(int hits) {
         hitsPerPage = hits;
     }
-    
-    public void setSort(String sortKey, String sortVal) {        
+
+    public void setSort(String sortKey, String sortVal) {
         if (sortKey == null || sortKey.isEmpty()) {
             _sortKey = ElasticTweetSearch.RELEVANCE;
             _sortVal = "desc";
@@ -426,5 +439,14 @@ public class ResultsPanel extends Panel {
 
     public void setAdQuery(String queryString) {
         lazyLoadAdPanel.setSearchQuery(queryString);
+    }
+
+    @Override
+    public void contribute(WiQueryResourceManager wiQueryResourceManager) {        
+    }
+
+    @Override
+    public JsStatement statement() {
+        return new JsStatement();
     }
 }

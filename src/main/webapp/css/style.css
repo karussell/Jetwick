@@ -251,7 +251,7 @@ body, p {
     left: 33px;
     padding-left: 4px;
     border: none;    
-/*    wrong auto completion padding: 1px 10px 1px 10px;*/
+    /*    wrong auto completion padding: 1px 10px 1px 10px;*/
     width: 400px;
     padding-top: 2px;
     padding-bottom: 3px;
@@ -612,9 +612,11 @@ div.wicket-aa ul li.selected {
 
 .rep-link a { color: black; }
 
-.more-tweets {
-    font-size: 0.5em;
-    padding: 0px 5px 0 10px;
+.user-twitter-link {
+    background-image: url("../img/twitter-icon.png");
+    background-repeat: no-repeat;        
+    padding: 0px 5px 0 20px;
+    margin-top: 10px;
 }
 
 .more-tw-label img { height: 14px; }
@@ -635,7 +637,7 @@ div.wicket-aa ul li.selected {
     padding: 50px 50px;
 }
 
-.imprint ul li, .about ul li {
+.about ul li {
     list-style: none;
 }
 
@@ -811,8 +813,8 @@ ul.show-dots li {
     list-style: circle;
 }
 
-#offline {
-    width: 500px;
+#offline, .imprint {
+    width: 600px;
     margin-left: auto;
     margin-right: auto;
 }

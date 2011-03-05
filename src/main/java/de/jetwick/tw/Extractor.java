@@ -141,9 +141,9 @@ public class Extractor {
     public boolean onNewHashTag(int index, String tag) {
         try {
             tag = "#" + tag;
-            String cleanLink = Helper.stripOutLuceneHighlighting(tag);
-            cleanLink = URLEncoder.encode(cleanLink, Helper.UTF8);
-            String newLink = Helper.toJetwickSearch(tag, cleanLink);
+            String cleanTag = Helper.stripOutLuceneHighlighting(tag);
+            cleanTag = URLEncoder.encode(cleanTag, Helper.UTF8);
+            String newLink = createTagMarkup(tag, cleanTag);
             sb.append(newLink);
 
             return true;
@@ -151,6 +151,10 @@ public class Extractor {
             logger.warn("Cannot create link for " + tag, ex);
         }
         return false;
+    }
+
+    public String createTagMarkup(String tag, String cleanTag) {
+        return Helper.toJetwickSearch(tag, cleanTag);
     }
 
     public boolean onNewUser(int index, String user) {
@@ -215,6 +219,17 @@ public class Extractor {
     }
 
     public String toLink(String url, String title) {
-        return Helper.toLink(title, Helper.stripOutLuceneHighlighting(url));
+        if (url.startsWith("www."))
+            url = "http://" + url;
+
+        String shortTitle = title;
+        if (title.length() > 50)
+            shortTitle = title.substring(0, 47) + "...";
+
+        return createLinkMarkup(shortTitle, title, Helper.stripOutLuceneHighlighting(url), "ex-tw-link");
+    }
+
+    public String createLinkMarkup(String shortTitle, String title, String url, String clazz) {
+        return "<a title=\"" + title + "\" class=\"" + clazz + "\" target=\"_blank\" href=\"" + url + "\">" + shortTitle + "</a>";
     }
 }

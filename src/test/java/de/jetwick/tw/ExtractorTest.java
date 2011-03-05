@@ -51,10 +51,10 @@ public class ExtractorTest {
 
     @Test
     public void testLinkToSaveHtml() {
-        assertEquals("bla : " + Helper.toLink(link, link) + " bla",
+        assertEquals("bla : " + extractor.toLink(link, link) + " bla",
                 extractor.toSaveHtml("bla : " + link + " bla"));
         link = "http://bit.ly/bgkw";
-        assertEquals(Helper.toLink(link, link), extractor.toSaveHtml(link));
+        assertEquals(extractor.toLink(link, link), extractor.toSaveHtml(link));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class ExtractorTest {
         assertEquals("Hi " + Helper.toJetwickUser("@timetabling", "%40timetabling") + " how are you?",
                 extractor.toSaveHtml("Hi @timetabling how are you?"));
 
-        assertEquals(" " + Helper.toJetwickUser("@timetabling", "%40timetabling") + " look here " + Helper.toLink(link, link),
+        assertEquals(" " + Helper.toJetwickUser("@timetabling", "%40timetabling") + " look here " + extractor.toLink(link, link),
                 extractor.toSaveHtml(" @timetabling look here " + link));
         assertEquals(Helper.toJetwickUser("@timetabling", "%40timetabling") + ":",
                 extractor.toSaveHtml("@timetabling:"));
@@ -80,11 +80,11 @@ public class ExtractorTest {
         assertEquals("peter.k@test.de",
                 extractor.toSaveHtml("peter.k@test.de"));
 
-        assertEquals(Helper.toJetwickSearch("#java", "%23java") + " " + Helper.toLink(link, link),
+        assertEquals(Helper.toJetwickSearch("#java", "%23java") + " " + extractor.toLink(link, link),
                 extractor.toSaveHtml("#java " + link));
 
 
-        assertEquals(Helper.toJetwickSearch("#<B>java</B>", "%23java") + " " + Helper.toLink(link, link),
+        assertEquals(Helper.toJetwickSearch("#<B>java</B>", "%23java") + " " + extractor.toLink(link, link),
                 extractor.toSaveHtml("#<B>java</B> " + link));
     }
 
@@ -103,7 +103,7 @@ public class ExtractorTest {
                 contains("href=\"http://www.unitime.org/\">www.<b>unitime</b>.org/</a>"));
 
         String str = "http://j.mp/dv6kfF";
-        assertEquals("Android app stealing user data<br/>" + Helper.toLink(str, str),
+        assertEquals("Android app stealing user data<br/>" + extractor.toLink(str, str),
                 extractor.toSaveHtml("Android app stealing user data\nhttp://j.mp/dv6kfF"));
 
         assertEquals("Android " + extractor.toLink("http://j.mp/dv6kfF", "http://j.mp/dv6kfF") + "<br/> test",

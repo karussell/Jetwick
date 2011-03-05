@@ -33,12 +33,20 @@ import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.odlabs.wiquery.core.commons.IWiQueryPlugin;
+import org.odlabs.wiquery.core.commons.WiQueryResourceManager;
+import org.odlabs.wiquery.core.effects.EffectBehavior;
+import org.odlabs.wiquery.core.javascript.JsStatement;
+import org.odlabs.wiquery.ui.effects.BounceEffect;
+import org.odlabs.wiquery.ui.effects.EffectsHelper;
+import org.odlabs.wiquery.ui.effects.ExplodeEffect;
+import org.odlabs.wiquery.ui.effects.ExplodeEffect.Mode;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SearchBox extends Panel {
+public class SearchBox extends Panel implements IWiQueryPlugin {
 
     public static final String ALL = "all", USER = "user", FRIENDS = "friends";
     public static final List<String> SEARCHTYPES = Arrays.asList(ALL, FRIENDS, USER);
@@ -65,30 +73,32 @@ public class SearchBox extends Panel {
 
         setSearchType(searchTypeAsStr);
         final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
-        
-        final Button bttn = new Button("submitbutton") {
-            
+
+        final Button buttonRight = new Button("submitbutton") {
+
             @Override
             public void onSubmit() {
                 setResponsePage(getApplication().getHomePage(), getParams(query, selectedIndex, userName, loggedInUser));
             }
-        };    
-         final Button bttnLeft = new Button("submitbuttonleft") {
-            
+        };
+        final Button bttnLeft = new Button("submitbuttonleft") {
+
             @Override
             public void onSubmit() {
-                bttn.onSubmit();
+                buttonRight.onSubmit();
             }
-        };        
+        };
         form = new Form("searchform") {
 
             @Override
             public void onSubmit() {
-                bttn.onSubmit();
+                buttonRight.onSubmit();
             }
         };
-        form.add(bttn);
-        form.add(bttnLeft);        
+        
+//        buttonRight.add(new EffectBehavior(new BounceEffect()));
+        form.add(buttonRight);
+        form.add(bttnLeft);
         form.setMarkupId("queryform");
         add(form);
 
@@ -145,7 +155,7 @@ public class SearchBox extends Panel {
         rg.add(userTF);
         form.add(rg);
 
-        form.add(new BookmarkablePageLink("homelink", HomePage.class));              
+        form.add(new BookmarkablePageLink("homelink", HomePage.class));
 //        Model hrefModel = new Model() {
 //
 //            @Override
@@ -230,5 +240,15 @@ public class SearchBox extends Panel {
         }
 
         return params;
+    }
+
+    @Override
+    public void contribute(WiQueryResourceManager wiQueryResourceManager) {
+        EffectsHelper.bounce(wiQueryResourceManager);        
+    }
+
+    @Override
+    public JsStatement statement() {
+        return new JsStatement();
     }
 }

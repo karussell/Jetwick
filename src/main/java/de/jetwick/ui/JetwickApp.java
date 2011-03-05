@@ -58,7 +58,7 @@ public class JetwickApp extends WebApplication {
 
     @Override
     protected void init() {
-        super.init();
+        super.init();               
 
         getApplicationSettings().setPageExpiredErrorPage(SessionTimeout.class);
         getApplicationSettings().setInternalErrorPage(ErrorPage.class);
@@ -102,7 +102,7 @@ public class JetwickApp extends WebApplication {
         mountBookmarkablePage("imprint", Imprint.class);
         mountBookmarkablePage("mobile", MobilePage.class);
         mountBookmarkablePage("m", MobilePage.class);        
-        mountBookmarkablePage("xy", HomePage.class);        
+//        mountBookmarkablePage("xy", HomePage.class);        
         addComponentInstantiationListener(getGuiceInjector());
     }
 

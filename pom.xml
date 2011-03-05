@@ -78,6 +78,11 @@
             <artifactId>wicket-guice</artifactId>
             <version>${wicket.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.odlabs.wiquery</groupId>
+            <artifactId>wiquery</artifactId>
+            <version>1.2.2</version>
+        </dependency>
         
         <!-- e.g. for cookie class -->
         <dependency>
@@ -313,6 +318,11 @@
             <id>elasticsearch</id>
             <name>ElasticSearch Repo for jython jar</name>
             <url>http://elasticsearch.googlecode.com/svn/maven</url>
+        </repository>
+        <repository>
+            <id>wiquery-maven-repo</id>
+            <name>WiQuery repository</name>
+            <url>https://wiquery.googlecode.com/svn/repo/</url>
         </repository>
         
     </repositories>

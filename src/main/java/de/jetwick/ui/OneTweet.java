@@ -37,6 +37,15 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.odlabs.wiquery.core.commons.IWiQueryPlugin;
+import org.odlabs.wiquery.core.commons.WiQueryResourceManager;
+import org.odlabs.wiquery.core.effects.Effect;
+import org.odlabs.wiquery.core.events.Event;
+import org.odlabs.wiquery.core.events.MouseEvent;
+import org.odlabs.wiquery.core.events.WiQueryEventBehavior;
+import org.odlabs.wiquery.core.javascript.JsScope;
+import org.odlabs.wiquery.core.javascript.JsStatement;
+import org.odlabs.wiquery.ui.dialog.util.DialogUtilsBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +53,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class OneTweet extends Panel {
+public class OneTweet extends Panel implements IWiQueryPlugin {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private String language;
@@ -61,7 +70,7 @@ public class OneTweet extends Panel {
     public OneTweet init(IModel<JTweet> model, boolean showUser) {
         setOutputMarkupId(true);
         final JTweet tweet = model.getObject();
-        if(tweet == null) {
+        if (tweet == null) {
             setVisible(false);
             return this;
         }
@@ -83,11 +92,25 @@ public class OneTweet extends Panel {
         spamIndicator.setVisible(tweet.isSpam());
         add(spamIndicator);
 
+//        final DialogUtilsBehavior dialogUtilsBehavior = new DialogUtilsBehavior();
+//        add(dialogUtilsBehavior);
         final Label label = new Label("tweetText", new Model<String>() {
+
+            int counter = 0;
 
             @Override
             public String getObject() {
-                return new Extractor().setTweet(tweet).setText(translate(tweet)).run().toString();
+                return new Extractor() {
+
+                    @Override
+                    public String createTagMarkup(String tag, String cleanTag) {
+//                        String url = Helper.TSURL + cleanTag;
+                        return "<a class=\"i-tw-link tw-tag\" "
+                                + "clean=\"" + cleanTag + "\" "
+                                + "tag=\"" + tag + " \" "                                
+                                + ">" + tag + "</a>";
+                    }
+                }.setTweet(tweet).setText(translate(tweet)).run().toString();
             }
         });
         label.setEscapeModelStrings(false);
@@ -221,6 +244,21 @@ public class OneTweet extends Panel {
         return this;
     }
 
+    private void addButtonWithEffect(String buttonId, final String clazz, final Effect effect) {
+        WebMarkupContainer button = new WebMarkupContainer(buttonId);
+        button.add(new WiQueryEventBehavior(new Event(MouseEvent.CLICK) {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public JsScope callback() {
+                return JsScope.quickScope(new JsStatement().$(null, "." + clazz).chain(effect).render());
+            }
+        }));
+
+        add(button);
+    }
+
     public String translate(JTweet tweet) {
         String trText = getTextFromTranslateAllAction(tweet.getTwitterId());
         if (trText != null)
@@ -259,5 +297,14 @@ public class OneTweet extends Panel {
     }
 
     public void onFindSimilarClick(JTweet tweet, AjaxRequestTarget target) {
+    }
+
+    @Override
+    public void contribute(WiQueryResourceManager wiQueryResourceManager) {
+    }
+
+    @Override
+    public JsStatement statement() {
+        return new JsStatement();
     }
 }
