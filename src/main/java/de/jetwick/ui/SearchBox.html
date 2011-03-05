@@ -27,7 +27,7 @@
     <wicket:panel>           
         <div class="searchbox">
             <form class="searchform" wicket:id="searchform">                
-                
+
                 <div class="jetwicklogo" title="Go back to home">                        
                     <a wicket:id="homelink">
                         <img src="img/jetwick.png"/>
@@ -36,7 +36,7 @@
                 </div>
                 <div class="searchform-glue">
                     <input type="text" wicket:id="textField" class="searchform-text"
-                       name="q" title="Enter your query"/>                            
+                           name="q" title="Enter your query"/>                            
                     <button wicket:id="submitbuttonleft" title="Search" class="searchform-button-left">                        
                     </button>                                        
                     <button wicket:id="submitbutton" title="Search" class="searchform-button">                                            
@@ -58,6 +58,10 @@
                     </div>
                 </div>
             </form>
+            <div class="user-twitter-link" wicket:id="userTwitter">
+                <img src="img/twitter-icon.png"/>    
+                <a wicket:id="userTwitterLink" target="_blank" title="Twitter Account (External Link)">[Show User@twitter.com]</a>                                
+            </div>
         </div>
     </wicket:panel>
 </body>

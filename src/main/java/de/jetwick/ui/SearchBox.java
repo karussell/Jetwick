@@ -17,6 +17,7 @@ package de.jetwick.ui;
 
 import de.jetwick.ui.util.DefaultFocusBehaviour;
 import de.jetwick.ui.util.MyAutoCompleteTextField;
+import de.jetwick.util.Helper;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -25,28 +26,22 @@ import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.Radio;
 import org.apache.wicket.markup.html.form.RadioGroup;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
+import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.odlabs.wiquery.core.commons.IWiQueryPlugin;
-import org.odlabs.wiquery.core.commons.WiQueryResourceManager;
-import org.odlabs.wiquery.core.effects.EffectBehavior;
-import org.odlabs.wiquery.core.javascript.JsStatement;
-import org.odlabs.wiquery.ui.effects.BounceEffect;
-import org.odlabs.wiquery.ui.effects.EffectsHelper;
-import org.odlabs.wiquery.ui.effects.ExplodeEffect;
-import org.odlabs.wiquery.ui.effects.ExplodeEffect.Mode;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SearchBox extends Panel implements IWiQueryPlugin {
+public class SearchBox extends Panel {
 
     public static final String ALL = "all", USER = "user", FRIENDS = "friends";
     public static final List<String> SEARCHTYPES = Arrays.asList(ALL, FRIENDS, USER);
@@ -55,6 +50,8 @@ public class SearchBox extends Panel implements IWiQueryPlugin {
     private String userName;
     private AutoCompleteTextField queryTF;
     private final Form form;
+    private Model<String> oneUserLink = new Model<String>("");
+    private Model<String> oneUserLabel = new Model<String>("");
 
     // for test
     public SearchBox(String id) {
@@ -72,6 +69,13 @@ public class SearchBox extends Panel implements IWiQueryPlugin {
         super(id);
 
         setSearchType(searchTypeAsStr);
+        add(new WebMarkupContainer("userTwitter") {
+
+            @Override
+            public boolean isVisible() {
+                return !getUserName().isEmpty();
+            }
+        }.add(new ExternalLink("userTwitterLink", oneUserLink, oneUserLabel)));
         final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
 
         final Button buttonRight = new Button("submitbutton") {
@@ -95,7 +99,7 @@ public class SearchBox extends Panel implements IWiQueryPlugin {
                 buttonRight.onSubmit();
             }
         };
-        
+
 //        buttonRight.add(new EffectBehavior(new BounceEffect()));
         form.add(buttonRight);
         form.add(bttnLeft);
@@ -197,6 +201,13 @@ public class SearchBox extends Panel implements IWiQueryPlugin {
     public void init(String q, String u) {
         query = q;
         userName = u;
+        if (getUserName().isEmpty()) {
+            oneUserLabel.setObject("");
+            oneUserLink.setObject("");
+        } else {
+            oneUserLabel.setObject(Helper.TURL + "/" + getUserName());
+            oneUserLink.setObject(Helper.TURL + "/" + getUserName());
+        }
     }
 
     public String getUserName() {
@@ -241,14 +252,13 @@ public class SearchBox extends Panel implements IWiQueryPlugin {
 
         return params;
     }
-
-    @Override
-    public void contribute(WiQueryResourceManager wiQueryResourceManager) {
-        EffectsHelper.bounce(wiQueryResourceManager);        
-    }
-
-    @Override
-    public JsStatement statement() {
-        return new JsStatement();
-    }
+//    @Override
+//    public void contribute(WiQueryResourceManager wiQueryResourceManager) {
+//        EffectsHelper.bounce(wiQueryResourceManager);        
+//    }
+//
+//    @Override
+//    public JsStatement statement() {
+//        return new JsStatement();
+//    }
 }

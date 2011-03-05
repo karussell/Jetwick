@@ -612,11 +612,9 @@ div.wicket-aa ul li.selected {
 
 .rep-link a { color: black; }
 
-.user-twitter-link {
-    background-image: url("../img/twitter-icon.png");
-    background-repeat: no-repeat;        
-    padding: 0px 5px 0 20px;
-    margin-top: 10px;
+.user-twitter-link {    
+    padding: 0px 5px 10px 20px;    
+    margin: 10px 5px;
 }
 
 .more-tw-label img { height: 14px; }
@@ -813,7 +811,7 @@ ul.show-dots li {
     list-style: circle;
 }
 
-#offline, .imprint {
+#offline, .imprint, .about {
     width: 600px;
     margin-left: auto;
     margin-right: auto;

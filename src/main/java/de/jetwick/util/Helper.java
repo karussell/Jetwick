@@ -247,7 +247,7 @@ public class Helper {
     }
 
     public static String toJetwickUser(String title, String user) {
-        return toInternLink(title, JURL + "?user=" + user);
+        return toInternLink(title, JURL + "?search=user&user=" + user);
     }
 
     public static String toJetwickSearch(String title, String q) {

@@ -78,8 +78,6 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
     private int hitsPerPage;
     private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private Map<Long, JTweet> allTweets = new LinkedHashMap<Long, JTweet>();
-    private Model<String> oneUserLink = new Model<String>("");
-    private Model<String> oneUserLabel = new Model<String>("");
 
     // for test only
     public ResultsPanel(String id) {
@@ -168,8 +166,7 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
         add(createSortLink("sortRetweets", ElasticTweetSearch.RT_COUNT, "desc"));
         add(createSortLink("sortLatest", ElasticTweetSearch.DATE, "desc"));
         add(createSortLink("sortOldest", ElasticTweetSearch.DATE, "asc"));        
-    
-        add(new ExternalLink("latestTw", oneUserLink, oneUserLabel));
+            
         add(new DialogUtilsBehavior());
 
         userView = new ListView("users", users) {
@@ -340,8 +337,6 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
         translateAll = false;
         translateMap.clear();
         users.clear();
-        oneUserLabel.setObject("");
-        oneUserLink.setObject("");
         queryMessage = "";
         queryMessageWarn = "";
     }
@@ -359,14 +354,7 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
     }
 
     public void add(JUser u) {
-        users.add(u);
-        if (users.size() == 1) {
-            oneUserLabel.setObject(Helper.TURL + "/" + u.getScreenName());
-            oneUserLink.setObject(Helper.TURL + "/" + u.getScreenName());
-        } else {
-            oneUserLabel.setObject("");
-            oneUserLink.setObject("");
-        }
+        users.add(u);       
     }
 
     public void setQuery(String visibleString) {
