@@ -49,6 +49,7 @@ import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.elasticsearch.action.search.SearchResponse;
+import org.odlabs.wiquery.ui.dialog.Dialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
@@ -117,7 +118,7 @@ public class HomePage extends WebPage {
         } else {
             initSession();
             init(createQuery(parameters), parameters, 0, true);
-        }
+        }       
     }
 
     private void initSession() {
@@ -657,7 +658,7 @@ public class HomePage extends WebPage {
                     twitterFallback = false;
                 }
             } else {
-                info("Login to use friend search. Follow us to recieve private messages on updates (rare frequency).");
+                info("Login to use friend search!");
 //                warn("Please login to search friends of " + parameters.getString("user"));
             }
         }

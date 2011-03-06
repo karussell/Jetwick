@@ -33,6 +33,8 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.RequestUtils;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
+import org.odlabs.wiquery.ui.dialog.Dialog;
+import org.odlabs.wiquery.ui.dialog.util.DialogUtilsBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +48,8 @@ public class UserPanel extends Panel {
 
     public UserPanel(String id, final HomePage homePageRef) {
         super(id);
-        Link loginLink = new IndicatingAjaxFallbackLink("loginLink") {
+
+        Link loginLinkProceed = new IndicatingAjaxFallbackLink("loginLinkProceed") {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
@@ -67,6 +70,19 @@ public class UserPanel extends Panel {
                 } catch (Exception ex) {
                     logger.error("Cannot login!", ex);
                 }
+            }
+        };
+
+        add(new DialogUtilsBehavior());
+        final Dialog dialog = new Dialog("dialog");        
+        add(dialog.setTitle("Information").setWidth(340).add(loginLinkProceed));
+
+        Link loginLink = new IndicatingAjaxFallbackLink("loginLink") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+//                dialog.enable();
+                dialog.open(target);
             }
         };
         add(loginLink);

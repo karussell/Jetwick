@@ -60,6 +60,11 @@ body, p {
     padding: 0px 15px 0px 15px;
 }
 
+.login-dialog .login-link-proceed {
+    color: #0063AC;
+    float: right;
+}
+
 .userpanel {    
     padding: 0px 0px 0px 15px;
 }
