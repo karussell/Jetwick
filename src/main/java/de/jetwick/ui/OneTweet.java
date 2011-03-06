@@ -45,7 +45,6 @@ import org.odlabs.wiquery.core.events.MouseEvent;
 import org.odlabs.wiquery.core.events.WiQueryEventBehavior;
 import org.odlabs.wiquery.core.javascript.JsScope;
 import org.odlabs.wiquery.core.javascript.JsStatement;
-import org.odlabs.wiquery.ui.dialog.util.DialogUtilsBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

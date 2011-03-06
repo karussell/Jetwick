@@ -551,6 +551,10 @@ div.wicket-aa ul li.selected {
     color: #003f6e;
 }
 
+.i-tw-link {
+    cursor: pointer;
+}
+
 /*.user-name a { color: black; }*/
 .user-name {
     /*    font-weight: bold;*/
