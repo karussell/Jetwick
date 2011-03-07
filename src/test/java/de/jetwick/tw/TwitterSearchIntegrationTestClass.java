@@ -163,7 +163,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         TwitterSearch st = twitterSearch;
         Set<JTweet> resList = new LinkedHashSet<JTweet>();
         JTag tag = new JTag("java");
-        st.search(tag.getTerm(), resList, 200, tag.getLastId());
+        st.search(tag.getTerm(), resList, 200, tag.getMaxCreateTime());
         for (JTweet tw : resList) {
             assertNotNull(tw.getFromUser().getProfileImageUrl());
         }
@@ -188,7 +188,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
 
         resList.clear();
         // searchAndGetUsers with the saved sinceId
-        st.search(tag.getTerm(), resList, 200, tag.getLastId());
+        st.search(tag.getTerm(), resList, 200, tag.getMaxCreateTime());
         assertTrue(resList.size() > 0);
     }
 

@@ -97,7 +97,7 @@ public class TweetConsumer extends MyThread {
             indexedTweets += res.size();
             float tweetsPerSec = indexedTweets / (longTime.getTime() / 1000.0f);
             String str = "[es] " + currentTime.toString() + "\t tweets/s:" + tweetsPerSec
-                    + "\t curr indexedTw:" + res.size() + " all indexedTw:" + indexedTweets + "\t all receivedTw:" + receivedTweets ;
+                    + "\t curr indexedTw:" + res.size() + " all indexedTw:" + indexedTweets + "\t all receivedTw:" + receivedTweets;
 
             long time = System.currentTimeMillis();
             if (optimizeInterval > 0)
@@ -119,12 +119,12 @@ public class TweetConsumer extends MyThread {
         Collection<TweetPackage> donePackages = new ArrayList<TweetPackage>();
         Collection<JTweet> tweetSet = new LinkedHashSet<JTweet>();
         while (true) {
-            TweetPackage tw = tws.poll();
-            if (tw == null)
+            TweetPackage twp = tws.poll();
+            if (twp == null)
                 break;
 
-            donePackages.add(tw);
-            tweetSet.addAll(tw.getTweets());
+            donePackages.add(twp);
+            tweetSet.addAll(twp.getTweets());
             if (tweetSet.size() > batch)
                 break;
         }

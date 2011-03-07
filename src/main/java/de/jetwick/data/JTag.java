@@ -27,33 +27,43 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     public static final String TERM = "term";
     public static final long DEFAULT_Q_I = 5 * 1000L;
     private String term;
-    private Long lastId = 0L;
-    private Long queryInterval = DEFAULT_Q_I;
-    private Long lastMillis = 0L;
-    private Long searchCounter = 0L;
+    
+    /** Save the maximum creation date of the tweet list for the last twitter search */
+    private long maxCreateTime = 0L;        
+    /** 
+     * Save when the last twitter search was performed. Then TweetCollector prefer
+     * tags with a higher frequency even after interrupted
+     */
+    private long lastMillis = 0L;
+    /** How long to wait until the TweetCollector should perform the new twitter search
+     */
+    private long queryInterval = DEFAULT_Q_I;
 
     public JTag() {
     }
 
-    public JTag(String term) {        
+    public JTag(String term) {
         this.term = toLowerCaseOnlyOnTerms(term);
     }
 
-    public JTag(String term, long maxId, long queryInterval) {
-        this(term);
-        this.lastId = maxId;
-        this.queryInterval = queryInterval;
+    public long getLastMillis() {
+        return lastMillis;
     }
 
-    public JTag setLastId(long maxId) {
-        this.lastId = maxId;
+    public JTag setLastMillis(long lastMillis) {
+        this.lastMillis = lastMillis;
         return this;
     }
 
-    public long getLastId() {
-        return lastId;
+    public long getMaxCreateTime() {
+        return maxCreateTime;
     }
 
+    public JTag setMaxCreateTime(long maxCreateTime) {
+        this.maxCreateTime = maxCreateTime;
+        return this;
+    }
+    
     public long getQueryInterval() {
         return queryInterval;
     }
@@ -79,13 +89,8 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
             return false;
     }
 
-    void setLastMillis(Long lastMillis) {
-        this.lastMillis = lastMillis;
-    }
-
     public void optimizeQueryFrequency(int newTweets) {
-        // try to get 100 tweets per search
-        long old = queryInterval;
+        // try to get 100 tweets per search        
         if (newTweets == 0)
             queryInterval *= 20;
         else
@@ -100,28 +105,6 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         // force max 5 min for jetwick
         if ("#jetwick".equalsIgnoreCase(term) || "jetwick".equalsIgnoreCase(term))
             queryInterval = Math.min(queryInterval, 5 * 60 * 1001);
-
-        // force max 5 hours
-//        queryInterval = Math.min(queryInterval, 3 * 3600 * 1001);
-
-//        logger.info(newTweets + " hits for " + term + "\t" + lastId
-//                + "\t => query interval was: " + Math.round(old / 1000f)
-//                + "; adjusted to " + Math.round(queryInterval / 1000f));
-    }
-
-    public void update(JTag st) {
-        lastId = st.lastId;
-        queryInterval = st.queryInterval;
-        lastMillis = st.lastMillis;
-        searchCounter = st.searchCounter;
-    }
-
-    public void incSearchCounter() {
-        searchCounter++;
-    }
-
-    public Long getSearchCounter() {
-        return searchCounter;
     }
 
     /**

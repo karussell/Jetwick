@@ -359,16 +359,15 @@ public class TwitterSearch implements Serializable {
     // The specific number of requests a client is able to make to the Search API for a given hour is not released.
     // The number is quite a bit higher and we feel it is both liberal and sufficient for most applications.
     // The since_id parameter will be removed from the next_page element as it is not supported for pagination.
-    public long search(String term, Collection<JTweet> result, int tweets, long lastId) throws TwitterException {
+    public long search(String term, Collection<JTweet> result, int tweets, long lastMaxCreateTime) throws TwitterException {
         Map<String, JUser> userMap = new LinkedHashMap<String, JUser>();
-        return search(term, result, userMap, tweets, lastId);
+        return search(term, result, userMap, tweets, lastMaxCreateTime);
     }
 
     long search(String term, Collection<JTweet> result,
-            Map<String, JUser> userMap, int tweets, long lastId) throws TwitterException {
-        long maxId = lastId;
-        long sinceId = lastId;
-
+            Map<String, JUser> userMap, int tweets, long lastMaxCreateTime) throws TwitterException {
+        long maxId = 0L;
+        long maxMillis = 0L;
         int hitsPerPage;
         int maxPages;
         if (tweets < 100) {
@@ -400,8 +399,11 @@ public class TwitterSearch implements Serializable {
                 // determine maxId in the first page
                 if (page == 0 && maxId < twe.getId())
                     maxId = twe.getId();
+                
+                if(maxMillis < twe.getCreatedAt().getTime())
+                    maxMillis = twe.getCreatedAt().getTime();                
 
-                if (twe.getId() < sinceId)
+                if (twe.getCreatedAt().getTime() + 1000 < lastMaxCreateTime)
                     breakPaging = true;
                 else {
                     String userName = twe.getFromUser().toLowerCase();
@@ -415,12 +417,12 @@ public class TwitterSearch implements Serializable {
                 }
             }
 
-            // sinceId could force us to leave earlier than defined by maxPages
+            // minMillis could force us to leave earlier than defined by maxPages
             if (breakPaging || res.getTweets().size() < hitsPerPage)
                 break;
         }
 
-        return maxId;
+        return maxMillis;
     }
 
     /**

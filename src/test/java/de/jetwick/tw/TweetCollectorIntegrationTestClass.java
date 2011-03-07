@@ -15,6 +15,7 @@
  */
 package de.jetwick.tw;
 
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import de.jetwick.JetwickTestClass;
@@ -105,7 +106,7 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
             }                        
 
             @Override
-            public long search(String q, Collection<JTweet> result, int tweets, long sinceId) {
+            public long search(String q, Collection<JTweet> result, int tweets, long lastMillis) {
                 JUser u = new JUser("timetabling");
                 JTweet tw1 = new JTweet(1L, "test", u);
                 result.add(tw1);
@@ -121,7 +122,7 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
                 result.add(tw1);
 
                 assertEquals(4, result.size());
-                return result.size();
+                return lastMillis;
             }
 
             @Override

@@ -149,7 +149,7 @@ public class Statistics {
         int counter = 0;        
         for (JTag tag : tagSearch.findAll(0, 1000)) {
             counter ++;
-            newTags.add(tag.setLastId(0).setQueryInterval(1000));            
+            newTags.add(tag.setMaxCreateTime(0L).setLastMillis(0).setQueryInterval(1000));            
         }        
         tagSearch.bulkUpdate(newTags, tagSearch.getIndexName(), true);
         tagSearch.optimize();

@@ -94,8 +94,9 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     @Override
     public XContentBuilder createDoc(JTag tag) throws IOException {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
-        b.field("lastId", tag.getLastId());
-        b.field(Q_INTERVAL, tag.getQueryInterval());
+        b.field("lastMillis", tag.getLastMillis());
+        b.field("maxCreateTime", tag.getMaxCreateTime());
+        b.field(Q_INTERVAL, tag.getQueryInterval());        
         return b;
     }
 
@@ -103,7 +104,8 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     public JTag readDoc(Map<String, Object> doc, String idAsStr) {
         String term = idAsStr;
         JTag tag = new JTag(term);
-        tag.setLastId(((Number) doc.get("lastId")).longValue());
+        tag.setLastMillis(((Number) doc.get("lastMillis")).longValue());
+        tag.setMaxCreateTime(((Number) doc.get("maxCreateTime")).longValue());
         tag.setQueryInterval(((Number) doc.get(Q_INTERVAL)).longValue());
         return tag;
     }

@@ -29,6 +29,15 @@ import static org.junit.Assert.*;
 public class JTagTest {
 
     @Test
+    public void testNextQuery() throws InterruptedException {
+        JTag tag = new JTag("java");
+        tag.nextQuery();
+        assertFalse(tag.nextQuery());
+        Thread.sleep(JTag.DEFAULT_Q_I + 100);
+        assertTrue(tag.nextQuery());        
+    }
+    
+    @Test
     public void testOptimizeQueryFrequency() {
         JTag st = new JTag("java");
         st.optimizeQueryFrequency(10);

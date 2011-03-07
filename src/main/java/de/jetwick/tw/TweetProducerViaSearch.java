@@ -101,19 +101,17 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
                     if (count < maxFill)
                         break;
 
-                    logger.info("... WAITING! " + count + " are too many tweets from twitter4j searching!");
+                    logger.info("WAITING! " + count + " are too many tweets from twitter4j searching!");
                     if (!myWait(20))
                         break MAIN;
                 }
 
                 float waitInSeconds = 2f;
-                try {
-                    long maxId = 0;
+                try {                    
                     LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
-                    maxId = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getLastId());
-
+                    long newLastMillis = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getMaxCreateTime());                    
+                    tag.setMaxCreateTime(newLastMillis);
                     int hits = tmp.size();
-                    tag.setLastId(maxId);
                     feededTweets += hits;
                     float tweetsPerSec = feededTweets / ((System.currentTimeMillis() - start) / 1000.0f);
                     logger.info("tweets/sec:" + tweetsPerSec + " \tqueue= " + count + " \t + "

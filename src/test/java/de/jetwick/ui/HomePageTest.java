@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import java.util.Date;
 import de.jetwick.es.TweetQuery;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.config.Configuration;
@@ -233,10 +234,10 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public long search(String term, Collection<JTweet> result, int tweets, long lastId) throws TwitterException {
+            public long search(String term, Collection<JTweet> result, int tweets, long lastSearch) throws TwitterException {
                 qString = "#" + term;
                 result.addAll(returnSearchTweets);
-                return lastId;
+                return lastSearch;
             }
 
             @Override
