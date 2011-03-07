@@ -35,8 +35,7 @@ import twitter4j.TwitterException;
 
 public class MyTweetGrabber implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    public static AtomicInteger idCounter = new AtomicInteger(0);
+    private static final long serialVersionUID = 1L;    
     private final Logger logger = LoggerFactory.getLogger(MyTweetGrabber.class);
     private String userName;
     private String queryStr;
@@ -131,7 +130,7 @@ public class MyTweetGrabber implements Serializable {
 
                 try {
                     if (tweets != null && tweets.size() > 0 && !name.isEmpty())
-                        rmiClient.get().init().send(new TweetPackageList(name).init(idCounter.addAndGet(1), tweets));
+                        rmiClient.get().init().send(new TweetPackageList(name).init(tweets));
                 } catch (Exception ex) {
                     logger.warn("Error while sending tweets to queue server" + ex.getMessage());
                 }
@@ -165,7 +164,7 @@ public class MyTweetGrabber implements Serializable {
                                 tw.makePersistent();
                             }
 
-                            TweetPackageList pkg = new TweetPackageList("archiving user:" + userName).init(idCounter.addAndGet(1), tmp);
+                            TweetPackageList pkg = new TweetPackageList("archiving user:" + userName).init(tmp);
                             rmiClient.get().init().send(pkg);
                             logger.info("queue tweets " + tweetCount + " to index queue");
                             setProgress((int) (tweetCount * 100.0 / maxTweets));

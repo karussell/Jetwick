@@ -144,7 +144,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                         if (tw.getFromUser().getScreenName().equalsIgnoreCase(authUser.getScreenName()))
                             tw.makePersistent();
                     }
-                    tweetPackages.add(new TweetPackageList("friendsOf:" + authUser.getScreenName()).init(MyTweetGrabber.idCounter.addAndGet(1), tweets));
+                    tweetPackages.add(new TweetPackageList("friendsOf:" + authUser.getScreenName()).init(tweets));
                     logger.info("Pushed " + tweets.size() + " friend tweets of " + authUser.getScreenName()
                             + " into queue. Last id " + ue.getLastId() + ". " + watch.stop());
                 }

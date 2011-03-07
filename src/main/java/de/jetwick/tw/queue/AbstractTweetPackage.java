@@ -24,7 +24,6 @@ import java.util.Date;
  */
 public abstract class AbstractTweetPackage implements TweetPackage {
 
-    private int id;
     private int progress;
     protected int processedTweets;
     private TweetPackageStatus status = TweetPackageStatus.STARTED;
@@ -47,8 +46,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
         return name;
     }
 
-    protected AbstractTweetPackage init(int id, int maxTweets) {
-        this.id = id;
+    protected AbstractTweetPackage init(int maxTweets) {        
         this.tweets = maxTweets;
         return this;
     }
@@ -146,7 +144,7 @@ public abstract class AbstractTweetPackage implements TweetPackage {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " id:" + id + " tweets:" + tweets + "\t name:" + name + " age/sec:" + getAgeInSeconds();
+        return getClass().getSimpleName() + " tweets:" + tweets + "\t name:" + name + " age/sec:" + getAgeInSeconds();
     }
 
     public static int calcNumberOfTweets(Collection<TweetPackage> coll) {

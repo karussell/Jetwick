@@ -16,7 +16,8 @@
 
 package de.jetwick.es;
 
-import org.elasticsearch.common.Base64;
+
+import org.apache.wicket.util.crypt.Base64;
 import de.jetwick.config.Configuration;
 import de.jetwick.util.Helper;
 import java.net.HttpURLConnection;
@@ -25,7 +26,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
-//import org.apache.solr.common.util.Base64;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -84,7 +84,7 @@ public class UserIndexResponseOrderTestClass {
         HttpURLConnection urlConn = null;
 
         // there are several other such methods. e.g. in twitter4j or under com.sun:
-        String encoding = new String(Base64.decode(userPw));
+        String encoding = new String(Base64.decodeBase64(userPw.getBytes()));
         //URLConnection
         urlConn = (HttpURLConnection) new URL(url).openConnection();
         // Enable reading from server ( to read response )

@@ -89,7 +89,7 @@ public class TweetConsumerTest extends JetwickTestClass {
         LinkedBlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         JTweet tw = createTweet(1L, "@daniel fancy!", "timetabling");
         tw.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(0, Arrays.asList(tw)));
+        queue.add(new TweetPackageList("").init(Arrays.asList(tw)));
         Collection<JTweet> res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(1, res.size());
         // 0 removeDays < tw.createdAt
@@ -109,7 +109,7 @@ public class TweetConsumerTest extends JetwickTestClass {
         tw2.setCreatedAt(new Date());
         JTweet tw3 = createTweet(6L, "Bla bli", "userB");
         tw3.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(0, Arrays.asList(tw, tw2, tw3)));
+        queue.add(new TweetPackageList("").init(Arrays.asList(tw, tw2, tw3)));
         Collection<JTweet> res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(2, res.size());
 //        assertEquals(0, res.getDeletedTweets().size());
@@ -120,7 +120,7 @@ public class TweetConsumerTest extends JetwickTestClass {
         BlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         JTweet tw = createTweet(5L, "text", "timetabling");
         tw.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(0, Arrays.asList(tw)));
+        queue.add(new TweetPackageList("").init(Arrays.asList(tw)));
         Collection<JTweet> res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(1, res.size());
 //        assertEquals(0, res.getDeletedTweets().size());
@@ -128,7 +128,7 @@ public class TweetConsumerTest extends JetwickTestClass {
         queue.clear();
         tw = createTweet(6L, "RT @timetabling: text", "userB");
         tw.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(0, Arrays.asList(tw)));
+        queue.add(new TweetPackageList("").init(Arrays.asList(tw)));
         res = tweetConsumer.updateTweets(queue, 100);
         assertEquals(2, res.size());
 //        assertEquals(0, res.getDeletedTweets().size());

@@ -66,7 +66,7 @@ public class RMIClient implements CommunicationService {
         DefaultModule module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
         RMIClient rmiProvider = injector.getInstance(RMIClient.class);
-        rmiProvider.send(injector.getInstance(TweetPackageList.class).init(0,
+        rmiProvider.send(injector.getInstance(TweetPackageList.class).init(
                 Arrays.asList(new JTweet(1L, "test", new JUser("peter")))));
     }
 

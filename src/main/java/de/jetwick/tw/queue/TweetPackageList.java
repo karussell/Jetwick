@@ -32,8 +32,8 @@ public class TweetPackageList extends AbstractTweetPackage {
         setName(name);
     }
 
-    public TweetPackageList init(int id, Collection<JTweet> tweets) {
-        super.init(id, tweets == null ? 0 : tweets.size());
+    public TweetPackageList init( Collection<JTweet> tweets) {
+        super.init(tweets == null ? 0 : tweets.size());
         if (tweets != null)
             this.tweets = new LinkedHashSet<JTweet>(tweets);
 

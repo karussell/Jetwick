@@ -15,7 +15,7 @@
  */
 package de.jetwick.tw;
 
-import java.util.Date;
+import de.jetwick.data.JTag;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import de.jetwick.JetwickTestClass;
@@ -88,8 +88,8 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         final Map<Thread, Throwable> exceptionMap = new HashMap<Thread, Throwable>();
         Thread.UncaughtExceptionHandler excHandler = createExceptionMapHandler(exceptionMap);
 
-        // fill DB with default tags
-        tagSearchTester.getSearch().addAll(Arrays.asList("java"), true);
+        // fill DB with one default tag
+        tagSearchTester.getSearch().bulkUpdate(Arrays.asList(new JTag("java")), tagSearchTester.getSearch().getIndexName(), true);
 
         // already existing tweets must not harm
         ElasticTweetSearch tweetSearch = tweetSearchTester.getSearch();

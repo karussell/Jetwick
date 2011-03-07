@@ -51,9 +51,6 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
 
     @Override
     public void run() {
-//        for (int i = 0; i < 256; i++) {
-//            System.out.println(i + "" + (char) i);
-//        }
         logger.info("tweet number batch:" + maxFill);
         int counter = 0;
         MAIN:
@@ -66,7 +63,7 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
                 if (count < maxFill)
                     break;
 
-                logger.info("... WAITING! " + count + " are too many tweets from twitter4j searching!");
+                logger.info("WAITING! " + count + " are too many tweets from twitter4j searching!");
                 if (!myWait(20))
                     break MAIN;
             }
@@ -91,7 +88,7 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
                 }
             }
 
-            tweetPackages.add(new TweetPackageList("fake:" + counter).init(MyTweetGrabber.idCounter.addAndGet(1), tmp));
+            tweetPackages.add(new TweetPackageList("fake:" + counter).init(tmp));
         }
 
         logger.info(getClass().getSimpleName() + " successfully finished");

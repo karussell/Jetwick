@@ -196,11 +196,10 @@ public class UrlExtractorTest {
     JTweet createTweet(long id, String twText) {
         return new JTweet(id, twText, new JUser("tmp")).setCreatedAt(new Date(id));
     }
-    public static int counter = 0;
 
     BlockingQueue<TweetPackage> createPkg(JTweet... tweets) {
         return new LinkedBlockingQueue<TweetPackage>(
                 Arrays.asList(
-                new TweetPackageList("tmp").init(counter++, Arrays.asList(tweets))));
+                new TweetPackageList("tmp").init(Arrays.asList(tweets))));
     }
 }
