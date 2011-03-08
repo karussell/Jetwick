@@ -27,9 +27,8 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     public static final String TERM = "term";
     public static final long DEFAULT_Q_I = 5 * 1000L;
     private String term;
-    
     /** Save the maximum creation date of the tweet list for the last twitter search */
-    private long maxCreateTime = 0L;        
+    private long maxCreateTime = 0L;
     /** 
      * Save when the last twitter search was performed. Then TweetCollector prefer
      * tags with a higher frequency even after interrupted
@@ -38,6 +37,10 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     /** How long to wait until the TweetCollector should perform the new twitter search
      */
     private long queryInterval = DEFAULT_Q_I;
+    /**
+     * The first search should page 5 times
+     */
+    private int pages = 5;
 
     public JTag() {
     }
@@ -63,7 +66,7 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         this.maxCreateTime = maxCreateTime;
         return this;
     }
-    
+
     public long getQueryInterval() {
         return queryInterval;
     }
@@ -99,26 +102,14 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         // force at least 5 second
         queryInterval = Math.max(queryInterval, 5 * 1001);
 
-        // force max 20 min
-        queryInterval = Math.min(queryInterval, 20 * 60 * 1001);
-
-        // force max 5 min for jetwick
-        if ("#jetwick".equalsIgnoreCase(term) || "jetwick".equalsIgnoreCase(term))
-            queryInterval = Math.min(queryInterval, 5 * 60 * 1001);
-    }
-
-    /**
-     * @return true if this tag is regularly searched
-     */
-    public boolean isFrequent() {
-        return queryInterval < 3600 * 1000;
+        // force max 5 min
+        queryInterval = Math.min(queryInterval, 5 * 60 * 1001);
     }
 
     public int getPages() {
-        if (isFrequent())
-            return 1;
-
-        return 10;
+        int tmp = pages;
+        pages = 1;
+        return tmp;
     }
 
     @Override
