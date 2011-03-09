@@ -31,7 +31,6 @@ public class UrlExtractor extends Extractor {
     private StopWatch sw = new StopWatch("");
     private int resolveTimeout = 500;
     private List<UrlEntry> urlEntries = new ArrayList<UrlEntry>();
-    private UrlTitleCleaner urlTitleCleaner = new UrlTitleCleaner();
 
     public UrlExtractor setResolveTimeout(int resolveTimeout) {
         this.resolveTimeout = resolveTimeout;
@@ -97,10 +96,10 @@ public class UrlExtractor extends Extractor {
 //                entry.setResolvedSnippet(str[1]);
 
                 String title_snippet[] = getInfo(url, resolveTimeout);
-                if (!urlTitleCleaner.contains(title_snippet[0]))
-                    entry.setResolvedTitle(title_snippet[0]);
+                if (title_snippet[0].isEmpty())
+                    entry.setResolvedTitle(url);
                 else
-                    entry.setResolvedTitle("");
+                    entry.setResolvedTitle(title_snippet[0]);
 
                 sw.stop();
                 entry.setResolvedDomain(Helper.extractDomain(url));
@@ -122,10 +121,5 @@ public class UrlExtractor extends Extractor {
 
     public String[] getInfo(String url, int timeout) {
         return Helper.getUrlInfos(url, timeout);
-    }
-
-    public UrlExtractor setCleaner(UrlTitleCleaner urlCleaner) {
-        this.urlTitleCleaner = urlCleaner;
-        return this;
     }
 }

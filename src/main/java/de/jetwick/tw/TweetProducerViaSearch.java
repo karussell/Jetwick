@@ -24,6 +24,7 @@ import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.Helper;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -95,27 +96,21 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
             JTag tag = tags.poll();
             if (tag != null && tag.nextQuery()) {
                 // do not add more tweets to the pipe if consumer cannot process it
-                int count = 0;
-                while (true) {
-                    count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
-                    if (count < maxFill)
-                        break;
-
-                    logger.info("WAITING! " + count + " are too many tweets from twitter4j searching!");
-                    if (!myWait(20))
-                        break MAIN;
-                }
+                Integer count = tooManyTweetsWait(tweetPackages, maxFill, "twitter4j searching", 20, true);
+                if(count == null)
+                    break MAIN;                
 
                 float waitInSeconds = 2f;
                 try {                    
+                    int pages = tag.getPages();
                     LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
-                    long newLastMillis = twSearch.search(tag.getTerm(), tmp, tag.getPages() * 100, tag.getMaxCreateTime());                    
+                    long newLastMillis = twSearch.search(tag.getTerm(), tmp, pages * 100, tag.getMaxCreateTime());                    
                     tag.setMaxCreateTime(newLastMillis);
                     int hits = tmp.size();
                     feededTweets += hits;
                     float tweetsPerSec = feededTweets / ((System.currentTimeMillis() - start) / 1000.0f);
                     logger.info("tweets/sec:" + tweetsPerSec + " \tqueue= " + count + " \t + "
-                            + hits + " \t q=" + tag.getTerm() + " pages=" + tag.getPages());
+                            + hits + " \t q=" + tag.getTerm() + " pages=" + pages + " lastMillis=" + new Date(newLastMillis));
 
                     tweetPackages.add(new TweetPackageList("search:" + tag.getTerm()).init(tmp));
 

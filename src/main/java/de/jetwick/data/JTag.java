@@ -112,6 +112,11 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         return tmp;
     }
 
+    public JTag setPages(int p) {
+        pages = p;
+        return this;
+    }
+
     @Override
     public String toString() {
         return term + " " + getWaitingSeconds();

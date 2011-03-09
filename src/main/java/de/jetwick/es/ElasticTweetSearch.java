@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -166,6 +165,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
         return srb.execute().actionGet();
     }
 
+    @Override
     public XContentBuilder createDoc(JTweet tw) throws IOException {
         if (tw.getFromUser() == null) {
             // this came from UpdateResult.addNewTweet(tweet1); UpdateResult.addRemovedTweet(tweet1) at the same time
@@ -212,29 +212,25 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
             b.field(TAG, entry.getKey());
         }
-
+        
         int counter = 0;
         for (UrlEntry urlEntry : tw.getUrlEntries()) {
-            if (!urlEntry.getResolvedTitle().isEmpty()
-                    && !urlEntry.getResolvedUrl().isEmpty()) {
-                counter++;
-                b.field("url_pos_" + counter + "_s", urlEntry.getIndex() + "," + urlEntry.getLastIndex());
-                b.field("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
-                b.field("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
-                b.field("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
-                // index this field with a tokenizer ...
-                if (counter == 1)
-                    b.field("dest_title_t", urlEntry.getResolvedTitle());
+            counter++;
+            b.field("url_pos_" + counter + "_s", urlEntry.getIndex() + "," + urlEntry.getLastIndex());
+            b.field("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
+            b.field("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
+            b.field("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());            
+            if (counter == 1)
+                b.field("dest_title_t", urlEntry.getResolvedTitle());
 
-                if (counter >= 3)
-                    break;
-            }
+            if (counter >= 3)
+                break;
         }
 
-        b.field("url_i", counter);
+        b.field(URL_COUNT, counter);
         b.field(DUP_COUNT, tw.getDuplicates().size());
         b.field("lang", tw.getLanguage());
-        b.field("quality_i", tw.getQuality());
+        b.field(QUALITY, tw.getQuality());
         b.field("repl_i", tw.getReplyCount());
         b.field(RT_COUNT, tw.getRetweetCount());
 
@@ -269,8 +265,8 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
         tw.setRt(rt);
         tw.setReply(rp);
 
-        if (source.get("quality_i") != null)
-            tw.setQuality(((Number) source.get("quality_i")).intValue());
+        if (source.get(QUALITY) != null)
+            tw.setQuality(((Number) source.get(QUALITY)).intValue());
 
 //        System.out.println("now "+map.get(INREPLY_ID) + " " + doc.field(INREPLY_ID));
 
@@ -288,7 +284,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
     public UrlEntry[] parseUrlEntries(Map<String, Object> source) {
         int urlCount = 0;
         try {
-            urlCount = ((Number) source.get("url_i")).intValue();
+            urlCount = ((Number) source.get(URL_COUNT)).intValue();
         } catch (Exception ex) {
         }
 
@@ -425,7 +421,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             logger.error("Error while searchReplies", ex);
             return Collections.EMPTY_SET;
         }
-    }    
+    }
 
     Collection<JTweet> update(JTweet tmpTweets) {
         return privateUpdate(Arrays.asList(tmpTweets));
@@ -631,16 +627,15 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
      * add relation to existing/original tweet
      */
     public JTweet connectToOrigTweet(JTweet tw, String toUserStr) {
-        if (tw.isRetweet() && JTweet.isDefaultInReplyId(tw.getInReplyTwitterId())) {            
+        if (tw.isRetweet() && JTweet.isDefaultInReplyId(tw.getInReplyTwitterId())) {
             // do not connect if retweeted user == user who retweets  
             if (toUserStr.equals(tw.getFromUser().getScreenName()))
                 return null;
-            
+
             try {
                 // connect retweets to tweets only searchTweetsDays old
-                SearchResponse rsp = query(new TweetQuery(JetwickQuery.escapeQuery(tw.extractRTText())).                        
-                        addFilterQuery(USER, toUserStr).
-                        addFilterQuery(IS_RT, false).                        
+                SearchResponse rsp = query(new TweetQuery(JetwickQuery.escapeQuery(tw.extractRTText())).addFilterQuery(USER, toUserStr).
+                        addFilterQuery(IS_RT, false).
                         setSize(10));
                 List<JTweet> existingTw = collectObjects(rsp);
                 for (JTweet tmp : existingTw) {
@@ -793,7 +788,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             logger.error("couldn't add reply to:" + orig, ex);
             return false;
         }
-    }    
+    }
 
     public JTweet findByTwitterId(Long twitterId) {
         try {

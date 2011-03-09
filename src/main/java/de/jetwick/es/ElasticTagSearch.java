@@ -96,7 +96,8 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         b.field("lastMillis", tag.getLastMillis());
         b.field("maxCreateTime", tag.getMaxCreateTime());
-        b.field(Q_INTERVAL, tag.getQueryInterval());        
+        b.field(Q_INTERVAL, tag.getQueryInterval());
+        b.field("pages", tag.getPages());
         return b;
     }
 
@@ -107,6 +108,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         tag.setLastMillis(((Number) doc.get("lastMillis")).longValue());
         tag.setMaxCreateTime(((Number) doc.get("maxCreateTime")).longValue());
         tag.setQueryInterval(((Number) doc.get(Q_INTERVAL)).longValue());
+        tag.setPages(((Number) doc.get("pages")).intValue());
         return tag;
     }
 

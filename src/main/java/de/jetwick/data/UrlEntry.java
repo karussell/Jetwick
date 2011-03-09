@@ -66,6 +66,9 @@ public class UrlEntry implements Serializable {
         this.resolvedSnippet = resolvedSnippet;
     }
 
+    /**
+     * @return The first snippet of the web site
+     */
     public String getResolvedSnippet() {
         return resolvedSnippet;
     }
@@ -82,6 +85,9 @@ public class UrlEntry implements Serializable {
         return resolvedDomain;
     }
 
+    /**
+     * @return either the title of the web site or if unresolved the url itself
+     */
     public String getResolvedTitle() {
         return resolvedTitle;
     }

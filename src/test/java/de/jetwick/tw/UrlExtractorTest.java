@@ -90,6 +90,10 @@ public class UrlExtractorTest {
         assertEquals("http://ok-long.de/test_x", getFirst(3).getResolvedUrl());
         assertEquals("ok-long.de", getFirst(3).getResolvedDomain());
         assertEquals("http://ok-long.de/test_x_t", getFirst(3).getResolvedTitle());
+        
+        assertEquals("http://training-central.com", getFirst(4).getResolvedUrl());
+        assertEquals("http://notval.l/", getFirst(5).getResolvedUrl());        
+        
         assertEquals("http://vali.d.le/_x", getFirst(6).getResolvedUrl());
         assertEquals("vali.d.le", getFirst(6).getResolvedDomain());
 
@@ -118,17 +122,19 @@ public class UrlExtractorTest {
     @Test
     public void testResolveTitleWithUrlCleaner() throws InterruptedException {
         TweetUrlResolver twp = new TweetUrlResolver() {
-
+            
             @Override
             public UrlExtractor createExtractor() {
-                return new FakeUrlExtractor().setCleaner(new UrlTitleCleaner(new BufferedReader(new StringReader("http://hiho.de_x_t"))));
+                return new FakeUrlExtractor();
             }
-        };
+        }.setTest(100);
+        twp.setUrlCleaner(new UrlTitleCleaner(new BufferedReader(new StringReader("http://hiho.de_x_t"))));
         twp.setReadingQueue(createPkg(createTweet(1L, "test http://hiho.de test2"))).
                 run();
         ret = twp.getResultQueue();
-        // do not add to urlentries
-        assertEquals(0, get(0).size());
+        // add to urlentries but mark tweet as spam
+        assertEquals(1, get(0).size());
+        assertEquals(JTweet.QUAL_SPAM, ret.iterator().next().getTweets().iterator().next().getQuality());
     }
 
     @Test
@@ -151,7 +157,7 @@ public class UrlExtractorTest {
                     }
                 };
             }
-        };
+        }.setTest(100);
 
         twp.setReadingQueue(createPkg(createTweet(1L, "test http://hiho.de test2"))).
                 run();
@@ -190,7 +196,7 @@ public class UrlExtractorTest {
             public UrlExtractor createExtractor() {
                 return new FakeUrlExtractor();
             }
-        };
+        }.setTest(100);
     }
 
     JTweet createTweet(long id, String twText) {

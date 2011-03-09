@@ -18,9 +18,7 @@ package de.jetwick.tw;
 import com.google.inject.Inject;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.data.JTweet;
-import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
-import de.jetwick.util.Helper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
@@ -43,31 +41,31 @@ public class TweetUrlResolver extends MyThread {
     private int resolveThreads = 5;
     private int resolveTimeout = 500;
     private ExecutorService service;
-    private boolean test = true;
+    private long testWait = -1;
     private BlockingQueue<TweetPackage> packages;
     private BlockingQueue<TweetPackage> resultPackages = new LinkedBlockingQueue<TweetPackage>();
     private int maxFill = 1000;
     @Inject
     // if no inject then use empty list:
-    private UrlTitleCleaner urlCleaner = new UrlTitleCleaner();
+    private UrlTitleCleaner urlTitleCleaner = new UrlTitleCleaner();
 
     public TweetUrlResolver() {
         super("tweet-urlresolver");
     }
 
-    public TweetUrlResolver setTest(boolean test) {
-        this.test = test;
+    public TweetUrlResolver setTest(long testWait) {
+        this.testWait = testWait;
         return this;
     }
 
     public void setMaxFill(int maxFill) {
         this.maxFill = maxFill;
-    }        
+    }
 
     public void setUrlCleaner(UrlTitleCleaner urlCleaner) {
-        this.urlCleaner = urlCleaner;
+        this.urlTitleCleaner = urlCleaner;
     }
-    
+
     public void setResolveTimeout(int resolveTimeout) {
         this.resolveTimeout = resolveTimeout;
     }
@@ -84,7 +82,7 @@ public class TweetUrlResolver extends MyThread {
     }
 
     public UrlExtractor createExtractor() {
-        return new UrlExtractor().setCleaner(urlCleaner).setResolveTimeout(resolveTimeout);
+        return new UrlExtractor().setResolveTimeout(resolveTimeout);
     }
 
     public TweetUrlResolver setReadingQueue(BlockingQueue<TweetPackage> tweetPackages) {
@@ -114,19 +112,19 @@ public class TweetUrlResolver extends MyThread {
                                 // log not too often
                                 if (tmp == 0 || tmp == 1)
                                     logger.info("urlResolver: no tweet packages in queue");
-                                
+
                                 if (!myWait(10))
                                     return null;
 
                                 continue;
                             }
-
+                            
                             for (JTweet tw : pkg.getTweets()) {
                                 allTweets.addAndGet(1);
                                 UrlExtractor extractor = createExtractor();
                                 for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
-                                    if (Helper.trimNL(Helper.trimAll(ue.getResolvedTitle())).isEmpty())
-                                        continue;
+                                    if(urlTitleCleaner.contains(ue.getResolvedTitle()))                                    
+                                        tw.multiplyQuality(JTweet.QUAL_SPAM / 100.0);                                    
 
                                     tw.addUrlEntry(ue);
                                 }
@@ -136,18 +134,10 @@ public class TweetUrlResolver extends MyThread {
                             if (tmp == 0 || tmp == 1)
                                 logger.info("sentTweets:" + allTweets.get());
 
-                            int count = 0;
-                            while (true) {
-                                count = AbstractTweetPackage.calcNumberOfTweets(resultPackages);
-                                if (count < maxFill)
-                                    break;
-
-                                // log not too often
-                                if (tmp == 0 || tmp == 1)
-                                    logger.info("... WAITING! " + count + " are too many tweets from url resolving!");
-                                if (!myWait(20))
-                                    return null;
-                            }
+                            // reduce logging if many threads
+                            boolean log = tmp == 0 || tmp == 1;
+                            if (tooManyTweetsWait(resultPackages, maxFill, "url resolving", 20, log) == null)
+                                return null;
                         } // while
                     } catch (Exception ex) {
                         logger.error("one url resolver died", ex);
@@ -157,8 +147,8 @@ public class TweetUrlResolver extends MyThread {
             });
         }
         try {
-            if (test)
-                getService().invokeAll(workerCollection, 100, TimeUnit.MILLISECONDS);
+            if (testWait > 0)
+                getService().invokeAll(workerCollection, testWait, TimeUnit.MILLISECONDS);
             else
                 getService().invokeAll(workerCollection);
 
@@ -166,5 +156,5 @@ public class TweetUrlResolver extends MyThread {
         } catch (InterruptedException ex) {
             logger.info(getName() + " was interrupted:" + ex.getMessage());
         }
-    }   
+    }
 }

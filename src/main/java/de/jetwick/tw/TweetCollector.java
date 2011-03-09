@@ -68,9 +68,9 @@ public class TweetCollector {
         ElasticTweetSearch tweetSearch = injector.getInstance(ElasticTweetSearch.class);
         ElasticUserSearch userSearch = injector.getInstance(ElasticUserSearch.class);
         ElasticTagSearch tagSearch = injector.getInstance(ElasticTagSearch.class);
-        Configuration cfg = injector.getInstance(Configuration.class);        
+        Configuration cfg = injector.getInstance(Configuration.class);
 
-        // producer's -> queue1 -> resolve url (max threads) -> queue2 -> feed solr (min time, max tweets)
+        // producer's => queue1 -> resolve url (max threads) -> queue2 -> feed solr (min time, max tweets)
         //              /\
         //              ||
         //          rmi from UI
@@ -79,19 +79,19 @@ public class TweetCollector {
         TweetProducer twProducer = injector.getInstance(TweetProducer.class);
         int tweetsPerBatch = cfg.getTweetsPerBatch();
         twProducer.setMaxFill(2 * tweetsPerBatch);
-        twProducer.setTwitterSearch(tws); 
-        twProducer.setUserSearch(userSearch);        
-        twProducer.setTagSearch(tagSearch);   
+        twProducer.setTwitterSearch(tws);
+        twProducer.setUserSearch(userSearch);
+        twProducer.setTagSearch(tagSearch);
 
         BlockingQueue<TweetPackage> queue1 = twProducer.getQueue();
-        
+
         // feeding queue1 from tweets of friends (of registered users)
         TweetProducerViaUsers producerFromFriends = injector.getInstance(TweetProducerViaUsers.class);
         producerFromFriends.setQueue(queue1);
         producerFromFriends.setTwitterSearch(tws);
-        producerFromFriends.setUserSearch(userSearch);        
-        producerFromFriends.setMaxFill(2 * tweetsPerBatch);        
-                
+        producerFromFriends.setUserSearch(userSearch);
+        producerFromFriends.setMaxFill(2 * tweetsPerBatch);
+
         // feeding queue1 from UI
         RMIServer rmiServer = injector.getInstance(RMIServer.class);
         rmiServer.setFeedingQueue(queue1);
@@ -102,8 +102,7 @@ public class TweetCollector {
         twUrlResolver.setReadingQueue(queue1);
         twUrlResolver.setResolveThreads(cfg.getTweetResolveUrlThreads());
         twUrlResolver.setResolveTimeout(cfg.getTweetResolveUrlTimeout());
-        twUrlResolver.setUncaughtExceptionHandler(excHandler);
-        twUrlResolver.setTest(false);
+        twUrlResolver.setUncaughtExceptionHandler(excHandler);        
         twUrlResolver.setMaxFill(2 * tweetsPerBatch);        
         twUrlResolver.setUrlCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
 
@@ -127,11 +126,10 @@ public class TweetCollector {
         twProducerThread.start();
 
         twProducerThread.join();
-        
+
         producerFromFriends.interrupt();
         twConsumer.interrupt();
         twUrlResolver.interrupt();
         rmiServerThread.interrupt();
     }
 }
-

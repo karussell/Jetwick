@@ -57,9 +57,7 @@ public class MiscIntegrationTestClass {
 
         // encoding is now windows-1251
         assertEquals("Фильмы скачать бесплатно, новинки игр, качественный софт, музыка на Tamross.ru",
-                Helper.getUrlTitle("http://tamross.ru/videoyroki/31817-java-dlya-professionalov-obuchayushhij-videokurs.html", 4000));
-
-        assertEquals("Vaadin Sampler", Helper.getUrlTitle("http://demo.vaadin.com/sampler", 1000));
+                Helper.getUrlTitle("http://tamross.ru/videoyroki/31817-java-dlya-professionalov-obuchayushhij-videokurs.html", 4000));        
 
         // too slow sometimes ;-)
         //assertEquals("Twitter Search Jetwick", Helper.getUrlTitle("http://jetwick.com", 2000));

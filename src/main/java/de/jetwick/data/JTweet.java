@@ -94,19 +94,6 @@ public class JTweet implements DbObject, Serializable {
     /**
      * for tests only
      */
-    public JTweet(long id, String text, Date createdAt) {
-        quality = QUAL_MAX;
-        this.twitterId = id;
-        setText_(text);
-        this.createdAt = createdAt;
-
-        if (urlEntries == null)
-            urlEntries = new ArrayList<UrlEntry>();
-    }
-
-    /**
-     * for tests only
-     */
     public JTweet(Tweet tw) {
         this(tw.getId(), tw.getText(), tw.getCreatedAt());
 
@@ -119,6 +106,19 @@ public class JTweet implements DbObject, Serializable {
 
         // most tweets have location == null. See user.location
         location = tw.getLocation();
+    }
+    
+    /**
+     * for tests only
+     */
+    public JTweet(long id, String text, Date createdAt) {
+        quality = QUAL_MAX;
+        this.twitterId = id;
+        setText_(text);
+        this.createdAt = createdAt;
+
+        if (urlEntries == null)
+            urlEntries = new ArrayList<UrlEntry>();
     }
 
     public void addUrlEntry(UrlEntry ue) {
@@ -335,9 +335,15 @@ public class JTweet implements DbObject, Serializable {
     public int getQuality() {
         return quality;
     }
+    
+    public JTweet multiplyQuality(double factor) {
+        quality *= factor;
+        return this;
+    }
 
-    public void setQuality(int quality) {
+    public JTweet setQuality(int quality) {
         this.quality = quality;
+        return this;
     }
 
     public boolean isSpam() {

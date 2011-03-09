@@ -26,7 +26,6 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.es.ElasticUserSearchTest;
-import de.jetwick.config.Configuration;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import de.jetwick.es.TweetQuery;
@@ -53,7 +52,7 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
     // TODO later: @Inject
     private ElasticUserSearchTest userSearchTester = new ElasticUserSearchTest();
     private ElasticTweetSearchTest tweetSearchTester = new ElasticTweetSearchTest();
-    private ElasticTagSearchTest tagSearchTester = new ElasticTagSearchTest();    
+    private ElasticTagSearchTest tagSearchTester = new ElasticTagSearchTest();
 
     @BeforeClass
     public static void beforeClass() {
@@ -64,7 +63,7 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
     public static void afterClass() {
         ElasticTweetSearchTest.afterClass();
     }
-    
+
     @Override
     @Before
     public void setUp() throws Exception {
@@ -84,6 +83,87 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
     }
 
     @Test
+    public void testUrlResolving() throws Exception {
+        final Map<Thread, Throwable> exceptionMap = new HashMap<Thread, Throwable>();
+        Thread.UncaughtExceptionHandler excHandler = createExceptionMapHandler(exceptionMap);
+        
+        // fill DB with one default tag
+        tagSearchTester.getSearch().bulkUpdate(Arrays.asList(new JTag("java")), tagSearchTester.getSearch().getIndexName(), true);
+        
+        ElasticTweetSearch tweetSearch = tweetSearchTester.getSearch();
+        ElasticUserSearch userSearch = userSearchTester.getSearch();
+        TwitterSearch tws = new TwitterSearch() {
+
+            @Override
+            public boolean isInitialized() {
+                return true;
+            }
+
+            @Override
+            public long search(String q, Collection<JTweet> result, int tweets, long lastMillis) {
+                JUser u = new JUser("timetabling");
+                JTweet tw1 = new JTweet(1L, "... Egypt. http://apne.ws/dERa4A - XY #tEst", u);
+                result.add(tw1);
+                return lastMillis;
+            }
+
+            @Override
+            public List<JTweet> getTweets(JUser user, Collection<JUser> users, int twPerPage) {
+                return Collections.EMPTY_LIST;
+            }
+        };
+
+        TweetProducer tweetProducer = getInstance(TweetProducer.class);
+        tweetProducer.setTwitterSearch(tws);
+        tweetProducer.setUserSearch(userSearch);
+        tweetProducer.setTagSearch(tagSearchTester.getSearch());
+        Thread tweetProducerThread = new Thread(tweetProducer);
+        tweetProducerThread.setUncaughtExceptionHandler(excHandler);
+        tweetProducerThread.start();
+        tweetProducerThread.join(400);
+        
+        TweetUrlResolver twUrlResolver = new TweetUrlResolver() {
+
+            @Override
+            public UrlExtractor createExtractor() {
+                return new UrlExtractor() {
+
+                    @Override
+                    public String resolveOneUrl(String url, int timeout) {
+                        return url + "_x";
+                    }
+                };
+            }
+        }.setTest(100);
+        twUrlResolver.setResolveThreads(1);
+        twUrlResolver.setReadingQueue(tweetProducer.getQueue());
+        twUrlResolver.setUncaughtExceptionHandler(excHandler);        
+        twUrlResolver.start();     
+        
+        Thread.sleep(400);
+
+        BlockingQueue<TweetPackage> queue2 = twUrlResolver.getResultQueue();
+        TweetConsumer tweetConsumer = getInstance(TweetConsumer.class);
+        tweetConsumer.setUncaughtExceptionHandler(excHandler);
+        tweetConsumer.setReadingQueue(queue2);
+        tweetConsumer.setTweetBatchSize(1);
+        tweetConsumer.setTweetSearch(tweetSearch);
+        tweetConsumer.start();
+        
+        Thread.sleep(1000);
+        
+        tweetConsumer.interrupt();
+        twUrlResolver.interrupt();
+        tweetProducerThread.interrupt();
+        checkExceptions(exceptionMap);
+        
+        List<JTweet> res = tweetSearch.searchTweets(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "timetabling"));
+        assertEquals(1, res.size());
+        assertEquals(1, res.get(0).getUrlEntries().size());
+        assertTrue(res.get(0).getUrlEntries().iterator().next().getResolvedUrl().equals("http://apne.ws/dERa4A_x"));        
+    }
+
+    @Test
     public void testProduceTweets() throws InterruptedException, Exception {
         final Map<Thread, Throwable> exceptionMap = new HashMap<Thread, Throwable>();
         Thread.UncaughtExceptionHandler excHandler = createExceptionMapHandler(exceptionMap);
@@ -94,16 +174,14 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         // already existing tweets must not harm
         ElasticTweetSearch tweetSearch = tweetSearchTester.getSearch();
         ElasticUserSearch userSearch = userSearchTester.getSearch();
-        tweetSearch.update(Arrays.asList(new JTweet(3L, "duplication tweet", new JUser("tmp"))));        
+        tweetSearch.update(Arrays.asList(new JTweet(3L, "duplication tweet", new JUser("tmp"))));
 
-        Credits cred = new Configuration().getTwitterSearchCredits();
         TwitterSearch tws = new TwitterSearch() {
 
-            
             @Override
             public boolean isInitialized() {
                 return true;
-            }                        
+            }
 
             @Override
             public long search(String q, Collection<JTweet> result, int tweets, long lastMillis) {
@@ -130,8 +208,6 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
                 return Collections.EMPTY_LIST;
             }
         };
-//        tws.setTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
-
         TweetProducer tweetProducer = getInstance(TweetProducer.class);
         tweetProducer.setTwitterSearch(tws);
         tweetProducer.setUserSearch(userSearch);
@@ -139,14 +215,12 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         Thread tweetProducerThread = new Thread(tweetProducer);
         tweetProducerThread.setUncaughtExceptionHandler(excHandler);
         tweetProducerThread.start();
-
         tweetProducerThread.join(3000);
 
         TweetUrlResolver twUrlResolver = getInstance(TweetUrlResolver.class);
         twUrlResolver.setResolveThreads(1);
         twUrlResolver.setReadingQueue(tweetProducer.getQueue());
-        twUrlResolver.setUncaughtExceptionHandler(excHandler);
-        twUrlResolver.setTest(false);
+        twUrlResolver.setUncaughtExceptionHandler(excHandler);        
         twUrlResolver.start();
 
         BlockingQueue<TweetPackage> queue2 = twUrlResolver.getResultQueue();
@@ -156,8 +230,9 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         tweetConsumer.setTweetBatchSize(1);
         tweetConsumer.setTweetSearch(tweetSearch);
         tweetConsumer.start();
-
+        
         twUrlResolver.join(1000);
+        
         tweetConsumer.interrupt();
         checkExceptions(exceptionMap);
 
@@ -170,9 +245,9 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         assertEquals(1, res.size());
 
         Collection<JTweet> coll = tweetSearch.searchTweets(new TweetQuery("duplicate"));
-        assertEquals(1, coll.size());        
-        assertEquals("duplication tweet", coll.iterator().next().getText());        
-        
+        assertEquals(1, coll.size());
+        assertEquals("duplication tweet", coll.iterator().next().getText());
+
         coll = tweetSearch.searchTweets(new TweetQuery("duplication"));
         assertEquals(1, coll.size());
         assertEquals("duplication tweet", coll.iterator().next().getText());

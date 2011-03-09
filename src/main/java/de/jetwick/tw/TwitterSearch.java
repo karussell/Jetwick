@@ -36,6 +36,7 @@ import twitter4j.IDs;
 import twitter4j.Paging;
 import twitter4j.Query;
 import twitter4j.QueryResult;
+import twitter4j.RateLimitStatus;
 import twitter4j.ResponseList;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
@@ -67,6 +68,7 @@ public class TwitterSearch implements Serializable {
     protected Logger logger = LoggerFactory.getLogger(TwitterSearch.class);
     private String consumerKey;
     private String consumerSecret;
+    private int rateLimit = -1;
 
     public TwitterSearch() {
     }
@@ -196,6 +198,7 @@ public class TwitterSearch implements Serializable {
 
     public User getTwitterUser() throws TwitterException {
         ResponseList<User> list = twitter.lookupUsers(new String[]{twitter.getScreenName()});
+        rateLimit--;
         if (list.size() == 0)
             return null;
         else if (list.size() == 1)
@@ -206,7 +209,9 @@ public class TwitterSearch implements Serializable {
 
     public int getSecondsUntilReset() {
         try {
-            return twitter.getRateLimitStatus().getSecondsUntilReset();
+            RateLimitStatus rls = twitter.getRateLimitStatus();
+            rateLimit = rls.getRemainingHits();
+            return rls.getSecondsUntilReset();
         } catch (TwitterException ex) {
             logger.error("Cannot determine rate limit", ex);
             return -1;
@@ -218,36 +223,46 @@ public class TwitterSearch implements Serializable {
      */
     public int getRateLimit() {
         try {
-            rl = twitter.getRateLimitStatus().getRemainingHits();
-            return rl;
+            rateLimit = twitter.getRateLimitStatus().getRemainingHits();
+            return rateLimit;
         } catch (TwitterException ex) {
             logger.error("Cannot determine rate limit", ex);
-            return 0;
+            return -1;
         }
     }
-    private int rl = -1;
 
     public int getRateLimitFromCache() {
         if (twitter == null)
             return -1;
 
         try {
-            if (rl < 0)
-                rl = twitter.getRateLimitStatus().getRemainingHits();
+            if (rateLimit < 0)
+                rateLimit = twitter.getRateLimitStatus().getRemainingHits();
         } catch (TwitterException ex) {
-            rl = -1;
+            rateLimit = -1;
         }
 
-        return rl;
+        return rateLimit;
+    }
+
+    /**
+     * forces correct rate limit for next getRateLimitFromCache
+     */
+    public void resetRateLimitCache() {
+        rateLimit = -1;
     }
 
     public Status getTweet(long id) throws TwitterException {
-        return twitter.showStatus(id);
+        Status st = twitter.showStatus(id);
+        rateLimit--;
+        return st;
     }
 
     public void getTest() throws TwitterException {
         System.out.println(twitter.getFollowersIDs("dzone").getIDs());
         System.out.println(twitter.getFriendsStatuses("dzone"));
+        rateLimit--;
+        rateLimit--;
     }
 
     // this works:
@@ -273,6 +288,7 @@ public class TwitterSearch implements Serializable {
         List<Tweet> res = new ArrayList<Tweet>();
         try {
             ResponseList<Status> statusList = twitter.getPublicTimeline();
+            rateLimit--;
             for (Status st : statusList) {
                 res.add(toTweet(st));
             }
@@ -338,11 +354,14 @@ public class TwitterSearch implements Serializable {
         try {
             // twitter.getPublicTimeline() -> only 20 tweets per minute
             Set<String> set = new LinkedHashSet<String>();
-            for (Trend t : twitter.getTrends().getTrends()) {
+            Trend[] trends = twitter.getTrends().getTrends();
+            rateLimit--;
+            for (Trend t : trends) {
                 set.add(t.getName());
             }
             return set;
         } catch (TwitterException ex) {
+            logger.error("Couldn't grab trends", ex);
             return Collections.EMPTY_SET;
         }
     }
@@ -399,9 +418,9 @@ public class TwitterSearch implements Serializable {
                 // determine maxId in the first page
                 if (page == 0 && maxId < twe.getId())
                     maxId = twe.getId();
-                
-                if(maxMillis < twe.getCreatedAt().getTime())
-                    maxMillis = twe.getCreatedAt().getTime();                
+
+                if (maxMillis < twe.getCreatedAt().getTime())
+                    maxMillis = twe.getCreatedAt().getTime();
 
                 if (twe.getCreatedAt().getTime() + 1000 < lastMaxCreateTime)
                     breakPaging = true;
@@ -467,6 +486,7 @@ public class TwitterSearch implements Serializable {
         for (int retry = 0; retry < maxRetries; retry++) {
             try {
                 ResponseList<User> res = twitter.lookupUsers(arr);
+                rateLimit--;
                 List<Tweet> tweets = new ArrayList<Tweet>();
                 for (int ii = 0; ii < res.size(); ii++) {
                     User user = res.get(ii);
@@ -538,7 +558,10 @@ public class TwitterSearch implements Serializable {
 
         for (int trial = 0; trial < 2; trial++) {
             try {
-                for (Status st : twitter.getUserTimeline(user.getScreenName(), new Paging(currentPage + 1, tweets, 1))) {
+                ResponseList<Status> rList = twitter.getUserTimeline(
+                        user.getScreenName(), new Paging(currentPage + 1, tweets, 1));
+                rateLimit--;
+                for (Status st : rList) {
                     Tweet tw = toTweet(st);
                     res.add(new JTweet(tw, user.init(tw)));
                 }
@@ -585,6 +608,7 @@ public class TwitterSearch implements Serializable {
                 paging.setMaxId(maxId);
 
             Collection<Status> tmp = twitter.getHomeTimeline(paging);
+            rateLimit--;
             for (Status st : tmp) {
                 // determine maxId in the first page
                 if (page == 0 && maxId < st.getId())
@@ -656,20 +680,16 @@ public class TwitterSearch implements Serializable {
 
     private void getFriendsOrFollowers(String userName, AnyExecutor<JUser> executor, boolean friends) {
         long cursor = -1;
+        resetRateLimitCache();
         while (true) {
-            int rate;
-
-            while ((rate = getRateLimit()) < LIMIT) {
-                int reset = -1;
-                try {
-                    reset = twitter.getRateLimitStatus().getSecondsUntilReset();
-                } catch (Exception ex) {
-                }
-                if (reset > 1) {
+            while (getRateLimitFromCache() < LIMIT) {
+                int reset = getSecondsUntilReset();
+                if (reset != 0) {
                     logger.info("no api points left while getFriendsOrFollowers! Skipping ...");
                     return;
                 }
-                myWait(reset);
+                resetRateLimitCache();
+                myWait(0.5f);
             }
 
             ResponseList<User> res = null;
@@ -686,6 +706,7 @@ public class TwitterSearch implements Serializable {
                     else
                         ids = twitter.getFollowersIDs(userName, cursor);
                 }
+                rateLimit--;
             } catch (TwitterException ex) {
                 logger.warn(ex.getMessage());
                 break;
@@ -706,6 +727,7 @@ public class TwitterSearch implements Serializable {
                 for (int i = 0; i < 5; i++) {
                     try {
                         res = twitter.lookupUsers(limitedIds);
+                        rateLimit--;
                         for (User user : res) {
                             // strange that this was necessary for ibood
                             if (user.getScreenName().trim().isEmpty())
@@ -737,12 +759,14 @@ public class TwitterSearch implements Serializable {
     }
 
     public Status doRetweet(long twitterId) throws TwitterException {
-        return twitter.retweetStatus(twitterId);
+        Status st = twitter.retweetStatus(twitterId);
+        rateLimit--;
+        return st;
     }
 
-    private void myWait(int i) {
+    private void myWait(float seconds) {
         try {
-            Thread.sleep(i * 1000);
+            Thread.sleep(Math.round(seconds * 1000));
         } catch (Exception ex) {
             throw new UnsupportedOperationException(ex);
         }

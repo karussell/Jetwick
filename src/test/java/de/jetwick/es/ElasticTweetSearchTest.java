@@ -755,17 +755,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw = new JTweet(1L, "text", new JUser("peter"));
         List<UrlEntry> entries = new ArrayList<UrlEntry>();
 
-        UrlEntry urlEntry = new UrlEntry(0, 20, "http://test.de/bla");
-        urlEntry.setResolvedDomain("");
-        urlEntry.setResolvedTitle("");
-        entries.add(urlEntry);
-
-        urlEntry = new UrlEntry(5, 17, "");
-        urlEntry.setResolvedDomain("");
-        urlEntry.setResolvedTitle("");
-        entries.add(urlEntry);
-
-        urlEntry = new UrlEntry(2, 18, "http://fulltest.de/bla");
+        UrlEntry urlEntry = new UrlEntry(2, 18, "http://fulltest.de/bla");
         urlEntry.setResolvedDomain("resolved-domain.de");
         urlEntry.setResolvedTitle("ResolvedTitel");
         entries.add(urlEntry);
@@ -774,12 +764,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         XContentBuilder iDoc = twSearch.createDoc(tw);
         String str = iDoc.prettyPrint().string();
-
         assertTrue(str.contains("\"url_pos_1_s\":\"2,18\""));
         assertTrue(str.contains("\"dest_url_1_s\":\"http://fulltest.de/bla\""));
         assertTrue(str.contains("\"dest_domain_1_s\":\"resolved-domain.de\""));
         assertTrue(str.contains("\"dest_title_1_s\":\"ResolvedTitel\""));
-        assertTrue(str.contains("\"dest_title_t\":\"ResolvedTitel\""));
 
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("user", "peter");

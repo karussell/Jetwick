@@ -20,7 +20,6 @@ import de.jetwick.es.JetwickQuery;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import de.jetwick.es.UserQuery;
-import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.StopWatch;
 import java.util.LinkedHashMap;
@@ -60,32 +59,25 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
     }
 
     public boolean innerRun() {
+        int counter = 0;
         Set<JUser> users = new LinkedHashSet<JUser>();
         long counts = userSearch.countAll();
         int ROWS = 100;
         // paging
         for (int i = 0; i < counts / ROWS + 1; i++) {
-            // prefer last logged in users
-            JetwickQuery q = new UserQuery().setFrom(i * ROWS).setSize(ROWS).
-                    setSort(ElasticUserSearch.CREATED_AT, "desc");
             try {
+                // prefer last logged in users
+                JetwickQuery q = new UserQuery().setFrom(i * ROWS).setSize(ROWS).
+                        setSort(ElasticUserSearch.CREATED_AT, "desc");
                 userSearch.search(users, q);
             } catch (Exception ex) {
                 logger.error("Couldn't search user index", ex);
             }
         }
-        
-        // do not add more tweets to the pipe if consumer cannot process it
-        int count = 0;
-        while (true) {
-            count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
-            if (count < maxFill)
-                break;
 
-            logger.info("... WAITING! " + count + " are too many tweets from friend-tweet search!");
-            if (!myWait(20))
-                return false;
-        }
+        // do not add more tweets to the pipe if consumer cannot process it
+        if (tooManyTweetsWait(tweetPackages, maxFill, "friend-tweet search", 20, true) == null)
+            return false;
 
         logger.info("Found:" + users.size() + " users in user index");
         for (JUser authUser : users) {
@@ -113,14 +105,14 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                 }
             }
 
-//            try {
-//                logger.info("Now User:" + ue.getTwitterSearch().getScreenName());
-//            } catch (Exception ex) {
-//                logger.error("Error when getting user", ex);
-//                continue;
-//            }
+            // getRateLimit is too slow -> use cached most of the times
+            int rl = 0;
+            if (counter++ % 20 == 0)
+                rl = ue.getTwitterSearch().getRateLimit();
+            else
+                rl = ue.getTwitterSearch().getRateLimitFromCache();
 
-            if (ue.getTwitterSearch().getRateLimit() < TwitterSearch.LIMIT) {
+            if (rl < TwitterSearch.LIMIT) {
                 logger.info("No API points left for user:" + ue.getUser() + " " + ue.getTwitterSearch().getSecondsUntilReset());
                 continue;
             }

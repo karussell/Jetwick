@@ -81,9 +81,13 @@ public class TweetConsumer extends MyThread {
             // make sure we really use the commit batch size
             // because solr doesn't want too frequent commits
             int count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
-            if (count < tweetBatchSize && System.currentTimeMillis() - lastFeed < tweetBatchTime)
+            if (count < tweetBatchSize && System.currentTimeMillis() - lastFeed < tweetBatchTime) {
+                // slow down calcNumberOfTweets calculation
+                if(!myWait(5))
+                    break;
                 continue;
-
+            }
+                        
             if (count == 0)
                 continue;
 
@@ -131,7 +135,7 @@ public class TweetConsumer extends MyThread {
 
         int maxTrials = 1;
         for (int trial = 1; trial <= maxTrials; trial++) {
-            try {
+            try {                
                 Collection<JTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
                 receivedTweets += tweetSet.size();
                 String str = "[es] indexed:";

@@ -55,9 +55,6 @@ public class TermCreateCommand implements AnyExecutor<JTweet> {
         for (Entry<String, Integer> entry : tw.getTextTerms().getSortedFreqLimit(0.05f)) {
             if (entry.getValue() > maxTerms)
                 maxTerms = entry.getValue();
-
-            if (entry.getKey().equals("beknowledge"))
-                qual = qual * 0.9;
         }
 
         // term occurs more than one time on the current tweet?
