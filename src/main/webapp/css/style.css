@@ -587,12 +587,8 @@ div.wicket-aa ul li.selected {
 }
 
 .tweet {
-    padding-top: 5px;
-    padding-bottom: 7px;
-}
-
-.tweets {
-    padding: 0px 0px 10px 0px;    
+    padding-top: 0px;
+    padding-bottom: 11px;
 }
 
 .subtweets {    
