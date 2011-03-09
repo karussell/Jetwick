@@ -847,5 +847,6 @@ ul.show-dots li {
 body .ui-widget-header {
     background: none;
     background-image: url("../img/bar-min-vert.png");
+    background-repeat: repeat-x;
     border: none;
 }
