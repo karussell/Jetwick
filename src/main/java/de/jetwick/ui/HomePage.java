@@ -82,7 +82,7 @@ public class HomePage extends WebPage {
     private Provider<ElasticUserSearch> uindexProvider;
     @Inject
     private MyTweetGrabber grabber;
-    private JSDateFilter dateFilter;
+    private JSDateFilter dateFilterPanel;
     private transient Thread tweetThread;
     private static int TWEETS_IF_HIT = 30;
     private static int TWEETS_IF_NO_HIT = 40;
@@ -267,7 +267,7 @@ public class HomePage extends WebPage {
             if (updateSearchBox)
                 target.addComponent(searchBox);
             target.addComponent(tagCloud);
-            target.addComponent(dateFilter);
+            target.addComponent(dateFilterPanel);
             target.addComponent(urlTrends);
             target.addComponent(feedbackPanel);
             target.addComponent(ssPanel);
@@ -505,7 +505,7 @@ public class HomePage extends WebPage {
         };
         add(facetPanel.setOutputMarkupId(true));
 
-        dateFilter = new JSDateFilter("dateFilter") {
+        dateFilterPanel = new JSDateFilter("dateFilter") {
 
             @Override
             protected void onFacetChange(AjaxRequestTarget target, String filter, Boolean selected) {
@@ -538,7 +538,7 @@ public class HomePage extends WebPage {
                 return facetPanel.getFilterName(key);
             }
         };
-        add(dateFilter.setOutputMarkupId(true));
+        add(dateFilterPanel.setOutputMarkupId(true));
 
         // TODO M2.1
         language = getWebRequestCycle().getWebRequest().getHttpServletRequest().getLocale().getLanguage();
@@ -620,9 +620,11 @@ public class HomePage extends WebPage {
         String tmpUserName = null;
         if (getMySession().hasLoggedIn())
             tmpUserName = getMySession().getUser().getScreenName();
-        else {
+        else {            
             ssPanel.setVisible(false);
-            facetPanel.setVisible(false);
+            // TODO remove all the facets + date facets!?
+            facetPanel.setVisible(false);            
+            dateFilterPanel.setVisible(false);            
         }
 
         searchBox = new SearchBox("searchbox", tmpUserName, searchType) {
@@ -793,7 +795,7 @@ public class HomePage extends WebPage {
         resultsPanel.setUser(userName);
         resultsPanel.setHitsPerPage(hitsPerPage);
 
-        dateFilter.update(rsp);
+        dateFilterPanel.update(rsp);
 
         if (!query.getSortFields().isEmpty()) {
             resultsPanel.setSort(query.getSortFields().get(0).getKey(), query.getSortFields().get(0).getValue());

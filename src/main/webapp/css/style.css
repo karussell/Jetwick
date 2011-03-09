@@ -63,6 +63,11 @@ body, p {
 .login-dialog div {
     padding-bottom: 10px;
 }
+.login-dialog .screenshot {
+    clear: both;
+    float: left;
+    padding: 40px 0px;
+}
 
 div.dialog-button a {
     margin-top: 20px;
@@ -289,8 +294,7 @@ div.dialog-button a {
     border-bottom: gray 1px groove;    
 }
 
-#search-type-left {
-    padding-left: 6px;
+#search-type-left {    
     padding-right: 8px;    
     font-size: 14px;        
 }

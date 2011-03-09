@@ -157,6 +157,8 @@ public class SearchBox extends Panel {
         rg.add(new Radio("1", new Model(1)).setMarkupId("sbfriends"));
         rg.add(new Radio("2", new Model(2)).setMarkupId("sbuser"));
         rg.add(userTF);
+        if(loggedInUser == null)
+            rg.setVisible(false);
         form.add(rg);
 
         form.add(new BookmarkablePageLink("homelink", HomePage.class));
