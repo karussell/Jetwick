@@ -118,7 +118,7 @@ public class HomePage extends WebPage {
         } else {
             initSession();
             init(createQuery(parameters), parameters, 0, true);
-        }       
+        }
     }
 
     private void initSession() {
@@ -406,9 +406,6 @@ public class HomePage extends WebPage {
             }
         };
 
-        if (!getMySession().hasLoggedIn())
-            ssPanel.setVisible(false);
-
         add(ssPanel.setOutputMarkupId(true));
 
         add(new UserPanel("userPanel", this) {
@@ -623,6 +620,10 @@ public class HomePage extends WebPage {
         String tmpUserName = null;
         if (getMySession().hasLoggedIn())
             tmpUserName = getMySession().getUser().getScreenName();
+        else {
+            ssPanel.setVisible(false);
+            facetPanel.setVisible(false);
+        }
 
         searchBox = new SearchBox("searchbox", tmpUserName, searchType) {
 
@@ -679,13 +680,13 @@ public class HomePage extends WebPage {
         doSearch(query, page, twitterFallback, false);
     }
 
-    public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {        
+    public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {
         String queryString;
         if (!instantSearch) {
             // change text field
-            searchBox.init(query.setEscape(false).getQuery(), query.extractUserName());        
+            searchBox.init(query.setEscape(false).getQuery(), query.extractUserName());
         }
-        
+
         queryString = query.setEscape(true).getQuery();
 
         // if query is lastQuery then user is saved in filter not in a pageParam
@@ -716,7 +717,7 @@ public class HomePage extends WebPage {
         long start = System.currentTimeMillis();
         long totalHits = 0;
         SearchResponse rsp = null;
-        try {                        
+        try {
             rsp = getTweetSearch().search(users, query);
             totalHits = rsp.getHits().getTotalHits();
             logger.info(addIP("[stats] " + totalHits + " hits for: " + query.toString()));

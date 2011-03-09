@@ -77,7 +77,7 @@ public class UserPanel extends Panel {
         final Dialog dialog = new Dialog("dialog");        
         add(dialog.setTitle("Information").setWidth(340).add(loginLinkProceed));
 
-        Link loginLink = new IndicatingAjaxFallbackLink("loginLink") {
+        Link loginLink = new AjaxFallbackLink("loginLink") {
 
             @Override
             public void onClick(AjaxRequestTarget target) {

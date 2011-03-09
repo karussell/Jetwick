@@ -438,6 +438,7 @@ public class JTweet implements DbObject, Serializable {
                 "ah",
                 "aw", "cu", "ff",
                 "haha", "hahaha", "hehe", "hey", "hi",
+                "pls",
                 "rt", "re", "soo", "thx",
                 "yeah", "via",
                 "/by", "/cc", "/via",

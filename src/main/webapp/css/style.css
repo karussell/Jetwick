@@ -95,12 +95,6 @@ body, p {
     font-size: 0.7em;
     padding: 2px 0px 0px 0px;
     margin: 0px;
-    border-bottom: gray 1px groove;
-}
-
-.footer ul {
-    list-style: none;
-    font-size: 0.7em;
 }
 
 .external-refs-right ul, .external-refs ul {      
@@ -135,6 +129,22 @@ body, p {
     padding-right: 2px;
 }
 
+.footer {
+    clear: both;
+    float: right;
+    border-top: gray 1px groove;
+}
+.footer ul {
+    list-style: none;
+    font-size: 0.7em;
+}
+/*.footer ul li {
+    display: inline;
+    padding-right: 40px;
+}*/
+.footer ul li a {
+    color: black; 
+}
 .right { float: right; }
 .left { float: left; }
 .warn { color: #fc4046;}
@@ -598,18 +608,20 @@ div.wicket-aa ul li.selected {
     padding-top: 11px;
 }
 
-.navigation {
-    padding-left: 170px;
-    clear: both
+.navigation {    
 }
 
-.navigation .pre {
-    width: 150px;
+.navigation .pre {    
     float: left;
 }
 
 .navigation span {
+    padding-left: 10px;
     padding-right: 10px;
+}
+
+.navigation img {
+    margin-bottom: -5px;
 }
 
 .user-name, .rep-vote-up, .more-tweets, .similar-link { float: left; }
@@ -737,9 +749,9 @@ div.wicket-aa ul li.selected {
     padding-bottom: 5px;
 }
 
-.tagcloud {
+/*.tagcloud {
     float: left;
-}
+}*/
 
 .tagcloud .var-size-0  { font-size: 12px;}
 .tagcloud .var-size-1  { font-size: 13px;}
@@ -828,4 +840,10 @@ ul.show-dots li {
 #offline ul li {
     list-style: none;
     padding-top: 30px;
+}
+
+body .ui-widget-header {
+    background: none;
+    background-image: url("../img/bar-min-vert.png");
+    border: none;
 }

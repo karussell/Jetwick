@@ -132,10 +132,10 @@ public class TweetQuery extends JetwickQuery {
     @Override
     public TweetQuery attachFacetibility() {
         setDateFacets(true).
-                addFacetField(TAG).addFacetField("lang").
+                addFacetField(TAG, 15).addFacetField("lang").
                 // originality
-                addFacetField(IS_RT).
-                addFacetField(FIRST_URL_TITLE);
+                addFacetField(IS_RT);
+//                addFacetField(FIRST_URL_TITLE);
 
 //        // latest
 //        q.addFacetQuery(FILTER_ENTRY_LATEST_DT);

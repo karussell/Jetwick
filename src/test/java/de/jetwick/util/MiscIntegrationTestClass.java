@@ -34,7 +34,7 @@ public class MiscIntegrationTestClass {
         String url = "http://bit.ly/dipo5a";
         String newUrl = Helper.getResolvedUrl(url, 900);
         assertTrue(url.length() < newUrl.length());
-
+        
         url = "http://is.gd/en49t";
         newUrl = Helper.getResolvedUrl(url, 900);
         assertTrue(url.length() < newUrl.length());
