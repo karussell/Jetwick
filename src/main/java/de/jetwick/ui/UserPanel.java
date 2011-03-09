@@ -81,11 +81,18 @@ public class UserPanel extends Panel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-//                dialog.enable();
                 dialog.open(target);
             }
         };
         add(loginLink);
+        Link editFilters = new AjaxFallbackLink("editFilters") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                dialog.open(target);
+            }
+        };
+        add(editFilters);
 
         if (!homePageRef.getMySession().hasLoggedIn()) {
             add(new WebMarkupContainer("loginContainer").setVisible(false));
@@ -94,6 +101,7 @@ public class UserPanel extends Panel {
         }
 
         loginLink.setVisible(false);
+        editFilters.setVisible(false);
         WebMarkupContainer container = new WebMarkupContainer("loginContainer") {
 
             {

@@ -25,12 +25,25 @@
     </head>
     <body>
     <wicket:panel>
-        <a class="login-link" wicket:id="loginLink" title="Login with your twitter account">
-            <img src="img/authenticate.png"/>
-        </a>
+        <div class="login-link">
+            <a wicket:id="loginLink" title="Login with your twitter account">
+                <img src="img/authenticate.png"/>            
+            </a>
+        </div>
+        <div class="login-link">
+            <a wicket:id="editFilters" title="Change Filters: Language, With/Without Links, ... (Login Required)">
+                <img src="img/edit-filters.png"/>
+            </a>        
+        </div>
         <div class="login-dialog" wicket:id="dialog">
-            Follow us at <a href="http://twitter.com/jetwick">twitter.com/jetwick</a><br/>
-            to recieve updates via private message (rare frequency).
+            <div>
+                To use friend search, <a href="http://www.youtube.com/watch?v=SMURdDVbShI" target="_blank">relaxed saved searches</a>
+                or to edit filters you need to login via twitter!
+            </div>
+            <div>
+                Follow us at <a href="http://twitter.com/jetwick">twitter.com/jetwick</a><br/>
+                to recieve updates via private message (rare frequency).
+            </div>
             <div class="dialog-button">                    
                 <a wicket:id="loginLinkProceed" title="Login">
                     Proceed Login

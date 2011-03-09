@@ -57,7 +57,11 @@ body, p {
 }
 
 .login-link {
-    padding: 0px 15px 0px 15px;
+    padding: 6px 15px 0px 16px;
+}
+
+.login-dialog div {
+    padding-bottom: 10px;
 }
 
 div.dialog-button a {
