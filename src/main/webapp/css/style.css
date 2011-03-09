@@ -585,18 +585,9 @@ div.wicket-aa ul li.selected {
     padding-right: 5px;
 }
 
-.profile-url {
-    min-width: 48px;
-    float: left;
-}
-
-.profile-url a img{
-    width: 40px;
-    height:40px;
-}
-
 .tweet {
     padding-top: 5px;
+    padding-bottom: 7px;
 }
 
 .tweets {
@@ -606,6 +597,16 @@ div.wicket-aa ul li.selected {
 .subtweets {    
     padding-left: 15px;
     padding-top: 11px;
+}
+
+.profile-url {
+    min-width: 48px;
+    float: left;
+}
+
+.profile-url a img{
+    width: 40px;
+    height:40px;
 }
 
 .navigation {    
