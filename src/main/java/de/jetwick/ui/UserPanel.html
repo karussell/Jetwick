@@ -24,35 +24,37 @@
         <title>[Panel Test]</title>
     </head>
     <body>
-        <wicket:panel>
-            <a class="login-link" wicket:id="loginLink" title="Login with your twitter account">
-                <img src="img/authenticate.png"/>
-            </a>
-            <div class="login-dialog" wicket:id="dialog">
-                Follow us at <a href="http://twitter.com/jetwick">twitter.com/jetwick</a><br/>
-                to recieve updates via private message (rare frequency).<br/><br/>                
-                <a class="login-link-proceed" wicket:id="loginLinkProceed" title="Login">
+    <wicket:panel>
+        <a class="login-link" wicket:id="loginLink" title="Login with your twitter account">
+            <img src="img/authenticate.png"/>
+        </a>
+        <div class="login-dialog" wicket:id="dialog">
+            Follow us at <a href="http://twitter.com/jetwick">twitter.com/jetwick</a><br/>
+            to recieve updates via private message (rare frequency).
+            <div class="dialog-button">                    
+                <a wicket:id="loginLinkProceed" title="Login">
                     Proceed Login
                 </a>
             </div>
-            <div class="userpanel" wicket:id="loginContainer">
-                <div wicket:id="userModal"></div>                
-                <div>                    
-                    <span wicket:id="loginText" class="login-text">[Logged in as]</span>                    
-                    <ul>                                                                        
-                        <li>
-                            <a wicket:id="showTweets" title="Lists your sent tweets">My Tweets</a>
-                        </li>
-                        <li>
-                            <a wicket:id="grabTweets" title="Makes tweets of any user searchable! (max 3200)">Grab Tweets</a>
-                        </li>                                                
-                        <li>
-                            <a wicket:id="logout">Logout</a>
-                        </li>
-                    </ul>
-                </div>
+        </div>
+        <div class="userpanel" wicket:id="loginContainer">
+            <div wicket:id="userModal"></div>                
+            <div>                    
+                <span wicket:id="loginText" class="login-text">[Logged in as]</span>                    
+                <ul>                                                                        
+                    <li>
+                        <a wicket:id="showTweets" title="Lists your sent tweets">My Tweets</a>
+                    </li>
+                    <li>
+                        <a wicket:id="grabTweets" title="Makes tweets of any user searchable! (max 3200)">Grab Tweets</a>
+                    </li>                                                
+                    <li>
+                        <a wicket:id="logout">Logout</a>
+                    </li>
+                </ul>
             </div>
-        </wicket:panel>
-    </body>
+        </div>
+    </wicket:panel>
+</body>
 </html>
 

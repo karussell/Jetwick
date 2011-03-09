@@ -15,6 +15,11 @@
  */
 package de.jetwick.ui;
 
+import org.odlabs.wiquery.core.events.Event;
+import org.odlabs.wiquery.core.events.MouseEvent;
+import org.odlabs.wiquery.core.events.WiQueryEventBehavior;
+import org.odlabs.wiquery.core.javascript.JsScope;
+import org.odlabs.wiquery.ui.dialog.Dialog;
 import de.jetwick.ui.util.FacetHelper;
 
 import java.util.ArrayList;
@@ -109,7 +114,6 @@ public class SavedSearchPanel extends Panel {
                     }
                 };
 
-
                 String name = h.displayName;
                 if (name.length() > 20)
                     name = name.substring(0, 20) + "..";
@@ -130,12 +134,22 @@ public class SavedSearchPanel extends Panel {
                 li.add(label4count);
                 li.add(link);
 
+                final Dialog dialog = new Dialog("confirmation").setTitle("Delete Saved Search "+name+"?");
+                dialog.add(new AjaxFallbackLink("button") {
+
+                    @Override
+                    public void onClick(AjaxRequestTarget target) {                        
+                        dialog.close(target);
+                        SavedSearchPanel.this.onRemove(target, ssId);
+                    }
+                });
+                li.add(dialog);
                 Link removeLink = new AjaxFallbackLink("removeLink") {
 
                     @Override
                     public void onClick(AjaxRequestTarget target) {
-                        SavedSearchPanel.this.onRemove(target, ssId);
-                    }
+                        dialog.open(target);
+                    }                    
                 };
                 li.add(removeLink);
             }
@@ -168,16 +182,16 @@ public class SavedSearchPanel extends Panel {
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
     public List<FacetHelper> createFacetsFields(SearchResponse rsp) {
-        List<FacetHelper> list = new ArrayList<FacetHelper>();        
+        List<FacetHelper> list = new ArrayList<FacetHelper>();
         Long count = null;
 
         if (rsp != null && rsp.facets() != null) {
             List<Facet> facets = rsp.facets().facets();
             if (facets != null)
-                for (Facet f : facets){                    
-                    if(!(f instanceof QueryFacet)) 
+                for (Facet f : facets) {
+                    if (!(f instanceof QueryFacet))
                         continue;
-                    
+
                     int firstIndex = f.getName().indexOf(SAVED_SEARCHES + "_");
                     if (firstIndex < 0)
                         continue;
@@ -189,7 +203,7 @@ public class SavedSearchPanel extends Panel {
                     }
 
                     // do not exclude smaller zero
-                    count = ((QueryFacet)f).count();
+                    count = ((QueryFacet) f).count();
                     if (count == null)
                         count = 0L;
 

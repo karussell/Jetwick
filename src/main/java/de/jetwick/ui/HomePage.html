@@ -20,15 +20,15 @@
                 $(".tweet-text .tw-tag").click(function () {                        
                     var clean = $(this).attr('clean');
                     var tag = $(this).attr('tag');
-                    var newDiv = $(document.createElement('div'));                                        
+                    var newDiv = $(document.createElement('div'));
                     var twUrl = "http://search.twitter.com/search?q="+clean;
-                    //var mTwUrl = "http://mobile.twitter.com/searches?q="+clean;                    
+                    //var mTwUrl = "http://mobile.twitter.com/searches?q="+clean;
                     newDiv.html(
                     '<a href="?q='+clean+'"><img src="img/jetwick-twitter.png"/> Search Jetwick for '+tag+'</a><br/>'
                         +'<a target="_blank" href="'+twUrl +'"><img src="img/twitter-icon.png"/> Search Twitter for '+tag+'</a><br/><br/>'
                         +'<iframe src="'+twUrl+'" width="640" height="450"/>');
                     newDiv.dialog({ title: 'Search ' + tag, width: 680, height: 620, modal: true });                    
-                });                    
+                });                
             });            
         </script>
         <div class="external-refs-right" wicket:id="externalRefsRight">[ex refs]</div>

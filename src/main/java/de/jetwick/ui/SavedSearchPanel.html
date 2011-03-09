@@ -24,37 +24,44 @@
         <title>[Panel Test]</title>
     </head>
     <body>
-        <wicket:panel>            
-            <div class="filter saved-searches">
-                <div class="filter-names">
-                    <div title="Save any search">Searches                        
-                        <a wicket:id="saveSearch" title="Add current search to this saved search list">
-                            <img src="img/feed_add.png"/>
-                        </a>
-                    </div>
-                    <div wicket:id="indicatorImage">
-                        <img src="img/indicator.gif"/>
-                    </div>
-                    <div class="saveInfo">                        
-                        <a wicket:id="saveInfo">Click this icon <img src="img/feed_add.png"/> 
-                            to save your current search
-                            and get informed when new tweets are available
-                        </a>
-                    </div>
-                    <ul>                        
-                        <li wicket:id="filterValues">
-                            <a class="remove-link" wicket:id="removeLink" title="Remove this save search">
-                                <img src="img/cancel-light.png"/>
-                            </a>
-                            <a wicket:id="filterValueLink">
-                                <span wicket:id="filterValue">[filter value]</span>
-                            </a>
-                            <span class="filter-count" wicket:id="filterCount">[count]</span>
-                        </li>
-                    </ul>
+    <wicket:panel>            
+        <div class="filter saved-searches">
+            <div class="filter-names">
+                <div title="Save any search">Searches                        
+                    <a wicket:id="saveSearch" title="Add current search to this saved search list">
+                        <img src="img/feed_add.png"/>
+                    </a>
                 </div>
+                <div wicket:id="indicatorImage">
+                    <img src="img/indicator.gif"/>
+                </div>
+                <div class="saveInfo">                        
+                    <a wicket:id="saveInfo">Click this icon <img src="img/feed_add.png"/> 
+                        to save your current search
+                        and get informed when new tweets are available
+                    </a>
+                </div>
+                <ul>                        
+                    <li wicket:id="filterValues">
+                        <a class="remove-link" wicket:id="removeLink" title="Remove this save search">
+                            <img src="img/cancel-light.png"/>
+                        </a>
+                        <a wicket:id="filterValueLink">
+                            <span wicket:id="filterValue">[filter value]</span>
+                        </a>
+                        <span class="filter-count" wicket:id="filterCount">[count]</span>
+                        <div wicket:id="confirmation">
+                            <div>Delete it?
+                            </div>
+                            <div class="dialog-button">
+                                <a wicket:id="button">Ok</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
             </div>
-        </wicket:panel>
-    </body>
+        </div>
+    </wicket:panel>
+</body>
 </html>
 

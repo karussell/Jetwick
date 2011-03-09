@@ -60,7 +60,8 @@ body, p {
     padding: 0px 15px 0px 15px;
 }
 
-.login-dialog .login-link-proceed {
+div.dialog-button a {
+    margin-top: 20px;
     color: #0063AC;
     float: right;
 }
