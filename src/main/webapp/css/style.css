@@ -80,7 +80,7 @@ body .ui-widget-content {
     background-color: white;
     border: 2px solid #DDDDDD;
 }
-.login-dialog {
+.hide {
     display: none;
 }
 .login-dialog div {

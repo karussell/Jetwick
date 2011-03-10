@@ -74,14 +74,15 @@ public class UserPanel extends Panel {
         };
 
         add(new DialogUtilsBehavior());
-        final Dialog dialog = new Dialog("dialog");        
+        final Dialog dialog = new Dialog("dialog");
         add(dialog.setTitle("Information").setWidth(540).add(loginLinkProceed));
 
         Link loginLink = new AjaxFallbackLink("loginLink") {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                dialog.open(target);
+                if (target != null)
+                    dialog.open();
             }
         };
         add(loginLink);
@@ -89,7 +90,8 @@ public class UserPanel extends Panel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                dialog.open(target);
+                if (target != null)
+                    dialog.open();
             }
         };
         add(editFilters);

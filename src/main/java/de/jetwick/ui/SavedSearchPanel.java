@@ -130,11 +130,12 @@ public class SavedSearchPanel extends Panel {
                 li.add(label4count);
                 li.add(link);
 
-                final Dialog dialog = new Dialog("confirmation").setWidth(400).setTitle("Delete Saved Search "+name+"?");
+                final Dialog dialog = new Dialog("confirmation").setWidth(400).
+                        setTitle("Delete Saved Search " + name + "?");
                 dialog.add(new AjaxFallbackLink("button") {
 
                     @Override
-                    public void onClick(AjaxRequestTarget target) {                        
+                    public void onClick(AjaxRequestTarget target) {
                         dialog.close(target);
                         SavedSearchPanel.this.onRemove(target, ssId);
                     }
@@ -144,8 +145,9 @@ public class SavedSearchPanel extends Panel {
 
                     @Override
                     public void onClick(AjaxRequestTarget target) {
-                        dialog.open(target);
-                    }                    
+                        if (target != null)
+                            dialog.open();
+                    }
                 };
                 li.add(removeLink);
             }

@@ -35,30 +35,33 @@
                 <img src="img/edit.png"/> Edit Search Filters
             </a>        
         </div>
-        <div class="login-dialog">
+        <div class="hide">
             <div wicket:id="dialog">
-                <div>
-                    To use friend search, <a href="http://www.youtube.com/watch?v=SMURdDVbShI" target="_blank">relaxed saved searches</a>
-                    or to edit filters you need to be logged in!
+                <!-- dialog markup will be moved out of main ! -->
+                <div class="login-dialog">
+                    <div>
+                        To use friend search, <a href="http://www.youtube.com/watch?v=SMURdDVbShI" target="_blank">relaxed saved searches</a>
+                        or to edit filters you need to be logged in!
+                    </div>
+                    <div>
+                        Follow us at <a href="http://twitter.com/jetwick">twitter.com/jetwick</a><br/>
+                        to recieve updates via private message (rare frequency).
+                    </div>
+                    <img src="img/accept2.png"/> I have read and accept the <a href="imprint">Terms of Service</a>
+                    <div class="dialog-button">
+                        <a wicket:id="loginLinkProceed" title="Login">
+                            <img src="img/arrow_right.png"/>
+                            and I want to login with my twitter account!
+                        </a>
+                    </div>
+                    <!--
+                    <div class="screenshot">
+                        <a href="http://www.youtube.com/watch?v=9U2uxeaVIXk" target="_blank" title="Video Introduction">
+                            <img src="img/screenshot.png" width="600px" alt="View Video Intro"/>
+                        </a>
+                    </div>
+                    -->
                 </div>
-                <div>
-                    Follow us at <a href="http://twitter.com/jetwick">twitter.com/jetwick</a><br/>
-                    to recieve updates via private message (rare frequency).
-                </div>
-                <img src="img/accept2.png"/> I have read and accept the <a href="imprint">Terms of Service</a>
-                <div class="dialog-button">
-                    <a wicket:id="loginLinkProceed" title="Login">
-                        <img src="img/arrow_right.png"/>
-                        and I want to login with my twitter account!
-                    </a>
-                </div>
-                <!--
-                <div class="screenshot">
-                    <a href="http://www.youtube.com/watch?v=9U2uxeaVIXk" target="_blank" title="Video Introduction">
-                        <img src="img/screenshot.png" width="600px" alt="View Video Intro"/>
-                    </a>
-                </div>
-                -->
             </div>
         </div>
         <div class="userpanel" wicket:id="loginContainer">
