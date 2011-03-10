@@ -60,6 +60,11 @@ body, p {
     padding: 6px 15px 0px 16px;
 }
 
+.login-link a {
+    font-size: 0.8em;
+    color: black;
+}
+
 .login-dialog div {
     padding-bottom: 10px;
 }
