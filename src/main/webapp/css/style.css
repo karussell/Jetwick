@@ -370,7 +370,7 @@ div.wicket-aa ul li.selected {
     padding-top: 20px;
 }
 #main, .external-refs-right {
-    width: 1050px;
+    width: 900px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -645,8 +645,14 @@ div.wicket-aa ul li.selected {
 .rep-link a { color: black; }
 
 .user-twitter-link {    
-    padding: 0px 5px 10px 20px;    
+    padding: 0px 5px 10px 0px;    
     margin: 10px 5px;
+}
+
+.user-twitter-link .user-twitter-link-del {
+    font-size: 0.7em;
+    color: black;
+    padding-left: 15px;    
 }
 
 .more-tw-label img { height: 14px; }
@@ -660,11 +666,6 @@ div.wicket-aa ul li.selected {
 }
 .rep-link {
     padding-left: 15px;
-}
-
-.about, .imprint, .reputation-desc, .error-page {
-    width: 1100px;
-    padding: 50px 50px;
 }
 
 .about ul li {
@@ -711,8 +712,8 @@ div.wicket-aa ul li.selected {
 }
 #info-panel {
     float: left;
-    width: 325px;
-    padding: 0px 0px 0px 18px;
+    width: 185px;
+    padding: 0px 0px 0px 14px;
     margin: 0px;
 }
 
@@ -843,7 +844,7 @@ ul.show-dots li {
     list-style: circle;
 }
 
-#offline, .imprint, .about {
+#offline, .imprint, .about, .reputation-desc, .error-page {
     width: 600px;
     margin-left: auto;
     margin-right: auto;

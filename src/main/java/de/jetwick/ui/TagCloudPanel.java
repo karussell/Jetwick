@@ -122,6 +122,8 @@ public class TagCloudPanel extends Panel {
             }
         }
 
-        setVisible(tags.size() > 0);
+        // hide if visible (do not show if not visible and tags.size > 0)
+        if(isVisible())
+            setVisible(tags.size() > 0);
     }
 }

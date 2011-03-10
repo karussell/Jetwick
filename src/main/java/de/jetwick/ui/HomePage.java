@@ -69,7 +69,7 @@ public class HomePage extends WebPage {
     private ResultsPanel resultsPanel;
     private FacetPanel facetPanel;
     private SavedSearchPanel ssPanel;
-    private TagCloudPanel tagCloud;
+    private TagCloudPanel tagCloudPanel;
     private NavigationPanel navigationPanel;
     private SearchBox searchBox;
     private String language = "en";
@@ -266,7 +266,7 @@ public class HomePage extends WebPage {
             target.addComponent(navigationPanel);
             if (updateSearchBox)
                 target.addComponent(searchBox);
-            target.addComponent(tagCloud);
+            target.addComponent(tagCloudPanel);
             target.addComponent(dateFilterPanel);
             target.addComponent(urlTrends);
             target.addComponent(feedbackPanel);
@@ -433,7 +433,7 @@ public class HomePage extends WebPage {
             }
         });
 
-        tagCloud = new TagCloudPanel("tagcloud") {
+        tagCloudPanel = new TagCloudPanel("tagcloud") {
 
             @Override
             protected void onTagClick(String name) {
@@ -458,7 +458,7 @@ public class HomePage extends WebPage {
 //                setResponsePage(HomePage.class, pp);
             }
         };
-        add(tagCloud.setOutputMarkupId(true));
+        add(tagCloudPanel.setOutputMarkupId(true));
 
         navigationPanel = new NavigationPanel("navigation", hitsPerPage) {
 
@@ -620,11 +620,14 @@ public class HomePage extends WebPage {
         String tmpUserName = null;
         if (getMySession().hasLoggedIn())
             tmpUserName = getMySession().getUser().getScreenName();
-        else {            
+        else {
             ssPanel.setVisible(false);
             // TODO remove all the facets + date facets!?
-            facetPanel.setVisible(false);            
-            dateFilterPanel.setVisible(false);            
+            facetPanel.setVisible(false);
+            dateFilterPanel.setVisible(false);
+            // so that my reference on twitter works ;)            
+            if (userName.isEmpty())
+                tagCloudPanel.setVisible(false);
         }
 
         searchBox = new SearchBox("searchbox", tmpUserName, searchType) {
@@ -787,7 +790,7 @@ public class HomePage extends WebPage {
             tweetThread = null;
 
         facetPanel.update(rsp, query);
-        tagCloud.update(rsp, query);
+        tagCloudPanel.update(rsp, query);
         urlTrends.update(rsp, query);
 
         resultsPanel.setQueryMessage(msg);

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -75,7 +76,15 @@ public class SearchBox extends Panel {
             public boolean isVisible() {
                 return !getUserName().isEmpty();
             }
-        }.add(new ExternalLink("userTwitterLink", oneUserLink, oneUserLabel)));
+        }.add(new ExternalLink("userTwitterLink", oneUserLink, oneUserLabel)).
+                add(new AjaxFallbackLink("userTwitterLinkRemove") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                setSearchType(ALL);
+                setResponsePage(getApplication().getHomePage(), getParams(query, selectedIndex, null, loggedInUser));
+            }
+        }));
         final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
 
         final Button buttonRight = new Button("submitbutton") {
