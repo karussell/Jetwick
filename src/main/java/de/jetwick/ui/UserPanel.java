@@ -82,7 +82,7 @@ public class UserPanel extends Panel {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 if (target != null)
-                    dialog.open();
+                    dialog.open(target);
             }
         };
         add(loginLink);
@@ -91,7 +91,7 @@ public class UserPanel extends Panel {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 if (target != null)
-                    dialog.open();
+                    dialog.open(target);
             }
         };
         add(editFilters);
