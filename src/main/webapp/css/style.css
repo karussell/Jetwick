@@ -15,13 +15,22 @@
 */
 
 /*
-  | external-refs-right               |
-  |-----------------------------------|
-  |userpanel| searchbox  |            |
-  | left    | date-filter| info-panel |
-  | filter  | resultlist | info-panel |
-  |-----------------------------------|
-  | navigation + footer               |
+
+#main
+
+  | external-refs-right      |
+  |--------------------------|
+
+   left-column    content
+
+  | userpanel  | searchbox   |
+  | left       | date-filter |
+  | filter     | resultlist  |
+  | tagcloud   | navigation  |
+  | urltrends  |             |
+  | wikipanel  |             |
+  |--------------------------|
+  | footer                   |
 */
 
 img { border-style: none; }
@@ -52,12 +61,8 @@ body, p {
 .feedbackPanelINFO { background-color: #ffffd6; }
 .feedbackPanelWARNING { background-color: #ffd791; }
 
-.left-column {
-    float: left;
-}
-
 .login-link {
-    padding: 6px 15px 0px 16px;
+    padding: 6px 15px 0px 26px;
 }
 
 .login-link a {
@@ -145,8 +150,9 @@ div.dialog-button a {
 }
 
 .footer {
+    margin-top: 40px;
     clear: both;
-    float: right;
+    float: left;
     border-top: gray 1px groove;
 }
 .footer ul {
@@ -370,9 +376,15 @@ div.wicket-aa ul li.selected {
     padding-top: 20px;
 }
 #main, .external-refs-right {
-    width: 900px;
+    width: 800px;
     margin-left: auto;
     margin-right: auto;
+}
+
+.left-column {
+    padding-left: 10px;
+    min-width: 200px;
+    float: left;
 }
 .searchform {
     width: 530px;
@@ -382,8 +394,7 @@ div.wicket-aa ul li.selected {
     width: 530px;
 }
 
-.filter {
-    width: 145px;
+.filter {    
     margin-top: 0px;
     padding: 0px 15px 0px 10px;
 }
@@ -761,9 +772,9 @@ div.wicket-aa ul li.selected {
     padding-bottom: 5px;
 }
 
-/*.tagcloud {
-    float: left;
-}*/
+.tagcloud {
+    width: 200px;
+}
 
 .tagcloud .var-size-0  { font-size: 12px;}
 .tagcloud .var-size-1  { font-size: 13px;}

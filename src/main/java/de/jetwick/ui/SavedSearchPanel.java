@@ -15,10 +15,6 @@
  */
 package de.jetwick.ui;
 
-import org.odlabs.wiquery.core.events.Event;
-import org.odlabs.wiquery.core.events.MouseEvent;
-import org.odlabs.wiquery.core.events.WiQueryEventBehavior;
-import org.odlabs.wiquery.core.javascript.JsScope;
 import org.odlabs.wiquery.ui.dialog.Dialog;
 import de.jetwick.ui.util.FacetHelper;
 
@@ -134,7 +130,7 @@ public class SavedSearchPanel extends Panel {
                 li.add(label4count);
                 li.add(link);
 
-                final Dialog dialog = new Dialog("confirmation").setTitle("Delete Saved Search "+name+"?");
+                final Dialog dialog = new Dialog("confirmation").setWidth(400).setTitle("Delete Saved Search "+name+"?");
                 dialog.add(new AjaxFallbackLink("button") {
 
                     @Override
