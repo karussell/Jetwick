@@ -61,7 +61,7 @@ body, p {
 .feedbackPanelINFO { background-color: #ffffd6; }
 .feedbackPanelWARNING { background-color: #ffd791; }
 
-.login-link {
+.login-link {    
     padding: 6px 15px 0px 26px;
 }
 
@@ -70,6 +70,19 @@ body, p {
     color: black;
 }
 
+body .ui-dialog, body .ui-dialog-content {
+    background: none;
+    background-color: white;
+}
+body .ui-widget-content {
+    color: black;
+    background: none;
+    background-color: white;
+    border: 2px solid #DDDDDD;
+}
+.login-dialog {
+    display: none;
+}
 .login-dialog div {
     padding-bottom: 10px;
 }
@@ -382,10 +395,15 @@ div.wicket-aa ul li.selected {
 }
 
 .left-column {
-    padding-left: 10px;
-    min-width: 200px;
+    padding-left: 20px;
+    min-width: 210px;
     float: left;
 }
+/* avoid that content will be under left column */
+.wikipanel, .tagcloud, .urltrends {
+    max-width: 190px;
+}
+
 .searchform {
     width: 530px;
 }
@@ -742,8 +760,7 @@ div.wicket-aa ul li.selected {
 }
 .urltrends {
     white-space: nowrap;
-    overflow: hidden;
-    width: 100%;
+    overflow: hidden;    
     float: left;
     padding: 20px 0px 0px 0px;
 }
@@ -770,10 +787,6 @@ div.wicket-aa ul li.selected {
 
 .tagcloud-header {
     padding-bottom: 5px;
-}
-
-.tagcloud {
-    width: 200px;
 }
 
 .tagcloud .var-size-0  { font-size: 12px;}

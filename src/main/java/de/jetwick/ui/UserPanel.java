@@ -75,7 +75,7 @@ public class UserPanel extends Panel {
 
         add(new DialogUtilsBehavior());
         final Dialog dialog = new Dialog("dialog");        
-        add(dialog.setTitle("Information").setWidth(640).add(loginLinkProceed));
+        add(dialog.setTitle("Information").setWidth(540).add(loginLinkProceed));
 
         Link loginLink = new AjaxFallbackLink("loginLink") {
 
