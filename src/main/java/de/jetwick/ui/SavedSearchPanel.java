@@ -146,7 +146,7 @@ public class SavedSearchPanel extends Panel {
                     @Override
                     public void onClick(AjaxRequestTarget target) {
                         if (target != null)
-                            dialog.open();
+                            dialog.open(target);
                     }
                 };
                 li.add(removeLink);
