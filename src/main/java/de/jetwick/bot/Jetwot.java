@@ -183,7 +183,7 @@ public class Jetwot {
                 // only original tweets
                 addFilterQuery(IS_RT, false).
                 // for english our spam + dup detection works ok
-                addFilterQuery("lang", "(en OR de OR sp)").
+                addFilterQuery(ElasticTweetSearch.LANG, "(en OR de OR sp)").
                 setSort(RT_COUNT, "desc").
                 setSize(50);
 

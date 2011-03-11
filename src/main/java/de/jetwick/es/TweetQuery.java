@@ -132,7 +132,7 @@ public class TweetQuery extends JetwickQuery {
     @Override
     public TweetQuery attachFacetibility() {
         setDateFacets(true).
-                addFacetField(TAG, 15).addFacetField("lang").
+                addFacetField(TAG, 15).addFacetField(LANG).
                 // originality
                 addFacetField(IS_RT);
 //                addFacetField(FIRST_URL_TITLE);
@@ -147,8 +147,8 @@ public class TweetQuery extends JetwickQuery {
         addFacetQuery(RT_COUNT, "[50 TO *]");
 
         addFacetQuery(DUP_COUNT, "0");
-        addFacetQuery(DUP_COUNT, "[1 TO *]");        
-  
+        addFacetQuery(DUP_COUNT, "[1 TO *]");
+
         // spam
 //        q.addFacetQuery(FILTER_SPAM);
 //        q.addFacetQuery(FILTER_NO_SPAM);
@@ -157,6 +157,11 @@ public class TweetQuery extends JetwickQuery {
         addFacetQuery(URL_COUNT, "[1 TO *]");
         addFacetQuery(URL_COUNT, "0");
 
+        return this;
+    }
+
+    public TweetQuery attachUserFacets() {
+        addFacetField(USER, 15);
         return this;
     }
 

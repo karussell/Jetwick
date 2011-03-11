@@ -78,6 +78,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
     public static final String TAG = "tag";
     public static final String INREPLY_ID = "inreply_l";
     public static final String QUALITY = "quality_i";
+    public static final String LANG = "lang";
     public static final String URL_COUNT = "url_i";
     public static final String FIRST_URL_TITLE = "dest_title_1_s";
 //    public static final String KEY_USER = "user:";
@@ -212,14 +213,14 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
         for (Entry<String, Integer> entry : tw.getTextTerms().entrySet()) {
             b.field(TAG, entry.getKey());
         }
-        
+
         int counter = 0;
         for (UrlEntry urlEntry : tw.getUrlEntries()) {
             counter++;
             b.field("url_pos_" + counter + "_s", urlEntry.getIndex() + "," + urlEntry.getLastIndex());
             b.field("dest_url_" + counter + "_s", urlEntry.getResolvedUrl());
             b.field("dest_domain_" + counter + "_s", urlEntry.getResolvedDomain());
-            b.field("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());            
+            b.field("dest_title_" + counter + "_s", urlEntry.getResolvedTitle());
             if (counter == 1)
                 b.field("dest_title_t", urlEntry.getResolvedTitle());
 
@@ -229,7 +230,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
 
         b.field(URL_COUNT, counter);
         b.field(DUP_COUNT, tw.getDuplicates().size());
-        b.field("lang", tw.getLanguage());
+        b.field(LANG, tw.getLanguage());
         b.field(QUALITY, tw.getQuality());
         b.field("repl_i", tw.getReplyCount());
         b.field(RT_COUNT, tw.getRetweetCount());
@@ -268,11 +269,9 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
         if (source.get(QUALITY) != null)
             tw.setQuality(((Number) source.get(QUALITY)).intValue());
 
-//        System.out.println("now "+map.get(INREPLY_ID) + " " + doc.field(INREPLY_ID));
+        tw.setLanguage((String) source.get(LANG));
 
         if (source.get(INREPLY_ID) != null) {
-//            Long replyId = (Long) doc.field(INREPLY_ID).getValue();
-
             long replyId = ((Number) source.get(INREPLY_ID)).longValue();
             tw.setInReplyTwitterId(replyId);
         }

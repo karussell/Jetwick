@@ -53,17 +53,15 @@ public class FacetPanel extends Panel {
     private Map<String, String> tr = new LinkedHashMap<String, String>();
     private Set<String> alreadyFiltered = new LinkedHashSet<String>();
     private List<Entry<String, List<FacetHelper>>> normalFacetFields = new ArrayList<Entry<String, List<FacetHelper>>>();
-    private ListView tagView;
-    private String dtKey = "dt";
-    private String langKey = "lang";
+    private ListView tagView;        
 
     public FacetPanel(String id) {
         super(id);
 
         // No Massive Tweeter
         tr.put("loc", "Location");
-        tr.put(dtKey, "Date");
-        tr.put(langKey, "Language");
+        tr.put(DATE, "Date");
+        tr.put(LANG, "Language");
         tr.put(IS_RT, "Content");
         tr.put(IS_RT + ":true", "retweet");
         tr.put(IS_RT + ":false", "original");
@@ -85,14 +83,14 @@ public class FacetPanel extends Panel {
         tr.put(FILTER_NO_SPAM, "without");
         tr.put(FILTER_SPAM, "only spam");
 
-        tr.put(langKey + ":" + UNKNOWN_LANG, "Other");
-        tr.put(langKey + ":" + DE, "Deutsch");
-        tr.put(langKey + ":" + EN, "English");
-        tr.put(langKey + ":" + NL, "Nederlandse");
-        tr.put(langKey + ":" + RU, "Pусский");
-        tr.put(langKey + ":" + SP, "Español");
-        tr.put(langKey + ":" + FR, "Français");
-        tr.put(langKey + ":" + PT, "Português");
+        tr.put(LANG + ":" + UNKNOWN_LANG, "Other");
+        tr.put(LANG + ":" + DE, "Deutsch");
+        tr.put(LANG + ":" + EN, "English");
+        tr.put(LANG + ":" + NL, "Nederlandse");
+        tr.put(LANG + ":" + RU, "Pусский");
+        tr.put(LANG + ":" + SP, "Español");
+        tr.put(LANG + ":" + FR, "Français");
+        tr.put(LANG + ":" + PT, "Português");
 
         tagView = new ListView("filterNames", normalFacetFields) {
 
@@ -201,7 +199,7 @@ public class FacetPanel extends Panel {
         Map<String, Integer> filterToIndex = new LinkedHashMap<String, Integer>() {
 
             {
-                put(langKey, 1);
+                put(LANG, 1);
                 put(RT_COUNT, 2);
                 put(URL_COUNT, 3);
                 put(IS_RT, 4);
@@ -245,7 +243,7 @@ public class FacetPanel extends Panel {
                             continue;
 
                         String key = name.substring(0, firstIndex);
-                        if (dtKey.equals(key))
+                        if (DATE.equals(key))
                             continue;
 
                         String val = name.substring(firstIndex + 1);
