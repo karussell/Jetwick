@@ -44,7 +44,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     public void setUp() throws Exception {
         userSearch = new ElasticUserSearch(getClient());
         super.setUp(userSearch);
-    }   
+    }
 
     @Test
     public void testDelete() throws Exception {
@@ -174,7 +174,6 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 //        UserQuery query = userSearch.createMltQuery("peter");
 //        assertTrue(userSearch.isMlt(query));
 //    }
-
     @Test
     public void testUnderscoreInName() throws Exception {
         JUser karsten = new JUser("karsten");
@@ -185,17 +184,17 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         korland.setDescription("hooping hooping solr nice");
         userSearch.save(korland, true);
 
-        Collection<JUser> list = new LinkedHashSet<JUser>();        
+        Collection<JUser> list = new LinkedHashSet<JUser>();
         userSearch.search(list, "g_korland", 10, 0);
         assertEquals(1, list.size());
-        
+
         list = new LinkedHashSet<JUser>();
         userSearch.search(list, "hooping", 10, 0);
-        assertEquals(2, list.size());       
+        assertEquals(2, list.size());
     }
 
     @Test
-    public void testPaging()  {
+    public void testPaging() {
         for (int i = 0; i < 5; i++) {
             JUser karsten = new JUser("karsten" + i);
             karsten.setDescription("hooping hooping nice solr");
@@ -212,7 +211,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
-    public void testUserFind()  {
+    public void testUserFind() {
         JUser karsten = new JUser("karsten");
         karsten.addOwnTweet(new JTweet(1, "hooping hooping", karsten));
         karsten.addOwnTweet(new JTweet(2, "nice solr", karsten));
@@ -226,21 +225,31 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         assertEquals(0, userSearch.search(list, "kasten", 3, 0));
         assertEquals(0, list.size());
     }
-    
+
     @Test
-    public void testFindByScreenname()  {
+    public void testFindByScreenname() {
         JUser karsten = new JUser("karsten");
         karsten.addOwnTweet(new JTweet(1, "hooping hooping", karsten));
         karsten.addOwnTweet(new JTweet(2, "nice solr", karsten));
         userSearch.save(karsten, true);
-        
+
         assertNotNull(userSearch.findByScreenName("karsten"));
-        assertNotNull(userSearch.findByScreenName("Karsten"));       
         assertNull(userSearch.findByScreenName("hooping"));
     }
 
     @Test
-    public void testFacetSearch()  {
+    public void testFindByEmail() {
+        JUser peter = new JUser("peter").setEmail("peter@karich.de");
+        userSearch.save(peter, false);
+        JUser karsten = new JUser("karsten").setEmail("karsten@f.de");
+        userSearch.save(karsten, true);
+
+        assertEquals("peter", userSearch.findByEmail("peter@karich.de").getScreenName());
+        assertEquals("karsten", userSearch.findByEmail("karsten@f.de").getScreenName());
+    }
+
+    @Test
+    public void testFacetSearch() {
         userSearch.setTermMinFrequency(0);
 
         JUser karsten = new JUser("karsten");
@@ -261,9 +270,9 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
 
         Collection<JUser> list = new LinkedHashSet<JUser>();
         SearchResponse rsp = userSearch.search(list, query);
-        
+
         // found 2 users which have java as tags
-        assertEquals(2, list.size());       
+        assertEquals(2, list.size());
 //        TermsStatsFacet.Entry cnt = ((TermsStatsFacet) rsp.getFacets().facet("tag")).entries().get(1);                
 //        assertEquals("java", cnt.getTerm());
 //        assertEquals(2, cnt.getCount());
@@ -306,18 +315,18 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
         assertTrue(coll.contains("karsten OR tester"));
-    }    
-    
-     @Test
+    }
+
+    @Test
     public void testFriends() throws Exception {
-         JUser user = new JUser("peter").setFriends(Arrays.asList("test", "tester"));
-         JUser user2 = new JUser("karsten").setFriends(Collections.EMPTY_LIST);
-         JUser user3 = new JUser("johannes").setFriends(null);
-         userSearch.save(user, false);
-         userSearch.save(user2, false);
-         userSearch.save(user3, true);
-         assertEquals(2, userSearch.findByScreenName("peter").getFriends().size());
-         assertEquals(0, userSearch.findByScreenName("karsten").getFriends().size());
-         assertEquals(0, userSearch.findByScreenName("johannes").getFriends().size());
-     }
+        JUser user = new JUser("peter").setFriends(Arrays.asList("test", "tester"));
+        JUser user2 = new JUser("karsten").setFriends(Collections.EMPTY_LIST);
+        JUser user3 = new JUser("johannes").setFriends(null);
+        userSearch.save(user, false);
+        userSearch.save(user2, false);
+        userSearch.save(user3, true);
+        assertEquals(2, userSearch.findByScreenName("peter").getFriends().size());
+        assertEquals(0, userSearch.findByScreenName("karsten").getFriends().size());
+        assertEquals(0, userSearch.findByScreenName("johannes").getFriends().size());
+    }
 }

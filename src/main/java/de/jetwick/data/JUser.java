@@ -44,7 +44,7 @@ public class JUser implements DbObject, Serializable {
     private Collection<JTweet> ownTweets = new LinkedHashSet<JTweet>();
     private Map<Long, SavedSearch> savedSearches = new LinkedHashMap<Long, SavedSearch>();
     private Date lastFriendsUpdate;
-    private Collection<String> friends;    
+    private Collection<String> friends;
     private String realName;
     // we don't need an index here -> already via uniqueconstraint
     private String screenName;
@@ -60,7 +60,10 @@ public class JUser implements DbObject, Serializable {
     private Set<String> tags = new LinkedHashSet<String>();
     private String twitterTokenSecret;
     private String twitterToken;
-    private boolean adminUser = false;
+    public static String ROLE_ADMIN = "admin";
+    public static String ROLE_USER = "user";
+    private String role = ROLE_USER;
+    private String email;
 
     public JUser() {
         setCreatedAt(new Date());
@@ -154,6 +157,23 @@ public class JUser implements DbObject, Serializable {
         this.createdAt = createdAt;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public JUser setEmail(String email) {
+        this.email = email;
+        return this;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
     public void addLanguage(String lang) {
         langs.add(lang);
     }
@@ -163,7 +183,7 @@ public class JUser implements DbObject, Serializable {
     }
 
     public boolean isAdmin() {
-        return adminUser;
+        return ROLE_ADMIN.equals(role);
     }
 
     public Integer getTwitterId() {
@@ -314,5 +334,5 @@ public class JUser implements DbObject, Serializable {
         int hash = 7;
         hash = 61 * hash + (this.screenName != null ? this.screenName.hashCode() : 0);
         return hash;
-    }        
+    }
 }

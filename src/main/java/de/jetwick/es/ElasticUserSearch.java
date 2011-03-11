@@ -26,6 +26,7 @@ import de.jetwick.tw.cmd.StringFreqMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -133,10 +134,10 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         // make sure that if we look for a specific user this user will show up first:
         b.field(SCREEN_NAME, user.getScreenName());
-        
-        if(user.getTwitterId() != null)
+
+        if (user.getTwitterId() != null)
             b.field("twitterId", user.getTwitterId());
-        
+
         b.field("realName", user.getRealName());
         b.field("iconUrl", user.getProfileImageUrl());
         b.field("webUrl", user.getWebUrl());
@@ -148,6 +149,9 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         b.field("twCreatedAt_dt", user.getTwitterCreatedAt());
         b.field("friendsUpdate_dt", user.getLastFriendsUpdate());
         b.field("friends", Helper.toStringArray(user.getFriends()));
+        b.field("timestamp_dt", new Date());
+        b.field("email", user.getEmail());
+        b.field("role", user.getRole());
 
         int counter = 1;
         for (SavedSearch ss : user.getSavedSearches()) {
@@ -191,9 +195,9 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
     public JUser readDoc(Map<String, Object> doc, String idAsStr) {
         String userName = idAsStr;
         JUser user = new JUser(userName);
-        if(doc.get("twitterId") != null)
-            user.setTwitterId( ((Number)doc.get("twitterId")).intValue());        
-        
+        if (doc.get("twitterId") != null)
+            user.setTwitterId(((Number) doc.get("twitterId")).intValue());
+
         user.setRealName((String) doc.get("realName"));
         user.setProfileImageUrl((String) doc.get("iconUrl"));
         user.setWebUrl((String) doc.get("webUrl"));
@@ -206,6 +210,9 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         user.setTwitterCreatedAt(Helper.toDateNoNPE((String) doc.get("twCreatedAt_dt")));
         user.setLastFriendsUpdate(Helper.toDateNoNPE((String) doc.get("friendsUpdate_dt")));
         user.setFriends((Collection<String>) doc.get("friends"));
+        if (doc.get("role") != null)
+            user.setRole((String) doc.get("role"));
+        user.setEmail((String) doc.get("email"));
 
         long counter = 1;
         while (true) {
@@ -268,6 +275,22 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         }
     }
 
+    public JUser findByEmail(String email) {
+        try {
+            email = email.toLowerCase();
+            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery("email", email)));
+            if (res.isEmpty())
+                return null;
+            else if (res.size() == 1)
+                return res.iterator().next();
+            else
+                throw new IllegalStateException("email search:" + email + " returns more than one users:" + res);
+        } catch (Exception ex) {
+            logger.error("Couldn't load user with email:" + email + " " + ex.getMessage());
+            return null;
+        }
+    }
+
     public Collection<String> getQueryTerms() {
         SearchResponse rsp = search(new UserQuery().addFacetField(QUERY_TERMS, 1000));
         TermsFacet tf = (TermsFacet) rsp.getFacets().facet(QUERY_TERMS);
@@ -285,11 +308,11 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
     }
 
     public SearchResponse search(Collection<JUser> users, JetwickQuery query) {
-        SearchRequestBuilder srb = client.prepareSearch(getIndexName());        
+        SearchRequestBuilder srb = client.prepareSearch(getIndexName());
         SearchResponse response = query.initRequestBuilder(srb).execute().actionGet();
         users.addAll(collectObjects(response));
         return response;
-    }   
+    }
 
     /** use createQuery + search instead */
     @Deprecated
