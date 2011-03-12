@@ -120,6 +120,14 @@ public class UserPanel extends Panel {
                     }
                 });
 
+                add(new AjaxFallbackLink("showHomeline") {
+
+                    @Override
+                    public void onClick(AjaxRequestTarget target) {
+                        onHomeline(target, user.getScreenName());
+                    }
+                });
+
                 add(new AjaxFallbackLink("showTweets") {
 
                     @Override
@@ -194,6 +202,9 @@ public class UserPanel extends Panel {
     }
 
     public void onShowTweets(AjaxRequestTarget target, String user) {
+    }
+
+    public void onHomeline(AjaxRequestTarget target, String user) {
     }
 
     public void onLogout() {

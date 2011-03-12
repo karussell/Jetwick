@@ -421,6 +421,12 @@ public class HomePage extends WebPage {
             }
 
             @Override
+            public void onHomeline(AjaxRequestTarget target, String user) {
+                doSearch(createFriendQuery(""), 0, false);
+                HomePage.this.updateAfterAjax(target, true);
+            }
+
+            @Override
             public void onShowTweets(AjaxRequestTarget target, String userName) {
                 doSearch(new TweetQuery(true).addUserFilter(userName).setSort(ElasticTweetSearch.DATE, "desc"), 0, false);
                 HomePage.this.updateAfterAjax(target, true);
@@ -655,27 +661,33 @@ public class HomePage extends WebPage {
         add(searchBox.setOutputMarkupId(true));
 
         if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
-            if (getMySession().hasLoggedIn()) {
-                Collection<String> friends = getMySession().getFriends(uindexProvider.get());
-                if (friends.isEmpty()) {
-                    info("You recently logged in. Please try again in 2 minutes to use friend search.");
-                } else {
-                    query = new TweetQuery(query.getQuery()).createFriendsQuery(friends).
-                            addLatestDateFilter(8).
-                            setSort(ElasticTweetSearch.DATE, "desc");
-                    page = 0;
-                    twitterFallback = false;
-                }
-            } else {
-                info("Login to use friend search!");
-//                warn("Please login to search friends of " + parameters.getString("user"));
-            }
+            page = 0;
+            twitterFallback = false;
+            JetwickQuery q = createFriendQuery(query.getQuery());
+            if (q == null)
+                return;
         }
 
         if (getMySession().hasLoggedIn())
             query.attachUserFacets();
 
         doSearch(query, page, twitterFallback);
+    }
+
+    public JetwickQuery createFriendQuery(String queryStr) {
+        if (getMySession().hasLoggedIn()) {
+            Collection<String> friends = getMySession().getFriends(uindexProvider.get());
+            if (friends.isEmpty()) {
+                info("You recently logged in. Please try again in 2 minutes to use friend search.");
+            } else {
+                return new TweetQuery(queryStr).createFriendsQuery(friends).
+                        addLatestDateFilter(8).
+                        setSort(ElasticTweetSearch.DATE, "desc");
+            }
+        } else
+            info("Login to use friend search!");
+
+        return null;
     }
 
     /**
