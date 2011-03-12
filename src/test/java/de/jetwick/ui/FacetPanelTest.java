@@ -93,7 +93,7 @@ public class FacetPanelTest extends WicketPagesTestClass {
         });
         
         List<Entry<String, List<FacetHelper>>> ret = panel.createFacetsFields(sr);
-        assertEquals(7, ret.size());
+        assertEquals(8, ret.size());
 
         // get language
         List<FacetHelper> dfh = ret.get(1).getValue();

@@ -15,9 +15,6 @@
  */
 package de.jetwick.es;
 
-import de.jetwick.es.JetwickQuery;
-import de.jetwick.es.SimilarQuery;
-import de.jetwick.es.TweetQuery;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import java.io.IOException;
@@ -40,6 +37,17 @@ import static org.elasticsearch.common.xcontent.XContentFactory.*;
 public class JetwickQueryTest {
 
     public JetwickQueryTest() {
+    }
+
+    @Test
+    public void testRemoveFilters() {
+        JetwickQuery q = new TweetQuery().addFilterQuery("test", "pest");
+        q.removeFilterQueries("test");
+        assertEquals(0, q.getFilterQueries().size());
+        q.addFilterQuery("test", "pest").addFilterQuery("-test", "pesting").addFilterQuery("anotherfield", "value");
+        q.removeFilterQueries("test");
+        assertEquals(1, q.getFilterQueries().size());
+        assertEquals("anotherfield", q.getFilterQueries().get(0).getKey());
     }
 
     @Test

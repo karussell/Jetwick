@@ -95,8 +95,9 @@ div.dialog-button a {
     float: right;
 }
 
-.userpanel {    
-    padding: 0px 0px 0px 5px;
+.userpanel {
+    padding: 10px 0 0 5px;
+    margin-right: 10px;    
 }
 .userpanel ul {
     font-size: 0.9em;
@@ -411,10 +412,12 @@ div.wicket-aa ul li.selected {
 
 .filter {    
     margin-top: 0px;
-    padding: 0px 15px 0px 0px;
+    margin-right: 10px;
+    padding: 0px 10px 0px 0px;
 }
 
 .filter-rm { font-weight: bold }
+.filter-ex { text-decoration: line-through }
 .filter .filter-count {
     font-size: 0.7em;
     color: gray
@@ -425,8 +428,10 @@ div.wicket-aa ul li.selected {
 .filter-names ul li { font-size: 0.9em; }
 .filter-names ul li span.gray { color: gray; }
 
+
 .saved-searches {
     padding-top: 8px;
+    border-bottom: gray 1px dotted;
 }
 .saved-searches .filter-names {
     padding-bottom: 0px;
@@ -439,6 +444,10 @@ div.wicket-aa ul li.selected {
     color: gray;
 }
 .saved-searches .remove-link {
+    margin-left: -5px;
+    padding-right: 4px;
+}
+.filter .remove-link {
     margin-left: -5px;
     padding-right: 4px;
 }

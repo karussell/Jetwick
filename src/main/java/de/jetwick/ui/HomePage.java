@@ -49,7 +49,6 @@ import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.elasticsearch.action.search.SearchResponse;
-import org.odlabs.wiquery.ui.dialog.Dialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
@@ -423,7 +422,7 @@ public class HomePage extends WebPage {
 
             @Override
             public void onShowTweets(AjaxRequestTarget target, String userName) {
-                doSearch(new TweetQuery(true).addUserFilter(userName), 0, false);
+                doSearch(new TweetQuery(true).addUserFilter(userName).setSort(ElasticTweetSearch.DATE, "desc"), 0, false);
                 HomePage.this.updateAfterAjax(target, true);
             }
 
@@ -475,6 +474,7 @@ public class HomePage extends WebPage {
 
         facetPanel = new FacetPanel("filterPanel") {
 
+            @Override
             public void onRemoveAllFilter(AjaxRequestTarget target, String key) {
                 if (lastQuery != null)
                     lastQuery.removeFilterQueries(key);
@@ -488,12 +488,14 @@ public class HomePage extends WebPage {
             }
 
             @Override
-            public void onFacetChange(AjaxRequestTarget target, String key, Object val, boolean selected) {
+            public void onFilterChange(AjaxRequestTarget target, String key, Object val, Boolean selected) {
                 if (lastQuery != null) {
-                    if (selected)
-                        lastQuery.addFilterQuery(key, val);
-                    else
+                    if (selected == null)
                         lastQuery.removeFilterQuery(key, val);
+                    else if (selected)
+                        lastQuery.addFilterQuery("-" + key, val);
+                    else
+                        lastQuery.addFilterQuery(key, val);
                 } else {
                     logger.error("last query cannot be null but was! ... when clicking on facets!?");
                     return;
@@ -508,7 +510,7 @@ public class HomePage extends WebPage {
         dateFilterPanel = new JSDateFilter("dateFilter") {
 
             @Override
-            protected void onFacetChange(AjaxRequestTarget target, String filter, Boolean selected) {
+            protected void onFilterChange(AjaxRequestTarget target, String filter, Boolean selected) {
                 if (lastQuery != null) {
                     if (selected == null) {
                         lastQuery.removeFilterQueries(filter);
@@ -659,6 +661,7 @@ public class HomePage extends WebPage {
                     info("You recently logged in. Please try again in 2 minutes to use friend search.");
                 } else {
                     query = new TweetQuery(query.getQuery()).createFriendsQuery(friends).
+                            addLatestDateFilter(8).
                             setSort(ElasticTweetSearch.DATE, "desc");
                     page = 0;
                     twitterFallback = false;
@@ -668,6 +671,9 @@ public class HomePage extends WebPage {
 //                warn("Please login to search friends of " + parameters.getString("user"));
             }
         }
+
+        if (getMySession().hasLoggedIn())
+            query.attachUserFacets();
 
         doSearch(query, page, twitterFallback);
     }

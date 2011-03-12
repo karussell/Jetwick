@@ -352,6 +352,11 @@ public abstract class JetwickQuery implements Serializable {
         return this;
     }
 
+    public JetwickQuery attachUserFacets() {
+        addFacetField(USER, 10);
+        return this;
+    }
+
     public JetwickQuery addUserFilter(String userName) {
         if (userName != null && !userName.trim().isEmpty()) {
             userName = trimUserName(userName);
@@ -395,8 +400,10 @@ public abstract class JetwickQuery implements Serializable {
     }
 
     public boolean containsFilter(String key, Object val) {
+        String negateKey = "-" + key;
         for (Entry<String, Object> e : getFilterQueries()) {
-            if (e.getKey().equals(key) && e.getValue().equals(val))
+            if ((e.getKey().equals(key) || e.getKey().equals(negateKey))
+                    && e.getValue().equals(val))
                 return true;
         }
         return false;
@@ -437,18 +444,20 @@ public abstract class JetwickQuery implements Serializable {
             return false;
         String filterKey = filter.substring(0, index);
         String filterValueToReduce = getFirstFilterQuery(filterKey);
-
+        
         if (filterValueToReduce == null)
             return false;
 
-        index = filterValueToReduce.indexOf(filter);
+        index = filter.indexOf(filterValueToReduce);
         if (index < 0)
             return false;
 
-        String res[] = filterValueToReduce.split(" OR ");
+        System.out.println("" + getFilterQueries());
         removeFilterQuery(filterKey, filterValueToReduce);
+        System.out.println("" + getFilterQueries());
         filterValueToReduce = "";
         int alreadyAdded = 0;
+        String res[] = filterValueToReduce.split(" OR ");
         for (int i = 0; i < res.length; i++) {
             if (filter.equals(res[i]))
                 continue;
@@ -459,9 +468,8 @@ public abstract class JetwickQuery implements Serializable {
             filterValueToReduce += res[i];
         }
 
-        if (!filterValueToReduce.isEmpty()) {
-            addFilterQuery(filterKey, filterValueToReduce);
-        }
+        if (!filterValueToReduce.isEmpty())
+            addFilterQuery(filterKey, filterValueToReduce);        
 
         return true;
     }
@@ -485,10 +493,11 @@ public abstract class JetwickQuery implements Serializable {
     }
 
     public JetwickQuery removeFilterQueries(String filterKey) {
+        String negateFilterKey = "-" + filterKey;
         Iterator<Entry<String, Object>> iter = filterQueries.iterator();
         while (iter.hasNext()) {
             Entry e = iter.next();
-            if (e.getKey().equals(filterKey))
+            if (e.getKey().equals(filterKey) || e.getKey().equals(negateFilterKey))
                 iter.remove();
         }
 

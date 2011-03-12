@@ -63,7 +63,7 @@ public class JSDateFilter extends Panel {
 
                         @Override
                         public void onClick(AjaxRequestTarget target) {
-                            onFacetChange(target, dtKey, null);
+                            onFilterChange(target, dtKey, null);
                         }
                     }.add(new AttributeAppender("title", new Model("Remove all filters from '" + dtVal + "'"), " ")));
                 } else {
@@ -92,8 +92,8 @@ public class JSDateFilter extends Panel {
                 Link link = new /*Indicating*/ AjaxFallbackLink("itemLink") {
 
                     @Override
-                    public void onClick(AjaxRequestTarget target) {
-                        JSDateFilter.this.onFacetChange(target, entry.getFilter(), !selected);
+                    public void onClick(AjaxRequestTarget target) {                        
+                        JSDateFilter.this.onFilterChange(target, entry.getFilter(), !selected);
                     }
                 };
                 link.add(app);
@@ -115,7 +115,7 @@ public class JSDateFilter extends Panel {
         add(items);
     }
 
-    protected void onFacetChange(AjaxRequestTarget target, String filter, Boolean selected) {
+    protected void onFilterChange(AjaxRequestTarget target, String filter, Boolean selected) {
     }
 
     protected boolean isAlreadyFiltered(String key, Object value) {

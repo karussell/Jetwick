@@ -158,12 +158,7 @@ public class TweetQuery extends JetwickQuery {
         addFacetQuery(URL_COUNT, "0");
 
         return this;
-    }
-
-    public TweetQuery attachUserFacets() {
-        addFacetField(USER, 15);
-        return this;
-    }
+    }    
 
     public TweetQuery createFriendsQuery(Collection<String> friends) {
         if (friends.isEmpty())

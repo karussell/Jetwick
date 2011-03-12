@@ -52,13 +52,15 @@ public class FacetPanel extends Panel {
 
     private Map<String, String> tr = new LinkedHashMap<String, String>();
     private Set<String> alreadyFiltered = new LinkedHashSet<String>();
+    private Set<String> alreadyExcluded = new LinkedHashSet<String>();
     private List<Entry<String, List<FacetHelper>>> normalFacetFields = new ArrayList<Entry<String, List<FacetHelper>>>();
-    private ListView tagView;        
+    private ListView tagView;
 
     public FacetPanel(String id) {
         super(id);
 
         // No Massive Tweeter
+        tr.put(USER, "Tweeters");
         tr.put("loc", "Location");
         tr.put(DATE, "Date");
         tr.put(LANG, "Language");
@@ -116,19 +118,48 @@ public class FacetPanel extends Panel {
                     @Override
                     protected void populateItem(ListItem li) {
                         final FacetHelper h = (FacetHelper) li.getModelObject();
-                        final boolean selected = alreadyFiltered.contains(h.getFilter());
+                        final boolean selected = isAlreadyFiltered(h.getFilter());
+                        final boolean excluded = isAlreadyExcluded(h.getFilter());
                         Link link = new IndicatingAjaxFallbackLink("filterValueLink") {
 
                             @Override
                             public void onClick(AjaxRequestTarget target) {
-                                onFacetChange(target, h.key, h.value, !selected);
+                                if (excluded)
+                                    onFilterChange(target, h.key, h.value, null);
+                                else
+                                    onFilterChange(target, h.key, h.value, false);
                             }
                         };
+                        Link excludeLink = new IndicatingAjaxFallbackLink("filterExcludeLink") {
+
+                            @Override
+                            public void onClick(AjaxRequestTarget target) {
+                                if (selected)
+                                    onFilterChange(target, h.key, h.value, null);
+                                else
+                                    onFilterChange(target, h.key, h.value, true);
+                            }
+                        };
+                        li.add(new Label("filterCount", " (" + h.count + ")"));
+                        li.add(link);
+                        li.add(excludeLink);
+
+                         /* exlude does not work for filter queries like RT_COUNT.contains(h.key)*/
+                        if(USER.contains(h.key) || LANG.contains(h.key))
+                            excludeLink.setVisible(true);
+                        else
+                            excludeLink.setVisible(false);
+
+                        if (excluded)
+                            link.add(new AttributeAppender("class", new Model("filter-ex"), " "));
+
                         // change style if filter is selected
                         if (selected)
                             link.add(new AttributeAppender("class", new Model("filter-rm"), " "));
                         else
                             link.add(new AttributeAppender("class", new Model("filter-add"), " "));
+
+                        // TODO strike through if filter is excluded
 
                         link.add(new Label("filterValue", h.displayName));
 
@@ -137,9 +168,6 @@ public class FacetPanel extends Panel {
                             link.setEnabled(false);
                             link.add(new AttributeAppender("class", new Model("gray"), " "));
                         }
-
-                        li.add(new Label("filterCount", " (" + h.count + ")"));
-                        li.add(link);
                     }
                 });
             }
@@ -151,6 +179,12 @@ public class FacetPanel extends Panel {
     public String getFilterName(String name) {
         name += ":";
         for (String filter : alreadyFiltered) {
+            if (filter.startsWith(name)) {
+                return filter.substring(name.length());
+            }
+        }
+        name = "-" + name;
+        for (String filter : alreadyExcluded) {
             if (filter.startsWith(name)) {
                 return filter.substring(name.length());
             }
@@ -168,25 +202,37 @@ public class FacetPanel extends Panel {
             }
         }
         alreadyFiltered = new LinkedHashSet<String>();
+        alreadyExcluded = new LinkedHashSet<String>();
         for (Entry<String, Object> e : query.getFilterQueries()) {
-            alreadyFiltered.add(e.getKey() + ":" + e.getValue());
+            if (e.getKey().startsWith("-"))
+                alreadyExcluded.add(e.getKey() + ":" + e.getValue());
+            else
+                alreadyFiltered.add(e.getKey() + ":" + e.getValue());
         }
     }
 
-    public void onFacetChange(AjaxRequestTarget target, String key, Object val, boolean selected) {
+    public void onFilterChange(AjaxRequestTarget target, String key, Object val, Boolean selected) {
     }
 
     public void onRemoveAllFilter(AjaxRequestTarget target, String key) {
     }
 
-    public boolean isAlreadyFiltered(String filter) {
+    private boolean isAlreadyFiltered(String filter) {
         return alreadyFiltered.contains(filter);
     }
 
-    public String translate(String str) {
+    private boolean isAlreadyExcluded(String filter) {
+        return alreadyExcluded.contains(filter);
+    }
+
+    private String translate(String str) {
         String val = tr.get(str);
-        if (val == null)
+        if (val == null) {
+            int index = str.indexOf(USER + ":");
+            if (index >= 0)
+                return str.substring(index + USER.length() + 1);
             return str;
+        }
 
         return val;
     }
@@ -195,16 +241,17 @@ public class FacetPanel extends Panel {
      * Make sure that the facets appear in the order we defined via filterToIndex
      */
     public List<Entry<String, List<FacetHelper>>> createFacetsFields(SearchResponse rsp) {
-        final int MAX_VAL = 6;
+        final int MAX_VAL = 7;
         Map<String, Integer> filterToIndex = new LinkedHashMap<String, Integer>() {
 
             {
                 put(LANG, 1);
-                put(RT_COUNT, 2);
-                put(URL_COUNT, 3);
-                put(IS_RT, 4);
-                put(DUP_COUNT, 5);
-                put(QUALITY, 6);
+                put(USER, 2);
+                put(RT_COUNT, 3);
+                put(URL_COUNT, 4);
+                put(IS_RT, 5);
+                put(DUP_COUNT, 6);
+                put(QUALITY, 7);
             }
         };
         List<Entry<String, List<FacetHelper>>> ret = new ArrayList<Entry<String, List<FacetHelper>>>();
@@ -230,7 +277,7 @@ public class FacetPanel extends Panel {
                                     term = "false";
 
                                 // exclude smaller zero?
-                                list.add(new FacetHelper(key, "\"" + term + "\"",
+                                list.add(new FacetHelper(key, term,
                                         translate(key + ":" + term), e.getCount()));
                             }
                             ret.set(integ, new MapEntry(ff.getName(), list));
