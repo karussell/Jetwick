@@ -173,7 +173,7 @@ public class Jetwot {
 
     public Collection<JTweet> search() {
         JetwickQuery query = new TweetQuery(). // should be not too old
-                addFilterQuery(DATE, "[" + new MyDate().minusDays(6).toLocalString() + " TO *]").
+                addFilterQuery(DATE, "[" + new MyDate().minusDays(1).toLocalString() + " TO *]").
                 // should be high quality
                 addFilterQuery(QUALITY, "[90 TO *]").
                 // should be the first tweet with this content
