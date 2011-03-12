@@ -25,7 +25,7 @@
 
   | userpanel  | searchbox   |
   | left       | date-filter |
-  | filter     | resultlist  |
+  | filter     | resultslist |
   | tagcloud   | navigation  |
   | urltrends  |             |
   | wikipanel  |             |
@@ -313,16 +313,21 @@ div.dialog-button a {
     border-left: none;
     border-top: none;
     border-right: none;
-    border-bottom: gray 1px groove;    
+    border-bottom: gray 1px groove;
 }
 
 #search-type-left {    
     padding-right: 8px;    
     font-size: 14px;        
 }
-.search-type { 
-    padding-top: 5px;
+.search-type {    
+    padding-top: 0px;
     font-size: 11px;    
+}
+
+.not-logged-in-spacer {
+    padding-bottom: 15px;
+    border-bottom: gray 1px groove;
 }
 
 div.wicket-aa {
@@ -475,7 +480,7 @@ div.wicket-aa ul li.selected {
 
 #resultslist {    
     padding-left: 0px;
-    padding-top: 5px;
+    padding-top: 0px;
     padding-bottom: 5px;
     margin-bottom: 25px;
     border-bottom: gray 1px groove;
@@ -489,9 +494,10 @@ div.wicket-aa ul li.selected {
     margin: 0px;
 }
 
-#resultslist-header {    
-    font-size: 0.8em;    
-    border-bottom: 1px solid gray;        
+#resultslist-header {
+    padding: 1px 5px;
+    font-size: 0.8em;       
+    border-bottom: gray 1px groove;
 }
 
 #resultslist-header .translate-all {    
@@ -680,7 +686,7 @@ div.wicket-aa ul li.selected {
 .rep-link a { color: black; }
 
 .user-twitter-link {    
-    padding: 0px 5px 10px 0px;    
+    padding: 0px 5px 5px 0px;
     margin: 10px 5px;
 }
 

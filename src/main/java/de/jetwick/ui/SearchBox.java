@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
+import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteSettings;
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -167,7 +168,8 @@ public class SearchBox extends Panel {
         rg.add(new Radio("2", new Model(2)).setMarkupId("sbuser"));
         rg.add(userTF);
         if(loggedInUser == null)
-            rg.setVisible(false);
+            form.add(new AttributeAppender("class", new Model("not-logged-in-spacer"), " "));
+
         form.add(rg);
 
         form.add(new BookmarkablePageLink("homelink", HomePage.class));
