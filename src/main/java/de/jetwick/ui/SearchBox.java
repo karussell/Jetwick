@@ -261,8 +261,7 @@ public class SearchBox extends Panel {
         } else if (tmpSelectedIndex == 1) {
             params.add("search", SEARCHTYPES.get(1));
 //            params.add("user", tmpLoginUser);
-        }
-
+        }        
         return params;
     }
 //    @Override

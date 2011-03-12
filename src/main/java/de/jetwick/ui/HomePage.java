@@ -660,11 +660,11 @@ public class HomePage extends WebPage {
         };
         add(searchBox.setOutputMarkupId(true));
 
-        if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
+        if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {            
             page = 0;
             twitterFallback = false;
-            JetwickQuery q = createFriendQuery(query.getQuery());
-            if (q == null)
+            query = createFriendQuery(query.getQuery());
+            if (query == null)
                 return;
         }
 

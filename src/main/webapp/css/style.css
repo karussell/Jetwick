@@ -313,7 +313,7 @@ div.dialog-button a {
     border-left: none;
     border-top: none;
     border-right: none;
-    border-bottom: gray 1px groove;
+    border-bottom: gray 1px dotted;
 }
 
 #search-type-left {    
