@@ -124,7 +124,7 @@ public class FacetPanel extends Panel {
 
                             @Override
                             public void onClick(AjaxRequestTarget target) {
-                                if (excluded)
+                                if (selected)
                                     onFilterChange(target, h.key, h.value, null);
                                 else
                                     onFilterChange(target, h.key, h.value, false);
@@ -134,7 +134,7 @@ public class FacetPanel extends Panel {
 
                             @Override
                             public void onClick(AjaxRequestTarget target) {
-                                if (selected)
+                                if (excluded)
                                     onFilterChange(target, h.key, h.value, null);
                                 else
                                     onFilterChange(target, h.key, h.value, true);

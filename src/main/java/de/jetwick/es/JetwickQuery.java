@@ -369,8 +369,9 @@ public abstract class JetwickQuery implements Serializable {
     }
 
     public String getUserFilter() {
+        String neg = "-" + USER;
         for (Entry<String, Object> entry : getFilterQueries()) {
-            if (entry.getKey().equals(USER))
+            if (entry.getKey().equals(USER) || entry.getKey().equals(neg))
                 return entry.getKey() + ":" + entry.getValue();
         }
 
@@ -444,7 +445,7 @@ public abstract class JetwickQuery implements Serializable {
             return false;
         String filterKey = filter.substring(0, index);
         String filterValueToReduce = getFirstFilterQuery(filterKey);
-        
+
         if (filterValueToReduce == null)
             return false;
 
@@ -469,7 +470,7 @@ public abstract class JetwickQuery implements Serializable {
         }
 
         if (!filterValueToReduce.isEmpty())
-            addFilterQuery(filterKey, filterValueToReduce);        
+            addFilterQuery(filterKey, filterValueToReduce);
 
         return true;
     }

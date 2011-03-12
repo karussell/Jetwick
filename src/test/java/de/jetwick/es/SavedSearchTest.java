@@ -38,7 +38,23 @@ public class SavedSearchTest {
         assertEquals("java, user:\"peter rich\"", new SavedSearch(1,
                 new TweetQuery("java").addFilterQuery("user", "\"peter rich\"")).getName());
         assertEquals("java termin, user:\"peter test\"", new SavedSearch(1,
-                new TweetQuery("java termin").addFilterQuery("user", "\"peter test\"")).getName());               
+                new TweetQuery("java termin").addFilterQuery("user", "\"peter test\"")).getName());
+        assertEquals("java, -user:peter", new SavedSearch(1,
+                new TweetQuery("java").addFilterQuery("-user", "peter")).getName());
+    }
+
+    @Test
+    public void testSave() {
+        TweetQuery q1 = new TweetQuery("java");
+        q1.addFilterQuery("user", "peter");
+        assertTrue(new SavedSearch(1, q1).toString().contains("q=java&fq=user%3Apeter"));
+
+        assertEquals(q1.getFilterQueries(), JetwickQuery.parseQuery("fq=user%3Apeter").getFilterQueries());
+
+        q1 = new TweetQuery("java");
+        q1.addFilterQuery("-user", "peter");
+        assertTrue(new SavedSearch(1, q1).toString().contains("q=java&fq=-user%3Apeter"));
+        assertEquals(q1.getFilterQueries(), JetwickQuery.parseQuery("fq=-user%3Apeter").getFilterQueries());
     }
 
     @Test
@@ -62,10 +78,10 @@ public class SavedSearchTest {
         assertEndsWith("(peter pan) AND test:x AND test2:y",
                 new SavedSearch(1, new TweetQuery("peter pan").addFilterQuery("test", "x").
                 addFilterQuery("test2", "y")).calcFacetQuery());
-        
+
         assertEquals("solr  lucene", new SavedSearch(1,
                 new TweetQuery("solr  lucene")).calcFacetQuery());
-        
+
         assertEquals("solr OR lucene", new SavedSearch(1,
                 new TweetQuery("solr OR lucene")).calcFacetQuery());
     }
