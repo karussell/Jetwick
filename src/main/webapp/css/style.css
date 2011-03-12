@@ -684,10 +684,19 @@ div.wicket-aa ul li.selected {
     margin: 10px 5px;
 }
 
+.user-twitter-link img {
+    margin-bottom: -2px;
+}
+
 .user-twitter-link .user-twitter-link-del {
     font-size: 0.7em;
     color: black;
     padding-left: 15px;    
+}
+
+.user-twitter-link-del img {
+    margin-bottom: -1px;
+    padding-right: 4px;
 }
 
 .more-tw-label img { height: 14px; }
