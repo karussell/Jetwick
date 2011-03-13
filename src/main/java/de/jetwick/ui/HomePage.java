@@ -668,9 +668,6 @@ public class HomePage extends WebPage {
                 return;
         }
 
-        if (getMySession().hasLoggedIn())
-            query.attachUserFacets();
-
         doSearch(query, page, twitterFallback);
     }
 
@@ -704,6 +701,9 @@ public class HomePage extends WebPage {
     }
 
     public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {
+        if (getMySession().hasLoggedIn())
+            query.attachUserFacets();
+
         String queryString;
         if (!instantSearch) {
             // change text field
