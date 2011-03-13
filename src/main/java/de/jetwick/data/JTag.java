@@ -102,8 +102,8 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         // force at least 5 second
         queryInterval = Math.max(queryInterval, 5 * 1001);
 
-        // force max 5 min
-        queryInterval = Math.min(queryInterval, 5 * 60 * 1001);
+        // force max 10 min
+        queryInterval = Math.min(queryInterval, 10 * 60 * 1001);
     }
 
     public int getPages() {
