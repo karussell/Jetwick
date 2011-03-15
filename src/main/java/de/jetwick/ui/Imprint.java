@@ -16,13 +16,11 @@
 
 package de.jetwick.ui;
 
-import org.apache.wicket.markup.html.WebPage;
-
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class Imprint extends WebPage {
+public class Imprint extends JetwickPage {
 
     public Imprint() {
     }

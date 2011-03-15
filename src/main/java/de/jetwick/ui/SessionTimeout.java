@@ -16,7 +16,6 @@
 package de.jetwick.ui;
 
 import org.apache.wicket.PageParameters;
-import org.apache.wicket.markup.html.WebPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +23,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class SessionTimeout extends WebPage {
+public class SessionTimeout extends JetwickPage {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 

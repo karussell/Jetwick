@@ -20,26 +20,28 @@
     "http://www.w3.org/TR/html4/strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
       xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
-    <head>        
-        <title>Jetwick Twitter Search</title>       
-        <link type="image/png" rel="icon" href="favicon.ico"/>
-        <link rel="stylesheet" type="text/css" href="css/style.css"/>
-    </head>
-    <body>
-        <div>
-            <wicket:link>
-                <a href="HomePage.html">Back to Home</a>
-            </wicket:link>
-            <ul class="cleanusers">
-                <li wicket:id="users" class="user">
-                    <div>
-                        <a wicket:id="userName">[external link]</a> |
-                        <a wicket:id="statusLink">@twitter</a>
-                    </div>
-                    <span wicket:id="tweetText">[text]</span>
-                </li>
-            </ul>
-        </div>
-    </body>
+    <head>
+    <wicket:head>
+        <title>Jetwick Twitter Search</title>
+    </wicket:head>
+</head>
+<body>
+<wicket:extend>
+    <div>
+        <wicket:link>
+            <a href="HomePage.html">Back to Home</a>
+        </wicket:link>
+        <ul class="cleanusers">
+            <li wicket:id="users" class="user">
+                <div>
+                    <a wicket:id="userName">[external link]</a> |
+                    <a wicket:id="statusLink">@twitter</a>
+                </div>
+                <span wicket:id="tweetText">[text]</span>
+            </li>
+        </ul>
+    </div>
+</wicket:extend>
+</body>
 </html>
 

@@ -21,11 +21,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
       xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
     <head>
-        <title>Jetwick Offline</title>
-        <link type="image/png" rel="icon" href="favicon.ico"/>
-        <link rel="stylesheet" type="text/css" href="css/style.css"/>
+        <wicket:head>
+            <title>Jetwick Offline</title>
+        </wicket:head>
     </head>
     <body>
+    <wicket:extend>
         <div id="offline">
             <div class="feedback" wicket:id="feedback">
             </div>
@@ -59,18 +60,6 @@
                 <img src="img/screenshot.png" width="800px" alt="View Video Intro"/>
             </a>
         </div>                
-
-        <script type="text/javascript">
-            var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.pannous.info/piwik/" : "http://www.pannous.info/piwik/");
-            document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
-        </script>
-        <script type="text/javascript">
-            try {
-                var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 3);
-                piwikTracker.trackPageView();
-                piwikTracker.enableLinkTracking();
-            } catch( err ) {  }
-        </script>
-        <noscript><p><img src="http://www.pannous.info/piwik/piwik.php?idsite=3" style="border:0" alt="" /></p></noscript>
+        </wicket:extend>
     </body>
 </html>

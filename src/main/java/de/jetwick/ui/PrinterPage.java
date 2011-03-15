@@ -22,13 +22,12 @@ import de.jetwick.util.Helper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 
-public class PrinterPage extends WebPage {
+public class PrinterPage extends JetwickPage {
 
     private List<JTweet> results = new ArrayList<JTweet>();
 

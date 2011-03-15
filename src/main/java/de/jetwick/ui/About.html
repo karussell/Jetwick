@@ -21,133 +21,123 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
       xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
     <head>
+    <wicket:head>
         <title>About Jetwick</title>
-        <link type="image/png" rel="icon" href="favicon.ico"/>
-        <link rel="stylesheet" type="text/css" href="css/style.css"/>
-    </head>
-    <body>
-        <div class="about">            
-            <div class="external-links">
-                <wicket:link>
-                    <a href="HomePage.html">Back to Home</a>
-                </wicket:link>
-            </div>
-
-            <ul>
-                <li>
-                    <div class="about-head">
-                        Jetwick is an open source twitter search and offers the following features:
-                    </div>
-                    <ul class="show-dots">
-                        <li>
-                            Find relevant tweets fast! Even old ones.
-                        </li>
-                        <li>
-                            Filter tweets by date, language, keywords, ...
-                        </li>
-                        <li>
-                            <a wicket:id="ownLink" href="HomePage.html">Search your own or others tweets.</a>
-                        </li>
-                        <li>
-                            For the git repository look at
-                            <a target="_blank" href="https://github.com/karussell/Jetwick">this page</a>
-                        </li>
-                        <li>
-                            Updates are tweeted
-                            <a target="_blank" href="http://twitter.com/jetwick">@jetwick</a> and blogged from
-                            <a target="_blank" href="http://karussell.wordpress.com/">karussell</a>
-                        </li>
-                        <li>
-                            For more features with a video and screenshots look at
-                            <a target="_blank" href="http://www.pannous.info/products/jetwick-twitter-search/">this page from pannous.info</a>
-                        </li>                        
-                    </ul>
-                </li>
-                <li class="about-head">
-                    <a href="http://www.youtube.com/watch?v=9U2uxeaVIXk" target="_blank">
-                        <img src="img/jw-video.png" alt="View Video Intro"/>
-                    </a>
-                </li>
-                <li>
-                    <div class="about-head" id="ads">
-                        Advertisments. <a href="imprint">Contact us</a> or
-                        create free advertisments via tweets:
-                    </div>
-                    <ul class="show-dots">
-                        <li>
-                            Create a tweet with your headline and add a link if you like.
-                            Then add the hashtag #jetwick and your own additional hashtags
-                        </li>
-                        <li>
-                            If this tweet is then retweeted it is more likely to be shown.
-                            At the moment no retweets are necessary.
-                            This will change in the future to one or more retweets depending on the spam we get.
-                        </li>
-                        <li>
-                            Your tweet then will 'fight' against the other advertisments booked for the entered keyword.
-                            The tweet with the most retweets will win.                           
-                            If two or more tweets have the same retweet number both will have the same probability to be shown.
-                        </li>
-                        <li>
-                            After 3 days the advertisment is removed.
-                        </li>
-                        <li>
-                            This principle was first invented by <a href="http://meta.stackoverflow.com/questions/31913/open-source-advertising-sidebar-1h-2010">stackoverflow</a>.
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <div class="about-head">
-                        Testimonials
-                    </div>
-                    <div class="about-desc">
-                        YourKit is kindly supporting open source projects with
-                        its full-featured Java Profiler. YourKit, LLC is the creator
-                        of innovative and intelligent tools for profiling Java and .NET applications.
-                        Take a look at YourKit's leading software products:
-                        <a href="http://www.yourkit.com/java/profiler/index.jsp">YourKit Java Profiler</a>
-                        and <a href="http://www.yourkit.com/.net/profiler/index.jsp">YourKit .NET Profiler</a>.
-                    </div>
-                </li>
-                <li>
-                    <div class="about-head">
-                        Why we named it 'Jetwick'?
-                    </div>
-                    <div class="about-desc">
-                        You might think that we combined jetty and wicket, some Java software we use.
-                        But the truth is that the initial name was 'Yatwic' which we derived from '<b>Y</b>et <b>A</b>nother <b>Twi</b>tter <b>C</b>lient'.
-                        The spelling was a bit awkward so we changed it to its faster brother Jetwick.
-                    </div>
-                    <div class="about-desc">
-                        By the way: At the beginning we didn't use wicket.
-                    </div>
-                </li>
-                <li>
-                    <div class="about-head">
-                        What does 'wicked' mean?
-                    </div>
-                    <div class="about-desc">
-                        Look into
-                        <a target="_blank" href="http://www.urbandictionary.com/define.php?term=wicked">
-                            urbandictionary
-                        </a>
-                        for more information.
-                    </div>
-                </li>
-
-            </ul>
+    </wicket:head>
+</head>
+<body>
+<wicket:extend>
+    <div class="about">
+        <div class="external-links">
+            <wicket:link>
+                <a href="HomePage.html">Back to Home</a>
+            </wicket:link>
         </div>
-        <script type="text/javascript">
-            var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.pannous.info/piwik/" : "http://www.pannous.info/piwik/");
-            document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
-        </script>
-        <script type="text/javascript">
-            try {
-                var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 1);
-                piwikTracker.trackPageView();
-                piwikTracker.enableLinkTracking();
-            } catch( err ) {  }
-        </script>
-        <img src="http://www.pannous.info/piwik/piwik.php?idsite=1" style="border:0" alt="" />
-    </body>
+
+        <ul>
+            <li>
+                <div class="about-head">
+                    Jetwick is an open source twitter search and offers the following features:
+                </div>
+                <ul class="show-dots">
+                    <li>
+                        Find relevant tweets fast! Even old ones.
+                    </li>
+                    <li>
+                        Filter tweets by date, language, keywords, ...
+                    </li>
+                    <li>
+                        <a wicket:id="ownLink" href="HomePage.html">Search your own or others tweets.</a>
+                    </li>
+                    <li>
+                        For the git repository look at
+                        <a target="_blank" href="https://github.com/karussell/Jetwick">this page</a>
+                    </li>
+                    <li>
+                        Updates are tweeted
+                        <a target="_blank" href="http://twitter.com/jetwick">@jetwick</a> and blogged from
+                        <a target="_blank" href="http://karussell.wordpress.com/">karussell</a>
+                    </li>
+                    <li>
+                        For more features with a video and screenshots look at
+                        <a target="_blank" href="http://www.pannous.info/products/jetwick-twitter-search/">this page from pannous.info</a>
+                    </li>
+                </ul>
+            </li>
+            <li class="about-head">
+                <a href="http://www.youtube.com/watch?v=9U2uxeaVIXk" target="_blank">
+                    <img src="img/jw-video.png" alt="View Video Intro"/>
+                </a>
+            </li>
+            <li>
+                <div class="about-head" id="ads">
+                    Advertisments. <a href="imprint">Contact us</a> or
+                    create free advertisments via tweets:
+                </div>
+                <ul class="show-dots">
+                    <li>
+                        Create a tweet with your headline and add a link if you like.
+                        Then add the hashtag #jetwick and your own additional hashtags
+                    </li>
+                    <li>
+                        If this tweet is then retweeted it is more likely to be shown.
+                        At the moment no retweets are necessary.
+                        This will change in the future to one or more retweets depending on the spam we get.
+                    </li>
+                    <li>
+                        Your tweet then will 'fight' against the other advertisments booked for the entered keyword.
+                        The tweet with the most retweets will win.
+                        If two or more tweets have the same retweet number both will have the same probability to be shown.
+                    </li>
+                    <li>
+                        After 3 days the advertisment is removed.
+                    </li>
+                    <li>
+                        This principle was first invented by <a href="http://meta.stackoverflow.com/questions/31913/open-source-advertising-sidebar-1h-2010">stackoverflow</a>.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <div class="about-head">
+                    Testimonials
+                </div>
+                <div class="about-desc">
+                    YourKit is kindly supporting open source projects with
+                    its full-featured Java Profiler. YourKit, LLC is the creator
+                    of innovative and intelligent tools for profiling Java and .NET applications.
+                    Take a look at YourKit's leading software products:
+                    <a href="http://www.yourkit.com/java/profiler/index.jsp">YourKit Java Profiler</a>
+                    and <a href="http://www.yourkit.com/.net/profiler/index.jsp">YourKit .NET Profiler</a>.
+                </div>
+            </li>
+            <li>
+                <div class="about-head">
+                    Why we named it 'Jetwick'?
+                </div>
+                <div class="about-desc">
+                    You might think that we combined jetty and wicket, some Java software we use.
+                    But the truth is that the initial name was 'Yatwic' which we derived from '<b>Y</b>et <b>A</b>nother <b>Twi</b>tter <b>C</b>lient'.
+                    The spelling was a bit awkward so we changed it to its faster brother Jetwick.
+                </div>
+                <div class="about-desc">
+                    By the way: At the beginning we didn't use wicket.
+                </div>
+            </li>
+            <li>
+                <div class="about-head">
+                    What does 'wicked' mean?
+                </div>
+                <div class="about-desc">
+                    Look into
+                    <a target="_blank" href="http://www.urbandictionary.com/define.php?term=wicked">
+                        urbandictionary
+                    </a>
+                    for more information.
+                </div>
+            </li>
+
+        </ul>
+    </div>
+    </wicket:extend>
+</body>
 </html>

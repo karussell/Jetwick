@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import java.util.Date;
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.link.ExternalLink;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class ErrorPage extends WebPage {
+public class ErrorPage extends JetwickPage {
 
     public ErrorPage() {
         String str = "http://twitter.com/?status=@Jetwick An Error Occured! " + new Date();

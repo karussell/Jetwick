@@ -21,25 +21,27 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
       xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
     <head>
+    <wicket:head>
         <title>Jetwick Error</title>
-        <link type="image/png" rel="icon" href="favicon.ico"/>
-        <link rel="stylesheet" type="text/css" href="css/style.css"/>
-    </head>
-    <body>
-        <div class="about">            
-            <ul>                
-                <li class="about-desc">
-                    Internal Error! <wicket:link>
-                        <a href="HomePage.html">Try again!</a>
-                    </wicket:link>
-                </li>                
-                <li class="about-desc">
-                    Please report via
-                    <a href="#" wicket:id="twlink" target="_blank">tweet</a>,
-                    <a href="#" wicket:id="emailLink">mail</a> or
-                    <a href="https://github.com/karussell/Jetwick/issues">bug tracking</a>.
-                </li>
-            </ul>
-        </div>
-    </body>
+    </wicket:head>
+</head>
+<body>
+<wicket:extend>
+    <div class="about">
+        <ul>
+            <li class="about-desc">
+                Internal Error! <wicket:link>
+                <a href="HomePage.html">Try again!</a>
+            </wicket:link>
+            </li>
+            <li class="about-desc">
+                Please report via
+                <a href="#" wicket:id="twlink" target="_blank">tweet</a>,
+                <a href="#" wicket:id="emailLink">mail</a> or
+                <a href="https://github.com/karussell/Jetwick/issues">bug tracking</a>.
+            </li>
+        </ul>
+    </div>
+</wicket:extend>
+</body>
 </html>

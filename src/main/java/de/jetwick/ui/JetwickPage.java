@@ -1,5 +1,5 @@
 /*
- *  Copyright 2010 Peter Karich jetwick_@_pannous_._info
+ *  Copyright 2011 Peter Karich, jetwick_@_pannous_._info.
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -12,18 +12,17 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
+ *  under the License.
  */
+
 package de.jetwick.ui;
 
-import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import org.apache.wicket.markup.html.WebPage;
 
 /**
  *
  * @author Peter Karich, jetwick_@_pannous_._info
  */
-public class OfflinePage extends JetwickPage {
+public class JetwickPage extends WebPage {
 
-    public OfflinePage() {
-        add(new FeedbackPanel("feedback"));
-    }
 }

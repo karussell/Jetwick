@@ -17,14 +17,13 @@
 package de.jetwick.ui;
 
 import org.apache.wicket.PageParameters;
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.link.Link;
 
 /**
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class About extends WebPage {
+public class About extends JetwickPage {
 
     public About() {
 //        add(new Link("accountLink") {

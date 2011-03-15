@@ -41,7 +41,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.Model;
@@ -58,7 +57,7 @@ import twitter4j.http.AccessToken;
  * TODO clean up this bloated class
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class HomePage extends WebPage {
+public class HomePage extends JetwickPage {
 
     private static final long serialVersionUID = 1L;
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -114,7 +113,7 @@ public class HomePage extends WebPage {
             // avoid showing the url parameters (e.g. refresh would let it failure!)
             setRedirect(true);
             setResponsePage(HomePage.class);
-        } else {
+        } else {            
             initSession();
             init(createQuery(parameters), parameters, 0, true);
         }
