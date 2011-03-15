@@ -71,7 +71,7 @@ public class TweetDetector {
         // ignore urls
         // urls contain all characters except spaces: [^ ] and we need this multple times: *
         str = str.replaceAll("http[s]?://[^ ]*", " ");
-        str = str.replaceAll("[\\\"\\:\\.\\!\\?\\)\\(\\[\\]\\,\\>\\<\\-\\n\\t\\&]", " ");
+        str = str.replaceAll("[\\\"\\:\\;\\&\\.\\!\\?\\)\\(\\[\\]\\,\\>\\<\\-\\n\\t\\&]", " ");
         str = str.replaceAll(" #", " ");
         // or at the beginning of the line
         if (str.charAt(0) == '#')

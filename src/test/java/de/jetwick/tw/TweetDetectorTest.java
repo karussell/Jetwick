@@ -126,8 +126,10 @@ public class TweetDetectorTest {
         assertEquals(" ", TweetDetector.stripNoiseFromWord("http://blibla.de"));
         assertEquals(" ", TweetDetector.stripNoiseFromWord(" "));
         assertEquals("  test", TweetDetector.stripNoiseFromWord("http:// test"));
+        assertEquals("http test", TweetDetector.stripNoiseFromWord("http&test"));
+        assertEquals("http test ", TweetDetector.stripNoiseFromWord("http;test;"));
     }
-
+    
     @Test
     public void testLanguageDetection() {
         // skip the noise words and last terms for language detection:
