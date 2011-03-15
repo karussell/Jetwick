@@ -22,6 +22,7 @@ import de.jetwick.data.JUser;
 import de.jetwick.es.UserQuery;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.StopWatch;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -138,7 +139,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                     }
                     tweetPackages.add(new TweetPackageList("friendsOf:" + authUser.getScreenName()).init(tweets));
                     logger.info("Pushed " + tweets.size() + " friend tweets of " + authUser.getScreenName()
-                            + " into queue. Last id " + ue.getLastId() + ". " + watch.stop());
+                            + " into queue. Last date " + new Date(ue.getLastId()) + ". " + watch.stop());
                 }
             } catch (Exception ex) {
                 logger.error("Exception while retrieving friend tweets of "

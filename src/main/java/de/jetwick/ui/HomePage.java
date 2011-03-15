@@ -421,12 +421,14 @@ public class HomePage extends JetwickPage {
 
             @Override
             public void onHomeline(AjaxRequestTarget target, String user) {
+                searchBox.setSearchType(SearchBox.FRIENDS);
                 doSearch(createFriendQuery(""), 0, false);
                 HomePage.this.updateAfterAjax(target, true);
             }
 
             @Override
             public void onShowTweets(AjaxRequestTarget target, String userName) {
+                searchBox.setSearchType(SearchBox.USER);
                 doSearch(new TweetQuery(true).addUserFilter(userName).setSort(ElasticTweetSearch.DATE, "desc"), 0, false);
                 HomePage.this.updateAfterAjax(target, true);
             }
