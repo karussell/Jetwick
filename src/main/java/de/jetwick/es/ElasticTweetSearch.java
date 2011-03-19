@@ -132,7 +132,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
         NotFilterBuilder notPersistentFilter = FilterBuilders.notFilter(FilterBuilders.existsFilter(UPDATE_DT));
         XContentFilterBuilder fewRetweetsFilter = FilterBuilders.rangeFilter(RT_COUNT).lt(100).includeUpper(false);
         RangeFilterBuilder tooOldFilter = FilterBuilders.rangeFilter(DATE);
-        tooOldFilter.lte(new MyDate(removeUntil.getTime()).castToDay().toDate()).cache(true);
+        tooOldFilter.lte(new MyDate(removeUntil.getTime()).castToDay().toDate());
         XContentFilterBuilder filter = FilterBuilders.andFilter(tooOldFilter,
                 notPersistentFilter, fewRetweetsFilter);
 

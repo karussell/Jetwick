@@ -286,10 +286,6 @@ public class JUser implements DbObject, Serializable {
             tw.setFromUser(this, false);
     }
 
-    public void deleteOwnTweet(JTweet tw) {
-        ownTweets.remove(tw);
-    }
-
     public Collection<JTweet> getOwnTweets() {
 //        if (dirtyOwnTweets) {
 //            SolrTweet.deduplicate(ownTweets);
