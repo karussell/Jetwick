@@ -142,14 +142,14 @@ public class JSDateFilter extends Panel {
                     if (fromStr.contains("-Infinity")) {
                         display = "older";
                         fromStr = "*";
-                    } else if (toStr.contains("Infinity")) {
+                    } else if (toStr.contains("Infinity") && !fromStr.endsWith("00:00:00.0Z")) {
                         display = "last 8h";
                         toStr = "*";
                     } else {
                         // ignore year and time
-                        int index = toStr.indexOf("T");
+                        int index = fromStr.indexOf("T");
                         if (index > 0)
-                            display = toStr.substring(5, index);
+                            display = fromStr.substring(5, index);
                     }
 
                     String filter = "[" + fromStr + " TO " + toStr + "]";

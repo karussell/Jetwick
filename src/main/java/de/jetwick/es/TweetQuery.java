@@ -15,6 +15,7 @@
  */
 package de.jetwick.es;
 
+import java.util.Date;
 import org.elasticsearch.search.facet.termsstats.TermsStatsFacet.ComparatorType;
 import de.jetwick.util.StrEntry;
 import org.elasticsearch.search.facet.AbstractFacetBuilder;
@@ -74,13 +75,15 @@ public class TweetQuery extends JetwickQuery {
             MyDate date = new MyDate();
 
             // latest
-            rfb.addUnboundedTo(Helper.toLocalDateTime(date.minusHours(8).castToHour().toDate()));
-
+            rfb.addUnboundedTo(Helper.toLocalDateTime(date.clone().minusHours(8).castToHour().toDate()));
+            // first day            
+            rfb.addUnboundedTo(Helper.toLocalDateTime(date.castToDay().toDate()));
+            
             for (int i = 0; i < 7; i++) {
-                // from must be smaller than to!
-                MyDate tmp = date.clone();
-                rfb.addRange(Helper.toLocalDateTime(date.minusDays(1).castToDay().toDate()),
-                        Helper.toLocalDateTime(tmp.toDate()));
+                // 'from' must be smaller than 'to'!
+                Date oldDate = date.toDate();
+                rfb.addRange(Helper.toLocalDateTime(date.minusDays(1).toDate()),
+                        Helper.toLocalDateTime(oldDate));
             }
 
             // oldest

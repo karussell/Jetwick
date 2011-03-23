@@ -503,7 +503,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             // We are not receiving the deleted tweets! but do we need to
             // update the tweets where this deleted tweet was a retweet?
             // No. Because "userA: text" and "userB: RT @usera: text" now the second tweet is always AFTER the first!
-            deleteUntil(removeUntil);
+//            deleteUntil(removeUntil);
 
             // force visibility for next call of update
             refresh();
