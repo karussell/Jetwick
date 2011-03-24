@@ -113,7 +113,7 @@ public class HomePage extends JetwickPage {
             // avoid showing the url parameters (e.g. refresh would let it failure!)
             setRedirect(true);
             setResponsePage(HomePage.class);
-        } else {            
+        } else {
             initSession();
             init(createQuery(parameters), parameters, 0, true);
         }
@@ -627,9 +627,11 @@ public class HomePage extends JetwickPage {
         add(wikiPanel = new WikipediaLazyLoadPanel("wikipanel"));
 
         String tmpUserName = null;
-        if (getMySession().hasLoggedIn())
+        boolean showSpacer = true;
+        if (getMySession().hasLoggedIn()) {
             tmpUserName = getMySession().getUser().getScreenName();
-        else {
+            showSpacer = false;
+        } else {                        
             ssPanel.setVisible(false);
             // TODO remove all the facets + date facets!?
             facetPanel.setVisible(false);
@@ -637,9 +639,15 @@ public class HomePage extends JetwickPage {
             // so that my reference on twitter works ;)            
             if (userName.isEmpty())
                 tagCloudPanel.setVisible(false);
+
+            if (query.getQuery().isEmpty()) {
+                resultsPanel.setVisible(false);
+                navigationPanel.setVisible(false);
+                showSpacer = false;
+            }
         }
 
-        searchBox = new SearchBox("searchbox", tmpUserName, searchType) {
+        searchBox = new SearchBox("searchbox", tmpUserName, searchType, showSpacer) {
 
             @Override
             protected Collection<String> getQueryChoices(String input) {
@@ -661,7 +669,7 @@ public class HomePage extends JetwickPage {
         };
         add(searchBox.setOutputMarkupId(true));
 
-        if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {            
+        if (SearchBox.FRIENDS.equalsIgnoreCase(searchType)) {
             page = 0;
             twitterFallback = false;
             query = createFriendQuery(query.getQuery());
@@ -704,6 +712,8 @@ public class HomePage extends JetwickPage {
     public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {
         if (getMySession().hasLoggedIn())
             query.attachUserFacets();
+        else if (query.getQuery().isEmpty())
+            return;        
 
         String queryString;
         if (!instantSearch) {

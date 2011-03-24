@@ -57,7 +57,7 @@ public class SearchBox extends Panel {
 
     // for test
     public SearchBox(String id) {
-        this(id, null, null);
+        this(id, null, null, false);
     }
 
     public void setSearchType(String type) {
@@ -67,7 +67,7 @@ public class SearchBox extends Panel {
             selectedIndex = 0;
     }
 
-    public SearchBox(String id, final String loggedInUser, String searchTypeAsStr) {
+    public SearchBox(String id, final String loggedInUser, String searchTypeAsStr, boolean showSpacer) {
         super(id);
 
         setSearchType(searchTypeAsStr);
@@ -167,7 +167,7 @@ public class SearchBox extends Panel {
         rg.add(new Radio("1", new Model(1)).setMarkupId("sbfriends"));
         rg.add(new Radio("2", new Model(2)).setMarkupId("sbuser"));
         rg.add(userTF);
-        if(loggedInUser == null)
+        if(showSpacer)
             form.add(new AttributeAppender("class", new Model("not-logged-in-spacer"), " "));
 
         form.add(rg);
