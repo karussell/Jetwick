@@ -56,17 +56,7 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
         MAIN:
         while (!isInterrupted()) {
             counter++;
-            // do not add more tweets to the pipe if consumer cannot process it
-            int count = 0;
-            while (true) {
-                count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
-                if (count < maxFill)
-                    break;
-
-                logger.info("WAITING! " + count + " are too many tweets from twitter4j searching!");
-                if (!myWait(20))
-                    break MAIN;
-            }
+            tooManyTweetsWait(tweetPackages, maxFill, "twitter4j search", 20, true);           
 
             LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
             int TWEETS_PER_USER = 5;

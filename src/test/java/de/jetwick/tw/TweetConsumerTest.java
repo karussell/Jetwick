@@ -25,17 +25,14 @@ import de.jetwick.data.JTweet;
 import de.jetwick.es.ElasticTweetSearchTest;
 import de.jetwick.data.JUser;
 import de.jetwick.tw.queue.TweetPackage;
-import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.MyDate;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -88,12 +85,8 @@ public class TweetConsumerTest extends JetwickTestClass {
         tweetConsumer.setRemoveDays(1);
         LinkedBlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         JTweet tw = createTweet(1L, "@daniel fancy!", "timetabling");
-        tw.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(Arrays.asList(tw)));
-        Collection<JTweet> res = tweetConsumer.updateTweets(queue, 100);
-        assertEquals(1, res.size());
-        // 0 removeDays < tw.createdAt
-//        assertEquals(0, res.getDeletedTweets().size());
+        tw.setCreatedAt(new Date());        
+        tweetConsumer.updateTweets(Arrays.asList(tw));
     }
 
     @Test
@@ -109,29 +102,18 @@ public class TweetConsumerTest extends JetwickTestClass {
         tw2.setCreatedAt(new Date());
         JTweet tw3 = createTweet(6L, "Bla bli", "userB");
         tw3.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(Arrays.asList(tw, tw2, tw3)));
-        Collection<JTweet> res = tweetConsumer.updateTweets(queue, 100);
-        assertEquals(2, res.size());
-//        assertEquals(0, res.getDeletedTweets().size());
+        
+        tweetConsumer.updateTweets(Arrays.asList(tw, tw2, tw3));        
     }
 
     @Test
     public void testSolrData() {
-        BlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         JTweet tw = createTweet(5L, "text", "timetabling");
-        tw.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(Arrays.asList(tw)));
-        Collection<JTweet> res = tweetConsumer.updateTweets(queue, 100);
-        assertEquals(1, res.size());
-//        assertEquals(0, res.getDeletedTweets().size());
-
-        queue.clear();
+        tw.setCreatedAt(new Date());        
+        tweetConsumer.updateTweets(Arrays.asList(tw));
         tw = createTweet(6L, "RT @timetabling: text", "userB");
-        tw.setCreatedAt(new Date());
-        queue.add(new TweetPackageList("").init(Arrays.asList(tw)));
-        res = tweetConsumer.updateTweets(queue, 100);
-        assertEquals(2, res.size());
-//        assertEquals(0, res.getDeletedTweets().size());
+        tw.setCreatedAt(new Date());        
+        tweetConsumer.updateTweets(Arrays.asList(tw));        
     }
 
     JTweet createTweet(long id, String twText, String user) {

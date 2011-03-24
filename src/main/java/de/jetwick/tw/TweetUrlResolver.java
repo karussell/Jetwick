@@ -107,24 +107,20 @@ public class TweetUrlResolver extends MyThread {
                 public Object call() throws Exception {
                     try {
                         while (true) {
-                            TweetPackage pkg = packages.poll();
-                            if (pkg == null) {
-                                // log not too often
+                            TweetPackage pkg = null;
+                            try {
+                                pkg = packages.take();
+                            } catch (Exception ex) {
                                 if (tmp == 0 || tmp == 1)
-                                    logger.info("urlResolver: no tweet packages in queue");
-
-                                if (!myWait(10))
-                                    return null;
-
-                                continue;
+                                    logger.warn("url resolver " + tmp + " died");
+                                break;
                             }
-                            
                             for (JTweet tw : pkg.getTweets()) {
                                 allTweets.addAndGet(1);
                                 UrlExtractor extractor = createExtractor();
                                 for (UrlEntry ue : extractor.setText(tw.getText()).run().getUrlEntries()) {
-                                    if(urlTitleCleaner.contains(ue.getResolvedTitle()))                                    
-                                        tw.multiplyQuality(JTweet.QUAL_SPAM / 100.0);                                    
+                                    if (urlTitleCleaner.contains(ue.getResolvedTitle()))
+                                        tw.multiplyQuality(JTweet.QUAL_SPAM / 100.0);
 
                                     tw.addUrlEntry(ue);
                                 }
@@ -140,7 +136,7 @@ public class TweetUrlResolver extends MyThread {
                                 return null;
                         } // while
                     } catch (Exception ex) {
-                        logger.error("one url resolver died", ex);
+                        logger.error("url resolver " + tmp + "died", ex);
                     }
                     return null;
                 } // call

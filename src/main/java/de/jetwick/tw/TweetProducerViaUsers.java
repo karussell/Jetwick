@@ -72,7 +72,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                         setSort(ElasticUserSearch.CREATED_AT, "desc");
                 userSearch.search(users, q);
             } catch (Exception ex) {
-                logger.error("Couldn't search user index", ex);
+                logger.error("Couldn't search user index: " + ex.getMessage());
             }
         }
 
@@ -148,11 +148,11 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
 
             // do not hit twitter too much
             myWait(2);
-        }
+        } //  next user
 
         myWait(10);
         return true;
-    }
+    } // next cycle
 
     String getErrorMsg(Throwable e) {
         if (e == null || e.getMessage() == null)

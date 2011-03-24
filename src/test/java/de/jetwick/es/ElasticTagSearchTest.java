@@ -55,7 +55,7 @@ public class ElasticTagSearchTest extends AbstractElasticSearchTester {
     
     @Test
     public void testAddAll() throws IOException {
-        tagSearch.addAll(Arrays.asList("test", "pest"), true);
+        tagSearch.addAll(Arrays.asList("test", "pest"), true, false);
         assertEquals(2, tagSearch.findSorted(0, 100).size());
         assertEquals("test", tagSearch.findByName("tesT").getTerm());
         assertEquals("pest", tagSearch.findByName("Pest").getTerm());

@@ -20,6 +20,7 @@ import de.jetwick.data.JTag;
 import de.jetwick.util.Helper;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -62,8 +63,14 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         super(client);
     }
 
-    public void addAll(Collection<String> tagStringList, boolean refresh) throws IOException {
-        Map<String, JTag> tags = findByNames(tagStringList);
+    public void addAll(Collection<String> tagStringList, boolean refresh, boolean ignoreSearchError) throws IOException {
+        Map<String, JTag> tags = Collections.emptyMap();
+        try {
+            tags = findByNames(tagStringList);
+        } catch (Exception ex) {
+            if (!ignoreSearchError)
+                throw new RuntimeException(ex);
+        }
         Set<JTag> newTags = new LinkedHashSet<JTag>();
 
         for (String requestedTag : tagStringList) {

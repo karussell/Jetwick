@@ -105,7 +105,7 @@ public class Statistics {
         argStr = map.get("importTags");
         if (argStr != null)
             importTags(map.get("tagFile"));
-        
+
         argStr = map.get("clearPropertiesOfTags");
         if (argStr != null)
             clearPropertiesOfTags();
@@ -123,8 +123,8 @@ public class Statistics {
         for (Object o : list) {
             System.out.println(o);
         }
-    }    
-    
+    }
+
     public void importTags(String file) throws IOException {
         Set<String> newTags = new TreeSet<String>();
         for (String str : Helper.readFile(file)) {
@@ -132,30 +132,37 @@ public class Statistics {
                 newTags.add(JTag.toLowerCaseOnlyOnTerms(str.trim()));
         } // do only delete those where we don't have a new one
         // do only update tags which are new
-        for (JTag tag : tagSearch.findAll(0, 1000)) {
-            if (!newTags.contains(tag.getTerm()))
-                tagSearch.deleteByName(tag.getTerm());
-            else
-                newTags.remove(tag.getTerm());
+        
+        boolean ignoreSearchError = false;
+        try {
+            for (JTag tag : tagSearch.findAll(0, 1000)) {
+                if (!newTags.contains(tag.getTerm()))
+                    tagSearch.deleteByName(tag.getTerm());
+                else
+                    newTags.remove(tag.getTerm());
+            }
+        } catch (Exception ex) {
+            ignoreSearchError = true;
+            logger.info("Tag index seems to be not available or empty! Message:" + ex.getMessage());
         }
-
-        tagSearch.addAll(newTags, true);
+        
+        tagSearch.addAll(newTags, true, ignoreSearchError);
         tagSearch.optimize();
         logger.info("Imported tag:" + newTags.size() + " all tags:" + tagSearch.findAll(0, 1000).size());
     }
 
     public void clearPropertiesOfTags() throws IOException {
         Set<JTag> newTags = new LinkedHashSet<JTag>();
-        int counter = 0;        
+        int counter = 0;
         for (JTag tag : tagSearch.findAll(0, 1000)) {
-            counter ++;
-            newTags.add(tag.setMaxCreateTime(0L).setLastMillis(0).setQueryInterval(1000));            
-        }        
+            counter++;
+            newTags.add(tag.setMaxCreateTime(0L).setLastMillis(0).setQueryInterval(1000));
+        }
         tagSearch.bulkUpdate(newTags, tagSearch.getIndexName(), true);
         tagSearch.optimize();
         logger.info(counter + " Updated:" + newTags.size() + " tags " + newTags);
     }
-    
+
     public void write(Set<String> words, String file) throws Exception {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Helper.UTF8));
         writer.write("# Written from YTweet via Statistics class! " + new Date());
@@ -223,5 +230,4 @@ public class Statistics {
             System.out.println(str);
         }
     }
-
 }
