@@ -18,7 +18,9 @@ package de.jetwick.ui.jschart;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.ui.util.FacetHelper;
 import de.jetwick.ui.util.LabeledLink;
+import de.jetwick.util.Helper;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -86,18 +88,30 @@ public class JSDateFilter extends Panel {
                 final FacetHelper entry = (FacetHelper) item.getModelObject();
 
                 Label bar = new Label("itemSpan");
-                AttributeAppender app = new AttributeAppender("title", new Model(entry.count + " tweets"), " ");
+                String additionalDateInfo = entry.count + " tweets";
+                String displayName = entry.displayName;
+                try {
+                    Date date = Helper.toDate(displayName);
+                    int index = displayName.indexOf("T");
+                    if (index > 0)
+                        additionalDateInfo += " on " + Helper.getMonthDay(date);
+                    
+                    displayName = Helper.getWeekDay(date);
+                } catch (Exception ex) {
+                }
+
+                AttributeAppender app = new AttributeAppender("title", new Model(additionalDateInfo), " ");
                 bar.add(app).add(new AttributeAppender("style", new Model("height:" + (int) (zoomer * entry.count) + "px"), " "));
                 final boolean selected = isAlreadyFiltered(entry.key, entry.value);
                 Link link = new /*Indicating*/ AjaxFallbackLink("itemLink") {
 
                     @Override
-                    public void onClick(AjaxRequestTarget target) {                        
+                    public void onClick(AjaxRequestTarget target) {
                         JSDateFilter.this.onFilterChange(target, entry.getFilter(), !selected);
                     }
                 };
                 link.add(app);
-                Label label = new Label("itemLabel", entry.displayName);
+                Label label = new Label("itemLabel", displayName);
                 link.add(bar).add(label);
                 if (entry.count == 0) {
                     link.setEnabled(false);
@@ -134,24 +148,19 @@ public class JSDateFilter extends Panel {
         if (rsp != null && rsp.facets() != null) {
             RangeFacet rf = rsp.facets().facet(ElasticTweetSearch.DATE_FACET);
             if (rf != null) {
+                int counter = 0;
                 for (RangeFacet.Entry e : rf.entries()) {
-                    String display = "";
+                    String display = e.getFromAsString();
                     String fromStr = e.getFromAsString();
                     String toStr = e.getToAsString();
-//                    System.out.println("from:" + fromStr + " " + toStr);
-                    if (fromStr.contains("-Infinity")) {
+                    counter++;
+                    if (counter == rf.entries().size()) {
                         display = "older";
                         fromStr = "*";
-                    } else if (toStr.contains("Infinity") && !fromStr.endsWith("00:00:00.0Z")) {
+                    } else if (counter == 1) {
                         display = "last 8h";
                         toStr = "*";
-                    } else {
-                        // ignore year and time
-                        int index = fromStr.indexOf("T");
-                        if (index > 0)
-                            display = fromStr.substring(5, index);
                     }
-
                     String filter = "[" + fromStr + " TO " + toStr + "]";
 //                    System.out.println(display + " " + filter + " " + e.getCount());
                     facetList.add(new FacetHelper(dtKey, filter, display, e.getCount()));

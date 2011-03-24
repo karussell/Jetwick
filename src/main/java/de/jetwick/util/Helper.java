@@ -51,6 +51,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -86,6 +87,8 @@ public class Helper {
     public static final String UTF8 = "UTF8";
     private static final String localDateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.S'Z'";
     private static final String simpleDateString = "HH:mm yyyy-MM-dd";    
+    private static final String weekDayString = "EEE";    
+    private static final String monthDayString = "d. MMMM";    
 
     public static DateFormat createLocalFormat() {
         DateFormat df = new SimpleDateFormat(localDateTimeFormatString);
@@ -95,6 +98,18 @@ public class Helper {
 
     public static DateFormat createSimpleFormat() {
         DateFormat df = new SimpleDateFormat(simpleDateString);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));        
+        return df;
+    }
+    
+    public static DateFormat createWeekDayFormat() {
+        DateFormat df = new SimpleDateFormat(weekDayString, Locale.UK);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df;
+    }
+           
+    public static DateFormat createMonthDayFormat() {
+        DateFormat df = new SimpleDateFormat(monthDayString, Locale.UK);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df;
     }
@@ -188,6 +203,14 @@ public class Helper {
 
     public static String toSimpleDateTime(Date date) {
         return createSimpleFormat().format(date);
+    }
+    
+    public static String getWeekDay(Date date) {
+        return createWeekDayFormat().format(date);
+    }    
+    
+    public static String getMonthDay(Date date) {
+        return createMonthDayFormat().format(date);
     }
 
     public static String toLocalDateTime(Date date) {
