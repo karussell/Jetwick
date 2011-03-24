@@ -86,32 +86,44 @@ public class Helper {
     public static final String JURL = "";
     public static final String UTF8 = "UTF8";
     private static final String localDateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.S'Z'";
-    private static final String simpleDateString = "HH:mm yyyy-MM-dd";    
-    private static final String weekDayString = "EEE";    
-    private static final String monthDayString = "d. MMMM";    
+    private static final String simpleDateString = "HH:mm yyyy-MM-dd";
+    private static final String weekDayString = "EEE";
+    private static final String monthDayString = "d. MMMM";
 
-    public static DateFormat createLocalFormat() {
+    public static String getWeekDay(Date date) {
+        DateFormat df = new SimpleDateFormat(weekDayString, Locale.UK);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df.format(date);
+    }
+
+    public static String getMonthDay(Date date) {
+        DateFormat df = new SimpleDateFormat(monthDayString, Locale.UK);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df.format(date);
+    }
+
+    public static String toSimpleDateTime(Date date) {
+        DateFormat df = new SimpleDateFormat(simpleDateString, Locale.UK);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df.format(date);
+    }
+
+    public static DateFormat createLocalDateFormat() {
         DateFormat df = new SimpleDateFormat(localDateTimeFormatString);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df;
     }
 
-    public static DateFormat createSimpleFormat() {
-        DateFormat df = new SimpleDateFormat(simpleDateString);
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));        
-        return df;
+    public static String toLocalDateTime(Date date) {
+        return createLocalDateFormat().format(date);
     }
-    
-    public static DateFormat createWeekDayFormat() {
-        DateFormat df = new SimpleDateFormat(weekDayString, Locale.UK);
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return df;
-    }
-           
-    public static DateFormat createMonthDayFormat() {
-        DateFormat df = new SimpleDateFormat(monthDayString, Locale.UK);
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return df;
+
+    public static Date toDate(String createdAt) {
+        try {
+            return createLocalDateFormat().parse(createdAt);
+        } catch (ParseException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public static BufferedReader createBuffReader(File file) throws FileNotFoundException, UnsupportedEncodingException {
@@ -201,30 +213,6 @@ public class Helper {
         return appHome + c + str;
     }
 
-    public static String toSimpleDateTime(Date date) {
-        return createSimpleFormat().format(date);
-    }
-    
-    public static String getWeekDay(Date date) {
-        return createWeekDayFormat().format(date);
-    }    
-    
-    public static String getMonthDay(Date date) {
-        return createMonthDayFormat().format(date);
-    }
-
-    public static String toLocalDateTime(Date date) {
-        return createLocalFormat().format(date);
-    }
-
-    public static Date toDate(String createdAt) {
-        try {
-            return createLocalFormat().parse(createdAt);
-        } catch (ParseException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
     public static Date toDateNoNPE(String string) {
         if (string == null)
             return null;
@@ -282,7 +270,7 @@ public class Helper {
             url = "http://" + url;
 
         return "<a class=\"i-tw-link\" href=\"" + url + "\">" + title + "</a>";
-    }    
+    }
 
     public static Date plusDays(Date date, int days) {
         return new Date(date.getTime() + days * 24 * 3600 * 1000);
@@ -785,7 +773,6 @@ public class Helper {
 //        }
 //        return new String(arr);
 //    }
-
     public static String[] toStringArray(Collection<String> coll) {
         return coll.toArray(new String[coll.size()]);
     }
