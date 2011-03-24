@@ -435,6 +435,8 @@ div.wicket-aa ul li.selected {
 
 
 .saved-searches {
+    /* we need to make it smaller if no searches are added*/
+    width: 200px;
     padding-top: 8px;
     border-bottom: gray 1px dotted;
 }
