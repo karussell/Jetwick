@@ -436,6 +436,16 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
      * @return a collection of tweets which were updated in solr
      */
     public Collection<JTweet> update(Collection<JTweet> tmpTweets, Date removeUntil) {
+        return update(tmpTweets, removeUntil, true);
+    }
+    
+    /**
+     * @param tmpTweets
+     * @param removeUntil the date until all old tweet should be removed
+     * @param performDelete avoid too frequent removing!
+     * @return updated tweets
+     */
+    public Collection<JTweet> update(Collection<JTweet> tmpTweets, Date removeUntil, boolean performDelete) {
         try {
             Map<String, JUser> usersMap = new LinkedHashMap<String, JUser>();
             Map<Long, JTweet> existingTweets = new LinkedHashMap<Long, JTweet>();
@@ -499,14 +509,17 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
 //            fetchMoreTweets(twMap, usersMap);
 
             update(updateTweets);
-
+            
+            // force visibility for next call of update
+            // we do not need to force this for delete!
+            refresh();
+            
             // We are not receiving the deleted tweets! but do we need to
             // update the tweets where this deleted tweet was a retweet?
-            // No. Because "userA: text" and "userB: RT @usera: text" now the second tweet is always AFTER the first!
-//            deleteUntil(removeUntil);
-
-            // force visibility for next call of update
-            refresh();
+            // No. Because "userA: text" and "userB: RT @usera: text" now the second tweet is always AFTER the first!                        
+            if (performDelete)
+                deleteUntil(removeUntil);
+            
             return updateTweets;
         } catch (Exception ex) {
             throw new RuntimeException(ex);

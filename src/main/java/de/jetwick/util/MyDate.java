@@ -91,17 +91,17 @@ public class MyDate implements Cloneable {
         time -= date.getTime();
         return this;
     }
-    
+
     public MyDate castToHour() {
         time = (time / ONE_HOUR) * ONE_HOUR;
         return this;
     }
-    
+
     public MyDate castToMinute() {
         time = (time / ONE_MINUTE) * ONE_MINUTE;
         return this;
     }
-    
+
     public MyDate castToDay() {
         time = (time / ONE_DAY) * ONE_DAY;
         return this;
@@ -114,7 +114,7 @@ public class MyDate implements Cloneable {
     public Date toDate() {
         return new Date(time);
     }
-    
+
     @Override
     public MyDate clone() {
         return new MyDate(this);
@@ -123,8 +123,8 @@ public class MyDate implements Cloneable {
     @Override
     public String toString() {
         return new Date(time).toString();
-    }   
-    
+    }
+
     public String toLocalString() {
         return Helper.toLocalDateTime(new Date(time));
     }
@@ -132,8 +132,15 @@ public class MyDate implements Cloneable {
     public long getHours() {
         return time / ONE_HOUR;
     }
-    
+
     public long getDays() {
         return time / ONE_DAY;
+    }
+
+    /**
+     * @return hours of day for UTC time
+     */
+    public int _getHoursOfDay() {
+        return (int) ((time - new MyDate().castToDay().getTime()) / ONE_HOUR);
     }
 }

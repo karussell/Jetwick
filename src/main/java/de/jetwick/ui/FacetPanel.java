@@ -144,8 +144,8 @@ public class FacetPanel extends Panel {
                         li.add(link);
                         li.add(excludeLink);
 
-                         /* exlude does not work for filter queries like RT_COUNT.contains(h.key)*/
-                        if(USER.contains(h.key) || LANG.contains(h.key))
+                        /* exlude does not work for filter queries like RT_COUNT.contains(h.key)*/
+                        if (USER.contains(h.key) || LANG.contains(h.key))
                             excludeLink.setVisible(true);
                         else
                             excludeLink.setVisible(false);
@@ -259,64 +259,67 @@ public class FacetPanel extends Panel {
             ret.add(null);
         }
 
-        if (rsp != null) {
-            Facets facets = rsp.facets();
-            if (facets != null)
-                for (Facet facet : facets.facets()) {
-                    if (facet instanceof TermsFacet) {
-                        TermsFacet ff = (TermsFacet) facet;
-                        Integer integ = filterToIndex.get(ff.getName());
-                        if (integ != null && ff.entries() != null) {
-                            List<FacetHelper> list = new ArrayList<FacetHelper>();
-                            String key = ff.getName();
-                            for (TermsFacet.Entry e : ff.entries()) {
-                                String term = e.getTerm();
-                                if ("T".equals(term))
-                                    term = "true";
-                                else if ("F".equals(term))
-                                    term = "false";
+        if (rsp == null)
+            return ret;
 
-                                // exclude smaller zero?
-                                list.add(new FacetHelper(key, term,
-                                        translate(key + ":" + term), e.getCount()));
-                            }
-                            ret.set(integ, new MapEntry(ff.getName(), list));
-                        }
-                    } else if (facet instanceof FilterFacet) {
-                        FilterFacet ff = (FilterFacet) facet;
-                        String name = ff.getName();
-                        int firstIndex = name.indexOf(":");
-                        if (firstIndex < 0)
-                            continue;
+        Facets facets = rsp.facets();
+        if (facets == null)
+            return ret;
 
-                        String key = name.substring(0, firstIndex);
-                        if (DATE.equals(key))
-                            continue;
-
-                        String val = name.substring(firstIndex + 1);
+        for (Facet facet : facets.facets()) {
+            if (facet instanceof TermsFacet) {
+                TermsFacet ff = (TermsFacet) facet;
+                Integer integ = filterToIndex.get(ff.getName());
+                if (integ != null && ff.entries() != null) {
+                    List<FacetHelper> list = new ArrayList<FacetHelper>();
+                    String key = ff.getName();
+                    for (TermsFacet.Entry e : ff.entries()) {
+                        String term = e.getTerm();
+                        if ("T".equals(term))
+                            term = "true";
+                        else if ("F".equals(term))
+                            term = "false";
 
                         // exclude smaller zero?
-                        Long count = ff.count();
-                        if (count == null)
-                            count = 0L;
-
-                        Integer index = filterToIndex.get(key);
-                        if (index == null)
-                            continue;
-
-                        Entry<String, List<FacetHelper>> facetEntry = ret.get(index);
-                        List<FacetHelper> list;
-                        if (facetEntry == null) {
-                            facetEntry = new MapEntry(key, new ArrayList<FacetHelper>());
-                            ret.set(index, facetEntry);
-                        }
-
-                        list = facetEntry.getValue();
-                        list.add(new FacetHelper(key, val, translate(name), count));
+                        list.add(new FacetHelper(key, term,
+                                translate(key + ":" + term), e.getCount()));
                     }
-
+                    ret.set(integ, new MapEntry(ff.getName(), list));
                 }
+            } else if (facet instanceof FilterFacet) {
+                FilterFacet ff = (FilterFacet) facet;
+                String name = ff.getName();
+                int firstIndex = name.indexOf(":");
+                if (firstIndex < 0)
+                    continue;
+
+                String key = name.substring(0, firstIndex);
+                if (DATE.equals(key))
+                    continue;
+
+                String val = name.substring(firstIndex + 1);
+
+                // exclude smaller zero?
+                Long count = ff.count();
+                if (count == null)
+                    count = 0L;
+
+                Integer index = filterToIndex.get(key);
+                if (index == null)
+                    continue;
+
+                Entry<String, List<FacetHelper>> facetEntry = ret.get(index);
+                List<FacetHelper> list;
+                if (facetEntry == null) {
+                    facetEntry = new MapEntry(key, new ArrayList<FacetHelper>());
+                    ret.set(index, facetEntry);
+                }
+
+                list = facetEntry.getValue();
+                list.add(new FacetHelper(key, val, translate(name), count));
+            }
         }
+
         return ret;
     }
 }

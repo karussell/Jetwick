@@ -155,12 +155,17 @@ public class JSDateFilter extends Panel {
                     String toStr = e.getToAsString();
                     counter++;
                     if (counter == rf.entries().size()) {
-                        display = "older";
+                        display = "Older";
                         fromStr = "*";
                     } else if (counter == 1) {
-                        display = "last 8h";
+                        display = "Last 8h";
                         toStr = "*";
+                    } else if (counter == 2) {
+                        display = "Today";                        
+                    } else if (counter == 2) {
+                        display = "Ye.day";                        
                     }
+                    
                     String filter = "[" + fromStr + " TO " + toStr + "]";
 //                    System.out.println(display + " " + filter + " " + e.getCount());
                     facetList.add(new FacetHelper(dtKey, filter, display, e.getCount()));

@@ -467,6 +467,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         tw.setCreatedAt(new Date());
         Collection<JTweet> res = twSearch.update(Arrays.asList(tw),
                 new MyDate().minusDays(1).toDate());
+        // now refresh also deletes!
+        twSearch.refresh();
         assertEquals(1, res.size());
         assertEquals(1, twSearch.countAll());
         assertEquals(1, twSearch.search("test").size());
@@ -627,6 +629,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         updatedTweets = twSearch.update(Arrays.asList(tw101, tw102, tw103, tw104),
                 new MyDate().minusDays(1).toDate());
+        // now refresh also deletes!
+        twSearch.refresh();
         assertEquals(4, twSearch.countAll());
         assertEquals(4, updatedTweets.size());
         assertEquals(1, twSearch.findByTwitterId(101L).getRetweetCount());

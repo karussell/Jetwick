@@ -25,6 +25,7 @@ import de.jetwick.util.StopWatch;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.concurrent.BlockingQueue;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
@@ -135,8 +136,10 @@ public class TweetConsumer extends MyThread {
 
         int maxTrials = 1;
         for (int trial = 1; trial <= maxTrials; trial++) {
-            try {                
-                Collection<JTweet> res = tweetSearch.update(tweetSet, new MyDate().minusDays(removeDays).toDate());
+            try {                           
+                MyDate removeUntil = new MyDate().minusDays(removeDays);
+                boolean performDelete = removeUntil._getHoursOfDay() == 0;
+                Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), performDelete);
                 receivedTweets += tweetSet.size();
                 String str = "[es] indexed:";
                 for (TweetPackage pkg : donePackages) {

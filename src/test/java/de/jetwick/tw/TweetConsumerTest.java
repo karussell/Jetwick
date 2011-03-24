@@ -84,7 +84,7 @@ public class TweetConsumerTest extends JetwickTestClass {
     }        
 
     @Test
-    public void testAddAll() {
+    public void testAddAll() {        
         tweetConsumer.setRemoveDays(1);
         LinkedBlockingQueue<TweetPackage> queue = new LinkedBlockingQueue<TweetPackage>();
         JTweet tw = createTweet(1L, "@daniel fancy!", "timetabling");

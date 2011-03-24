@@ -15,14 +15,12 @@
  */
 package de.jetwick.ui.jschart;
 
-import java.lang.reflect.Constructor;
 import de.jetwick.es.ElasticTweetSearch;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.facet.range.RangeFacet.Entry;
 import org.elasticsearch.search.facet.range.RangeFacet;
 import de.jetwick.ui.WicketPagesTestClass;
 import de.jetwick.ui.util.FacetHelper;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -92,8 +90,8 @@ public class JSDateFilterTest extends WicketPagesTestClass {
         panel.update(sr);
         List<FacetHelper> dfh = panel.getFacetList();
 
-        assertEquals("last 8h", dfh.get(1).displayName);
-        assertEquals("older", dfh.get(0).displayName);                
+        assertEquals("Last 8h", dfh.get(0).displayName);
+        assertEquals("Older", dfh.get(1).displayName);                
     }
 
     private Entry newEntry(String from, String to) {

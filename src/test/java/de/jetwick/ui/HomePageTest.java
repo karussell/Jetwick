@@ -15,7 +15,6 @@
  */
 package de.jetwick.ui;
 
-import java.util.Date;
 import de.jetwick.es.TweetQuery;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.config.Configuration;

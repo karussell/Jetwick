@@ -631,19 +631,20 @@ public class HomePage extends JetwickPage {
         if (getMySession().hasLoggedIn()) {
             tmpUserName = getMySession().getUser().getScreenName();
             showSpacer = false;
-        } else {                        
+        } else {
             ssPanel.setVisible(false);
             // TODO remove all the facets + date facets!?
             facetPanel.setVisible(false);
             dateFilterPanel.setVisible(false);
             // so that my reference on twitter works ;)            
-            if (userName.isEmpty())
+            if (userName.isEmpty()) {
                 tagCloudPanel.setVisible(false);
 
-            if (query.getQuery().isEmpty()) {
-                resultsPanel.setVisible(false);
-                navigationPanel.setVisible(false);
-                showSpacer = false;
+                if (query.getQuery().isEmpty()) {
+                    resultsPanel.setVisible(false);
+                    navigationPanel.setVisible(false);
+                    showSpacer = false;
+                }
             }
         }
 
@@ -711,9 +712,7 @@ public class HomePage extends JetwickPage {
 
     public void doSearch(JetwickQuery query, int page, boolean twitterFallback, boolean instantSearch) {
         if (getMySession().hasLoggedIn())
-            query.attachUserFacets();
-        else if (query.getQuery().isEmpty())
-            return;        
+            query.attachUserFacets();        
 
         String queryString;
         if (!instantSearch) {
@@ -722,9 +721,12 @@ public class HomePage extends JetwickPage {
         }
 
         queryString = query.setEscape(true).getQuery();
-
         // if query is lastQuery then user is saved in filter not in a pageParam
         String userName = searchBox.getUserName();
+                        
+        if (!getMySession().hasLoggedIn() && query.getQuery().isEmpty() && userName.isEmpty())
+            return;
+        
         resultsPanel.setAdQuery(queryString);
         wikiPanel.setParams(queryString, language);
         boolean startBGThread = true;
