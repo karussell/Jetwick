@@ -43,9 +43,9 @@ public class ElasticTagSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testSave() {
-        tagSearch.update(new JTag("Test"));
-        tagSearch.update(new JTag("#Test"));
-        tagSearch.update(new JTag("algorithm -google"));
+        tagSearch.store(new JTag("Test"));
+        tagSearch.store(new JTag("#Test"));
+        tagSearch.store(new JTag("algorithm -google"));
         assertEquals("test", tagSearch.findByName("tesT").getTerm());
         assertEquals("#test", tagSearch.findByName("#test").getTerm());
         assertEquals("algorithm -google", tagSearch.findByName("algorithm -google").getTerm());

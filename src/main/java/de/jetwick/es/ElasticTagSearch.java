@@ -21,6 +21,7 @@ import de.jetwick.util.Helper;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,6 +49,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
     private String indexName = "tagindex";
+    private String indexType = "tag";
     public static final String Q_INTERVAL = "queryInterval";
     public static final String TERM = "_id";
 
@@ -61,6 +63,25 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
 
     public ElasticTagSearch(Client client) {
         super(client);
+    }
+
+    @Override
+    public String getIndexName() {
+        return indexName;
+    }
+
+    @Override
+    public void setIndexName(String indexName) {
+        this.indexName = indexName;
+    }
+
+    public void setIndexType(String indexType) {
+        this.indexType = indexType;
+    }
+
+    @Override
+    public String getIndexType() {
+        return indexType;
     }
 
     public void addAll(Collection<String> tagStringList, boolean refresh, boolean ignoreSearchError) throws IOException {
@@ -84,27 +105,17 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     }
 
     @Override
-    public String getIndexName() {
-        return indexName;
-    }
-
-    @Override
-    public void setIndexName(String indexName) {
-        this.indexName = indexName;
-    }
-
-    @Override
-    public String getIndexType() {
-        return "tag";
-    }
-
-    @Override
     public XContentBuilder createDoc(JTag tag) throws IOException {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
         b.field("lastMillis", tag.getLastMillis());
         b.field("maxCreateTime", tag.getMaxCreateTime());
         b.field(Q_INTERVAL, tag.getQueryInterval());
         b.field("pages", tag.getPages());
+        b.field("lastRequest", new Date());
+        b.field("requestCount", tag.getRequestCount());
+        if (!Helper.isEmpty(tag.getUser()))
+            b.field("user", tag.getUser().toLowerCase());
+
         return b;
     }
 
@@ -116,6 +127,11 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         tag.setMaxCreateTime(((Number) doc.get("maxCreateTime")).longValue());
         tag.setQueryInterval(((Number) doc.get(Q_INTERVAL)).longValue());
         tag.setPages(((Number) doc.get("pages")).intValue());
+        tag.setLastRequest(Helper.toDateNoNPE(((String) doc.get("lastRequest"))));
+        tag.setRequestCount(((Number) doc.get("requestCounter")).intValue());
+        String user = (String) doc.get("user");
+        if (!Helper.isEmpty(user))
+            tag.setUser(user);
         return tag;
     }
 
@@ -158,13 +174,24 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         return collectObjects(srb.execute().actionGet());
     }
 
-    public void update(JTag tag) {
-        update(tag, true);
+    public void store(JTag tag) {
+        store(tag, true);
     }
 
     public JTag findByName(String term) {
         term = JTag.toLowerCaseOnlyOnTerms(term);
         GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), term).
+                execute().actionGet();
+        if (rsp.getSource() == null)
+            return null;
+        return readDoc(rsp.getSource(), rsp.getId());
+    }
+
+    public JTag findByNameAndUser(String term, String user) {
+        term = JTag.toLowerCaseOnlyOnTerms(term);
+        user = JTag.toLowerCaseOnlyOnTerms(user);
+        String id = JTag.createId(term, user);
+        GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), id).
                 execute().actionGet();
         if (rsp.getSource() == null)
             return null;

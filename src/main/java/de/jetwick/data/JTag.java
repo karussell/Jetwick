@@ -15,7 +15,9 @@
  */
 package de.jetwick.data;
 
+import de.jetwick.util.Helper;
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  *
@@ -41,12 +43,39 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
      * The first search should page 5 times
      */
     private int pages = 5;
+    private Date lastRequest = new Date();
+    private int requestCount = 0;
+    private String user;
 
     public JTag() {
     }
 
     public JTag(String term) {
         this.term = toLowerCaseOnlyOnTerms(term);
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public int getRequestCount() {
+        return requestCount;
+    }
+
+    public void setRequestCount(int requestCount) {
+        this.requestCount = requestCount;
+    }
+
+    public Date getLastRequest() {
+        return lastRequest;
+    }
+
+    public void setLastRequest(Date lastRequest) {
+        this.lastRequest = lastRequest;
     }
 
     public long getLastMillis() {
@@ -124,7 +153,14 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
 
     @Override
     public String getId() {
-        return getTerm();
+        return createId(getTerm(), getUser());
+    }
+
+    public static String createId(String tmpTerm, String tmpUser) {
+        if (Helper.isEmpty(tmpUser))
+            return tmpTerm;
+
+        return tmpTerm + "_" + tmpUser;
     }
 
     /**

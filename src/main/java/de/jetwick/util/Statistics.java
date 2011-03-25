@@ -131,7 +131,7 @@ public class Statistics {
             if (str.trim().length() > 1)
                 newTags.add(JTag.toLowerCaseOnlyOnTerms(str.trim()));
         } // do only delete those where we don't have a new one
-        // do only update tags which are new
+        // do only store tags which are new
         
         boolean ignoreSearchError = false;
         try {

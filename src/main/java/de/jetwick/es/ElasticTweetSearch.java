@@ -507,17 +507,17 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             updateTweets.addAll(findDuplicates(twMap));
 
             // add the additionally fetched tweets to the user but do not add to updateTweets
-            // this is a bit expensive ~30-40sec for every update call on a large index!
+            // this is a bit expensive ~30-40sec for every store call on a large index!
 //            fetchMoreTweets(twMap, usersMap);
 
             update(updateTweets);
             
-            // force visibility for next call of update
+            // force visibility for next call of store
             // we do not need to force this for delete!
             refresh();
             
             // We are not receiving the deleted tweets! but do we need to
-            // update the tweets where this deleted tweet was a retweet?
+            // store the tweets where this deleted tweet was a retweet?
             // No. Because "userA: text" and "userB: RT @usera: text" now the second tweet is always AFTER the first!                        
             if (performDelete)
                 deleteUntil(removeUntil);

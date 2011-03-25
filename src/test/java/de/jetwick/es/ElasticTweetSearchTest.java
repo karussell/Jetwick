@@ -69,9 +69,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JUser otherUser = new JUser("otherUser");
         JTweet tw2 = new JTweet(2L, "Java is cool and stable!", otherUser);
         JTweet tw3 = new JTweet(3L, "Java is stable!", otherUser);
-        twSearch.update(tw1, false);
-        twSearch.update(tw2, false);
-        twSearch.update(tw3, true);
+        twSearch.store(tw1, false);
+        twSearch.store(tw2, false);
+        twSearch.store(tw3, true);
 
         assertEquals(1, twSearch.search("java").size());
         assertEquals(1, twSearch.search("test").size());
@@ -99,9 +99,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JUser otherUser = new JUser("otherUser");
         JTweet tw2 = new JTweet(2L, "Java is cool and stable!", otherUser);
         JTweet tw3 = new JTweet(3L, "Java is stable!", otherUser);
-        twSearch.update(tw1, false);
-        twSearch.update(tw2, false);
-        twSearch.update(tw3, true);
+        twSearch.store(tw1, false);
+        twSearch.store(tw2, false);
+        twSearch.store(tw3, true);
 
         assertEquals(1, twSearch.search("java").size());
         assertEquals(1, twSearch.search("test").size());
@@ -147,8 +147,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw1 = new JTweet(1L, "peter #java is cool!", peter);
         JUser peter2 = new JUser("peter2");
         JTweet tw2 = new JTweet(2L, "@peter java is cool!", peter2);
-        twSearch.update(tw1, false);
-        twSearch.update(tw2, true);
+        twSearch.store(tw1, false);
+        twSearch.store(tw2, true);
 
         assertEquals(1, twSearch.search("#java").size());
         assertEquals(1, twSearch.search("@peter").size());
@@ -162,11 +162,11 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw4 = new JTweet(4L, "Ibood is cool!", new JUser("peter4"));
         JTweet tw5 = new JTweet(5L, "iBOOD.com", new JUser("peter5"));
 
-        twSearch.update(tw1, false);
-        twSearch.update(tw2, false);
-        twSearch.update(tw3, false);
-        twSearch.update(tw5, false);
-        twSearch.update(tw4, true);
+        twSearch.store(tw1, false);
+        twSearch.store(tw2, false);
+        twSearch.store(tw3, false);
+        twSearch.store(tw5, false);
+        twSearch.store(tw4, true);
 
         assertEquals(5, twSearch.search("ibood").size());//1,2,3,4,5
         assertEquals(5, twSearch.search("iBood").size());//1,2,3,4,5
@@ -184,9 +184,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JUser peter2 = new JUser("peter2");
         JTweet tw2 = new JTweet(2L, "java is cool!", peter2);
         JTweet tw3 = new JTweet(3L, "peter javascript is cool!", new JUser("peter3"));
-        twSearch.update(tw1, false);
-        twSearch.update(tw2, false);
-        twSearch.update(tw3, true);
+        twSearch.store(tw1, false);
+        twSearch.store(tw2, false);
+        twSearch.store(tw3, true);
 
         assertEquals(1, twSearch.search("java").size());
         assertEquals("peter2", twSearch.search("java").iterator().next().getScreenName());
@@ -200,8 +200,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     public void testSorting() {
         MyDate day = new MyDate();
         MyDate day2 = day.clone().plusDays(1);
-        twSearch.update(createSolrTweet(day, "java is a test!", "peter"), false);
-        twSearch.update(createSolrTweet(day2, "java is cool and stable!", "peter2"), true);
+        twSearch.store(createSolrTweet(day, "java is a test!", "peter"), false);
+        twSearch.store(createSolrTweet(day2, "java is cool and stable!", "peter2"), true);
         JetwickQuery q = new TweetQuery("java").setSort("dt", "desc");
         List<JUser> res = new ArrayList<JUser>();
         twSearch.search(res, q);
@@ -220,9 +220,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         user.setLocation("TEST");
         JTweet tw;
         tw = new JTweet(1L, "test tweet text", user);
-        twSearch.update(tw, false);
+        twSearch.store(tw, false);
         tw = new JTweet(2L, "test tweet text2", user);
-        twSearch.update(tw, true);
+        twSearch.store(tw, true);
         List<JUser> res = new ArrayList<JUser>();
         twSearch.search(res, new TweetQuery().addFilterQuery("loc", "TEST"));
         assertEquals(1, res.size());
@@ -231,11 +231,11 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         user = new JUser("peter");
         tw = new JTweet(3L, "test tweet text", user);
         tw.setLocation("TEST3");
-        twSearch.update(tw, false);
+        twSearch.store(tw, false);
 
         tw = new JTweet(4L, "test tweet text", user);
         tw.setLocation("TEST4");
-        twSearch.update(tw, true);
+        twSearch.store(tw, true);
         res = new ArrayList<JUser>();
         twSearch.search(res, new TweetQuery().addFilterQuery("loc", "TEST3"));
         assertEquals(1, res.size());
@@ -249,7 +249,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         JUser otherUser = new JUser("otherUser");
         JTweet tw2 = new JTweet(2L, "java is cool and stable!", otherUser);
-        twSearch.update(tw2, false);
+        twSearch.store(tw2, false);
         twSearch.refresh();
         assertEquals(1, twSearch.search("java").size());
 
@@ -265,8 +265,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JUser userb = new JUser("userb");
         JTweet tw2 = new JTweet(2L, "this is a Test ", userb);
         tw2.addReply(tw);
-        twSearch.update(tw, true);
-        twSearch.update(tw2, true);
+        twSearch.store(tw, true);
+        twSearch.store(tw2, true);
 
         assertEquals(0, twSearch.searchReplies(1L, true).size());
         assertEquals(0, twSearch.searchReplies(2L, true).size());
@@ -283,8 +283,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JUser userb = new JUser("userb");
         JTweet tw2 = new JTweet(2L, "rt @usera: this is a Test ", userb);
         tw.addReply(tw2);
-        twSearch.update(tw, false);
-        twSearch.update(tw2, true);
+        twSearch.store(tw, false);
+        twSearch.store(tw2, true);
 
         assertEquals(1, twSearch.searchReplies(1L, true).size());
         assertEquals(0, twSearch.searchReplies(2L, true).size());
@@ -295,8 +295,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testFindDuplicates() {
-        twSearch.update(new JTweet(1L, "wikileaks is not a wtf", new JUser("userA")), false);
-        twSearch.update(new JTweet(2L, "news about wikileaks", new JUser("userB")), false);
+        twSearch.store(new JTweet(1L, "wikileaks is not a wtf", new JUser("userA")), false);
+        twSearch.store(new JTweet(2L, "news about wikileaks", new JUser("userB")), false);
 
         // find dup is restricted to the last hour so use a current date
         MyDate dt = new MyDate();
@@ -828,7 +828,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         // at the moment no retweets are required
 //        tw = createNowTweet(1L, "text #jetwick", "peter");
 //        tw.setQuality(100);
-//        twSearch.update(Arrays.asList(tw));
+//        twSearch.store(Arrays.asList(tw));
 //        twSearch.commit();
 //        assertEquals(0, twSearch.searchAds("text").size());
 
@@ -981,7 +981,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.deleteAll(index2);
         twSearch.deleteAll(resindex);
 
-        // this update makes a problem later on, when searching on index1
+        // this store makes a problem later on, when searching on index1
         twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser"))), index1, true);
 
         List<JTweet> list = new ArrayList<JTweet>();
@@ -994,7 +994,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
             list.add(new JTweet(i, "nice day", user2));
         }
         twSearch.bulkUpdate(list, index1, true);
-        // identical tweets -> TODO do or don't update?
+        // identical tweets -> TODO do or don't store?
         List<JTweet> list2 = new ArrayList<JTweet>();
         for (int i = 0; i < 100; i++) {
             list2.add(new JTweet(i, "[updated] hey cool one", user));

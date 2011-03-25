@@ -90,7 +90,7 @@ public abstract class AbstractElasticSearch<T extends DbObject> {
 
     public abstract String getIndexType();
 
-    public void update(T obj, boolean refresh) {
+    public void store(T obj, boolean refresh) {
         try {
             XContentBuilder b = createDoc(obj);
             if (b != null)

@@ -142,7 +142,7 @@ public class TweetProducerViaSearch extends MyThread implements TweetProducer {
 
     public void updateTag(JTag tag, int hits) {
         tag.optimizeQueryFrequency(hits);
-        tagSearch.update(tag);
+        tagSearch.store(tag);
     }
 
     Collection<JTag> initTags() {
