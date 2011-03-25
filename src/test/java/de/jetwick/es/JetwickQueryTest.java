@@ -40,6 +40,15 @@ public class JetwickQueryTest {
     }
 
     @Test
+    public void testParseDate() {
+        TweetQuery newQ = TweetQuery.parseQuery("q=test&fq=dt:[2011-03-21T09:00:00.0Z TO *]&fq=x:y");
+        assertEquals("dt", newQ.getFilterQueries().get(0).getKey());
+        assertEquals("[2011-03-21T09:00:00.0Z TO *]", newQ.getFilterQueries().get(0).getValue());
+        assertEquals("x", newQ.getFilterQueries().get(1).getKey());
+        assertEquals("y", newQ.getFilterQueries().get(1).getValue());
+    }
+
+    @Test
     public void testRemoveFilters() {
         JetwickQuery q = new TweetQuery().addFilterQuery("test", "pest");
         q.removeFilterQueries("test");

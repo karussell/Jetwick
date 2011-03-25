@@ -621,10 +621,10 @@ public abstract class JetwickQuery implements Serializable {
                 else if ("q".equals(key))
                     q.setQuery(val);
                 else if ("fq".equals(key)) {
-                    String strs[] = val.split("\\:");
+                    String strs[] = val.split("\\:", 2);
                     q.addFilterQuery(strs[0], getTermValue(strs[1]));
                 } else if ("facetQuery".equals(key)) {
-                    String strs[] = val.split("\\:");
+                    String strs[] = val.split("\\:", 2);
                     q.addFacetQuery(strs[0], strs[1]);
                 } else if ("facet".equals(key)) {
                     int index2 = val.indexOf("|");
