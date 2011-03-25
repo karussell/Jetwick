@@ -91,19 +91,7 @@ public class SavedSearch implements Serializable {
         //fq   => user:(timetabling)
 
         // in tweet index we are using dismax so transform into OR query
-        StringBuilder qString = new StringBuilder();
-        if (query.getQuery() != null)
-            qString.append(query.getQuery());
-        
-        String facetQuery = "";
-        if (qString.length() == 0)
-            facetQuery += "*:*";
-        else {
-            // since we use query QueryBuilders.queryString + dismax in updateSaveSearches
-            // this is not necessary here:
-            //facetQuery += "tw:(" + qStr + ") OR dest_title_t:(" + qStr + ")";
-            facetQuery += qString.toString();
-        }
+        String facetQuery = buildInitialFacetQuery(query.getQuery());
 
         // recognize lang, quality and crt_b
         if (query.getFilterQueries() != null) {
@@ -133,6 +121,18 @@ public class SavedSearch implements Serializable {
         return facetQuery;
     }
 
+    public static String buildInitialFacetQuery(String qStr) {
+        String facetQuery = "";
+        if (qStr == null || qStr.length() == 0)
+            facetQuery += "*:*";
+        else {
+            // since we use query QueryBuilders.queryString + dismax in updateSaveSearches
+            // this is not necessary here:
+            //facetQuery += "tw:(" + qStr + ") OR dest_title_t:(" + qStr + ")";
+            facetQuery += qStr;
+        }
+        return facetQuery;
+    }
     private String getLastQueryDateFilter() {
         return "[" + Helper.toLocalDateTime(lastQueryDate) + " TO *]";
     }

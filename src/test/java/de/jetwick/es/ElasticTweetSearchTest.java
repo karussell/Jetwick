@@ -1082,6 +1082,27 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(1, twSearch.collectObjects(twSearch.search(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "peter"))).size());
     }
 
+    @Test
+    public void testSuggestFilterRemoval() {
+        MyDate md = new MyDate();
+        twSearch.update(Arrays.asList(
+                createTweet(1L, "RT @user3: test this first tweet", "peter").setCreatedAt(md.toDate()),
+                createTweet(2L, "test others", "peter2").setCreatedAt(md.toDate()),
+                createTweet(3L, "testnot this", "peter3").setCreatedAt(md.minusHours(2).toDate()),
+                createTweet(4L, "test this", "peter4").setCreatedAt(md.toDate())));
+
+        JetwickQuery q = new TweetQuery(false).
+                addIsOriginalTweetFilter().
+                addLatestDateFilter(1).
+                addUserFilter("peter");
+        Collection<String> keys = twSearch.suggestRemoval(q);
+        assertEquals(3, keys.size());
+        Iterator<String> iter = keys.iterator();
+        assertEquals(ElasticTweetSearch.USER, iter.next());
+        assertEquals(ElasticTweetSearch.DATE, iter.next());
+        assertEquals(ElasticTweetSearch.IS_RT, iter.next());
+    }
+    
     JTweet createSolrTweet(MyDate dt, String twText, String user) {
         return new JTweet(dt.getTime(), twText, new JUser(user)).setCreatedAt(dt.toDate());
     }

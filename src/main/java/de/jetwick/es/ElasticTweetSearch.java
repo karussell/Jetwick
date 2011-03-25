@@ -30,6 +30,7 @@ import de.jetwick.tw.Extractor;
 import de.jetwick.tw.cmd.SerialCommandExecutor;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.Helper;
+import de.jetwick.util.MapEntry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +57,7 @@ import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
 import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.FacetBuilders;
+import org.elasticsearch.search.facet.query.QueryFacet;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.elasticsearch.search.facet.terms.TermsFacetBuilder;
 import org.slf4j.Logger;
@@ -1026,12 +1028,54 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             protected void processFacetQueries(SearchRequestBuilder srb) {
                 for (SavedSearch ss : savedSearches) {
                     srb.addFacet(FacetBuilders.queryFacet(SAVED_SEARCHES + "_" + ss.getId(),
-                            QueryBuilders.queryString(ss.calcFacetQuery()).useDisMax(true).defaultOperator(QueryStringQueryBuilder.Operator.AND).
-                            field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0)));
+                            createQSQB(ss.calcFacetQuery())));
                 }
             }
         }.setFrom(0).setSize(0);
 
         return search(q);
+    }
+
+    QueryStringQueryBuilder createQSQB(String qStr) {
+        return QueryBuilders.queryString(qStr).
+                useDisMax(true).defaultOperator(QueryStringQueryBuilder.Operator.AND).
+                field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0);
+    }
+
+    /**
+     * @return a collection where the first string indicates the filter key
+     * which should be removed to increase the number of results.
+     * Of course this can be only a heuristic sorting against the count of each
+     * filter query
+     */
+    public Collection<String> suggestRemoval(final JetwickQuery q) {
+        SearchResponse rsp = search(new TweetQuery() {
+
+            @Override
+            protected void processFacetQueries(SearchRequestBuilder srb) {
+                int counter = 0;
+                String initFacetQ = SavedSearch.buildInitialFacetQuery(q.getQuery());
+                for (Entry<String, Object> e : q.getFilterQueries()) {
+                    String facetQuery = initFacetQ + " AND " + e.getKey() + ":" + e.getValue().toString();
+                    srb.addFacet(FacetBuilders.queryFacet("ss_" + counter, createQSQB(facetQuery)));
+                    counter++;
+                }
+            }
+        });
+
+        List<Entry<String, Long>> list = new ArrayList<Entry<String, Long>>();
+        int counter = 0;
+        for (Entry<String, Object> e : q.getFilterQueries()) {
+            QueryFacet qf = (QueryFacet) rsp.facets().facet("ss_" + counter);
+            list.add(new MapEntry<String, Long>(e.getKey(), qf.count()));
+            counter++;
+        }
+
+        Helper.sortInplaceLongReverse(list);
+        Collection<String> res = new LinkedHashSet<String>();
+        for (Entry<String, Long> e : list) {
+            res.add(e.getKey());
+        }
+        return res;
     }
 }

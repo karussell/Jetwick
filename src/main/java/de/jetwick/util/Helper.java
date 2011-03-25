@@ -394,6 +394,26 @@ public class Helper {
     }
 
     /**
+     * The specified list will be sorted where then the small numbers comes first
+     */
+    public static <T> void sortInplaceLongReverse(List<Entry<T, Long>> entrySet) {
+        Collections.sort(entrySet, new Comparator<Entry<T, Long>>() {
+
+            @Override
+            public int compare(Entry<T, Long> o1, Entry<T, Long> o2) {
+                long i1 = o1.getValue();
+                long i2 = o2.getValue();
+                if (i1 < i2)
+                    return -1;
+                else if (i1 > i2)
+                    return 1;
+                else
+                    return 0;
+            }
+        });
+    }
+
+    /**
      * Returns an 'optimized'/fast HttpUrlConnection
      */
     public static HttpURLConnection getHttpURLConnection(String urlAsString) throws Exception {
