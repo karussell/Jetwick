@@ -19,7 +19,6 @@ import de.jetwick.data.JTag;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.data.JTweet;
 import de.jetwick.es.ElasticTagSearch;
-import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.Helper;

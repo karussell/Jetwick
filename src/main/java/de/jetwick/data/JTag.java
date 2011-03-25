@@ -54,6 +54,11 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         this.term = toLowerCaseOnlyOnTerms(term);
     }
 
+    public JTag(String term, String user) {
+        this.term = toLowerCaseOnlyOnTerms(term);
+        this.user = toLowerCaseOnlyOnTerms(user);
+    }
+
     public void setUser(String user) {
         this.user = user;
     }
@@ -167,6 +172,9 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
      * toLowerCase only on none keywords
      */
     public static String toLowerCaseOnlyOnTerms(String str) {
+        if(Helper.isEmpty(str))
+            return str;
+        
         StringBuilder sb = new StringBuilder();
         int counter = 0;
         for (String t : str.split(" ")) {

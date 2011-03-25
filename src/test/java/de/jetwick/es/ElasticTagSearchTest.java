@@ -41,11 +41,40 @@ public class ElasticTagSearchTest extends AbstractElasticSearchTester {
         super.setUp(tagSearch);
     }
 
+
+    @Test
+    public void testUpdateWithInc() {
+        // index shouldn't be empty for the first query in queueTag!
+        tagSearch.store(new JTag("tmp"), true);
+        
+        JTag tag = new JTag("java");
+        assertEquals(0, tag.getRequestCount());
+        tagSearch.queueTag(tag);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        assertEquals(1, tagSearch.findByName("java").getRequestCount());
+        assertEquals(2, tagSearch.countAll());
+
+        tag = new JTag("java");
+        assertEquals(0, tag.getRequestCount());        
+        tagSearch.queueTag(tag);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        assertEquals(2, tagSearch.countAll());
+        assertEquals(2, tagSearch.findByName("java").getRequestCount());
+
+        tag = new JTag("java", "peter");
+        assertEquals(0, tag.getRequestCount());        
+        tagSearch.queueTag(tag);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        assertEquals(1, tagSearch.findByNameAndUser("java", "peter").getRequestCount());
+        assertEquals(2, tagSearch.findByName("java").getRequestCount());
+        assertEquals(3, tagSearch.countAll());
+    }
+
     @Test
     public void testSave() {
         tagSearch.store(new JTag("Test"));
         tagSearch.store(new JTag("#Test"));
-        tagSearch.store(new JTag("algorithm -google"));
+        tagSearch.store(new JTag("algorithm -google"), true);
         assertEquals("test", tagSearch.findByName("tesT").getTerm());
         assertEquals("#test", tagSearch.findByName("#test").getTerm());
         assertEquals("algorithm -google", tagSearch.findByName("algorithm -google").getTerm());

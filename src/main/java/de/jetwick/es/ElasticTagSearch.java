@@ -27,6 +27,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -128,7 +131,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         tag.setQueryInterval(((Number) doc.get(Q_INTERVAL)).longValue());
         tag.setPages(((Number) doc.get("pages")).intValue());
         tag.setLastRequest(Helper.toDateNoNPE(((String) doc.get("lastRequest"))));
-        tag.setRequestCount(((Number) doc.get("requestCounter")).intValue());
+        tag.setRequestCount(((Number) doc.get("requestCount")).intValue());
         String user = (String) doc.get("user");
         if (!Helper.isEmpty(user))
             tag.setUser(user);
@@ -175,7 +178,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     }
 
     public void store(JTag tag) {
-        store(tag, true);
+        store(tag, false);
     }
 
     public JTag findByName(String term) {
@@ -202,5 +205,64 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         DeleteByQueryRequestBuilder qb = client.prepareDeleteByQuery(getIndexName()).setTypes(getIndexType());
         qb.setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.termFilter("_id", term)));
         client.deleteByQuery(qb.request());
+    }
+
+    /**
+     * Stores the specified tag and increase the request counter
+     * @param tag
+     */
+    public void queueTag(JTag tag) {
+        todoTags.add(tag);
+        if (!todoTagsThread.isAlive() && !todoTagsThread.isInterrupted())
+            todoTagsThread.start();
+    }
+
+    public void _updateWithInc(JTag tag) {
+        JTag existing = findByNameAndUser(tag.getTerm(), tag.getUser());
+        if (existing != null) {
+            tag = existing;
+            tag.setRequestCount(tag.getRequestCount() + 1);
+        } else
+            tag.setRequestCount(1);
+
+        store(tag);
+    }
+    private final BlockingDeque<JTag> todoTags = new LinkedBlockingDeque<JTag>();
+    private Thread todoTagsThread = new Thread() {
+
+        @Override
+        public void run() {
+            while (!isInterrupted()) {
+                try {
+                    JTag tag = todoTags.take();
+                    _updateWithInc(tag);
+                    if (todoTags.isEmpty()) {
+                        synchronized (todoTags) {
+                            todoTags.notifyAll();
+                        }
+                    }
+                } catch (Exception ex) {
+                    logger.error("Todo-Tags queueing thread was interrupted!!", ex);
+                    break;
+                }
+            }
+        }
+    };
+
+    /**
+     * Blocks until queue gets empty. Use only for tests!
+     * 
+     * @return true if queue was really empty. At least for some microseconds ;)
+     */
+    public boolean forceCleanTagQueueAndRefresh() {
+        synchronized (todoTags) {
+            try {
+                todoTags.wait(1000);
+                refresh();
+                return true;
+            } catch (Exception ex) {
+                return false;
+            }
+        }
     }
 }
