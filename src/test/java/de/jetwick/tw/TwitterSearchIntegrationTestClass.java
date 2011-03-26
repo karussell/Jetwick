@@ -111,7 +111,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     }
 
     @Test
-    public void getFollowers() throws TwitterException {
+    public void testGetFriends() throws TwitterException {
         final Collection<JUser> coll = new ArrayList<JUser>();
         twitterSearch.getFriends("wiedumir", new AnyExecutor<JUser>() {
 
@@ -122,6 +122,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
             }
         });
 
+        System.out.println("follower:" + coll.size());
         assertTrue(coll.size() > 5);
     }
 

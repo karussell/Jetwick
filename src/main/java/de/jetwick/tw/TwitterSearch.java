@@ -668,7 +668,7 @@ public class TwitterSearch implements Serializable {
     }
 
     private void getFriendsOrFollowers(String userName, AnyExecutor<JUser> executor, boolean friends) {
-        long cursor = 1;
+        long cursor = -1;
         resetRateLimitCache();
         while (true) {
             while (getRateLimitFromCache() < LIMIT) {
