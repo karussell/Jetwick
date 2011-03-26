@@ -76,6 +76,7 @@ public class TweetProducerViaSearchTest extends JetwickTestClass {
     public void testUpdateAndInitTag() {
         // make sure that updateTag is in a transaction                
         twProd.updateTag(new JTag("test"), 6);
+        tagSearchTester.getSearch().refresh();
         assertTrue(tagSearchTester.getSearch().findByName("test").getQueryInterval() < 10 * JTag.DEFAULT_Q_I);
     }
 
