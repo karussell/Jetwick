@@ -19,12 +19,11 @@ import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import de.jetwick.util.AnyExecutor;
 import java.util.Collection;
-import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
 import twitter4j.User;
-import twitter4j.http.AccessToken;
+import twitter4j.auth.AccessToken;
 
 /**
  * Offline twitter search. Implemented to test saved searches.

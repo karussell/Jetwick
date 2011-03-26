@@ -196,7 +196,7 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         String userName = idAsStr;
         JUser user = new JUser(userName);
         if (doc.get("twitterId") != null)
-            user.setTwitterId(((Number) doc.get("twitterId")).intValue());
+            user.setTwitterId(((Number) doc.get("twitterId")).longValue());
 
         user.setRealName((String) doc.get("realName"));
         user.setProfileImageUrl((String) doc.get("iconUrl"));

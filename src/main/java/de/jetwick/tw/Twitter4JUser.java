@@ -29,7 +29,7 @@ import twitter4j.User;
 public class Twitter4JUser implements User {
 
     private static final long serialVersionUID = 1L;
-    private int id;
+    private long id;
     private String name;
     private String screenName;
     private String location;
@@ -99,7 +99,7 @@ public class Twitter4JUser implements User {
         return geoEnabled;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -198,53 +198,12 @@ public class Twitter4JUser implements User {
     }
 
     @Override
-    public Date getStatusCreatedAt() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public long getStatusId() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public String getStatusText() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public String getStatusSource() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public boolean isStatusTruncated() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public long getStatusInReplyToStatusId() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public int getStatusInReplyToUserId() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public boolean isStatusFavorited() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public String getStatusInReplyToScreenName() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public int compareTo(User o) {
-        return this.id - o.getId();
+        if(id < o.getId())
+            return -1;
+        else if(id > o.getId())
+            return 1;
+        return 0;
     }
 
     @Override

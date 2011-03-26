@@ -27,7 +27,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import twitter4j.TwitterException;
-import twitter4j.http.AccessToken;
+import twitter4j.auth.AccessToken;
 
 /**
  *
@@ -91,10 +91,11 @@ public class MySessionTest extends WicketPagesTestClass {
         JUser user = new JUser("testuser");
         ElasticUserSearch uSearch = newMockUserSearch(user);
         session.setTwitterSearch(ts);
-        Cookie cookie = session.setTwitterSearch(new AccessToken("normalToken", "tSec"), uSearch, resp);
+        // token starts with user id!
+        Cookie cookie = session.setTwitterSearch(new AccessToken("123-normalToken", "tSec"), uSearch, resp);
         verify(uSearch).save(user, true);
         assertEquals(TwitterSearch.COOKIE, cookie.getName());
-        assertEquals("normalToken", cookie.getValue());
+        assertEquals("123-normalToken", cookie.getValue());
 
         uSearch = newMockUserSearch(user);
         session.logout(uSearch, resp);

@@ -30,8 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.AsyncTwitter;
-import twitter4j.AsyncTwitterFactory;
 import twitter4j.IDs;
 import twitter4j.Paging;
 import twitter4j.Query;
@@ -46,12 +44,11 @@ import twitter4j.Tweet;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
-import twitter4j.TwitterListener;
+import twitter4j.User;
+import twitter4j.auth.AccessToken;
+import twitter4j.auth.RequestToken;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
-import twitter4j.User;
-import twitter4j.http.AccessToken;
-import twitter4j.http.RequestToken;
 
 /**
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
@@ -159,7 +156,8 @@ public class TwitterSearch implements Serializable {
      * @return the url where the user should be redirected to
      */
     public String oAuthLogin(String callbackUrl) throws Exception {
-        twitter = new TwitterFactory().getOAuthAuthorizedInstance(consumerKey, consumerSecret);
+        twitter = new TwitterFactory().getInstance();
+        twitter.setOAuthConsumer(consumerKey, consumerSecret);
         tmpRequestToken = twitter.getOAuthRequestToken(callbackUrl);
         return tmpRequestToken.getAuthenticationURL();
     }
@@ -259,8 +257,8 @@ public class TwitterSearch implements Serializable {
     }
 
     public void getTest() throws TwitterException {
-        System.out.println(twitter.getFollowersIDs("dzone").getIDs());
-        System.out.println(twitter.getFriendsStatuses("dzone"));
+        System.out.println(twitter.getFollowersIDs("dzone", 0).getIDs());
+        System.out.println(twitter.getFriendsStatuses("dzone", 0));
         rateLimit--;
         rateLimit--;
     }
@@ -455,16 +453,6 @@ public class TwitterSearch implements Serializable {
         return solrTweets;
     }
 
-    public AsyncTwitter getAsyncTwitter(TwitterListener listener) {
-        try {
-            AsyncTwitterFactory factory = new AsyncTwitterFactory(listener);
-            AsyncTwitter asyncTwitter = factory.getInstance(twitter.getAuthorization());
-            return asyncTwitter;
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
     /**
      * API COSTS: 1
      * @param users should be maximal 100 users
@@ -638,31 +626,32 @@ public class TwitterSearch implements Serializable {
     }
 
     public void streamingTwitter() throws TwitterException {
-        TwitterStream stream = new TwitterStreamFactory(
-                new StatusListener() {
 
-                    @Override
-                    public void onStatus(Status status) {
-                        System.out.println(status.getUser().getScreenName());
-                    }
+        TwitterStream stream = new TwitterStreamFactory().getInstance(twitter.getAuthorization());
+        stream.addListener(new StatusListener() {
 
-                    @Override
-                    public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
-                    }
+            @Override
+            public void onStatus(Status status) {
+                System.out.println(status.getUser().getScreenName());
+            }
 
-                    @Override
-                    public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-                    }
+            @Override
+            public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
+            }
 
-                    @Override
-                    public void onException(Exception ex) {
-                    }
+            @Override
+            public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
+            }
 
-                    @Override
-                    public void onScrubGeo(int userId, long upToStatusId) {
-                        throw new UnsupportedOperationException("Not supported yet.");
-                    }
-                }).getInstance(twitter.getAuthorization());
+            @Override
+            public void onException(Exception ex) {
+            }
+
+            @Override
+            public void onScrubGeo(long userId, long upToStatusId) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        });
 
 //        stream.sample();
 
@@ -679,7 +668,7 @@ public class TwitterSearch implements Serializable {
     }
 
     private void getFriendsOrFollowers(String userName, AnyExecutor<JUser> executor, boolean friends) {
-        long cursor = -1;
+        long cursor = 1;
         resetRateLimitCache();
         while (true) {
             while (getRateLimitFromCache() < LIMIT) {
@@ -695,17 +684,11 @@ public class TwitterSearch implements Serializable {
             ResponseList<User> res = null;
             IDs ids = null;
             try {
-                if (friends) {
-                    if (cursor < 0)
-                        ids = twitter.getFriendsIDs(userName);
-                    else
-                        ids = twitter.getFriendsIDs(userName, cursor);
-                } else {
-                    if (cursor < 0)
-                        ids = twitter.getFollowersIDs(userName);
-                    else
-                        ids = twitter.getFollowersIDs(userName, cursor);
-                }
+                if (friends)
+                    ids = twitter.getFriendsIDs(userName, cursor);
+                else
+                    ids = twitter.getFollowersIDs(userName, cursor);
+
                 rateLimit--;
             } catch (TwitterException ex) {
                 logger.warn(ex.getMessage());
@@ -714,11 +697,11 @@ public class TwitterSearch implements Serializable {
             if (ids.getIDs().length == 0)
                 break;
 
-            int[] intids = ids.getIDs();
+            long[] intids = ids.getIDs();
 
             // split into max 100 batch
             for (int offset = 0; offset < intids.length; offset += 100) {
-                int[] limitedIds = new int[100];
+                long[] limitedIds = new long[100];
                 for (int ii = 0; ii + offset < intids.length && ii < limitedIds.length; ii++) {
                     limitedIds[ii] = intids[ii + offset];
                 }

@@ -21,7 +21,7 @@ import org.apache.wicket.PageParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
-import twitter4j.http.AccessToken;
+import twitter4j.auth.AccessToken;
 
 /**
  *

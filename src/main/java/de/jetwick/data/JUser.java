@@ -48,7 +48,7 @@ public class JUser implements DbObject, Serializable {
     private String realName;
     // we don't need an index here -> already via uniqueconstraint
     private String screenName;
-    private Integer twitterId;
+    private Long twitterId;
     private String profileImageUrl;
     private String webUrl;
     private String location;
@@ -186,11 +186,11 @@ public class JUser implements DbObject, Serializable {
         return ROLE_ADMIN.equals(role);
     }
 
-    public Integer getTwitterId() {
+    public Long getTwitterId() {
         return twitterId;
     }
 
-    public void setTwitterId(int id) {
+    public void setTwitterId(long id) {
         this.twitterId = id;
     }
 

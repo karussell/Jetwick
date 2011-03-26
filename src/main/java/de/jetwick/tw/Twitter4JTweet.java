@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.tw;
 
 import de.jetwick.data.UrlEntry;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import twitter4j.Annotations;
 import twitter4j.GeoLocation;
+import twitter4j.Place;
 import twitter4j.Tweet;
 
 /**
@@ -36,9 +33,9 @@ public class Twitter4JTweet implements Tweet {
     private String text;
     private long twitterId;
     private Date createdAt;
-    private int toUserId;
+    private long toUserId;
     private String toUser;
-    private int fromUserId;
+    private long fromUserId;
     private String fromUser;
     private String isoLanguageCode;
     private String source;
@@ -49,6 +46,7 @@ public class Twitter4JTweet implements Tweet {
     private long inReplyToStatusId = -1;
     private List<UrlEntry> urlEntries = new ArrayList<UrlEntry>();
     private Annotations annotations;
+    private Place place;
 
     public Twitter4JTweet(long twitterId, String text, String fromUser) {
         this.fromUser = fromUser;
@@ -80,7 +78,7 @@ public class Twitter4JTweet implements Tweet {
     }
 
     @Override
-    public int getToUserId() {
+    public long getToUserId() {
         return toUserId;
     }
 
@@ -100,7 +98,7 @@ public class Twitter4JTweet implements Tweet {
     }
 
     @Override
-    public int getFromUserId() {
+    public long getFromUserId() {
         return fromUserId;
     }
 
@@ -154,7 +152,7 @@ public class Twitter4JTweet implements Tweet {
         this.source = source;
     }
 
-    public void setToUser(int toUserId, String userScreenName) {
+    public void setToUser(long toUserId, String userScreenName) {
         this.toUserId = toUserId;
         this.toUser = userScreenName;
     }
@@ -229,7 +227,6 @@ public class Twitter4JTweet implements Tweet {
 //    public int compareTo(Object o) {
 //        throw new UnsupportedOperationException("Not supported yet.");
 //    }
-
     @Override
     public boolean equals(Object obj) {
         if (obj == null || getClass() != obj.getClass())
@@ -250,5 +247,14 @@ public class Twitter4JTweet implements Tweet {
 
     public void setAnnotations(Annotations annotations) {
         this.annotations = annotations;
+    }
+
+    @Override
+    public Place getPlace() {
+        return place;
+    }
+
+    public void setPlace(Place place) {
+        this.place = place;
     }
 }
