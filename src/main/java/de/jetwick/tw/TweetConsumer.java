@@ -18,10 +18,13 @@ package de.jetwick.tw;
 import com.google.inject.Inject;
 import de.jetwick.data.JTweet;
 import de.jetwick.es.ElasticTweetSearch;
+import de.jetwick.tw.queue.AbstractTweetPackage;
 import de.jetwick.tw.queue.TweetPackage;
 import de.jetwick.util.MyDate;
 import de.jetwick.util.StopWatch;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.concurrent.BlockingQueue;
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
@@ -61,48 +64,46 @@ public class TweetConsumer extends MyThread {
     @Override
     public void run() {
         logger.info("tweets per solr session:" + tweetBatchSize);
-        Collection<JTweet> tweetSet = new LinkedHashSet<JTweet>();
-            
-        while (!isInterrupted()) {            
-            try {
-                tweetSet.addAll(tweetPackages.take().getTweets());
-            } catch (InterruptedException ex) {
-                break;
+        while (!isInterrupted()) {
+            //
+            if (tweetPackages.isEmpty()) {
+                // TODO instead of a 'fixed' waiting               
+                // use beforeThread.getCondition().await + signalAll                
+                logger.info("Consumer: no tweetpackage in queue");
+
+                if (!myWait(5))
+                    break;
+                continue;
             }
 
             if (longTime == null)
                 longTime = new StopWatch("alltime");
-            
-            if (tweetSet.size() < tweetBatchSize && System.currentTimeMillis() - lastFeed < tweetBatchTime) {
+
+            // make sure we really use the commit batch size
+            // because solr doesn't want too frequent commits
+            int count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
+            if (count < tweetBatchSize && System.currentTimeMillis() - lastFeed < tweetBatchTime) {
                 // slow down calcNumberOfTweets calculation
-                if(!myWait(5))
+                if (!myWait(5))
                     break;
                 continue;
             }
-                        
-            if (tweetSet.isEmpty())
+
+            if (count == 0)
                 continue;
 
             lastFeed = System.currentTimeMillis();
             currentTime = new StopWatch("");
             longTime.start();
             currentTime.start();
-            updateTweets(tweetSet);            
+            int res = updateTweets(tweetPackages, tweetBatchSize).size();
             currentTime.stop();
             longTime.stop();
-            indexedTweets += tweetSet.size();
-            
-//            String str = "[es] indexed:";
-//            for (TweetPackage pkg : donePackages) {
-//                str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
-//            }
-//            logger.info(str);
-            
+            indexedTweets += res;
             float tweetsPerSec = indexedTweets / (longTime.getTime() / 1000.0f);
             String str = "[es] " + currentTime.toString() + "\t tweets/s:" + tweetsPerSec
-                    + "\t curr indexedTw:" + tweetSet.size() + " all indexedTw:" + indexedTweets + "\t all receivedTw:" + receivedTweets;
+                    + "\t curr indexedTw:" + res + " all indexedTw:" + indexedTweets + "\t all receivedTw:" + receivedTweets;
 
-            tweetSet.clear();
             long time = System.currentTimeMillis();
             if (optimizeInterval > 0)
                 str += "; next optimize in: " + (optimizeInterval - (time - lastOptimizeTime)) / 3600f / 1000f + "h ";
@@ -119,14 +120,38 @@ public class TweetConsumer extends MyThread {
         logger.info(getName() + " finished");
     }
 
-    public void updateTweets(Collection<JTweet> tweetSet) {      
+    public Collection<JTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
+        Collection<TweetPackage> donePackages = new ArrayList<TweetPackage>();
+        Collection<JTweet> tweetSet = new LinkedHashSet<JTweet>();
+        // why we cannot use take to grab the packages ???
+        // see revision 771df15 from 2011-03-24
+        // which seems to block the entire consumer side
+        // but this is strange because we have currently have a sleep here too!?       
+        
+        while (true) {
+            TweetPackage twp = tws.poll();
+            if (twp == null)
+                break;
+
+            donePackages.add(twp);
+            tweetSet.addAll(twp.getTweets());
+            if (tweetSet.size() > batch)
+                break;
+        }
+
         int maxTrials = 1;
         for (int trial = 1; trial <= maxTrials; trial++) {
-            try {                           
+            try {
                 MyDate removeUntil = new MyDate().minusDays(removeDays);
                 boolean performDelete = removeUntil._getHoursOfDay() == 0;
-                tweetSearch.update(tweetSet, removeUntil.toDate(), performDelete);
-                receivedTweets += tweetSet.size();                
+                Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), performDelete);
+                receivedTweets += tweetSet.size();
+                String str = "[es] indexed:";
+                for (TweetPackage pkg : donePackages) {
+                    str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
+                }
+                logger.info(str);
+                return res;
             } catch (Exception ex) {
                 logger.error("trial " + trial + ". couldn't update "
                         + tweetSet.size() + " tweets. now wait and try again", ex);
@@ -136,6 +161,8 @@ public class TweetConsumer extends MyThread {
                 myWait(5);
             }
         }
+
+        return Collections.EMPTY_LIST;
     }
 
     public void setTweetSearch(ElasticTweetSearch tweetSearch) {
