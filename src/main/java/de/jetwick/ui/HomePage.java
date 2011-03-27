@@ -95,7 +95,7 @@ public class HomePage extends JetwickPage {
     }
 
     public HomePage(final PageParameters parameters) {
-        String callback = parameters.getString("callback");
+        String callback = parameters.getString(UserPanel.CALLBACK);
         if ("true".equals(callback)) {
             try {
                 logger.info("Received callback");
@@ -110,9 +110,12 @@ public class HomePage extends JetwickPage {
                     error("Error when getting information from twitter! Please login again!");
                 getMySession().logout(uindexProvider.get(), (WebResponse) getResponse());
             }
-            // avoid showing the url parameters (e.g. refresh would let it failure!)
+            // 1. avoid showing the url parameters (e.g. refresh would let it failure!)
+            // 2. setResponsePage(HomePage.class); fails sometimes for firefox!?
+            
+            parameters.remove(UserPanel.CALLBACK);            
             setRedirect(true);
-            setResponsePage(HomePage.class);
+            setResponsePage(new HomePage(parameters));
         } else {
             initSession();
             init(createQuery(parameters), parameters, 0, true);

@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 public class UserPanel extends Panel {
 
+    public final static String CALLBACK = "callback";
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public UserPanel(String id, final HomePage homePageRef) {
@@ -59,7 +60,7 @@ public class UserPanel extends Panel {
                     String callbackUrl;
                     if (Application.DEVELOPMENT.equals(getApplication().getConfigurationType())) {
                         PageParameters params = new PageParameters();
-                        params.add("callback", "true");
+                        params.add(CALLBACK, "true");
                         callbackUrl = RequestUtils.toAbsolutePath(urlFor(HomePage.class, params).toString());
                     } else
                         callbackUrl = "http://jetwick.com?callback=true";
