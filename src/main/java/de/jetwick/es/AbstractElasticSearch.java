@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public abstract class AbstractElasticSearch<T extends DbObject> {
+public abstract class AbstractElasticSearch<T extends DbObject> implements CreateObjectsInterface<T> {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
     protected Client client;
@@ -252,7 +252,8 @@ public abstract class AbstractElasticSearch<T extends DbObject> {
     /**
      * All indices has to be created before!
      */
-    public void mergeIndices(Collection<String> indexList, String intoIndex, int hitsPerPage, boolean forceRefresh,
+    public void mergeIndices(Collection<String> indexList, String intoIndex,
+            int hitsPerPage, boolean forceRefresh, CreateObjectsInterface<T> createObj,
             XContentFilterBuilder additionalFilter) {
         if (forceRefresh) {
             refresh(indexList);
@@ -282,7 +283,7 @@ public abstract class AbstractElasticSearch<T extends DbObject> {
                         break;
 
                     queryWatch.stop();
-                    Collection tweets = collectObjects(rsp);
+                    Collection tweets = createObj.collectObjects(rsp);
                     StopWatch updateWatch = new StopWatch().start();
                     bulkUpdate(tweets, intoIndex);
                     updateWatch.stop();

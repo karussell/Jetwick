@@ -258,6 +258,23 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
             return null;
         }
     }
+    
+    public JUser findById(long userId) {
+        try {
+            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery("twitterId", userId)));
+            if (res.isEmpty())
+                return null;
+            else if (res.size() == 1) {
+                JUser u = res.iterator().next();
+                u.setTwitterId(userId);
+                return u;
+            } else
+                throw new IllegalStateException("userId search:" + userId + " returns more than one users:" + res);
+        } catch (Exception ex) {
+            logger.error("Couldn't load user with userId:" + userId + " " + ex.getMessage());
+            return null;
+        }
+    }
 
     public JUser findByScreenName(String name) {
         try {

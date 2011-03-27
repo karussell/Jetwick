@@ -128,11 +128,11 @@ public class MySession extends WebSession {
                 throw new IllegalStateException("user from twitterSearch cannot be null");
 
             logger.info("new twitter4j initialized for user:" + twitterUser.getScreenName());
-
+            
             // get current saved searches and update with current twitter infos
-            JUser tmpUser = uSearch.findByTwitterToken(token.getToken());
+            JUser tmpUser = uSearch.findById(token.getUserId());
             if (tmpUser == null) {
-                logger.info("token for " + twitterUser.getScreenName() + " not found in user index");
+                logger.info("userId for " + twitterUser.getScreenName() + " not found in user index");
                 // token will be removed on logout so get saved searches from uindex
                 tmpUser = uSearch.findByScreenName(twitterUser.getScreenName());
                 if (tmpUser == null) {
