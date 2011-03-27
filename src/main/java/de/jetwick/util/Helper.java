@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.zip.GZIPInputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -89,6 +90,8 @@ public class Helper {
     private static final String simpleDateString = "HH:mm yyyy-MM-dd";
     private static final String weekDayString = "EEE";
     private static final String monthDayString = "d. MMMM";
+    public static int K4 = 4096;
+    public static int K8 = K4 * 2;
 
     public static String getWeekDay(Date date) {
         DateFormat df = new SimpleDateFormat(weekDayString, Locale.UK);
@@ -413,21 +416,6 @@ public class Helper {
         });
     }
 
-    /**
-     * Returns an 'optimized'/fast HttpUrlConnection
-     */
-    public static HttpURLConnection getHttpURLConnection(String urlAsString) throws Exception {
-        URL url = new URL(urlAsString);
-        //using proxy may increase latency
-        HttpURLConnection hConn = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
-        // force no follow
-        hConn.setInstanceFollowRedirects(false);
-        // the program doesn't care what the content actually is !!
-        // http://java.sun.com/developer/JDCTechTips/2003/tt0422.html
-        hConn.setRequestMethod("HEAD");
-        return hConn;
-    }
-
     public static String extractDomain(String url) {
         // url shorteners seems to have a "domain.de" shorter or equal to 11
         // the longest was tinyurl.com the shortest is t.co
@@ -460,7 +448,14 @@ public class Helper {
      */
     public static String getResolvedUrl(String urlAsString, int timeout) {
         try {
-            HttpURLConnection hConn = getHttpURLConnection(urlAsString);
+            URL url = new URL(urlAsString);
+            //using proxy may increase latency
+            HttpURLConnection hConn = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
+            // force no follow
+            hConn.setInstanceFollowRedirects(false);
+            // the program doesn't care what the content actually is !!
+            // http://java.sun.com/developer/JDCTechTips/2003/tt0422.html
+            hConn.setRequestMethod("HEAD");
             // default is 0 => infinity waiting
             hConn.setConnectTimeout(timeout);
             hConn.setReadTimeout(timeout);
@@ -533,11 +528,16 @@ public class Helper {
             //using proxy may increase latency
             HttpURLConnection hConn = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
             hConn.setRequestProperty("User-Agent", "Mozilla/5.0 Gecko/20100915 Firefox/3.6.10");
+            hConn.setRequestProperty("Accept-Encoding", "gzip, deflate");
             hConn.setConnectTimeout(timeout);
             hConn.setReadTimeout(timeout);
             // default length of bufferedinputstream is 8k
-            byte[] arr = new byte[4096];
-            BufferedInputStream in = new BufferedInputStream(hConn.getInputStream(), arr.length);
+            byte[] arr = new byte[K4];
+            InputStream is = hConn.getInputStream();
+            if ("gzip".equals(hConn.getContentEncoding()))
+                is = new GZIPInputStream(is);
+
+            BufferedInputStream in = new BufferedInputStream(is, arr.length);
             in.read(arr);
             return getUrlInfosFromText(arr);
         } catch (Exception ex) {
@@ -575,19 +575,15 @@ public class Helper {
         HttpURLConnection hConn = (HttpURLConnection) url.openConnection();
         hConn.setReadTimeout(timeout);
         hConn.setConnectTimeout(timeout);
-        return newDocumentBuilder().parse(hConn.getInputStream());
+        hConn.setRequestProperty("Accept-Encoding", "gzip, deflate");
+
+        InputStream is = hConn.getInputStream();
+        if ("gzip".equals(hConn.getContentEncoding()))
+            is = new GZIPInputStream(is);
+        return newDocumentBuilder().parse(is);
     }
 
-    public static String readUrl(String urlAsString, int timeout) throws IOException {
-        URL url = new URL(urlAsString);
-        //using proxy may increase latency
-        HttpURLConnection hConn = (HttpURLConnection) url.openConnection();
-        hConn.setReadTimeout(timeout);
-        hConn.setConnectTimeout(timeout);
-        return readInputStream(hConn.getInputStream());
-    }
-
-    public static String readInputStream(InputStream is) throws IOException {
+    static String readInputStream(InputStream is) throws IOException {
         if (is == null)
             throw new IllegalArgumentException("stream mustn't be null!");
 
