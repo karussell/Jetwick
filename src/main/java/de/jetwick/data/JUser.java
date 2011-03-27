@@ -103,16 +103,18 @@ public class JUser implements DbObject, Serializable {
         return twitterToken;
     }
 
-    public void setTwitterToken(String twitterToken) {
+    public JUser setTwitterToken(String twitterToken) {
         this.twitterToken = twitterToken;
+        return this;
     }
 
     public String getTwitterTokenSecret() {
         return twitterTokenSecret;
     }
 
-    public void setTwitterTokenSecret(String twitterTokenSecret) {
+    public JUser setTwitterTokenSecret(String twitterTokenSecret) {
         this.twitterTokenSecret = twitterTokenSecret;
+        return this;
     }
 
     /**

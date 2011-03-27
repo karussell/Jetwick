@@ -98,7 +98,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                             authUser.getTwitterTokenSecret()));
                 } catch (Exception ex2) {
                     ex = ex2;
-                }
+                }                
                 if (ue.getTwitterSearch() == null) {
                     logger.error("Skipping user:" + authUser.getScreenName() + " token:"
                             + authUser.getTwitterToken() + " Error:" + getErrorMsg(ex));
@@ -168,7 +168,7 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
 
     protected boolean isValidUser(JUser u) {
         if (u.getTwitterToken() == null || u.getTwitterTokenSecret() == null) {
-            logger.warn("Skipped user:" + u.getScreenName() + " - no token or secret!");
+//            logger.warn("Skipped user:" + u.getScreenName() + " - no token or secret!");
             return false;
         }
         return true;

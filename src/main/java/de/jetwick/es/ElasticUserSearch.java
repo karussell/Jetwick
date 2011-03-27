@@ -35,6 +35,10 @@ import java.util.Set;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.query.xcontent.FilterBuilders;
+import org.elasticsearch.index.query.xcontent.FilteredQueryBuilder;
+import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +50,7 @@ import org.slf4j.LoggerFactory;
 public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
+    private static final String TOKEN = "token_s";
     private static final String QUERY_TERMS = "ss_qterms_mv_s";
     private static final String SCREEN_NAME = "name";
     public static final String CREATED_AT = "createdAt_dt";
@@ -142,7 +147,7 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         b.field("iconUrl", user.getProfileImageUrl());
         b.field("webUrl", user.getWebUrl());
         b.field("bio", user.getDescription());
-        b.field("token_s", user.getTwitterToken());
+        b.field(TOKEN, user.getTwitterToken());
         b.field("tokenSecret_s", user.getTwitterTokenSecret());
 
         b.field(CREATED_AT, user.getCreatedAt());
@@ -202,7 +207,7 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         user.setProfileImageUrl((String) doc.get("iconUrl"));
         user.setWebUrl((String) doc.get("webUrl"));
         user.setDescription((String) doc.get("bio"));
-        user.setTwitterToken((String) doc.get("token_s"));
+        user.setTwitterToken((String) doc.get(TOKEN));
         user.setTwitterTokenSecret((String) doc.get("tokenSecret_s"));
 
         user.setUpdateAt(Helper.toDateNoNPE((String) doc.get("timestamp")));
@@ -244,9 +249,14 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
         return user;
     }
 
+    /**
+     * Deprecated. Use findById
+     * @param token
+     * @return 
+     */
     public JUser findByTwitterToken(String token) {
         try {
-            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery("token_s", token)));
+            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery(TOKEN, token)));
             if (res.isEmpty())
                 return null;
             else if (res.size() == 1)
@@ -258,20 +268,23 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
             return null;
         }
     }
-    
-    public JUser findById(long userId) {
+
+    /**
+     * @return the user with the specified twitter id
+     */
+    public JUser findById(long userTwitterId) {
         try {
-            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery("twitterId", userId)));
+            Collection<JUser> res = collectObjects(search(new UserQuery().addFilterQuery("twitterId", userTwitterId)));
             if (res.isEmpty())
                 return null;
             else if (res.size() == 1) {
                 JUser u = res.iterator().next();
-                u.setTwitterId(userId);
+                u.setTwitterId(userTwitterId);
                 return u;
             } else
-                throw new IllegalStateException("userId search:" + userId + " returns more than one users:" + res);
+                throw new IllegalStateException("userId search:" + userTwitterId + " returns more than one users:" + res);
         } catch (Exception ex) {
-            logger.error("Couldn't load user with userId:" + userId + " " + ex.getMessage());
+            logger.error("Couldn't load user with userId:" + userTwitterId + " " + ex.getMessage());
             return null;
         }
     }
@@ -309,7 +322,14 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
     }
 
     public Collection<String> getQueryTerms() {
-        SearchResponse rsp = search(new UserQuery().addFacetField(QUERY_TERMS, 1000));
+        SearchRequestBuilder srb = client.prepareSearch(getIndexName());
+        FilteredQueryBuilder fb = QueryBuilders.filteredQuery(
+                QueryBuilders.matchAllQuery(),FilterBuilders.existsFilter(TOKEN));
+        
+        srb.addFacet(FacetBuilders.termsFacet(QUERY_TERMS).field(QUERY_TERMS).size(1000)).
+                setQuery(fb);
+        SearchResponse rsp = srb.execute().actionGet();
+//        SearchResponse rsp = search(new UserQuery().addFacetField(QUERY_TERMS, 1000));
         TermsFacet tf = (TermsFacet) rsp.getFacets().facet(QUERY_TERMS);
         Collection<String> res = new ArrayList<String>();
         if (tf.entries() != null)

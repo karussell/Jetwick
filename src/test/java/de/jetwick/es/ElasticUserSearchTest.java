@@ -290,12 +290,25 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
+    public void testFriends() throws Exception {
+        JUser user = new JUser("peter").setFriends(Arrays.asList("test", "tester"));
+        JUser user2 = new JUser("karsten").setFriends(Collections.EMPTY_LIST);
+        JUser user3 = new JUser("johannes").setFriends(null);
+        userSearch.save(user, false);
+        userSearch.save(user2, false);
+        userSearch.save(user3, true);
+        assertEquals(2, userSearch.findByScreenName("peter").getFriends().size());
+        assertEquals(0, userSearch.findByScreenName("karsten").getFriends().size());
+        assertEquals(0, userSearch.findByScreenName("johannes").getFriends().size());
+    }
+    
+    @Test
     public void testGetQueryTerms() throws Exception {
-        JUser user = new JUser("karsten");
+        JUser user = new JUser("karsten").setTwitterToken("test");
         user.addSavedSearch(new SavedSearch(1, new UserQuery("peter test")));
         user.addSavedSearch(new SavedSearch(2, new UserQuery("peter tester")));
         userSearch.save(user, false);
-        user = new JUser("peter");
+        user = new JUser("peter").setTwitterToken("test");
         user.addSavedSearch(new SavedSearch(3, new UserQuery("peter test")));
         user.addSavedSearch(new SavedSearch(4, new UserQuery("karsten tester")));
         user.addSavedSearch(new SavedSearch(5, new UserQuery("karsten OR tester")));
@@ -315,18 +328,5 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
         assertTrue(coll.contains("karsten OR tester"));
-    }
-
-    @Test
-    public void testFriends() throws Exception {
-        JUser user = new JUser("peter").setFriends(Arrays.asList("test", "tester"));
-        JUser user2 = new JUser("karsten").setFriends(Collections.EMPTY_LIST);
-        JUser user3 = new JUser("johannes").setFriends(null);
-        userSearch.save(user, false);
-        userSearch.save(user2, false);
-        userSearch.save(user3, true);
-        assertEquals(2, userSearch.findByScreenName("peter").getFriends().size());
-        assertEquals(0, userSearch.findByScreenName("karsten").getFriends().size());
-        assertEquals(0, userSearch.findByScreenName("johannes").getFriends().size());
     }
 }
