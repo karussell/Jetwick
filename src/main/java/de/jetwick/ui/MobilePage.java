@@ -78,9 +78,9 @@ public class MobilePage extends WebPage {
     }
 
     private void doSearch() {
-        Collection<JUser> users = new LinkedHashSet<JUser>();
-        
-        JetwickQuery query = new TweetQuery(queryString).setSort(ElasticTweetSearch.RT_COUNT, "desc").
+        Collection<JUser> users = new LinkedHashSet<JUser>();        
+        JetwickQuery query = new TweetQuery(queryString).
+                setEscape(true).setSort(ElasticTweetSearch.RT_COUNT, "desc").
                 addLatestDateFilter(24).addNoDupsFilter().addNoSpamFilter().
                 addIsOriginalTweetFilter().setSize(10);
         
