@@ -514,7 +514,7 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             
             // force visibility for next call of store
             // we do not need to force this for delete!
-            refresh();
+//            refresh();
             
             // We are not receiving the deleted tweets! but do we need to
             // store the tweets where this deleted tweet was a retweet?

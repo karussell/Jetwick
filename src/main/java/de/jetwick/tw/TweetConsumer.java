@@ -56,6 +56,7 @@ public class TweetConsumer extends MyThread {
     private int removeDays = 8;
     private long receivedTweets = 0;
     private long indexedTweets = 0;
+    private int counter = 0;
 
     public TweetConsumer() {
         super("tweet-consumer");
@@ -116,7 +117,7 @@ public class TweetConsumer extends MyThread {
                     logger.info("[es] optimized twindex to segments:" + optimizeToSegmentsAfterUpdate);
                 }
             }
-        }
+        }        
         logger.info(getName() + " finished");
     }
 
@@ -142,9 +143,10 @@ public class TweetConsumer extends MyThread {
         int maxTrials = 1;
         for (int trial = 1; trial <= maxTrials; trial++) {
             try {
-                MyDate removeUntil = new MyDate().minusDays(removeDays);
-                boolean performDelete = removeUntil._getHoursOfDay() == 0;
-                Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), performDelete);
+                // make sure last update went into the index                
+                tweetSearch.refresh();
+                MyDate removeUntil = new MyDate().minusDays(removeDays);                
+                Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), counter++ % 1000 == 0);
                 receivedTweets += tweetSet.size();
                 String str = "[es] indexed:";
                 for (TweetPackage pkg : donePackages) {

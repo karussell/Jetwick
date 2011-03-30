@@ -152,11 +152,12 @@ public class TweetCollectorIntegrationTestClass extends JetwickTestClass {
         
         Thread.sleep(1000);
         
-        tweetConsumer.interrupt();
+        tweetConsumer.interrupt();                
         twUrlResolver.interrupt();
         tweetProducerThread.interrupt();
         checkExceptions(exceptionMap);
         
+        tweetSearchTester.getSearch().refresh();
         List<JTweet> res = tweetSearch.searchTweets(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "timetabling"));
         assertEquals(1, res.size());
         assertEquals(1, res.get(0).getUrlEntries().size());
