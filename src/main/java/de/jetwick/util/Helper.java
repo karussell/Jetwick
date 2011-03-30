@@ -623,7 +623,7 @@ public class Helper {
      */
     public static String htmlEntityDecode(String s) {
         int i = 0, j = 0, pos = 0;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while ((i = s.indexOf("&", pos)) != -1 && (j = s.indexOf(';', i)) != -1) {
             int n = -1;
             for (i += 1; i < j; ++i) {

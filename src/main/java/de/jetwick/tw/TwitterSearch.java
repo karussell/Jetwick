@@ -435,7 +435,8 @@ public class TwitterSearch implements Serializable {
             }
 
             // minMillis could force us to leave earlier than defined by maxPages
-            if (breakPaging || res.getTweets().size() < hitsPerPage)
+            // or if resulting tweets are less then request (but -10 because of twitter strangeness)
+            if (breakPaging || res.getTweets().size() < hitsPerPage - 10)
                 break;
         }
 
