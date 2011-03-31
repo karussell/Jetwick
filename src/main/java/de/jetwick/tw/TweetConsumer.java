@@ -143,10 +143,11 @@ public class TweetConsumer extends MyThread {
         int maxTrials = 1;
         for (int trial = 1; trial <= maxTrials; trial++) {
             try {
-                // make sure last update went into the index                
-                tweetSearch.refresh();
+                                
                 MyDate removeUntil = new MyDate().minusDays(removeDays);                
                 Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), counter++ % 1000 == 0);
+                // make sure the update went into the index
+                tweetSearch.refresh();
                 receivedTweets += tweetSet.size();
                 String str = "[es] indexed:";
                 for (TweetPackage pkg : donePackages) {
