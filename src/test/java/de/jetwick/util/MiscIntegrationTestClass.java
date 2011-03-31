@@ -69,7 +69,13 @@ public class MiscIntegrationTestClass {
 
         Helper.enableCookieMgmt();
         // the following site directs to login (als a unique title)
-        Helper.getUrlTitle("http://ow.ly/2LbUA", 2000);
+        Helper.getUrlTitle("http://ow.ly/2LbUA", 2000);                        
+    }
+    
+    @Test
+    public void testCorrectDefaultUrlTitleEncoding() {
+        //"Lenta.ru: Технологии: Основатель Microsoft расскажет о \"вероломстве\" Билла Гейтса"
+//        kyrillic: System.out.println(Helper.getUrlTitle("http://bit.ly/hKvv2b", 2000));        
     }
 
     @Test

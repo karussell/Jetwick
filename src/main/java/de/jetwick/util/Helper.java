@@ -480,7 +480,16 @@ public class Helper {
      * Returns title and description of a specified string (as byte array)
      */
     public static String[] getUrlInfosFromText(byte[] arr) {
-        String res = new String(arr);
+        String res;
+        try {
+            // http1.1 says ISO-8859-1 is the default charset
+            res = new String(arr, "ISO-8859-1");
+            // sometime kyrillic is necessary !?
+            //res = new String(arr, "Windows-1251");
+        } catch (Exception ex) {
+            res = new String(arr);
+        }
+
         int index = getStartTitleEndPos(res);
         if (index < 0)
             return new String[]{"", ""};
@@ -493,15 +502,69 @@ public class Helper {
             if (lastEncIndex == encIndex + 8)
                 lastEncIndex = res.indexOf("\"", ++encIndex + 8);
 
+            // re-read byte array with different encoding
             if (lastEncIndex > encIndex + 8) {
-                String encoding = res.substring(encIndex + 8, lastEncIndex);
                 try {
+                    String encoding = res.substring(encIndex + 8, lastEncIndex);
                     res = new String(arr, encoding);
-                    index = getStartTitleEndPos(res);
-                    if (index < 0)
-                        return new String[]{"", ""};
                 } catch (Exception ex) {
                 }
+                index = getStartTitleEndPos(res);
+                if (index < 0)
+                    return new String[]{"", ""};
+            }
+        }
+
+        int lastIndex = res.indexOf("</title>");
+        if (lastIndex <= index)
+            return new String[]{"", ""};
+
+        String title = res.substring(index, lastIndex);
+        index = res.indexOf(DESCRIPTION);
+        if (index < 0)
+            index = res.indexOf(DESCRIPTION2);
+
+        lastIndex = res.indexOf("\"", index + DESCRIPTION.length());
+        if (index < 0 || lastIndex < 0)
+            return new String[]{title, ""};
+
+        index += DESCRIPTION.length();
+        return new String[]{title, res.substring(index, lastIndex)};
+    }
+
+    public static String[] getIsoUrlInfosFromText(byte[] arr) {
+        // http1.1 says ISO-8859-1 is the default charset
+        String res;
+        try {
+            res = new String(arr, "ISO-8859-1");
+        } catch (Exception ex) {
+            res = new String(arr);
+        }
+        // kyrillisch
+        //res = new String(arr, "Windows-1251");
+
+        int index = getStartTitleEndPos(res);
+        if (index < 0)
+            return new String[]{"", ""};
+
+        int encIndex = res.indexOf("charset=");
+        if (encIndex > 0) {
+            int lastEncIndex = res.indexOf("\"", encIndex + 8);
+
+            // if we have charset="something"
+            if (lastEncIndex == encIndex + 8)
+                lastEncIndex = res.indexOf("\"", ++encIndex + 8);
+
+            // re-read byte array with different encoding
+            if (lastEncIndex > encIndex + 8) {
+                try {
+                    String encoding = res.substring(encIndex + 8, lastEncIndex);
+                    res = new String(arr, encoding);
+                } catch (Exception ex) {
+                }
+                index = getStartTitleEndPos(res);
+                if (index < 0)
+                    return new String[]{"", ""};
             }
         }
 
