@@ -510,17 +510,16 @@ public class ElasticTweetSearch extends AbstractElasticSearch<JTweet> {
             // this is a bit expensive ~30-40sec for every store call on a large index!
 //            fetchMoreTweets(twMap, usersMap);
 
-            update(updateTweets);
-            
-            // force visibility for next call of store
-            // we do not need to force this for delete!
-//            refresh();
+            update(updateTweets);                        
             
             // We are not receiving the deleted tweets! but do we need to
             // store the tweets where this deleted tweet was a retweet?
             // No. Because "userA: text" and "userB: RT @usera: text" now the second tweet is always AFTER the first!                        
             if (performDelete)
                 deleteUntil(removeUntil);
+            
+            // force visibility for next call of store            
+            refresh();
             
             return updateTweets;
         } catch (Exception ex) {

@@ -145,9 +145,7 @@ public class TweetConsumer extends MyThread {
             try {
                                 
                 MyDate removeUntil = new MyDate().minusDays(removeDays);                
-                Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), counter++ % 1000 == 0);
-                // make sure the update went into the index
-                tweetSearch.refresh();
+                Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), counter++ % 1000 == 0);                
                 receivedTweets += tweetSet.size();
                 String str = "[es] indexed:";
                 for (TweetPackage pkg : donePackages) {
