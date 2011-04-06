@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.logging.Level;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -217,7 +216,11 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
             todoTagsThread.start();
     }
 
-    public void _updateWithInc(JTag tag) {
+    /**
+     * Do not use directly. Use queueTag instead
+     * @param tag 
+     */
+    void updateWithInc(JTag tag) {
         JTag existing = findByNameAndUser(tag.getTerm(), tag.getUser());
         if (existing != null) {
             tag = existing;
@@ -235,7 +238,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
             while (!isInterrupted()) {
                 try {
                     JTag tag = todoTags.take();
-                    _updateWithInc(tag);
+                    updateWithInc(tag);
                     if (todoTags.isEmpty()) {
                         synchronized (todoTags) {
                             todoTags.notifyAll();
