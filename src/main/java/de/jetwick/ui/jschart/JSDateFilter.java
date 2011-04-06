@@ -161,9 +161,7 @@ public class JSDateFilter extends Panel {
                         display = "Last 8h";
                         toStr = "*";
                     } else if (counter == 2) {
-                        display = "Today";                        
-                    } else if (counter == 2) {
-                        display = "Ye.day";                        
+                        display = "Today";     
                     }
                     
                     String filter = "[" + fromStr + " TO " + toStr + "]";

@@ -400,6 +400,7 @@ div.wicket-aa ul li.selected {
 .left-column {
     padding-left: 20px;
     min-width: 210px;
+    max-width: 250px;
     float: left;
 }
 /* avoid that content will be under left column */

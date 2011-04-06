@@ -130,8 +130,8 @@ public class JetwickApp extends WebApplication {
         session.setTwitterSearch(injector.getInstance(TwitterSearch.class));
 //        getGuiceInjector().inject(session);
         
-        WebRequest webRequest = ((WebRequest) request);
-        logger.info("created new session! IP=" + webRequest.getHttpServletRequest().getRemoteHost() + " session:" + session.getId());
+//        WebRequest webRequest = ((WebRequest) request);
+//        logger.info("created new session! IP=" + webRequest.getHttpServletRequest().getRemoteHost() + " session:" + session.getId());
         
         return session;
 
