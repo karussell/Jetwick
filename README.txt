@@ -1,4 +1,4 @@
-Jetwick - Personalized Twitter Search
+Jetwick - Open and Personalized Twitter Search
 
 License
 ========
@@ -39,7 +39,7 @@ With twitter this is a pain - with jetwick it's just a click.
 For more details take a look at this site:
 http://www.pannous.info/products/jetwick-twitter-search/
 
-Try it live: http://jetwick.com
+Try it live: http://jetsli.de/tweets
 
 Problems?
 =========
