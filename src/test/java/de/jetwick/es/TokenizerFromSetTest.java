@@ -33,7 +33,7 @@ public class TokenizerFromSetTest {
     @Test
     public void testIncrementToken() throws Exception {
         Tokenizer ts = new TokenizerFromSet(Arrays.asList("test", "pest", "fest").iterator());
-        Collection<String> res = new SimilarQuery().doSnowballStemming(ts);
+        Collection<String> res = new SimilarTweetQuery().doSnowballStemming(ts);
         assertEquals(3, res.size());
         assertTrue(res.contains("test"));
         assertTrue(res.contains("pest"));

@@ -17,17 +17,19 @@ package de.jetwick.config;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
+import de.jetwick.data.JTweet;
 import de.jetwick.es.AbstractElasticSearch;
 import de.jetwick.es.ElasticNode;
 import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
+import de.jetwick.snacktory.HtmlFetcher;
 import de.jetwick.tw.Credits;
 import de.jetwick.tw.TweetProducer;
 import de.jetwick.tw.TweetProducerViaSearch;
 import de.jetwick.tw.TwitterSearch;
-import de.jetwick.tw.UrlTitleCleaner;
+import de.jetwick.util.GenericUrlResolver;
 import de.jetwick.util.MaxBoundSet;
 import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
@@ -49,10 +51,17 @@ public class DefaultModule extends AbstractModule {
         installTweetProducer();
         installLastSearches();
         installTwitterModule();
-        installSearchModule();     
+        installSearchModule();
         installRMIModule();
-        installUrlCleaner();
-    }    
+
+        HtmlFetcher fetcher = createHtmlFetcher();
+        if (fetcher != null)
+            bind(HtmlFetcher.class).toInstance(fetcher);
+
+        GenericUrlResolver urlResolver = createGenericUrlResolver();
+        if (urlResolver != null)
+            bind(GenericUrlResolver.class).toInstance(urlResolver);        
+    }
 
     public void installSearchModule() {
         // TODO shouldn't fail when node is not available!!??
@@ -60,14 +69,26 @@ public class DefaultModule extends AbstractModule {
                 config.getTweetSearchUrl(), ElasticNode.PORT);
 
         ElasticTweetSearch tweetSearch = new ElasticTweetSearch(client);
-        tweetSearch.nodeInfo();
+        try {
+            tweetSearch.nodeInfo();
+        } catch (Exception ex) {
+            logger.warn("Problem to get node info:" + ex.getMessage());
+        } 
         bind(ElasticTweetSearch.class).toInstance(tweetSearch);
 
         ElasticUserSearch userSearch = new ElasticUserSearch(client);
         bind(ElasticUserSearch.class).toInstance(userSearch);
-        
-        ElasticTagSearch tagSearch = new ElasticTagSearch(client);        
-        bind(ElasticTagSearch.class).toInstance(tagSearch);
+
+        ElasticTagSearch tagSearch = new ElasticTagSearch(client);
+        bind(ElasticTagSearch.class).toInstance(tagSearch);        
+    }
+
+    public GenericUrlResolver createGenericUrlResolver() {
+        final GenericUrlResolver urlResolver = new GenericUrlResolver(config.getUrlResolverQueueSize());
+        urlResolver.setResolveThreads(config.getUrlResolverThreads());
+        urlResolver.setResolveTimeout(config.getUrlResolverTimeout());
+//        urlResolver.setMaxQueueSize(config.getUrlResolverHelperQueueSize());        
+        return urlResolver;
     }
 
     public void installRMIModule() {
@@ -76,13 +97,14 @@ public class DefaultModule extends AbstractModule {
 
     public void installTwitterModule() {
         final Credits cred = config.getTwitterSearchCredits();
-//        final TwitterSearch ts = createTwitterSearch().setConsumer(
-//                cred.getConsumerKey(), cred.getConsumerSecret());
+//        logger.info("TWITTER:"+cred.getConsumerKey() + " " + cred.getConsumerSecret());
+//        logger.info(cred.getToken() + " " + cred.getTokenSecret());
+
         final TwitterSearch ts = createTwitterSearch().setConsumer(
                 cred.getConsumerKey(), cred.getConsumerSecret());
 
         try {
-            ts.initTwitter4JInstance(cred.getToken(), cred.getTokenSecret());
+            ts.initTwitter4JInstance(cred.getToken(), cred.getTokenSecret(), true);
         } catch (Exception ex) {
             logger.error("Cannot create twitter4j instance!\n######### TWITTER4J ERROR: But start jetwick nevertheless! Error:" + ex);
         }
@@ -110,17 +132,14 @@ public class DefaultModule extends AbstractModule {
         bind(MaxBoundSet.class).toInstance(new MaxBoundSet<String>(250, 500).setMaxAge(10 * 60 * 1000));
     }
 
-    public void installUrlCleaner() {
-        try {
-            UrlTitleCleaner cleaner = new UrlTitleCleaner(config.getUrlTitleAvoidList());
-            bind(UrlTitleCleaner.class).toInstance(cleaner);
-        } catch (Exception ex) {
-            logger.error("error while reading url-title-file:" + config.getUrlTitleAvoidList() + " " + ex.getMessage());
-        }
-    }
-
-    private void installTweetProducer() {
+    public void installTweetProducer() {
 //        bind(TweetProducer.class).to(TweetProducerOffline.class);
         bind(TweetProducer.class).to(TweetProducerViaSearch.class);
+    }
+
+    public HtmlFetcher createHtmlFetcher() {
+        HtmlFetcher fetcher = new HtmlFetcher();
+        fetcher.setMaxTextLength(JTweet.MAX_LENGTH);
+        return fetcher;
     }
 }

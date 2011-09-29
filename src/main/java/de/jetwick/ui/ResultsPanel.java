@@ -75,7 +75,6 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
     private Map<Long, String> translateMap = new LinkedHashMap<Long, String>();
     private boolean translateAll = false;
     private int hitsPerPage;
-    private OneLineAdLazyLoadPanel lazyLoadAdPanel;
     private Map<Long, JTweet> allTweets = new LinkedHashMap<Long, JTweet>();
 
     // for test only
@@ -86,20 +85,6 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
     public ResultsPanel(String id, final String toLanguage) {
         super(id);
 
-        lazyLoadAdPanel = new OneLineAdLazyLoadPanel("onelinead") {
-
-            @Override
-            public OneLineAdPanel createAdPanel(String id) {
-                return new OneLineAdPanel(id) {
-
-                    @Override
-                    public OneTweet createOneTweetPanel(String id) {
-                        return createOneTweet(id, toLanguage);
-                    }
-                };
-            }
-        };
-        add(lazyLoadAdPanel.setOutputMarkupId(true));
         add(new Label("qm", new PropertyModel(this, "queryMessage")));
         add(new Label("qmWarn", new PropertyModel(this, "queryMessageWarn")) {
 
@@ -131,7 +116,7 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
             public void onClick(AjaxRequestTarget target) {
                 PageParameters pp = new PageParameters();
                 pp.add("findOrigin", query);
-                setResponsePage(getApplication().getHomePage(), pp);
+                setResponsePage(TweetSearchPage.class, pp);
             }
         };
 
@@ -226,12 +211,12 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
             @Override
             protected void setHeaders(WebResponse response) {
                 super.setHeaders(response);
-                response.setAttachmentHeader("tweets.csv");
+                response.setAttachmentHeader("tweets.txt");
             }
         };
 
         export.setCacheable(false);
-        add(new ResourceLink("exportCsvLink", export));
+        add(new ResourceLink("exportTsvLink", export));
         add(new Link("exportHtmlLink") {
 
             @Override
@@ -271,6 +256,12 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
             public Collection<JTweet> onInReplyOfClick(long id) {
                 return ResultsPanel.this.onInReplyOfClick(id);
             }
+
+            @Override
+            public void onRetweet(JTweet tweet, AjaxRequestTarget target) {
+                ResultsPanel.this.onRetweet(tweet, target);
+            }
+            
         }.setLanguage(lang);
     }
 
@@ -389,7 +380,7 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
                 pp.add("hits", "" + hits);
                 pp.add("user", user);
                 pp.add("q", query);
-                setResponsePage(getApplication().getHomePage(), pp);
+                setResponsePage(TweetSearchPage.class, pp);
             }
         };
 
@@ -424,10 +415,6 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
         return link;
     }
 
-    public void setAdQuery(String queryString) {
-        lazyLoadAdPanel.setSearchQuery(queryString);
-    }
-
     @Override
     public void contribute(WiQueryResourceManager wiQueryResourceManager) {        
     }
@@ -435,5 +422,8 @@ public class ResultsPanel extends Panel implements IWiQueryPlugin {
     @Override
     public JsStatement statement() {
         return new JsStatement();
+    }
+
+    protected void onRetweet(JTweet tweet, AjaxRequestTarget target) {        
     }
 }

@@ -34,7 +34,7 @@ public class MiscIntegrationTestClass {
         String url = "http://bit.ly/dipo5a";
         String newUrl = Helper.getResolvedUrl(url, 900);
         assertTrue(url.length() < newUrl.length());
-        
+
         url = "http://is.gd/en49t";
         newUrl = Helper.getResolvedUrl(url, 900);
         assertTrue(url.length() < newUrl.length());
@@ -49,6 +49,8 @@ public class MiscIntegrationTestClass {
         Helper.getResolvedUrl("http://tumblr.com/xrwg2fwzl", 5000);
 
         Helper.getResolvedUrl("http://bit.ly/9MBBhW", 5000);
+
+        System.out.println(Helper.getResolvedUrl("http://bit.ly/gek1qK", 5000));
     }
 
     @Test
@@ -57,7 +59,7 @@ public class MiscIntegrationTestClass {
 
         // encoding is now windows-1251
         assertEquals("Фильмы скачать бесплатно, новинки игр, качественный софт, музыка на Tamross.ru",
-                Helper.getUrlTitle("http://tamross.ru/videoyroki/31817-java-dlya-professionalov-obuchayushhij-videokurs.html", 4000));        
+                Helper.getUrlTitle("http://tamross.ru/videoyroki/31817-java-dlya-professionalov-obuchayushhij-videokurs.html", 4000));
 
         // too slow sometimes ;-)
         //assertEquals("Twitter Search Jetwick", Helper.getUrlTitle("http://jetwick.com", 2000));
@@ -69,13 +71,14 @@ public class MiscIntegrationTestClass {
 
         Helper.enableCookieMgmt();
         // the following site directs to login (als a unique title)
-        Helper.getUrlTitle("http://ow.ly/2LbUA", 2000);                        
+        Helper.getUrlTitle("http://ow.ly/2LbUA", 2000);
     }
-    
+
     @Test
     public void testCorrectDefaultUrlTitleEncoding() {
-        //"Lenta.ru: Технологии: Основатель Microsoft расскажет о \"вероломстве\" Билла Гейтса"
-//        kyrillic: System.out.println(Helper.getUrlTitle("http://bit.ly/hKvv2b", 2000));        
+//        kyrillic: 
+        assertEquals("Lenta.ru: Технологии: Основатель Microsoft "
+                + "расскажет о \"вероломстве\" Билла Гейтса", Helper.getUrlTitle("http://bit.ly/hKvv2b", 2000));
     }
 
     @Test
@@ -91,7 +94,7 @@ public class MiscIntegrationTestClass {
         Collection<WikiEntry> list = new Wikipedia().query("wicket", "de", 5);
         assertEquals(5, list.size());
         for (WikiEntry e : list) {
-            System.out.println(e);
+//            System.out.println(e);
         }
     }
 }

@@ -15,9 +15,9 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.data.JTweet;
 import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.tw.queue.TweetPackage;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -27,12 +27,10 @@ import java.util.concurrent.BlockingQueue;
  */
 public interface TweetProducer extends Runnable {
 
-    BlockingQueue<TweetPackage> getQueue();
+    void setQueue(BlockingQueue<JTweet> queue);
 
     @Override
     void run();
-
-    void setMaxFill(int maxFill);
 
     void setTwitterSearch(TwitterSearch tws);
 

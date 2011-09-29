@@ -15,6 +15,8 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.util.Helper;
+import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 
 /**
@@ -22,8 +24,34 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
  * @author Peter Karich, jetwick_@_pannous_._info
  */
 public class OfflinePage extends JetwickPage {
+    private String password;
 
-    public OfflinePage() {
+    public OfflinePage(PageParameters params) {
+        String pw = params.getString(TweetSearchPage.PASSWORD);
+        if(!Helper.isEmpty(pw))
+            info("Your invitation code is wrong. Please Click on the link below to get one!");
+        
         add(new FeedbackPanel("feedback"));
+        
+//        TextField queryTextField = new TextField("textField", new PropertyModel(this, "password"));                
+//        Form form= new Form("pwForm") {
+//
+//            @Override
+//            protected void onSubmit() {                
+//                PageParameters pp = new PageParameters();
+//                pp.put(Jetslide.PASSWORD, password);
+//                setResponsePage(Jetslide.class, pp);
+//            }            
+//        };        
+//        form.add(queryTextField);
+//        add(form);
+    }    
+    
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String str) {
+        password = str;
     }
 }

@@ -21,21 +21,18 @@ import de.jetwick.rmi.RMIClient;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import de.jetwick.tw.queue.QueueThread;
-import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.MaxBoundSet;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.TwitterException;
 
 public class MyTweetGrabber implements Serializable {
 
-    private static final long serialVersionUID = 1L;    
+    private static final long serialVersionUID = 1L;
     private final Logger logger = LoggerFactory.getLogger(MyTweetGrabber.class);
     private String userName;
     private String queryStr;
@@ -85,9 +82,9 @@ public class MyTweetGrabber implements Serializable {
 
             @Override
             public void run() {
-                if(!tweetSearch.isInitialized())
+                if (!tweetSearch.isInitialized())
                     return;
-                
+
                 int rl = tweetSearch.getRateLimit();
                 if (rl <= TwitterSearch.LIMIT) {
                     doAbort(new RuntimeException("Couldn't process query (TwitterSearch+Index)."
@@ -95,7 +92,7 @@ public class MyTweetGrabber implements Serializable {
                     return;
                 }
 
-                String name = "";
+                String feedSource = "";
                 if (tweets == null) {
                     if (userName != null && !userName.isEmpty()) {
                         // TODO exlude friendSearch
@@ -103,7 +100,7 @@ public class MyTweetGrabber implements Serializable {
                             if (!isSearchDoneInLastMinutes("user:" + userName)) {
 //                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
                                 tweets = new LinkedBlockingQueue<JTweet>();
-                                name = "grab user:" + userName;
+                                feedSource = "grab user:" + userName;
                                 tweets.addAll(tweetSearch.getTweets(new JUser(userName), new ArrayList<JUser>(), tweetCount));
                                 logger.info("add " + tweets.size() + " tweets from user search: " + userName);
                             }
@@ -116,7 +113,7 @@ public class MyTweetGrabber implements Serializable {
                             if (!isSearchDoneInLastMinutes(queryStr)) {
 //                                logger.info("lastsearches hashcode:" + lastSearches.hashCode());
                                 tweets = new LinkedBlockingQueue<JTweet>();
-                                name = "grab query:" + queryStr;
+                                feedSource = "grab query:" + queryStr;
                                 tweetSearch.search(queryStr, tweets, tweetCount, 0);
                                 logger.info("added " + tweets.size() + " tweets via twitter search: " + queryStr);
                             }
@@ -126,11 +123,14 @@ public class MyTweetGrabber implements Serializable {
                         }
                     }
                 } else
-                    name = "filledTweets:" + tweets.size();
+                    feedSource = "filledTweets:" + tweets.size();
 
                 try {
-                    if (tweets != null && tweets.size() > 0 && !name.isEmpty())
-                        rmiClient.get().init().send(new TweetPackageList(name).init(tweets));
+                    if (tweets != null && tweets.size() > 0 && !feedSource.isEmpty()) {
+                        for (JTweet tw : tweets) {
+                            rmiClient.get().init().send(tw.setFeedSource(feedSource));
+                        }
+                    }
                 } catch (Exception ex) {
                     logger.warn("Error while sending tweets to queue server" + ex.getMessage());
                 }
@@ -164,8 +164,9 @@ public class MyTweetGrabber implements Serializable {
                                 tw.makePersistent();
                             }
 
-                            TweetPackageList pkg = new TweetPackageList("archiving user:" + userName).init(tmp);
-                            rmiClient.get().init().send(pkg);
+                            for (JTweet tw : tmp) {
+                                rmiClient.get().init().send(tw.setFeedSource("archiving user:" + userName));
+                            }
                             logger.info("queue tweets " + tweetCount + " to index queue");
                             setProgress((int) (tweetCount * 100.0 / maxTweets));
                         } catch (Exception ex) {

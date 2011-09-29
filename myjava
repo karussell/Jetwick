@@ -1,5 +1,5 @@
-DIR=`dirname $0`
-CLASSES=$DIR/target/classes/
-LIBS=$DIR/target/jetwick/WEB-INF/lib/
+DIR=./target/jetwick/WEB-INF
+CLASSES=$DIR/classes/
+LIBS=$DIR/lib/
 JARS=$(find $LIBS -iname "*.jar" | tr  '\n' ':')
-java -cp $JARS:$CLASSES "$@"
+java -cp $CLASSES:$JARS "$@"

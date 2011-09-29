@@ -39,8 +39,8 @@ public class SearchBoxTest extends WicketPagesTestClass {
         assertEquals("timetabling", bx.getParams(null, 2, "timetabling", null).getString("user"));
 
         // search param
-        assertNull(bx.getParams(null, null, "timetabling", null).getString("search"));
-        assertEquals(null, bx.getParams(null, 0, "timetabling", null).getString("search"));
+        assertEquals("all", bx.getParams(null, null, "timetabling", null).getString("search"));
+        assertEquals("all", bx.getParams(null, 0, "timetabling", null).getString("search"));
         assertEquals("friends", bx.getParams(null, 1, "timetabling", null).getString("search"));
         assertEquals("user", bx.getParams(null, 2, "timetabling", null).getString("search"));
     }

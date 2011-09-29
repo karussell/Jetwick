@@ -15,9 +15,10 @@
  */
 package de.jetwick.rmi;
 
-import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.data.JTweet;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  * @author Peter Karich, peat_hal ‘at’ users ‘dot’ sourceforge ‘dot’ net
@@ -27,5 +28,7 @@ public interface CommunicationService extends Remote {
     /**
      * sends tweets to RMI server
      */
-    void send(TweetPackage tweets) throws RemoteException;
+    void send(JTweet tweets) throws RemoteException;
+
+    void send(Collection<JTweet> tweets) throws RemoteException;
 }

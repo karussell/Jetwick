@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	xmlns:georss="http://www.georss.org/georss" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:media="http://search.yahoo.com/mrss/"
+	>
+
+<channel>
+	<title>Find Time for the Karussell</title>
+	<atom:link href="http://karussell.wordpress.com/feed/" rel="self" type="application/rss+xml" />
+	<link>http://karussell.wordpress.com</link>
+	<description>Thoughts about Java and more</description>
+	<lastBuildDate>Fri, 05 Aug 2011 14:44:40 +0000</lastBuildDate>
+	<language>en</language>
+	<sy:updatePeriod>hourly</sy:updatePeriod>
+	<sy:updateFrequency>1</sy:updateFrequency>
+	<generator>http://wordpress.com/</generator>
+<cloud domain='karussell.wordpress.com' port='80' path='/?rsscloud=notify' registerProcedure='' protocol='http-post' />
+<image>
+		<url>http://s2.wp.com/i/buttonw-com.png</url>
+		<title>Find Time for the Karussell</title>
+		<link>http://karussell.wordpress.com</link>
+	</image>
+	<atom:link rel="search" type="application/opensearchdescription+xml" href="http://karussell.wordpress.com/osd.xml" title="Find Time for the Karussell" />
+	<atom:link rel='hub' href='http://karussell.wordpress.com/?pushpress=hub'/>
+		<item>
+		<title>Jetslide uses ElasticSearch as Database</title>
+		<link>http://karussell.wordpress.com/2011/07/13/jetslide-uses-elasticsearch-as-database/</link>
+		<comments>http://karussell.wordpress.com/2011/07/13/jetslide-uses-elasticsearch-as-database/#comments</comments>
+		<pubDate>Wed, 13 Jul 2011 13:28:54 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[ElasticSearch]]></category>
+		<category><![CDATA[Java]]></category>
+		<category><![CDATA[Jetslide]]></category>
+		<category><![CDATA[Lucene]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3266</guid>
+		<description><![CDATA[This post explains how one could use the search server ElasticSearch as a database. I&#8217;m using ElasticSearch as my only data storage system, because for Jetslide I want to avoid maintenance and development time overhead, which would be required when using a separate system. Be it NoSQL, object or pure SQL DBs. ElasticSearch is a [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3266&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p>This post explains how one could use the search server <a href="http://www.elasticsearch.org/">ElasticSearch</a> as a database. I&#8217;m using ElasticSearch as my only data storage system, because for <a href="http://jetsli.de">Jetslide</a> I want to avoid maintenance and development time overhead, which would be required when using a separate system. Be it NoSQL, object or pure SQL DBs.</p>
+<p>ElasticSearch is a really powerfull search server based on Apache Lucene. So why can you use ElasticSearch as a <a href="http://teddziuba.com/2011/06/most-important-concept-systems-design.html">single point of truth (</a><a href="http://teddziuba.com/2011/06/most-important-concept-systems-design.html">SPOT</a><a href="http://teddziuba.com/2011/06/most-important-concept-systems-design.html">)</a>? Let us begin and go through all &#8211; or at least my &#8211; requirements of a data storage system! Did I forget something? Add a comment <img src='http://s0.wp.com/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' />  !</p>
+<p><strong>CRUD &amp; Search<br />
+</strong></p>
+<p>You can cread, read (see also <em>realtime get</em>), update and delete documents of different types. And of course you can perform full text search!</p>
+<p><strong>Multi tenancy</strong></p>
+<p>Multiple indices are very easy to <a href="http://www.elasticsearch.org/guide/reference/api/admin-indices-create-index.html">create</a> and to <a href="http://www.elasticsearch.org/guide/reference/api/admin-indices-delete-index.html">delete</a>. This can be used to support several clients or simply to put different types into different indices like one would do when creating multiple tables for every type/class.</p>
+<p><strong>Sharding and Replication</strong></p>
+<p>Sharding and replication is just a matter of numbers when creating the index:</p>
+<pre>curl -XPUT 'http://localhost:9200/twitter/' -d '
+index :
+    number_of_shards : 3
+    number_of_replicas : 2'</pre>
+<p>You can even update the number of replicas afterwards &#8216;on the fly&#8217;. To update the number of shards of one index you have to reindex (see the <em>reindexing</em> section below).</p>
+<p><strong>Distributed &amp; Cloud<br />
+</strong></p>
+<p>ElasticSearch can be distributed over a lot of machines. You can dynamically <a href="http://www.elasticsearch.org/videos/2010/02/08/es-distributed-diagram.html">add and remove nodes</a> (video). Additionally read <a href="http://www.elasticsearch.org/blog/2010/05/11/here-comes-the-cloud.html">this blog post</a> for information about using ElasticSearch in &#8216;the cloud&#8217;.</p>
+<p><strong>Fault tolerant &amp; Reliability<br />
+</strong></p>
+<p>ElasticSearch will recover from the last snapshot of its gateway if something &#8216;bad&#8217; happens like an index corruption or even a total cluster fallout &#8211; <a href="http://www.elasticsearch.org/guide/reference/modules/gateway/index.html">think time machine for search</a>. Watch <a href="http://www.elasticsearch.org/videos/2010/06/07/berlinbuzzwords.html">this video from Berlin Buzz Words</a> (minute 26) to understand how the &#8216;reliable and asyncronous nature&#8217; are combined in ElasticSearch.</p>
+<p>Nevertheless I still recommend to <a href="http://karussell.wordpress.com/2011/07/10/how-to-backup-elasticsearch-with-rsync/">do a backup</a> from time to time to a different system (or at least different hard disc), e.g. in case you hit ElasticSearch or Lucene bugs or at least to make it really secure <img src='http://s0.wp.com/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' /> </p>
+<p><strong>Realtime Get</strong></p>
+<p>When using Lucene you have a real time latency. Which basically means that if you store a document into the index you&#8217;ll have to wait a bit until it appears when you search afterwards. Altought this latency is quite small: <a href="http://java.dzone.com/news/lucenes-near-real-time-search">only a few milliseconds</a> it is there and gets bigger if the index gets bigger. But ElasticSearch implements a <a href="https://github.com/elasticsearch/elasticsearch/issues/1060">realtime get feature</a> in its latest version, which makes it now possible to retrieve the object even if it is not searchable by its id!</p>
+<p><strong>Refresh, Commit and Versioning</strong></p>
+<p>As I said you have a realtime latency when creating or updating (aka indexing) a document. To update a document you can use the realtime get, merge it and put it back in the index. Another approach which avoids further hits on ElasticSearch, would be to call refresh (or commit in Solr) of the index. But this is very problematic (e.g. slow) when the index is not tiny.</p>
+<p>The good news is that you can again solve this problem with a feature from ElasticSearch &#8211; it is called <a href="http://www.elasticsearch.org/blog/2011/02/08/versioning.html">versioning</a>. This an identical to the &#8216;application site&#8217; optimistical locking <a href="http://docs.jboss.org/hibernate/core/3.3/reference/en/html/transactions.html#transactions-optimistic">in the database world</a>. Put the document in the index and if it fails e.g. merge the old state with the new and try again. To be honest this requires a bit more thinking using a failure-queue or similar, but now I have a really good working system secured with unit tests.</p>
+<p>If you think about it, this is a really huge benefit over e.g. Solr. Even if Solrs&#8217; raw indexing is faster (no one really did a good job in comparing indexing performance of Solr vs. ES) it requires a call of commit to make the documents searchable and slows down the whole indexing process a lot when comparing to ElasticSearch where you never really need to call the expensive refresh.</p>
+<p><strong>Reindexing</strong></p>
+<p>This is not necessary for a normal database. But it is crucial for a search server, e.g. to change an analyzer or the number of shards for an index. Reindexing sounds hard but can be easily implemented even without a separate data storage in ElasticSearch. For Jetslide I&#8217;m storing not single fields I&#8217;m storing the entire document as JSON in the <a href="http://www.elasticsearch.org/guide/reference/mapping/source-field.html">_source</a>. This is necessary to fetch the documents from the old index and put them into the newly created (with different settings).</p>
+<p>But wait. How can I fetch all documents from the old index? Wouldn&#8217;t this be bad in terms of performance or memory for big indices? No, you can use the <a href="http://www.elasticsearch.org/blog/2011/03/24/new-search-types.html">scan search type</a>, which avoids e.g. scoring.</p>
+<p>Ok, but how can I replace my old index with the new one? Can this be done &#8216;on the fly&#8217;? Yes, you can simply switch the alias of the index:</p>
+<pre>curl -XPOST 'http://localhost:9200/_aliases' -d '{
+"actions" : [
+   { "remove" : { "index" : "userindex6", "alias" : "userindex" } },
+   { "add" : { "index" : "userindex7", "alias" : "uindex" } }]
+}'</pre>
+<p><strong>Performance<br />
+</strong></p>
+<p>Well, ElasticSearch is fast. But you&#8217;ll have to determine for youself if it is fast enough for your use case and compare it to your existing data storage system.</p>
+<p><strong>Feature Rich<br />
+</strong></p>
+<p>ElasticSearch has a lot of features, which you do not find in a normal database. E.g. <a href="http://www.elasticsearch.org/guide/reference/api/search/facets/">faceting</a> or the powerful <a href="http://www.elasticsearch.org/blog/2011/02/08/percolator.html">percolator</a> to name only a few.</p>
+<h3><strong>Conclusion</strong></h3>
+<p>In this post I explained if and how ElasticSearch can be used as a database replacement. ElasticSearch is very powerfuly but e.g. the versioning feature requires a bit handwork. So working with ElasticSearch is comparable more to the <a href="http://en.wikipedia.org/wiki/Java_Database_Connectivity">JDBC</a> or SQL world not to the <a href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a> one. But I&#8217;m sure there will pop up some ORM tools for ElasticSearch, although I prefer to avoid system complexity and will always use the &#8216;raw&#8217; ElasticSearch I guess.</p>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/elasticsearch/'>ElasticSearch</a>, <a href='http://karussell.wordpress.com/category/java/'>Java</a>, <a href='http://karussell.wordpress.com/category/jetslide/'>Jetslide</a>, <a href='http://karussell.wordpress.com/category/lucene/'>Lucene</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3266/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3266/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3266/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3266/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3266/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3266/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3266/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3266/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3266/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3266/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3266/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3266/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3266/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3266/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3266&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/07/13/jetslide-uses-elasticsearch-as-database/feed/</wfw:commentRss>
+		<slash:comments>1</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>Introducing Jetslide News Reader</title>
+		<link>http://karussell.wordpress.com/2011/07/12/introducing-jetslide-news-reader/</link>
+		<comments>http://karussell.wordpress.com/2011/07/12/introducing-jetslide-news-reader/#comments</comments>
+		<pubDate>Tue, 12 Jul 2011 14:08:51 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[ElasticSearch]]></category>
+		<category><![CDATA[Java]]></category>
+		<category><![CDATA[Jetslide]]></category>
+		<category><![CDATA[Jetwick]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3157</guid>
+		<description><![CDATA[We are proud to announce the release of our Jetslide News Reader today! We know that there are a lot services aggregating articles from your twitter timeline such as the really nice tweetedtimes.com or paper.li. But as a hacker you&#8217;ll need a more powerful tool. You&#8217;ll need Jetslide. Read on to see why Jetslide is [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3157&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p><a href="http://flattr.com/thing/331355/Jetslide-News-Reader-for-Geeks" target="_blank"><img class="alignleft" style="border:0 none;" title="Flattr this" src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" width="93" height="20" border="0" /></a></p>
+<p>We are proud to announce the release of our Jetslide News Reader today! We know that there are a lot services aggregating articles from your twitter timeline such as the really nice <a href="http://tweetedtimes.com">tweetedtimes.com</a> or <a href="http://paper.li">paper.li</a>. But as a hacker you&#8217;ll need a more powerful tool. You&#8217;ll need <a title="Jetslide News Reader" href="http://jetsli.de">Jetslide</a>. Read on to see why Jetslide is different and read this <a href="http://www.pannous.info/products/jetslide-mobile-and-personal-news4geeks/">feature overview</a>. By the way: <a href="http://karussell.wordpress.com/2011/07/12/snacktory-yet-another-readability-clone-this-time-in-java/">yesterday we open sourced</a> the content extractor called snacktory.</p>
+<h3>Jetslide is different &#8230;</h3>
+<p>&#8230; because it divides your &#8216;newspaper&#8217; into easily navigatable topics and Jetslide prints articles from your timeline first! So you are following topics and not (only) people. See the first article which was referenced by a twitter friend and others, but it also prints articles from public. See the second article, where the highest share count (187) comes from digg. Click to view the reality of today or browse older content with the links under the articles:</p>
+<p><a href="http://jetsli.de?owner=timetabling&amp;query=facebook"><img class="alignnone size-full wp-image-3224" title="Jetslide Example" src="http://karussell.files.wordpress.com/2011/07/jetslide-example.png?w=500&#038;h=480" alt="" width="500" height="480" /></a></p>
+<h3>Jetslide is smart &#8230;</h3>
+<p>&#8230; enough to skip duplicate articles and enhance your topics with related material. The relavance of every article is determined by an advanced algorithm (number of shares, quality, tweed, your browser language &#8230;) with the help of my database <a href="http://ElasticSearch.org">ElasticSearch</a> &#8211; more on this in a later blog post.</p>
+<p>And you can use a lot of geeky search queries to get what you want. Read about it <a title="Jetslide Features" href="http://www.pannous.info/products/jetslide-mobile-and-personal-news4geeks/">here</a> which lists some more details about this.</p>
+<h3>Jetslides are social</h3>
+<p>As pointed out under &#8216;Jetslide is different&#8217; you&#8217;ll see articles posted in your twitter timeline first. But there is another features which make Jetslide more &#8216;social&#8217;. First, you get suggestions of users if they have the same or similar interests stored in their Jetslide. And second, Jetslide enables you to see others&#8217; personal jetslide when adding e.g. the  parameter owner=timetabling to the url:</p>
+<p><a title="Timetablings' Jetslide" href="http://jetsli.de/?owner=timetabling">http://jetsli.de/?owner=timetabling</a></p>
+<h2>Jetslides means RSS 3.0</h2>
+<p>You can even use the boring RSS feed:</p>
+<p>http://jetsli.de/rss/owner/timetabling/time/today</p>
+<p>But this is less powerful. The recommended way to &#8216;consume&#8217; your topics is via RSS 3.0 <img src='http://s1.wp.com/wp-includes/images/smilies/icon_wink.gif' alt=';)' class='wp-smiley' /> </p>
+<p><strong>Log in to Jetslide and select &#8220;Read Mode:Auto&#8221;.</strong> Then every time you hit the &#8216;next&#8217; arrow (or CTRL+right) the current viewed articles will be marked as read and only newer articles will pop up the next time you slide through. This way you can slide through your topics and come back everytime you want: after 2 hours or after 2 days (at the moment up to 7 days). In Auto-Read-Mode you&#8217;ll always see only what you have missed and what is relevant!</p>
+<p>This is the most important point why we do not call Jetslide a search engine but a news service.</p>
+<h3 class="alignnone size-full wp-image-3159">Jetslides are easily shareable</h3>
+<p class="alignnone size-full wp-image-3159">&#8230; because a Jetslide is just an URL &#8211; viewable on desktops,  smartphones and even WAP browsers (left):<a href="http://karussell.files.wordpress.com/2011/05/pict5662.jpg"><br />
+</a></p>
+<p class="alignnone size-full wp-image-3159"><a href="http://karussell.files.wordpress.com/2011/07/jetslide-on-multiple-devices.jpeg"><img class="alignnone size-full wp-image-3223" title="Jetslide Runs On Different Devices" src="http://karussell.files.wordpress.com/2011/07/jetslide-on-multiple-devices.jpeg?w=500&#038;h=370" alt="" width="500" height="370" /></a></p>
+<p><a title="Jetslide Survey" href="http://jetslide.polldaddy.com/s/jetslide-beta-test">All suggestions are very welcome!</a> Or <a title="Jetslide on convore (group chat)" href="https://convore.com/jetslide/">chat with us</a>!</p>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/elasticsearch/'>ElasticSearch</a>, <a href='http://karussell.wordpress.com/category/java/'>Java</a>, <a href='http://karussell.wordpress.com/category/jetslide/'>Jetslide</a>, <a href='http://karussell.wordpress.com/category/jetwick/'>Jetwick</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3157/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3157/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3157/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3157/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3157/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3157/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3157/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3157/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3157/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3157/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3157/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3157/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3157/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3157/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3157&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/07/12/introducing-jetslide-news-reader/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+
+		<media:content url="http://api.flattr.com/button/flattr-badge-large.png" medium="image">
+			<media:title type="html">Flattr this</media:title>
+		</media:content>
+
+		<media:content url="http://karussell.files.wordpress.com/2011/07/jetslide-example.png" medium="image">
+			<media:title type="html">Jetslide Example</media:title>
+		</media:content>
+
+		<media:content url="http://karussell.files.wordpress.com/2011/07/jetslide-on-multiple-devices.jpeg" medium="image">
+			<media:title type="html">Jetslide Runs On Different Devices</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>Snacktory &#8211; Yet another Readability clone. This time in Java.</title>
+		<link>http://karussell.wordpress.com/2011/07/12/snacktory-yet-another-readability-clone-this-time-in-java/</link>
+		<comments>http://karussell.wordpress.com/2011/07/12/snacktory-yet-another-readability-clone-this-time-in-java/#comments</comments>
+		<pubDate>Tue, 12 Jul 2011 14:05:59 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[FreeSoftware]]></category>
+		<category><![CDATA[Java]]></category>
+		<category><![CDATA[Jetslide]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3231</guid>
+		<description><![CDATA[For Jetslide I needed a readability Java clone. There are already some tools, but I wanted some more and other features so I adapted the existing goose and jreadability and added some stuff. Check out the detection quality at Jetslide and fork it to improve it &#8211; since today snacktory is free software ! Copied [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3231&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p>For <a href="http://jetsli.de">Jetslide</a> I needed a <a href="http://code.google.com/p/arc90labs-readability/">readability</a> Java clone. There are already some tools, but I wanted some more and other features so I adapted the existing <a href="https://github.com/jiminoc/goose">goose</a> and <a href="https://github.com/ifesdjeen/jReadability">jreadability</a> and added some stuff. Check out the detection quality at <a href="http://jetsli.de">Jetslide</a> and <a href="https://github.com/karussell/snacktory">fork</a> it to improve it &#8211; since today snacktory is free software <img src='http://s0.wp.com/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' />  !</p>
+<p>Copied from the README:</p>
+<div id="LC1"><strong>Snacktory</strong></div>
+<div id="LC10">This is a small helper utility for pepole don&#8217;t want to write yet another java clone of Readability. In most cases, this is applied to articles, although it should work for any website to find its major area and extract its text and its important picture. Have a look into <a href="http://jetsli.de">Jetslide</a> where Snacktory is used. Jetslide is a new way to consume news, it does not only display the Websites&#8217; title but it displays a small preview of the site (&#8216;a snack&#8217;) and the important image if available.</div>
+<div id="LC12"><strong>License</strong></div>
+<div id="LC14">The software stands under Apache 2 License and comes with NO WARRANTY</div>
+<div id="LC16"><strong>Features</strong></div>
+<div id="LC22">Snacktory borrows some ideas from <a href="https://github.com/ifesdjeen/jReadability">jReadability</a> and <a href="https://github.com/jiminoc/goose">goose</a> (ideas + a lot test cases)</div>
+<div id="LC26">The advantages over jReadability are</div>
+<ul>
+<li>better article text detection than jReadability</li>
+<li>only Java deps</li>
+<li>more tests</li>
+</ul>
+<div id="LC31">The advantages over Goose are</div>
+<ul>
+<li>similar article text detection although better detection for none-english sites (German, Japanese, &#8230;)</li>
+<li>snacktory does not depend on the word count in its text detection to support CJK languages</li>
+<li>no external Services required to run the core tests =&gt; faster tests</li>
+<li>better charset detection</li>
+<li>with caching support</li>
+<li>skipping some known filetypes</li>
+</ul>
+<div id="LC39">The disadvantages to Goose are</div>
+<ul>
+<li>only the detection of the top image and the top text is supported at the moment</li>
+<li>some tests which passed do not pass. But added a bunch of other useful sites (stackoverflow, facebook, other languages &#8230;)</li>
+</ul>
+<div><strong>Usage</strong></div>
+<pre>HtmlFetcher fetcher = new HtmlFetcher();
+// set cache. e.g. take the map implementation from google collections:
+// fetcher.setCache(new MapMaker().concurrencyLevel(20).
+ //               maximumSize(count).expireAfterWrite(minutes, TimeUnit.MINUTES).makeMap();
+JResult res = fetcher.fetchAndExtract(url, resolveTimeout, true);
+res.getText(); res.getTitle(); res.getImageUrl();</pre>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/freesoftware/'>FreeSoftware</a>, <a href='http://karussell.wordpress.com/category/java/'>Java</a>, <a href='http://karussell.wordpress.com/category/jetslide/'>Jetslide</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3231/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3231/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3231/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3231/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3231/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3231/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3231/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3231/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3231/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3231/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3231/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3231/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3231/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3231/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3231&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/07/12/snacktory-yet-another-readability-clone-this-time-in-java/feed/</wfw:commentRss>
+		<slash:comments>2</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>Please do NOT retweet!</title>
+		<link>http://karussell.wordpress.com/2011/07/11/please-do-not-retweet/</link>
+		<comments>http://karussell.wordpress.com/2011/07/11/please-do-not-retweet/#comments</comments>
+		<pubDate>Mon, 11 Jul 2011 21:53:07 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[Java]]></category>
+		<category><![CDATA[Twitter]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3086</guid>
+		<description><![CDATA[As you might know I have developed jetwick and now jetsli.de. While that I have seen a lot of tweets which were heavily retweeted again and again over the year. And not only the first time it got a lot of retweets. Every time one of the following tweets popped up it got at least [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3086&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p>As you might know I have developed jetwick and now jetsli.de. While that I have seen a lot of tweets which were heavily retweeted again and again over the year. And not only the first time it got a lot of retweets. Every time one of the following tweets popped up it got at least 50 retweets, so one cannot even say who is the original author of them.</p>
+<p>But please, do me a favour and do NOT retweet them anylonger <img src='http://s0.wp.com/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' />  ! Some are funny some not &#8230; here is my list:</p>
+<p>Java</p>
+<ul>
+<li>Java is a DSL for translating XML into stack traces.</li>
+<li>Saying that Java is nice because it works on all OS&#8217;s is like saying that anal sex is nice because it works on all genders.</li>
+<li>Why do Java developers wear glasses? Because they don&#8217;t C#</li>
+<li><a href="https://twitter.com/kventil/status/83453563136774144">If Java had true garbage collection, most programs would delete themselves upon execution.</a></li>
+</ul>
+<p>Google</p>
+<ul>
+<li>Unless your name is Google, stop acting like you know everything</li>
+<li>Go to google maps. Find route from China to Japan. Look at Number 41. Smile.</li>
+<li>You can&#8217;t upload love, you can&#8217;t download time, you can&#8217;t Google all of life&#8217;s answers. You must actually live some of your life.</li>
+<li>We need google 2.0 in our rooms! For our distributed things!</li>
+</ul>
+<p>Misc</p>
+<ul>
+<li>What&#8217;s Love? In Math: A problem, In history: A war, In chemistry: A reaction, In art: A heart…And in me: It&#8217;s You.</li>
+<li>Feynman Problem-solving algorithm<br />
+1. write down the problem<br />
+2. think VERY hard<br />
+3. write down the answer</li>
+<li>Facebook is a smart tool for simple people, Twitter is a simple tool for smart people.</li>
+<li>Twitter is for the cool people you&#8217;ve never met. Facebook is full of people you wish you could forget.</li>
+<li>No, microsoft word, i am pretty sure i know how to spell my name</li>
+<li>Life, as we know, was much simpler when Apple and Blackberry were just fruits.</li>
+</ul>
+<p>Although not tweeted all the year it was constantly tweeted every 3 days around xmas 2010. But I even saw <a href="http://twitter.com/#!/dearpleasesays/status/67605581007044609">a tweet in may</a> and again retweeted over 100 times!:</p>
+<ul>
+<li>Dear kids, there is no Santa. Those presents are from your parents.<br />
+Love,<br />
+Wikileaks</li>
+</ul>
+<p>The last tweet is a nice one and a potential candidate <img src='http://s1.wp.com/wp-includes/images/smilies/icon_wink.gif' alt=';)' class='wp-smiley' /> , but I saw it only once:</p>
+<ul>
+<li><a href="http://twitter.com/fatbellybella/status/69805647381794816">War doesn&#8217;t decide who&#8217;s RIGHT it decides who&#8217;s LEFT</a></li>
+</ul>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/java/'>Java</a>, <a href='http://karussell.wordpress.com/category/twitter/'>Twitter</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3086/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3086/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3086/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3086/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3086/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3086/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3086/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3086/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3086/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3086/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3086/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3086/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3086/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3086/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3086&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/07/11/please-do-not-retweet/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>How to backup ElasticSearch with rsync</title>
+		<link>http://karussell.wordpress.com/2011/07/10/how-to-backup-elasticsearch-with-rsync/</link>
+		<comments>http://karussell.wordpress.com/2011/07/10/how-to-backup-elasticsearch-with-rsync/#comments</comments>
+		<pubDate>Sun, 10 Jul 2011 11:55:56 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[ElasticSearch]]></category>
+		<category><![CDATA[Java]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3204</guid>
+		<description><![CDATA[Although there is a gateway feature implemented in ElasticSearch which basically recovers your index on start if it is corrupted or similar it is wise to create backups if there are bugs in Lucene or ElasticSearch (assuming you have set the fs gateway). The backup script looks as follows and uses the possibility to enable [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3204&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p>Although there is a <a href="http://www.elasticsearch.org/guide/reference/modules/gateway/index.html">gateway feature</a> implemented in ElasticSearch which basically recovers your index on start if it is corrupted or similar it is wise to create backups if there are bugs in Lucene or ElasticSearch (assuming you have set the fs gateway). The backup script looks as follows and uses the possibility to enable and disable the flushing for a short time:</p>
+<pre># TO_FOLDER=/something
+# FROM=/your-es-installation
+
+DATE=`date +%Y-%m-%d_%H-%M`
+TO=$TO_FOLDER/$DATE/
+echo "rsync from $FROM to $TO"
+# the first times rsync can take a bit long - do not disable flusing
+rsync -a $FROM $TO
+
+# now disable flushing and do one manual flushing
+$SCRIPTS/es-flush-disable.sh true
+$SCRIPTS/es-flush.sh
+# ... and sync again
+rsync -a $FROM $TO
+
+$SCRIPTS/es-flush-disable.sh false
+
+# now remove too old backups
+rm -rf `find $TO_FOLDER -maxdepth 1 -mtime +7` &amp;&gt; /dev/null</pre>
+<p>E.g. you could call the backup script regularly (even hourly) from cron and it will create new backups. By the way &#8211; if you want to take a look on the settings of all indices (e.g. to check the disable flushing stuff) this might be handy:</p>
+<pre>curl -XGET 'localhost:9200/_settings?pretty=true'</pre>
+<p><a title="Backup ElasticSearch with rsync" href="https://gist.github.com/1074906">Here are the complete scripts as gist</a> which I&#8217;m using for my <a href="http://jetsli.de">jetslide</a> project.</p>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/elasticsearch/'>ElasticSearch</a>, <a href='http://karussell.wordpress.com/category/java/'>Java</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3204/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3204/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3204/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3204/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3204/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3204/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3204/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3204/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3204/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3204/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3204/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3204/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3204/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3204/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3204&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/07/10/how-to-backup-elasticsearch-with-rsync/feed/</wfw:commentRss>
+		<slash:comments>3</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>ElasticSearch vs. Solr #lucene</title>
+		<link>http://karussell.wordpress.com/2011/05/12/elasticsearch-vs-solr-lucene/</link>
+		<comments>http://karussell.wordpress.com/2011/05/12/elasticsearch-vs-solr-lucene/#comments</comments>
+		<pubDate>Thu, 12 May 2011 13:19:31 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[ElasticSearch]]></category>
+		<category><![CDATA[Java]]></category>
+		<category><![CDATA[Jetwick]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3172</guid>
+		<description><![CDATA[I prepared a small presentation of &#8216;Why one should use ElasticSearch over Solr&#8217;. This document is based on my personal oppinion and experience with jetwick. It should not be used to show that Solr nor ElasticSearch is &#8216;bad&#8217;. Also keep in mind that I didn&#8217;t explored the most powerful feature of ElasticSearch which is &#8216;distributed&#8217;. [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3172&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p>I prepared a small presentation of &#8216;<a title="ElasticSearch vs. Solr" href="https://docs.google.com/present/view?id=dc6zhtt5_1frfxwfff">Why one should use ElasticSearch over Solr&#8217;.</a></p>
+<p>This document is based on my personal oppinion and experience with <a title="Twitter Search without noise" href="http://jetwick.com">jetwick</a>. It should <strong>not</strong> be used to show that Solr nor ElasticSearch is &#8216;bad&#8217;. Also keep in mind that I didn&#8217;t explored the most powerful feature of ElasticSearch which is &#8216;distributed&#8217;.</p>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/elasticsearch/'>ElasticSearch</a>, <a href='http://karussell.wordpress.com/category/java/'>Java</a>, <a href='http://karussell.wordpress.com/category/jetwick/'>Jetwick</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3172/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3172/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3172/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3172/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3172/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3172/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3172/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3172/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3172/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3172/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3172/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3172/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3172/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3172/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3172&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/05/12/elasticsearch-vs-solr-lucene/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>Longest Common Substring Algorithm in Java</title>
+		<link>http://karussell.wordpress.com/2011/04/14/longest-common-substring-algorithm-in-java/</link>
+		<comments>http://karussell.wordpress.com/2011/04/14/longest-common-substring-algorithm-in-java/#comments</comments>
+		<pubDate>Thu, 14 Apr 2011 16:29:32 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[FreeSoftware]]></category>
+		<category><![CDATA[Java]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3140</guid>
+		<description><![CDATA[For jetwick I needed yet another string algorithm and stumbled over this cool and common problem: trying to find the longest substring of two strings. Be sure that you understand the difference to the LC sequence problem. For example if we have two strings: Please, peter go swimming! and I&#8217;m peter goliswi The algorithm should [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3140&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p>For <a href="http://jetwick.com">jetwick</a> I needed yet another string algorithm and stumbled over this cool and common problem: trying to find the longest substring of two strings. Be sure that you understand the difference to the <a href="http://en.wikipedia.org/wiki/Longest_common_subsequence_problem">LC <strong>sequence</strong> problem</a>.</p>
+<p>For example if we have two strings:</p>
+<p><em>Please, peter go swimming!</em></p>
+<p>and</p>
+<p><em>I&#8217;m peter goliswi</em></p>
+<p>The algorithm should print out <em>&#8216; peter go&#8217;</em>. The longest common substring algorithm can be implemented in an efficient manner with the help of <a href="http://www.allisons.org/ll/AlgDS/Tree/Suffix/">suffic trees</a>.</p>
+<p>But in this post I&#8217;ll try to explain the bit less efficient &#8216;<a href="http://en.wikipedia.org/wiki/Longest_common_substring_problem">dynamic programming</a>&#8216; version of the algorithm. <a href="http://en.wikipedia.org/wiki/Dynamic_programming">Dynamic programming</a> means that you can reuse already calculated information in a later step or you break the algorithm into parts to reuse information. To understand the algorithm you just need to fill the entries of an integer-array with the lengths of the identical substrings. Assume we use i for the horizontal string (please &#8230;) and j for the vertical string. Then the algorithm hits at some time i=19 and j=0 for one identical character &#8216;i&#8217;. Then the line</p>
+<pre>num[i][j] = 1;</pre>
+<p>is executed and saves the lengths of the 1 length identical substring.</p>
+<pre class="brush: java;">
+  please, peter go swimming
+i 0000000000000000000100100
+' 0000000000000000000000000
+m 0000000000000000000011000
+  0000000100000100100000000
+p 1000000020000000000000000
+e 0010010003000000000000000
+t 0000000000400000000000000
+e 0010010001050000000000000
+r 0000000000006000000000000
+  0000000100000700100000000
+g 0000000000000080000000000
+o 0000000000000009000000000
+l 0100000000000000000000000
+i 0000000000000000000100100
+s 0001000000000000010000000
+w 0000000000000000002000000
+i 0000000000000000000300100
+</pre>
+<p>Later on it hits the m characters and saves 1 two times to the array but then at i=7 and j=3 it starts our substring and saves 1 for the space character. Then some loops later it reaches i=8 and j=4  Now it reuses the already calculated &#8220;identical-length&#8221; of 1. It will do:</p>
+<pre>num[8][4] = 1 + num[7][3];</pre>
+<p>and we get 2. So, we now know we have a substring with two 2 characters. And with</p>
+<pre>if (num[i][j] &gt; maxlen)</pre>
+<p>we make sure that we overwrite the existing longest substring (stored in the StringBuilder) ONLY IF there is a longer substring found and either append the character (if it is the current substring in progress):</p>
+<pre>sb.append(str1.charAt(i));</pre>
+<p>or we can start a longer substring. See the java code (mainly from wikipedia) for yourself:</p>
+<pre class="brush: java;">
+public static String longestSubstring(String str1, String str2) {
+
+StringBuilder sb = new StringBuilder();
+if (str1 == null || str1.isEmpty() || str2 == null || str2.isEmpty())
+  return &amp;quot;&amp;quot;;
+
+// ignore case
+str1 = str1.toLowerCase();
+str2 = str2.toLowerCase();
+
+// java initializes them already with 0
+int[][] num = new int[str1.length()][str2.length()];
+int maxlen = 0;
+int lastSubsBegin = 0;
+
+for (int i = 0; i &amp;lt; str1.length(); i++) {
+for (int j = 0; j &amp;lt; str2.length(); j++) {
+  if (str1.charAt(i) == str2.charAt(j)) {
+    if ((i == 0) || (j == 0))
+       num[i][j] = 1;
+    else
+       num[i][j] = 1 + num[i - 1][j - 1];
+
+    if (num[i][j] &amp;gt; maxlen) {
+      maxlen = num[i][j];
+      // generate substring from str1 =&amp;gt; i
+      int thisSubsBegin = i - num[i][j] + 1;
+      if (lastSubsBegin == thisSubsBegin) {
+         //if the current LCS is the same as the last time this block ran
+         sb.append(str1.charAt(i));
+      } else {
+         //this block resets the string builder if a different LCS is found
+         lastSubsBegin = thisSubsBegin;
+         sb = new StringBuilder();
+         sb.append(str1.substring(lastSubsBegin, i + 1));
+      }
+   }
+}
+}}
+
+return sb.toString();
+}
+</pre>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/freesoftware/'>FreeSoftware</a>, <a href='http://karussell.wordpress.com/category/java/'>Java</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3140/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3140/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3140/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3140/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3140/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3140/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3140/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3140/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3140/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3140/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3140/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3140/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3140/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3140/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3140&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/04/14/longest-common-substring-algorithm-in-java/feed/</wfw:commentRss>
+		<slash:comments>4</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>Viewing hprof from android with jvisualvm</title>
+		<link>http://karussell.wordpress.com/2011/04/10/viewing-hprof-from-android-with-jvisualvm/</link>
+		<comments>http://karussell.wordpress.com/2011/04/10/viewing-hprof-from-android-with-jvisualvm/#comments</comments>
+		<pubDate>Sun, 10 Apr 2011 10:58:38 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[Android]]></category>
+		<category><![CDATA[Java]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3127</guid>
+		<description><![CDATA[Add an additional permission to your app &#60;uses-permission android:name=&#8221;android.permission.WRITE_EXTERNAL_STORAGE&#8221; /&#62; to your manifest Create hprof protected void onDestroy() { super.onDestroy(); try { Debug.dumpHprofData(&#8220;/sdcard/data.hprof&#8221;); } catch (Exception e) { Log.e(&#8220;xy&#8221;, &#8220;couldn&#8217;t dump hprof&#8221;); } } or alternatively create a hprof file with: adb shell ps &#124; grep yourpackage; adb shell kill -10 pid Get the hprof [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3127&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<ol>
+<li><strong>Add an additional permission to your app</strong><br />
+&lt;uses-permission android:name=&#8221;android.permission.WRITE_EXTERNAL_STORAGE&#8221; /&gt;<br />
+to your manifest</li>
+<li><strong>Create hprof</strong><br />
+protected void onDestroy() {<br />
+super.onDestroy();<br />
+try {<br />
+Debug.dumpHprofData(&#8220;/sdcard/data.hprof&#8221;);<br />
+} catch (Exception e) {<br />
+Log.e(&#8220;xy&#8221;, &#8220;couldn&#8217;t dump hprof&#8221;);<br />
+}<br />
+}<br />
+or alternatively create a hprof file with: adb shell ps | grep yourpackage; adb shell kill -10 pid</li>
+<li><strong>Get the hprof file</strong><br />
+android-sdk-linux_x86/platform-tools/adb pull /sdcard/data.hprof /tmp/</li>
+<li><strong>Convert the hprof</strong> to sun standard format<br />
+android-sdk-linux_x86/tools/hprof-conv /tmp/search.hprof /tmp/search.st.hprof</li>
+<li><strong>Open hprof</strong> with /usr/lib/jvm/java-6-sun/bin/jvisualvm<br />
+File -&gt; Load -&gt; Head dumps (hprof)</li>
+</ol>
+<p><a href="http://karussell.files.wordpress.com/2011/04/jvis.png"><img class="alignnone size-full wp-image-3128" title="jvis" src="http://karussell.files.wordpress.com/2011/04/jvis.png?w=500&#038;h=295" alt="" width="500" height="295" /></a></p>
+<p>&nbsp;</p>
+<p><a href="http://android-developers.blogspot.com/2009/01/avoiding-memory-leaks.html">Avoid memory leaks</a> -&gt; take a look at the trackbacks!</p>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/android/'>Android</a>, <a href='http://karussell.wordpress.com/category/java/'>Java</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3127/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3127/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3127/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3127/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3127/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3127/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3127/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3127/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3127/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3127/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3127/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3127/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3127/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3127/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3127&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/04/10/viewing-hprof-from-android-with-jvisualvm/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+
+		<media:content url="http://karussell.files.wordpress.com/2011/04/jvis.png" medium="image">
+			<media:title type="html">jvis</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>3D Rotation in Gimp</title>
+		<link>http://karussell.wordpress.com/2011/04/09/3d-rotation-in-gimp/</link>
+		<comments>http://karussell.wordpress.com/2011/04/09/3d-rotation-in-gimp/#comments</comments>
+		<pubDate>Sat, 09 Apr 2011 12:32:20 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[FreeSoftware]]></category>
+		<category><![CDATA[Tools]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3122</guid>
+		<description><![CDATA[Erstelle eine zusätzliche transparente Ebene Selektiere nun die Ebene die 3D rotiert werden soll Gehe zu Filter-&#62;Abbilden-&#62;Auf Objekt Abbilden Wähle auf Quader abbilden Klicke &#8216;transparenter Hintergrund&#8217; Gehe zu Tab &#8216;Quader&#8217;. Eine Seite bekommt Ebene aus dem 1. Schritt. Alle anderen bekommen die Ebene aus dem 2. Schritt. Gehe zu Ausrichtung-&#62;Rotation und verändere wie gewünscht &#160; [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3122&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<ol>
+<li>Erstelle eine zusätzliche transparente Ebene</li>
+<li>Selektiere nun die Ebene die 3D rotiert werden soll</li>
+<li>Gehe zu Filter-&gt;Abbilden-&gt;Auf Objekt Abbilden</li>
+<li>Wähle auf Quader abbilden</li>
+<li>Klicke &#8216;transparenter Hintergrund&#8217;</li>
+<li>Gehe zu Tab &#8216;Quader&#8217;. Eine Seite bekommt Ebene aus dem 1. Schritt. Alle anderen bekommen die Ebene aus dem 2. Schritt.</li>
+<li>Gehe zu Ausrichtung-&gt;Rotation und verändere wie gewünscht</li>
+</ol>
+<p><a href="https://market.android.com/details?id=com.pannous.twitter.search.jetroid"><img class="size-full wp-image-3124 alignnone" title="Twitter Search for Android" src="http://karussell.files.wordpress.com/2011/04/jetwick-logo48.png?w=48&#038;h=48" alt="" width="48" height="48" /></a></p>
+<p>&nbsp;</p>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/freesoftware/'>FreeSoftware</a>, <a href='http://karussell.wordpress.com/category/tools/'>Tools</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3122/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3122/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3122/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3122/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3122/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3122/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3122/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3122/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3122/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3122/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3122/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3122/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3122/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3122/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3122&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/04/09/3d-rotation-in-gimp/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+
+		<media:content url="http://karussell.files.wordpress.com/2011/04/jetwick-logo48.png" medium="image">
+			<media:title type="html">Twitter Search for Android</media:title>
+		</media:content>
+	</item>
+		<item>
+		<title>Time Traveling with Twitter</title>
+		<link>http://karussell.wordpress.com/2011/04/02/time-traveling-with-twitter/</link>
+		<comments>http://karussell.wordpress.com/2011/04/02/time-traveling-with-twitter/#comments</comments>
+		<pubDate>Sat, 02 Apr 2011 07:41:09 +0000</pubDate>
+		<dc:creator>karussell</dc:creator>
+				<category><![CDATA[Twitter]]></category>
+
+		<guid isPermaLink="false">http://karussell.wordpress.com/?p=3110</guid>
+		<description><![CDATA[Via jetwick the following tweet got my attention: Follow @timetabling@timetablingKarussell Yet another tweet via @jetwick from future: http://ow.ly/4rxXh I predict that we will see the correct date 04:26 2011-04-02 tomorrow 1 April, 2011 22:15 via HootSuiteReplyRetweetFavorite How is this possible? Did I use Twitter to travel into the future? Sadly not it is only a [...]<img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3110&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></description>
+			<content:encoded><![CDATA[<p>Via jetwick the following tweet got my attention:</p>
+<div style='background: url(http://a2.twimg.com/a/1301438647/images/themes/theme14/bg.gif) #131516; padding: 20px; margin: 8px 0;'>
+<div style='background: #fff; color: #000; padding: 10px 12px 2px 12px; margin: 0; min-height: 60px; font-size: 18px;  line-height: 22px; -moz-border-radius: 5px; -webkit-border-radius:5px; -moz-box-shadow:0 2px 2px rgba(0,0,0,0.2); -webkit-box-shadow:0 2px 2px rgba(0,0,0,0.2); box-shadow:0 2px 2px rgba(0,0,0,0.2);'><span style='width: 100%; margin-bottom: 12px; padding-top: 8px; height: 40px;'><span style='float: right; width: 300px; font-size: 12px; text-align: right;'><a href='http://twitter.com/MeisterDaniel' class='twitter-follow-button' data-show-count='false' data-align='right' data-link-color='#009999''>Follow @MeisterDaniel</a></span><span style='line-height: 19px;'><a href='http://twitter.com/intent/user?screen_name=MeisterDaniel' title='Daniel Johansen' class='twitter-action'><img src='http://a0.twimg.com/profile_images/502637177/1461680998_m_normal.jpg' alt='Daniel Johansen' width='38' height='38' style='float: left;  margin: 0 7px 0px 0px;  width: 38px; height: 38px; padding: 0;  border: none;' /></a><strong><a href='http://twitter.com/intent/user?screen_name=MeisterDaniel' title='Daniel Johansen' style='color: #009999;' class='twitter-action'>@MeisterDaniel</a></strong><span style='color: #999; font-size: 14px;'><br />Daniel Johansen</span></span></span>
+<div style='margin: 1em 0 .5em 0;'>goodnight twitter</div>
+<div class='twitter-actions' style='font-size: 12px;'><span class='twitter-meta'><a title='tweeted on 2 April, 2011 04:26' href='http://twitter.com/#!/MeisterDaniel/status/53915907168272384' target='_blank'>2 April, 2011 04:26</a> via web</span><a href='https://twitter.com/intent/tweet?in_reply_to=53915907168272384' class='twitter-action twitter-reply-action' title='Reply'><span><em style='margin-left: 1em;'></em><strong>Reply</strong></span></a><a href='https://twitter.com/intent/retweet?tweet_id=53915907168272384' class='twitter-action twitter-retweet-action' title='Retweet'><span><em style='margin-left: 1em;'></em><strong>Retweet</strong></span></a><a href='https://twitter.com/intent/favorite?tweet_id=53915907168272384' class='twitter-action twitter-favorite-action' title='Favorite'><span><em style='margin-left: 1em;'></em><strong>Favorite</strong></span></a></div>
+</div>
+</div>
+<p>The tweet is dated on <a title="Show Status on twitter.com" href="http://twitter.com/meisterdaniel/status/53915907168272384" target="_blank">04:26 2011-04-02</a> but I could link to it approx. 6 hours <strong>earlier</strong>:</p>
+<div style='background: url(http://a0.twimg.com/a/1300991299/images/themes/theme12/bg.gif) no-repeat #ffffff; padding: 20px; margin: 8px 0;'>
+<div style='background: #fff; color: #000; padding: 10px 12px 2px 12px; margin: 0; min-height: 60px; font-size: 18px;  line-height: 22px; -moz-border-radius: 5px; -webkit-border-radius:5px; -moz-box-shadow:0 2px 2px rgba(0,0,0,0.2); -webkit-box-shadow:0 2px 2px rgba(0,0,0,0.2); box-shadow:0 2px 2px rgba(0,0,0,0.2);'><span style='width: 100%; margin-bottom: 12px; padding-top: 8px; height: 40px;'><span style='float: right; width: 300px; font-size: 12px; text-align: right;'><a href='http://twitter.com/timetabling' class='twitter-follow-button' data-show-count='false' data-align='right' data-link-color='#0099B9''>Follow @timetabling</a></span><span style='line-height: 19px;'><a href='http://twitter.com/intent/user?screen_name=timetabling' title='Karussell' class='twitter-action'><img src='http://a0.twimg.com/profile_images/705925706/shamrock_normal.png' alt='Karussell' width='38' height='38' style='float: left;  margin: 0 7px 0px 0px;  width: 38px; height: 38px; padding: 0;  border: none;' /></a><strong><a href='http://twitter.com/intent/user?screen_name=timetabling' title='Karussell' style='color: #0099B9;' class='twitter-action'>@timetabling</a></strong><span style='color: #999; font-size: 14px;'><br />Karussell</span></span></span>
+<div style='margin: 1em 0 .5em 0;'>Yet another tweet via @<a style="color: #0099B9" href="http://twitter.com/intent/user?screen_name=jetwick" class="twitter-action">jetwick</a> from future: <a style="color: #0099B9" href="http://ow.ly/4rxXh" rel="nofollow">http://ow.ly/4rxXh</a> I predict that we will see the correct date 04:26 2011-04-02 tomorrow</div>
+<div class='twitter-actions' style='font-size: 12px;'><span class='twitter-meta'><a title='tweeted on 1 April, 2011 22:15' href='http://twitter.com/#!/timetabling/status/53943616070090752' target='_blank'>1 April, 2011 22:15</a> via <a href="http://www.hootsuite.com" rel="nofollow" target="blank">HootSuite</a></span><a href='https://twitter.com/intent/tweet?in_reply_to=53943616070090752' class='twitter-action twitter-reply-action' title='Reply'><span><em style='margin-left: 1em;'></em><strong>Reply</strong></span></a><a href='https://twitter.com/intent/retweet?tweet_id=53943616070090752' class='twitter-action twitter-retweet-action' title='Retweet'><span><em style='margin-left: 1em;'></em><strong>Retweet</strong></span></a><a href='https://twitter.com/intent/favorite?tweet_id=53943616070090752' class='twitter-action twitter-favorite-action' title='Favorite'><span><em style='margin-left: 1em;'></em><strong>Favorite</strong></span></a></div>
+</div>
+</div>
+<p>How is this possible? Did I use Twitter to travel into the future?</p>
+<p>Sadly not <img src='http://s0.wp.com/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' />  it is only a minor, but funny bug of Twitter &#8211; the date of the tweet from MeisterDaniel is simply wrong &#8230;</p>
+<p>Now, let me know your twitter observations!</p>
+<br />Filed under: <a href='http://karussell.wordpress.com/category/twitter/'>Twitter</a>  <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/karussell.wordpress.com/3110/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/karussell.wordpress.com/3110/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/karussell.wordpress.com/3110/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/karussell.wordpress.com/3110/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/karussell.wordpress.com/3110/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/karussell.wordpress.com/3110/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/karussell.wordpress.com/3110/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/karussell.wordpress.com/3110/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/karussell.wordpress.com/3110/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/karussell.wordpress.com/3110/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/karussell.wordpress.com/3110/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/karussell.wordpress.com/3110/" /></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/karussell.wordpress.com/3110/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/karussell.wordpress.com/3110/" /></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=karussell.wordpress.com&amp;blog=2042483&amp;post=3110&amp;subd=karussell&amp;ref=&amp;feed=1" width="1" height="1" />]]></content:encoded>
+			<wfw:commentRss>http://karussell.wordpress.com/2011/04/02/time-traveling-with-twitter/feed/</wfw:commentRss>
+		<slash:comments>0</slash:comments>
+	
+		<media:content url="http://0.gravatar.com/avatar/206690a26526f07467ecfd6662f8b152?s=96&#38;d=identicon&#38;r=G" medium="image">
+			<media:title type="html">karussell</media:title>
+		</media:content>
+	</item>
+	</channel>
+</rss>

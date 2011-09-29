@@ -24,7 +24,6 @@ import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import de.jetwick.tw.queue.QueueThread;
-import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,7 +47,7 @@ public class HomePageTest extends WicketPagesTestClass {
     private String qString;
     private List<JTweet> returnUserTweets;
     private List<JTweet> returnSearchTweets;
-    private TweetPackage sentTweets;
+    private Collection<JTweet> sentTweets;
 
     @Before
     @Override
@@ -69,7 +68,7 @@ public class HomePageTest extends WicketPagesTestClass {
 
     @Test
     public void testSelectAndRemove() {
-        tester.startPage(HomePage.class);
+        tester.startPage(TweetSearchPage.class);
         tester.assertNoErrorMessage();
 
         FormTester formTester = tester.newFormTester("searchbox:searchform");
@@ -84,17 +83,17 @@ public class HomePageTest extends WicketPagesTestClass {
     @Test
     public void testNormalSearch() throws Exception {
 //        setUp();
-        ElasticTweetSearch search = getInstance(ElasticTweetSearch.class);                
+        ElasticTweetSearch search = getInstance(ElasticTweetSearch.class);
         JetwickQuery query = new TweetQuery("timetabling");
-        tester.startPage(new HomePage(query));
+        tester.startPage(new TweetSearchPage(query));
         tester.assertNoErrorMessage();
-        
-        verify(search).search(new LinkedHashSet<JUser>(), query);
+
+        verify(search).query(new LinkedHashSet<JUser>(), query);
     }
 
     @Test
     public void testQueueWhenNoResults() throws InterruptedException {
-        HomePage page = getInstance(HomePage.class);
+        TweetSearchPage page = getInstance(TweetSearchPage.class);
 
         QueueThread pkg = page.queueTweets(null, "java", null);
         Thread t = new Thread(pkg);
@@ -109,7 +108,7 @@ public class HomePageTest extends WicketPagesTestClass {
 
     @Test
     public void testQueueWhenUserSearch() throws InterruptedException {
-        HomePage page = getInstance(HomePage.class);
+        TweetSearchPage page = getInstance(TweetSearchPage.class);
 
         QueueThread p = page.queueTweets(null, null, "java");
         p.run();
@@ -121,7 +120,7 @@ public class HomePageTest extends WicketPagesTestClass {
 
     @Test
     public void testAvoidDuplicateSearchEnqueueing() throws InterruptedException {
-        HomePage page = getInstance(HomePage.class);
+        TweetSearchPage page = getInstance(TweetSearchPage.class);
 
         QueueThread p = page.queueTweets(null, null, "java");
         p.run();
@@ -137,7 +136,7 @@ public class HomePageTest extends WicketPagesTestClass {
         assertEquals("", uString);
 
 //        reset();
-//        page = getInstance(HomePage.class);
+//        page = getInstance(TweetSearchPage.class);
 //        p = page.queueTweets(null, null, "Java");
 //        p.run();
 //        assertNull(sentTweets);
@@ -147,10 +146,10 @@ public class HomePageTest extends WicketPagesTestClass {
 
     @Test
     public void testNoNullPointerExcForInstantSearch() throws InterruptedException {
-        HomePage page = getInstance(HomePage.class);
+        TweetSearchPage page = getInstance(TweetSearchPage.class);
 
         // query and user are null and hits == 0 => no background thread is created
-        page.init(new TweetQuery(), new PageParameters(), 0, false);
+        page.init(new TweetQuery(), new PageParameters());
         assertNull(page.getQueueThread());
 
         page.doSearch(new TweetQuery(), 0, false, true);
@@ -161,7 +160,7 @@ public class HomePageTest extends WicketPagesTestClass {
 
     @Test
     public void testWithDate() throws InterruptedException {
-        HomePage page = getInstance(HomePage.class);
+        TweetSearchPage page = getInstance(TweetSearchPage.class);
         PageParameters pp = new PageParameters();
         pp.put("until", "2011-02-01");
         JetwickQuery q = page.createQuery(pp);
@@ -175,10 +174,10 @@ public class HomePageTest extends WicketPagesTestClass {
 
     @Test
     public void testWhithNoSolrSearch() throws InterruptedException {
-        HomePage page = getInstance(HomePage.class);
+        TweetSearchPage page = getInstance(TweetSearchPage.class);
+        page.setTwitterFallback(true);
+        page.init(new TweetQuery("java"), new PageParameters());
 
-        // normal query fails but set twitterfallback = false
-        page.init(new TweetQuery("java"), new PageParameters(), 0, true);
         page.getQueueThread().run();
         assertNotNull(sentTweets);
         assertEquals("", uString);
@@ -223,7 +222,7 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public TwitterSearch initTwitter4JInstance(String token, String tokenSec) {
+            public TwitterSearch initTwitter4JInstance(String token, String tokenSec, boolean verify) {
                 return this;
             }
 
@@ -263,7 +262,12 @@ public class HomePageTest extends WicketPagesTestClass {
             }
 
             @Override
-            public void send(TweetPackage tweets) throws RemoteException {
+            public void send(JTweet tweet) throws RemoteException {
+                sentTweets = Arrays.asList(tweet);
+            }
+
+            @Override
+            public void send(Collection<JTweet> tweets) throws RemoteException {
                 sentTweets = tweets;
             }
         };

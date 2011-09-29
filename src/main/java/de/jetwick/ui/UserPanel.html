@@ -25,43 +25,18 @@
     </head>
     <body>
     <wicket:panel>
-        <div class="login-link">
-            <a wicket:id="loginLink" title="Login with your twitter account">
-                <img src="img/authenticate.png"/>            
+        <div class="jetroidad">
+            <a wicket:id="profileImageLink">
+                <img wicket:id="profileImage"/>
             </a>
         </div>
         <div class="login-link">
-            <a wicket:id="editFilters" title="Change Filters: Date, Language, With/Without Links, ... (Login Required)">
-                <img src="img/edit.png"/> Edit Search Filters
-            </a>        
-        </div>        
-        <div wicket:id="dialog" class="hide">
-            <!-- dialog markup will be moved out of main ! -->
-            <div class="login-dialog">
-                <div>
-                    To edit filters, to use friend search or 
-                    <a href="http://www.youtube.com/watch?v=SMURdDVbShI" target="_blank">to track keywords</a>
-                    you need to be logged in!
-                </div>
-                <div>
-                    Follow us at <a href="http://twitter.com/jetwick">twitter.com/jetwick</a><br/>
-                    to recieve updates via private message (rare frequency).
-                </div>
-                <img src="img/accept2.png"/> I have read and accept the <a href="imprint">Terms of Service</a>
-                <div class="dialog-button">
-                    <a wicket:id="loginLinkProceed" title="Login">
-                        <img src="img/arrow_right.png"/>
-                        and I want to login with my twitter account!
-                    </a>
-                </div>
-                <!--
-                <div class="screenshot">
-                    <a href="http://www.youtube.com/watch?v=9U2uxeaVIXk" target="_blank" title="Video Introduction">
-                        <img src="img/screenshot.png" width="600px" alt="View Video Intro"/>
-                    </a>
-                </div>
-                -->
-            </div>
+            <a wicket:id="loginLink" title="Sign in with your Twitter account">
+                <img alt="Login" src="img/authenticate.png"/>            
+            </a>
+        </div>     
+        <div class="gojetslide" wicket:id="gojetslideLink">
+            <a href="http://jetsli.de" title="Your geeky news reader"><img alt="Go Jetslide" src="img/gojetslide.png"/></a>
         </div>
         <div class="userpanel" wicket:id="loginContainer">
             <div wicket:id="userModal"></div>                
@@ -76,7 +51,10 @@
                     </li>
                     <li>
                         <a wicket:id="grabTweets" title="Makes tweets of any user searchable! (max 3200)">Grab Tweets</a>
-                    </li>                                                
+                    </li>
+                    <li>
+                        <a class="jetslidelink" href="http://jetsli.de" title="Your geeky news reader">Go Jetslide!</a>
+                    </li>
                     <li>
                         <a wicket:id="logout">Logout</a>
                     </li>

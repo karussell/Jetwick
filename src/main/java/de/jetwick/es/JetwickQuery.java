@@ -15,6 +15,19 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.BaseFilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeFilterBuilder;
+import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.snowball.SnowballFilter;
+import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import de.jetwick.data.JTweet;
@@ -23,10 +36,6 @@ import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.elasticsearch.index.query.xcontent.FilterBuilders;
-import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
-import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
-import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import org.elasticsearch.search.facet.AbstractFacetBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
 import de.jetwick.util.Helper;
@@ -41,7 +50,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import static de.jetwick.es.ElasticTweetSearch.*;
 
 /**
@@ -52,11 +60,12 @@ public abstract class JetwickQuery implements Serializable {
 
     private static final Logger logger = LoggerFactory.getLogger(JetwickQuery.class);
     private static final long serialVersionUID = 1L;
-    public final static String SAVED_SEARCHES = "ss";
+    public final static String SAVED_SEARCHES = "ss";   
     private int from;
     private int size = 10;
-    private String queryString;
-    private boolean escape = false;
+    protected String queryString;
+    protected boolean escape = false;
+    protected boolean explain = false;
     private List<StrEntry> sortFields = new ArrayList<StrEntry>();
     private List<Entry<String, Object>> filterQueries = new ArrayList<Entry<String, Object>>();
     private Map<String, Integer> facetFields = new LinkedHashMap<String, Integer>();
@@ -86,7 +95,7 @@ public abstract class JetwickQuery implements Serializable {
             start = 0;
 
         srb.setSearchType(SearchType.QUERY_THEN_FETCH).//QUERY_AND_FETCH would return too many results
-                setFrom(start).setSize(rows);//.setExplain(true);
+                setFrom(start).setSize(rows);
 
         for (StrEntry e : getSortFields()) {
             if ("asc".equals(e.getValue()))
@@ -95,7 +104,7 @@ public abstract class JetwickQuery implements Serializable {
                 srb.addSort(e.getKey(), SortOrder.DESC);
         }
 
-        XContentQueryBuilder qb = createQuery(getQuery());
+        QueryBuilder qb = createQuery(getQuery());
         qb = processFilterQueries(qb);
         processFacetFields(srb);
         processFacetQueries(srb);
@@ -116,10 +125,10 @@ public abstract class JetwickQuery implements Serializable {
         }
     }
 
-    public XContentQueryBuilder processFilterQueries(XContentQueryBuilder qb) {
-        XContentFilterBuilder fb = null;
+    public QueryBuilder processFilterQueries(QueryBuilder qb) {
+        FilterBuilder fb = null;
         for (Entry<String, Object> entry : getFilterQueries()) {
-            XContentFilterBuilder tmp = fromFilterQuery(entry);
+            FilterBuilder tmp = fromFilterQuery(entry);
             if (tmp == null)
                 continue;
             if (fb != null)
@@ -134,7 +143,7 @@ public abstract class JetwickQuery implements Serializable {
         return qb;
     }
 
-    public XContentFilterBuilder fromFilterQuery(Entry<String, Object> entry) {
+    public FilterBuilder fromFilterQuery(Entry<String, Object> entry) {
         return filterQuery2Builder(entry.getKey(), entry.getValue());
     }
 
@@ -159,30 +168,33 @@ public abstract class JetwickQuery implements Serializable {
             try {
                 newVal = Double.parseDouble(val);
             } catch (Exception ex2) {
-                // necessary?
-//                    try {
-//                        retVal = Boolean.parseBoolean(val);
-//                    } catch (Exception ex3) {
-//                    }
             }
         }
-//        if (newVal instanceof String)
-//            newVal = escapeQuery((String) newVal);
-
         return newVal;
     }
+
+    public JetwickQuery setExplain(boolean explain) {
+        this.explain = explain;
+        return this;
+    }
+    
+    public boolean isExplain() {
+        return explain;
+    }        
 
     public String getDefaultAnalyzer() {
         return "search_analyzer";
     }
 
-    protected XContentQueryBuilder createQuery(String queryStr) {
+    protected QueryBuilder createQuery(String queryStr) {
         return QueryBuilders.matchAllQuery();
     }
 
-    public static XContentFilterBuilder filterQuery2Builder(String key, Object input) {
+    public static FilterBuilder filterQuery2Builder(String key, Object input) {
         String val = input.toString();
-        if (val.contains(" OR ")) {
+        if (key.contains(ElasticTweetSearch._ID))
+            return idFilter(key, val);
+        else if (val.contains(" OR ")) {
             // handle field:(val OR val2 OR ...)
             if (val.startsWith("(") && val.endsWith(")"))
                 val = val.substring(1, val.length() - 1);
@@ -192,12 +204,11 @@ public abstract class JetwickQuery implements Serializable {
             for (int i = 0; i < res.length; i++) {
                 terms[i] = getTermValue(res[i]);
             }
-
             return FilterBuilders.termsFilter(key, terms);
         }
 
         if (val.startsWith("[NOW") || val.startsWith("[DAY")) {
-            throw new UnsupportedOperationException("not yet implemented");
+            throw new UnsupportedOperationException("Solr's date math is not yet implemented with ES");
         } else if (val.startsWith("[")) {
             val = val.substring(1, val.length() - 1);
             int index1 = val.indexOf(" ");
@@ -239,10 +250,25 @@ public abstract class JetwickQuery implements Serializable {
             return FilterBuilders.notFilter(FilterBuilders.termFilter(key.substring(1), getTermValue(val)));
         } else
             return FilterBuilders.termFilter(key, getTermValue(val));
+
     }
 
-    public static XContentFilterBuilder filters2Builder(Collection<String> filterStrings) {
-        List<XContentFilterBuilder> filters = new ArrayList<XContentFilterBuilder>();
+    public static BaseFilterBuilder idFilter(String key, String val) {
+        int index = key.indexOf(ElasticTweetSearch._ID);
+        String type = key.substring(index + ElasticTweetSearch._ID.length());
+        BaseFilterBuilder fb;
+        if (val.contains(" OR "))
+            fb = FilterBuilders.idsFilter(type).ids(val.split(" OR "));
+        else
+            fb = FilterBuilders.idsFilter(type).ids(val);
+
+        if (key.startsWith("-"))
+            fb = FilterBuilders.notFilter(fb);
+        return fb;
+    }
+
+    public static FilterBuilder filters2Builder(Collection<String> filterStrings) {
+        List<FilterBuilder> filters = new ArrayList<FilterBuilder>();
         for (String tmpFq : filterStrings) {
             String strs[] = tmpFq.split("\\:");
             if (strs.length != 2)
@@ -250,7 +276,7 @@ public abstract class JetwickQuery implements Serializable {
 
             filters.add(filterQuery2Builder(strs[0], strs[1]));
         }
-        return FilterBuilders.orFilter(filters.toArray(new XContentFilterBuilder[filters.size()]));
+        return FilterBuilders.orFilter(filters.toArray(new FilterBuilder[filters.size()]));
     }
 
     public JetwickQuery setEscape(boolean b) {
@@ -353,7 +379,7 @@ public abstract class JetwickQuery implements Serializable {
     }
 
     public JetwickQuery attachUserFacets() {
-        addFacetField(USER, 10);
+//        addFacetField(USER, 10);
         return this;
     }
 
@@ -551,10 +577,9 @@ public abstract class JetwickQuery implements Serializable {
         setFrom(page * hitsPerPage).setSize(hitsPerPage);
     }
 
-    public JetwickQuery addLatestDateFilter(int hours) {
-        addFilterQuery(DATE, "[" + new MyDate().minusHours(hours).castToHour().toLocalString() + " TO *]");
-        return this;
-    }
+    public abstract JetwickQuery addLatestDateFilter(int hours);
+
+    public abstract JetwickQuery addLatestDateFilter(MyDate date);
 
     public JetwickQuery addNoSpamFilter() {
         addFilterQuery(QUALITY, "[" + (JTweet.QUAL_SPAM + 1) + " TO *]");
@@ -571,14 +596,20 @@ public abstract class JetwickQuery implements Serializable {
         return this;
     }
 
+    public JetwickQuery addOnlyWithLinks() {
+        addFilterQuery(URL_COUNT, "[1 TO *]");
+        return this;
+    }
+
     @Override
     public String toString() {
         //q=algorithm&fq=quality_i%3A%5B27+TO+*%5D&fq=dups_i%3A%5B*+TO+0%5D&fq=crt_b%3A%22false%22&start=0&rows=15&sort=retw_i+desc
         String res = "";
+        if (queryString != null)
+            res = "q=" + Helper.urlEncode(queryString) + "&";
+
         res += "start=" + from;
         res += "&rows=" + size;
-        if (queryString != null)
-            res += "&q=" + Helper.urlEncode(queryString);
 
         for (Entry<String, String> e : getSortFields()) {
             res += "&sort=" + Helper.urlEncode(e.getKey() + " " + e.getValue());
@@ -601,7 +632,12 @@ public abstract class JetwickQuery implements Serializable {
     }
 
     public static TweetQuery parseQuery(String qString) {
-        TweetQuery q = new TweetQuery(false);
+        TweetQuery q = parseQuery(new TweetQuery(false), qString);
+        
+        return q;
+    }
+    
+    public static <Q extends JetwickQuery> Q parseQuery(Q q, String qString) {        
         qString = Helper.urlDecode(qString);
         for (String str : qString.split("&")) {
             int index = str.indexOf("=");
@@ -662,6 +698,42 @@ public abstract class JetwickQuery implements Serializable {
             sb.append(c);
         }
         return sb.toString();
+    }
+
+    /**
+     * smartEscapeQuery without : and ^ escaping
+     */
+    public static String smartEscapeQuery2(String str) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '!' || c == '[' || c == ']' || c == '{' || c == '}' || c == '~'
+                    || c == '?' || c == '|' || c == '&' || c == ';') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * @return true if string contains characters not good for twitter search.
+     * Those characters are similar if not identical to the special lucene-query params.
+     */
+    public static boolean containsForbiddenChars(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '\\' || c == '!' || c == '(' || c == ')' || c == ':'
+                    || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
+                    || c == '*' || c == '?' || c == '|' || c == '&' || c == ';') {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public static boolean isPowerQuery(String str) {
+        return str.contains(" OR ") || str.contains("-") || containsForbiddenChars(str);
     }
 
     public static String escapeQuery(String str) {
@@ -728,5 +800,59 @@ public abstract class JetwickQuery implements Serializable {
         } catch (Exception ex) {
             return "<ERROR:" + ex.getMessage() + ">";
         }
+    }
+
+    protected Collection<String> doSnowballTermsStemming(Collection<Entry<String, Integer>> terms) {
+        final Iterator<Entry<String, Integer>> iter = terms.iterator();
+        Tokenizer tokenizer = new TokenizerFromSet(new Iterator<String>() {
+
+            @Override
+            public boolean hasNext() {
+                return iter.hasNext();
+            }
+
+            @Override
+            public String next() {
+                return iter.next().getKey();
+            }
+
+            @Override
+            public void remove() {
+                iter.remove();
+            }
+        });
+
+        return doSnowballStemming(tokenizer);
+    }
+
+    public Set<String> doSnowballStemming(TokenStream ts) {
+        Set<String> res = new LinkedHashSet<String>();
+        ts = new SnowballFilter(ts, "English");
+        try {
+            while (ts.incrementToken()) {
+                res.add(ts.getAttribute(TermAttribute.class).term());
+            }
+        } catch (IOException ex) {
+            logger.error("Exception while stemming to snoball", ex);
+        }
+
+        return res;
+    }
+
+    public JetwickQuery createFriendsQuery(String key, Collection<String> friends) {
+        if (friends.isEmpty())
+            return this;
+
+        StringBuilder fq = new StringBuilder("(");
+        int counter = 0;
+        for (String screenName : friends) {
+            if (counter++ > 0)
+                fq.append(" OR ");
+            fq.append(screenName);
+        }
+
+        fq.append(")");
+        addFilterQuery(key, fq.toString());
+        return this;
     }
 }

@@ -23,7 +23,6 @@ import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
-import org.apache.lucene.util.ArrayUtil;
 
 import java.io.IOException;
 
@@ -329,7 +328,7 @@ public final class WordDelimiterFilter extends TokenFilter {
 
                 iterator.setText(termBuffer, termLength);
                 iterator.next();
-                
+
                 // word of no delimiters, or protected word: just return it
                 if ((iterator.current == 0 && iterator.end == termLength)
                         || (protWords != null && protWords.contains(termBuffer, 0, termLength))) {
@@ -359,7 +358,7 @@ public final class WordDelimiterFilter extends TokenFilter {
                     return true;
                 }
             }
-            
+
             // at the end of the string, output any concatenations
             if (iterator.end == WordDelimiterIterator.DONE) {
                 if (!concat.isEmpty()) {
@@ -452,7 +451,7 @@ public final class WordDelimiterFilter extends TokenFilter {
         savedType = typeAttribute.type();
 
         if (savedBuffer.length < termAttribute.termLength()) {
-            savedBuffer = new char[ArrayUtil.getNextSize(termAttribute.termLength())];
+            savedBuffer = new char[getNextSize(termAttribute.termLength())];
         }
 
         System.arraycopy(termAttribute.termBuffer(), 0, savedBuffer, 0, termAttribute.termLength());
@@ -670,4 +669,15 @@ public final class WordDelimiterFilter extends TokenFilter {
     // dollar sign?  $42
     // percent sign?  33%
     // downsides:  if source text is "powershot" then a query of "PowerShot" won't match!
+
+    public static int getNextSize(int targetSize) {
+        /* This over-allocates proportional to the list size, making room
+         * for additional growth.  The over-allocation is mild, but is
+         * enough to give linear-time amortized behavior over a long
+         * sequence of appends() in the presence of a poorly-performing
+         * system realloc().
+         * The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, ...
+         */
+        return (targetSize >> 3) + (targetSize < 9 ? 3 : 6) + targetSize;
+    }
 }

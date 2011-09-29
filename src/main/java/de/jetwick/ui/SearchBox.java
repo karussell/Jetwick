@@ -83,16 +83,15 @@ public class SearchBox extends Panel {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 setSearchType(ALL);
-                setResponsePage(getApplication().getHomePage(), getParams(query, selectedIndex, null, loggedInUser));
+                setResponsePage(TweetSearchPage.class, getParams(query, selectedIndex, null, loggedInUser));
             }
         }));
         final RadioGroup rg = new RadioGroup("searchTypes", new PropertyModel(this, "selectedIndex"));
-
         final Button buttonRight = new Button("submitbutton") {
 
             @Override
             public void onSubmit() {
-                setResponsePage(getApplication().getHomePage(), getParams(query, selectedIndex, userName, loggedInUser));
+                setResponsePage(TweetSearchPage.class, getParams(query, selectedIndex, userName, loggedInUser));
             }
         };
         final Button bttnLeft = new Button("submitbuttonleft") {
@@ -109,7 +108,8 @@ public class SearchBox extends Panel {
                 buttonRight.onSubmit();
             }
         };
-
+        
+        form.add(new BookmarkablePageLink("homelink", TweetSearchPage.class));
 //        buttonRight.add(new EffectBehavior(new BounceEffect()));
         form.add(buttonRight);
         form.add(bttnLeft);
@@ -167,12 +167,11 @@ public class SearchBox extends Panel {
         rg.add(new Radio("1", new Model(1)).setMarkupId("sbfriends"));
         rg.add(new Radio("2", new Model(2)).setMarkupId("sbuser"));
         rg.add(userTF);
-        if(showSpacer)
+        if (showSpacer)
             form.add(new AttributeAppender("class", new Model("not-logged-in-spacer"), " "));
 
         form.add(rg);
-
-        form.add(new BookmarkablePageLink("homelink", HomePage.class));
+        
 //        Model hrefModel = new Model() {
 //
 //            @Override
@@ -252,25 +251,18 @@ public class SearchBox extends Panel {
         if (tmpQuery != null && !tmpQuery.isEmpty())
             params.add("q", tmpQuery);
 
-        if (tmpSelectedIndex == null || tmpSelectedIndex == 0) {
+        if(tmpSelectedIndex == null)
+            tmpSelectedIndex = 0;
+        
+        params.add("search", SEARCHTYPES.get(tmpSelectedIndex));
+        if (tmpSelectedIndex == 0) {
             if (tmpUserName != null)
                 params.add("user", tmpUserName);
         } else if (tmpSelectedIndex == 2) {
-            params.add("search", SEARCHTYPES.get(2));
             params.add("user", tmpUserName);
         } else if (tmpSelectedIndex == 1) {
-            params.add("search", SEARCHTYPES.get(1));
 //            params.add("user", tmpLoginUser);
-        }        
+        }
         return params;
     }
-//    @Override
-//    public void contribute(WiQueryResourceManager wiQueryResourceManager) {
-//        EffectsHelper.bounce(wiQueryResourceManager);        
-//    }
-//
-//    @Override
-//    public JsStatement statement() {
-//        return new JsStatement();
-//    }
 }

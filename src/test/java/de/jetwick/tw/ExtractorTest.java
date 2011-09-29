@@ -15,6 +15,9 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.data.JTweet;
+import de.jetwick.data.JUser;
+import de.jetwick.data.UrlEntry;
 import de.jetwick.util.Helper;
 import org.junit.Before;
 import org.junit.Test;
@@ -127,5 +130,13 @@ public class ExtractorTest {
     public void testUrlWithNewLine() {
         assertEquals(extractor.toLink("http://test.de", "http://test.de") + "<br/>bli",
                 extractor.toSaveHtml("http://test.de\nbli"));
+    }
+    
+    @Test
+    public void testUrlEntriesToAvoidMemoryLeak() {
+        extractor.setTweet(new JTweet(1L, "test", new JUser("tester")).addUrlEntry(new UrlEntry(1, 2, "test.de"))).run();
+        assertEquals(1, extractor.getUrlEntrySize());
+        extractor.setTweet(new JTweet(1L, "test", new JUser("tester")).addUrlEntry(new UrlEntry(10, 2, "test.de"))).run();
+        assertEquals(1, extractor.getUrlEntrySize());
     }
 }

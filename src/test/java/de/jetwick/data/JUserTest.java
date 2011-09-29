@@ -35,22 +35,6 @@ public class JUserTest {
     }
 
     @Test
-    public void testCanBeUpdated() {
-        JUser user = new JUser("Peter");
-
-        assertTrue(user.isOutOfDate());
-
-        user.setUpdateAt(new Date());
-        assertFalse(user.isOutOfDate());
-
-        user.setUpdateAt(Helper.plusDays(new Date(), -8));
-        assertTrue(user.isOutOfDate());
-
-        user.setUpdateAt(Helper.plusDays(new Date(), -7));
-        assertFalse(user.isOutOfDate());
-    }
-
-    @Test
     public void testOwnTweets() {
         JUser user = new JUser("Peter");
         new JTweet(1, "1", user);

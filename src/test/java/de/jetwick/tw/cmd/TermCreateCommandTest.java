@@ -15,8 +15,6 @@
  */
 package de.jetwick.tw.cmd;
 
-import de.jetwick.es.JetwickQuery;
-import de.jetwick.es.SimilarQuery;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
@@ -156,25 +154,25 @@ public class TermCreateCommandTest {
         assertTrue(tw3.getQuality() > JTweet.QUAL_SPAM);
     }
 
-    @Test
-    public void testUrlTitleQuality() {
-        String url1 = "http://watchlivefree.blogspot.different.domain.com",
-                url2 = "http://watchlivefree.blogspot.com";
-        String[] tweetsAsStr = new String[]{
-            "blap notspamword " + url1,
-            "blup secondnotspamword " + url2};
-
-        JUser user = new JUser("user1");
-        JTweet tw1 = new JTweet(1L, tweetsAsStr[0], user).setCreatedAt(new Date(1L));
-        tw1.getUrlEntries().add(new UrlEntry(5, 123, url1).setResolvedTitle("identical title"));
-        JTweet tw2 = new JTweet(2L, tweetsAsStr[1], user).setCreatedAt(new Date(2L));
-        tw2.getUrlEntries().add(new UrlEntry(5, 123, url2).setResolvedTitle("identical title"));
-
-        execute(Arrays.asList(tw1, tw2));
-
-        assertTrue("tweet:" + tw1, tw1.getQuality() > 90);
-        assertTrue("tweet:" + tw2, tw2.getQuality() < 90);
-    }
+//    @Test
+//    public void testUrlTitleQuality() {
+//        String url1 = "http://watchlivefree.blogspot.different.domain.com",
+//                url2 = "http://watchlivefree.blogspot.com";
+//        String[] tweetsAsStr = new String[]{
+//            "blap notspamword " + url1,
+//            "blup secondnotspamword " + url2};
+//
+//        JUser user = new JUser("user1");
+//        JTweet tw1 = new JTweet(1L, tweetsAsStr[0], user).setCreatedAt(new Date(1L));
+//        tw1.getUrlEntries().add(new UrlEntry(5, 123, url1).setResolvedTitle("identical title"));
+//        JTweet tw2 = new JTweet(2L, tweetsAsStr[1], user).setCreatedAt(new Date(2L));
+//        tw2.getUrlEntries().add(new UrlEntry(5, 123, url2).setResolvedTitle("identical title"));
+//
+//        execute(Arrays.asList(tw1, tw2));
+//
+//        assertTrue("tweet:" + tw1, tw1.getQuality() > 90);
+//        assertTrue("tweet:" + tw2, tw2.getQuality() < 90);
+//    }
 
     @Test
     public void testExecute() {

@@ -24,8 +24,7 @@ import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIServer;
-import de.jetwick.tw.queue.TweetPackage;
-import java.util.concurrent.BlockingQueue;
+import de.jetwick.util.GenericUrlResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,70 +65,81 @@ public class TweetCollector {
         Injector injector = Guice.createInjector(module);
         TwitterSearch tws = injector.getInstance(TwitterSearch.class);
         ElasticTweetSearch tweetSearch = injector.getInstance(ElasticTweetSearch.class);
+
+        // WAIT UNTIL AVAILABLE
+        tweetSearch.waitUntilAvailable(10000);
+        
         ElasticUserSearch userSearch = injector.getInstance(ElasticUserSearch.class);
         ElasticTagSearch tagSearch = injector.getInstance(ElasticTagSearch.class);
         Configuration cfg = injector.getInstance(Configuration.class);
 
-        // producer's => queue1 -> resolve url (max threads) -> queue2 -> feed solr (min time, max tweets)
-        //              /\
-        //              ||
-        //          rmi from UI
+        // 1. every producer has a separate queue (with a different capacity) to feed TweetConsumer:
+        //      TProd1 -- queue1 --\
+        //      TProd2 -- queue2 ---> TweetConsumer
+        //      ...
+        
+        // 2. TweetConsumer polls N elements from every queue and feeds the results
+        //    into the resolver - see GenericUrlResolver.
+        
+        // 4. Via ElasticTweetSearch:s commit listener the URL:s of tweets will be        
+        //    resolved - 
+        //    For every URL an article is created and feeded into the article index
 
-        // feeding queue1 from twitter4j searches
-        TweetProducer twProducer = injector.getInstance(TweetProducer.class);
-        int tweetsPerBatch = cfg.getTweetsPerBatch();
-        twProducer.setMaxFill(2 * tweetsPerBatch);
+        TweetConsumer twConsumer = injector.getInstance(TweetConsumer.class);
+        twConsumer.setUncaughtExceptionHandler(excHandler);
+
+        GenericUrlResolver resolver = injector.getInstance(GenericUrlResolver.class);        
+        resolver.start();
+        int queueCapacity = cfg.getUrlResolverInputQueueSize();
+        // feeding consumer via twitter search (or offline fake)
+        TweetProducer twProducer = injector.getInstance(TweetProducer.class);                
         twProducer.setTwitterSearch(tws);
         twProducer.setUserSearch(userSearch);
         twProducer.setTagSearch(tagSearch);
+        twProducer.setQueue(twConsumer.register("producer-search", queueCapacity, 100));
 
-        BlockingQueue<TweetPackage> queue1 = twProducer.getQueue();
+        // feeding consumer via twitter keyword stream (gets keywords from tagindex)
+        TweetProducerViaStream producerViaStream = injector.getInstance(TweetProducerViaStream.class);
+        producerViaStream.setQueue(twConsumer.register("producer-stream", queueCapacity, 120));
+        producerViaStream.setTwitterSearch(tws);
+        producerViaStream.setTagSearch(tagSearch);
+        producerViaStream.setUncaughtExceptionHandler(excHandler);
+        producerViaStream.setTweetsPerSecLimit(cfg.getTweetsPerSecLimit());
 
-        // feeding queue1 from tweets of friends (of registered users)
+        // feeding consumer from tweets of friends (of registered users)
         TweetProducerViaUsers producerFromFriends = injector.getInstance(TweetProducerViaUsers.class);
-        producerFromFriends.setQueue(queue1);
+        producerFromFriends.setQueue(twConsumer.register("producer-friends", queueCapacity, 100));
         producerFromFriends.setTwitterSearch(tws);
         producerFromFriends.setUserSearch(userSearch);
-        producerFromFriends.setMaxFill(2 * tweetsPerBatch);
+        producerFromFriends.setUncaughtExceptionHandler(excHandler);
 
-        // feeding queue1 from UI
+        // feeding consumer from UI        
         RMIServer rmiServer = injector.getInstance(RMIServer.class);
-        rmiServer.setFeedingQueue(queue1);
+        rmiServer.setQueue(twConsumer.register("producer-rmi", queueCapacity, 20));
         Thread rmiServerThread = rmiServer.createThread();
+  
+        // configure tweet index to call UrlResolver after feeding of a tweet        
+        tweetSearch.setRemoveOlderThanDays(cfg.getTweetSearchRemoveDays());
+        tweetSearch.setBatchSize(cfg.getTweetSearchBatch());                
 
-        // reading queue1 and send to queue2
-        TweetUrlResolver twUrlResolver = injector.getInstance(TweetUrlResolver.class);
-        twUrlResolver.setReadingQueue(queue1);
-        twUrlResolver.setResolveThreads(cfg.getTweetResolveUrlThreads());
-        twUrlResolver.setResolveTimeout(cfg.getTweetResolveUrlTimeout());
-        twUrlResolver.setUncaughtExceptionHandler(excHandler);        
-        twUrlResolver.setMaxFill(2 * tweetsPerBatch);        
-        twUrlResolver.setUrlCleaner(new UrlTitleCleaner(cfg.getUrlTitleAvoidList()));
-
-        // reading queue2
-        BlockingQueue<TweetPackage> queue2 = twUrlResolver.getResultQueue();
-        TweetConsumer twConsumer = new TweetConsumer();
-        twConsumer.setReadingQueue(queue2);
-        twConsumer.setUncaughtExceptionHandler(excHandler);
-        twConsumer.setTweetBatchSize(tweetsPerBatch);
-        twConsumer.setOptimizeInterval(cfg.getTweetSearchOptimizeInterval());
-        twConsumer.setOptimizeToSegmentsAfterUpdate(cfg.getTweetSearchCommitOptimizeSegments());
-        twConsumer.setRemoveDays(cfg.getSolrRemoveDays());
-        twConsumer.setTweetSearch(tweetSearch);
-
-        rmiServerThread.start();
-        twConsumer.start();
-        twUrlResolver.start();
-        producerFromFriends.start();
         Thread twProducerThread = new Thread(twProducer, "tweet-producer");
         twProducerThread.setUncaughtExceptionHandler(excHandler);
         twProducerThread.start();
 
+        rmiServerThread.start();
+        twConsumer.start();
+        producerFromFriends.start();
+        if (cfg.isStreamEnabled())
+            producerViaStream.start();
+
+        // ## JOIN
         twProducerThread.join();
+
+        if (cfg.isStreamEnabled())
+            producerViaStream.interrupt();
 
         producerFromFriends.interrupt();
         twConsumer.interrupt();
-        twUrlResolver.interrupt();
-        rmiServerThread.interrupt();
+        rmiServerThread.interrupt();        
     }
 }

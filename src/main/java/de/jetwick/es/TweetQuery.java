@@ -15,8 +15,14 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder.Operator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Date;
-import org.elasticsearch.search.facet.termsstats.TermsStatsFacet.ComparatorType;
 import de.jetwick.util.StrEntry;
 import org.elasticsearch.search.facet.AbstractFacetBuilder;
 import de.jetwick.util.Helper;
@@ -24,12 +30,7 @@ import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.range.RangeFacetBuilder;
 import java.util.Map.Entry;
-import org.elasticsearch.index.query.xcontent.FilterBuilders;
-import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
-import org.elasticsearch.index.query.xcontent.QueryStringQueryBuilder.Operator;
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
-import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import java.util.Collection;
 import static de.jetwick.es.ElasticTweetSearch.*;
 
@@ -39,6 +40,7 @@ import static de.jetwick.es.ElasticTweetSearch.*;
  */
 public class TweetQuery extends JetwickQuery {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final long serialVersionUID = 1L;
 
     public TweetQuery() {
@@ -56,7 +58,7 @@ public class TweetQuery extends JetwickQuery {
     public TweetQuery(String queryStr, boolean init) {
         super(queryStr, init);
     }
-    private transient XContentFilterBuilder dateFilter = null;
+    private transient FilterBuilder dateFilter = null;
 
     @Override
     public SearchRequestBuilder initRequestBuilder(SearchRequestBuilder srb) {
@@ -78,7 +80,7 @@ public class TweetQuery extends JetwickQuery {
             rfb.addUnboundedTo(Helper.toLocalDateTime(date.clone().minusHours(8).castToHour().toDate()));
             // first day            
             rfb.addUnboundedTo(Helper.toLocalDateTime(date.castToDay().toDate()));
-            
+
             for (int i = 0; i < 7; i++) {
                 // 'from' must be smaller than 'to'!
                 Date oldDate = date.toDate();
@@ -95,8 +97,8 @@ public class TweetQuery extends JetwickQuery {
     }
 
     @Override
-    public XContentFilterBuilder fromFilterQuery(Entry<String, Object> entry) {
-        XContentFilterBuilder tmp = super.fromFilterQuery(entry);
+    public FilterBuilder fromFilterQuery(Entry<String, Object> entry) {
+        FilterBuilder tmp = super.fromFilterQuery(entry);
         if (entry.getKey().equals(ElasticTweetSearch.DATE)) {
             if (dateFilter != null)
                 dateFilter = FilterBuilders.andFilter(dateFilter, tmp);
@@ -110,13 +112,13 @@ public class TweetQuery extends JetwickQuery {
     @Override
     public AbstractFacetBuilder fromFacetField(String ff, int limit) {
         AbstractFacetBuilder facetBuilder;
-        if (ff.equals(ElasticTweetSearch.FIRST_URL_TITLE) || ff.equals(ElasticTweetSearch.TAG)) {
-            // hmmh no real differences ... strange
-            facetBuilder = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.score").order(ComparatorType.TOTAL).size(limit);
+//        if (ff.equals(ElasticTweetSearch.FIRST_URL_TITLE) || ff.equals(ElasticTweetSearch.TAG)) {
+        // hmmh no real differences ... strange
+//            facetBuilder = FacetBuilders.termsStatsFacet(ff).keyField(ff).valueScript("doc.score").order(ComparatorType.TOTAL).size(limit);
 //                    fb = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.relevance.value").order(ComparatorType.TOTAL);//.size(15);
 //                    fb = FacetBuilders.termsStats(ff).keyField(ff).valueScript("doc.relevance.value").order(ComparatorType.COUNT).size(15);
-        } else
-            facetBuilder = super.fromFacetField(ff, limit);
+//        } else        
+        facetBuilder = super.fromFacetField(ff, limit);
 
         if (dateFilter != null)
             facetBuilder.facetFilter(dateFilter);
@@ -134,7 +136,7 @@ public class TweetQuery extends JetwickQuery {
 
     @Override
     public TweetQuery attachFacetibility() {
-        setDateFacets(true).
+//        setDateFacets(true).
                 addFacetField(TAG, 15).addFacetField(LANG).
                 // originality
                 addFacetField(IS_RT);
@@ -161,34 +163,21 @@ public class TweetQuery extends JetwickQuery {
         addFacetQuery(URL_COUNT, "0");
 
         return this;
-    }    
+    }
 
     public TweetQuery createFriendsQuery(Collection<String> friends) {
-        if (friends.isEmpty())
-            return this;
-
-        StringBuilder fq = new StringBuilder("(");
-        int counter = 0;
-        for (String screenName : friends) {
-            if (counter++ > 0)
-                fq.append(" OR ");
-            fq.append(screenName);
-        }
-
-        fq.append(")");
-        addFilterQuery("user", fq.toString());
-        return this;
+        return (TweetQuery) super.createFriendsQuery("user", friends);
     }
 
     @Override
-    protected XContentQueryBuilder createQuery(String queryStr) {
-        XContentQueryBuilder qb;
+    protected QueryBuilder createQuery(String queryStr) {
+        QueryBuilder qb;
         if (queryStr == null || queryStr.isEmpty())
             qb = QueryBuilders.matchAllQuery();
         else {
             // fields can also contain patterns like so name.* to match more fields
             qb = QueryBuilders.queryString(queryStr).defaultOperator(Operator.AND).
-                    field(ElasticTweetSearch.TWEET_TEXT).field("dest_title_t").field("user", 0).
+                    field(ElasticTweetSearch.TWEET_TEXT).field(ElasticTweetSearch.TITLE).field(ElasticTweetSearch.USER, 0).
                     allowLeadingWildcard(false).analyzer(getDefaultAnalyzer()).useDisMax(true);
         }
 
@@ -209,11 +198,14 @@ public class TweetQuery extends JetwickQuery {
 //                lang("js").param("mynow", time);
     }
 
-    /**
-     * @deprecated use twittersearch findByTwitterId instead     
-     */
-    public JetwickQuery createIdQuery(long longVal) {
-        addFilterQuery("_id", longVal);
+    @Override
+    public JetwickQuery addLatestDateFilter(int hours) {
+        return addLatestDateFilter(new MyDate().minusHours(hours).castToHour());
+    }
+
+    @Override
+    public JetwickQuery addLatestDateFilter(MyDate date) {
+        addFilterQuery(DATE, "[" + date.toLocalString() + " TO *]");
         return this;
     }
 }

@@ -19,7 +19,9 @@ import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.util.Helper;
 import java.util.Collection;
+import java.util.Date;
 import javax.servlet.http.Cookie;
 import org.apache.wicket.Request;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -45,11 +47,13 @@ public class MySession extends WebSession {
      * TwitterSearch.setTwitter4JInstance to get the correct user name etc
      *
      * @see DefaultModule
+     * onNewSession session called for every request. everytime a new instance 
      */
     private TwitterSearch twitterSearch;
     private JUser user = null;
     private boolean twitterSearchInitialized = false;
     private boolean sessionTimedOut = false;
+    private String email;
 
     public MySession(Request request) {
         super(request);
@@ -62,7 +66,7 @@ public class MySession extends WebSession {
     public String getSessionTimeOutMessage() {
         String str = "";
         if (sessionTimedOut)
-            str = "You have been inactivate a while. Please try again.";
+            str = "You have been inactivate a while. Please go back and refresh or try again.";
 
         sessionTimedOut = false;
         return str;
@@ -76,29 +80,17 @@ public class MySession extends WebSession {
         return twitterSearch;
     }
 
-    // called for every request. initialized with default karussell data
-    public void setTwitterSearch(TwitterSearch twitterSearch) {
+    // for test only
+    void setTwitterSearch(TwitterSearch twitterSearch) {
         this.twitterSearch = twitterSearch;
-    }
-
-    public void init(WebRequest request, ElasticUserSearch uSearch) {
-        if (!twitterSearchInitialized) {
-            twitterSearchInitialized = true;
-            Cookie cookie = request.getCookie(TwitterSearch.COOKIE);
-            if (cookie != null) {
-                setUser(uSearch.findByTwitterToken(cookie.getValue()));
-                if (user != null)
-                    logger.info("Found cookie for user:" + getUser().getScreenName());
-            } else
-                logger.info("No cookie found. IP=" + request.getHttpServletRequest().getRemoteHost());
-        }
     }
 
     public JUser getUser() {
         return user;
     }
 
-    private void setUser(JUser user) {
+    // use only for tests!
+    public void setUser(JUser user) {
         this.user = user;
         dirty();
     }
@@ -106,80 +98,106 @@ public class MySession extends WebSession {
     public boolean hasLoggedIn() {
         return getUser() != null;
     }
-    
-    /**
-     * Use only if specified ts is already initialized
-     */
-    public Cookie setTwitterSearch(AccessToken token, ElasticUserSearch uSearch, WebResponse response) {
-        twitterSearch.initTwitter4JInstance(token.getToken(), token.getTokenSecret());
-        twitterSearchInitialized = true;
-        try {
-//            logger.info("TOKEN:" + token);
-            Cookie cookie = new Cookie(TwitterSearch.COOKIE, token.getToken());
-            // LATER: use https: cookie.setSecure(true);
-            cookie.setComment("Supply autologin for jetwick.com");
-            // four weeks
-            cookie.setMaxAge(4 * 7 * 24 * 60 * 60);
-            response.addCookie(cookie);
 
-            // get current infos
-            User twitterUser = twitterSearch.getTwitterUser();
-            if (twitterUser == null)
-                throw new IllegalStateException("user from twitterSearch cannot be null");
-
-            logger.info("new twitter4j initialized for user:" + twitterUser.getScreenName());
-            
-            // get current saved searches and update with current twitter infos
-            JUser tmpUser = uSearch.findById(token.getUserId());
-            if (tmpUser == null) {
-                logger.info("userId for " + twitterUser.getScreenName() + " not found in user index");
-                // token will be removed on logout so get saved searches from uindex
-                tmpUser = uSearch.findByScreenName(twitterUser.getScreenName());
-                if (tmpUser == null) {
-                    logger.info("user " + twitterUser.getScreenName() + " not found in user index");
-                    tmpUser = new JUser(twitterUser.getScreenName());
+    public void onNewSession(WebRequest request, ElasticUserSearch uSearch) {
+        if (!twitterSearchInitialized) {
+            twitterSearchInitialized = true;
+            Cookie cookie = request.getCookie(TwitterSearch.COOKIE);
+            if (cookie != null) {                
+                setUser(uSearch.findByTwitterToken(cookie.getValue()));
+                if (user != null) {
+                    user.setLastVisit(new Date());
+                    uSearch.save(user, false);
+                    logger.info("Found cookie for user:" + getUser().getScreenName());
                 }
-            }
-
-            tmpUser.updateFieldsBy(twitterUser);
-            tmpUser.setTwitterToken(token.getToken());
-            tmpUser.setTwitterTokenSecret(token.getTokenSecret());
-
-            // save user into user index
-            uSearch.save(tmpUser, true);
-
-            // save user into session
-            setUser(tmpUser);
-
-            logger.info("[stats] user login:" + twitterUser.getScreenName() + " " + tmpUser.getScreenName());
-            return cookie;
-        } catch (TwitterException ex) {
-            logger.error("Couldn't change twitterSearch user" + ex.getMessage());
-            return null;
+            } else
+                logger.info("No cookie found. IP=" + request.getHttpServletRequest().getRemoteHost());
         }
     }
 
-    public void logout(ElasticUserSearch uSearch, WebResponse response) {
-        response.clearCookie(new Cookie(TwitterSearch.COOKIE, ""));
+    public Cookie afterLogin(AccessToken token, ElasticUserSearch uSearch,
+            WebResponse response)
+            throws TwitterException {
+        if (email == null)
+            throw new IllegalArgumentException("Email not available. Please login again.");
 
+        twitterSearch.initTwitter4JInstance(token.getToken(), token.getTokenSecret(), true);
+        twitterSearchInitialized = true;
+//            logger.info("TOKEN:" + token);
+        Cookie cookie = new Cookie(TwitterSearch.COOKIE, token.getToken());
+        // LATER: use https: cookie.setSecure(true);
+        cookie.setComment("Supply autologin for " + Helper.JETSLIDE_URL);
+        // four weeks
+        cookie.setMaxAge(4 * 7 * 24 * 60 * 60);
+        // set path because the cookie should be sent for / and /slide* and /login*
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        // get current infos
+        User twitterUser = twitterSearch.getTwitterUser();
+
+        // get current saved searches and update with current twitter infos
+        JUser tmpUser = uSearch.findById(token.getUserId());
+        if (tmpUser == null) {
+            tmpUser = uSearch.findByScreenName(twitterUser.getScreenName());
+            if (tmpUser == null)
+                tmpUser = new JUser(twitterUser.getScreenName());
+        }
+
+        tmpUser.updateFieldsBy(twitterUser);
+        // now set email entered on form one page before twitter redirect
+        tmpUser.setEmail(email);
+        tmpUser.setTwitterToken(token.getToken());
+        tmpUser.setTwitterTokenSecret(token.getTokenSecret());
+        tmpUser.setLastVisit(new Date());
+
+        // save user into user index
+        uSearch.save(tmpUser, false);
+
+        // save user into session
+        setUser(tmpUser);
+
+        logger.info("[stats] user login:" + twitterUser.getScreenName() + " " + tmpUser.getScreenName());
+        return cookie;
+    }
+
+    public void clearCookie(WebResponse response, String name) {
+        Cookie c = new Cookie(name, "");
+        c.setPath("/");
+        response.clearCookie(c);
+    }
+
+    public void logout(ElasticUserSearch uSearch, WebResponse response, boolean invalidate) {
+        // clear old cookie version too:
+        clearCookie(response, "jetwick");
+        clearCookie(response, TwitterSearch.COOKIE);
         JUser tmpUser = getUser();
         if (tmpUser != null) {
             logger.info("[stats] user logout:" + tmpUser.getScreenName());
-            tmpUser.setTwitterToken(null);
-            tmpUser.setTwitterTokenSecret(null);
-            uSearch.save(tmpUser, true);
+//            tmpUser.setTwitterToken(null);
+//            tmpUser.setTwitterTokenSecret(null);
+            uSearch.save(tmpUser, false);
         }
-
         setUser(null);
+        if(invalidate)
+            invalidate();
     }
 
     public Collection<String> getFriends(ElasticUserSearch uSearch) {
         Collection<String> friends = getUser().getFriends();
-        if(friends.isEmpty()) {
+        if (friends.isEmpty()) {
             // we will need to update regularly to avoid missing the friends-update from TweetProducer
-            user = uSearch.findByScreenName(getUser().getScreenName());
-            friends = user.getFriends();            
-        }        
+            JUser tmp = uSearch.findByScreenName(getUser().getScreenName());
+            if (tmp != null) {                            
+                user = tmp;
+                friends = tmp.getFriends();
+            }
+        }
         return friends;
+    }
+
+    public void setFormData(String email, String pw) {
+        this.email = email;
+//        this.password = pw;
     }
 }

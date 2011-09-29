@@ -16,7 +16,6 @@
 
 package de.jetwick;
 
-import de.jetwick.es.UserIndexResponseOrderTestClass;
 import de.jetwick.tw.TweetCollectorIntegrationTestClass;
 import de.jetwick.tw.TwitterSearchIntegrationTestClass;
 import de.jetwick.util.MiscIntegrationTestClass;
@@ -27,26 +26,23 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 /**
- * Put test here if they requires network access or an external db server.
+ * Put test here if it requires network access or an external db server.
  * They usually take a lot longer then normal unit tests.
  * 
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 @RunWith(Suite.class)
 @SuiteClasses(value = {TwitterSearchIntegrationTestClass.class,
-    TweetCollectorIntegrationTestClass.class,
-    UserIndexResponseOrderTestClass.class,
+    TweetCollectorIntegrationTestClass.class,    
     MiscIntegrationTestClass.class})
 public class AllIntegrationTesting {
 
     @BeforeClass
     public static void beforeClass() {
-//        server = new Db4oServer();
-//        server.start(false);
+        //TODO start ES
     }
 
     @AfterClass
     public static void afterClass() {
-//        server.close();
     }
 }

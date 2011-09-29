@@ -60,7 +60,7 @@ public class Wikipedia {
                 + Helper.urlEncode(query) + "&srinfo=totalhits&format=xml&srlimit=" + hits;
 
         try {
-            Document doc = Helper.readUrlAsDocument(wikiUrl, 1000);
+            Document doc = Helper.getUrlAsDocument(wikiUrl, 1000);
             NodeList list = doc.getElementsByTagName("p");
             for (int ii = 0; ii < list.getLength(); ii++) {
                 Node node = list.item(ii);

@@ -23,3 +23,7 @@ out.txt
 *.log
 tmp.*
 tagfile.txt
+ignore-users.txt
+ignore-users.txt.dm
+tmp
+yagodata

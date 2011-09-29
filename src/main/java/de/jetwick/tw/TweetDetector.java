@@ -17,8 +17,10 @@ package de.jetwick.tw;
 
 import de.jetwick.data.JTweet;
 import de.jetwick.tw.cmd.StringFreqMap;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,22 +34,24 @@ import java.util.Set;
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class TweetDetector {
-
+    
+    public static final String MISC_TERMS = "misc";
+    public static final String NUM_TERMS = "num";
+    public static final String SINGLE_CHAR_TERMS = "1";
     public static final String UNKNOWN_LANG = "unknown";
-    public static final String MISC_LANG = "misc";
-    public static final String NUM = "num";
-    public static final String SINGLE = "1";
     public static final String DE = "de";
     public static final String NL = "nl";
     public static final String EN = "en";
     public static final String RU = "ru";
-    public static final String SP = "sp";
+    public static final String ES = "es";
     public static final String FR = "fr";
     public static final String PT = "pt";
+    public static final Set<String> LANGS = new LinkedHashSet<String>(Arrays.asList(DE, NL, EN, RU, ES, FR, PT));
+    
     private Collection<JTweet> tweets;
     private int termMaxCount = 6;
-    private StringFreqMap languages = new StringFreqMap();
-    private StringFreqMap terms = new StringFreqMap();
+    private StringFreqMap languages = new StringFreqMap(4);
+    private StringFreqMap terms = new StringFreqMap(8);
 
     public TweetDetector(Collection<JTweet> tweets) {
         this.tweets = tweets;
@@ -135,6 +139,9 @@ public class TweetDetector {
         // split against white space characters
         text = stripNoiseFromWord(text);
         String tmpTerms[] = text.split("\\s");
+//        Analyzer ana = new JetwickAnalyzer();
+//        TokenStream ts = ana.tokenStream("tw", new StringReader(text));
+//        CharTermAttribute termAttribute = ts.getAttribute(CharTermAttribute.class);
         int counter = 0;
         for (String term : tmpTerms) {
             counter++;
@@ -146,9 +153,9 @@ public class TweetDetector {
                 // skip the last term for language detection
                 if (counter < tmpTerms.length) {
                     for (String lang : detectedLangs) {
-                        if (lang.equals(TweetDetector.NUM)
-                                || lang.equals(TweetDetector.SINGLE)
-                                || lang.equals(TweetDetector.MISC_LANG))
+                        if (lang.equals(TweetDetector.NUM_TERMS)
+                                || lang.equals(TweetDetector.SINGLE_CHAR_TERMS)
+                                || lang.equals(TweetDetector.MISC_TERMS))
                             continue;
 
                         Integer integ = langMap.put(lang, 1);

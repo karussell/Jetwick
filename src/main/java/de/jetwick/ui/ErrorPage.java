@@ -16,6 +16,7 @@
 package de.jetwick.ui;
 
 import java.util.Date;
+import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
 
 /**
@@ -24,9 +25,11 @@ import org.apache.wicket.markup.html.link.ExternalLink;
  */
 public class ErrorPage extends JetwickPage {
 
-    public ErrorPage() {
-        String str = "http://twitter.com/?status=@Jetwick An Error Occured! " + new Date();
+    public ErrorPage() {        
+        super(false);
+        String str = "http://twitter.com/?status=@JetslideApp An Error Occured! " + new Date();
         add(new ExternalLink("twlink", str));
-        add(new ExternalLink("emailLink", "mailto:jetwick@pannous.info?subject=Jetwick Error at " + new Date()));
+        add(new ExternalLink("emailLink", "mailto:info@jetsli.de?subject=An Ugly Error occured!  " + new Date()));
+        add(new BookmarkablePageLink("back", TweetSearchPage.class));
     }
 }

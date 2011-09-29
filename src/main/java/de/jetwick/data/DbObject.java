@@ -23,4 +23,8 @@ package de.jetwick.data;
 public interface DbObject {
 
     String getId();
+    
+    long getVersion();
+    
+    DbObject setVersion(long v);
 }

@@ -15,7 +15,9 @@
  */
 package de.jetwick.es;
 
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.io.StringReader;
@@ -37,7 +39,6 @@ import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.indices.IndexMissingException;
-import org.elasticsearch.search.facet.termsstats.TermsStatsFacet;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -49,7 +50,7 @@ import static org.junit.Assert.*;
 public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
 //    private Logger logger = LoggerFactory.getLogger(getClass());
-    private static ElasticTweetSearch twSearch;
+    private static ElasticTweetSearch twSearch;    
 
     public ElasticTweetSearch getSearch() {
         return twSearch;
@@ -59,6 +60,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     public void setUp() throws Exception {
         twSearch = new ElasticTweetSearch(getClient());
         super.setUp(twSearch);
+        twSearch.setTesting(true);        
     }
 
     @Test
@@ -117,7 +119,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testHashtags() {
         // # is handled as digit so that we can search for java to get java and #java results (the same applies to @)
-        twSearch.update(createTweet(1L, "is cool and stable! #java", "peter2"));
+        twSearch.testUpdate(createTweet(1L, "is cool and stable! #java", "peter2"));
+        // hmmh sometimes this fails!?
         assertEquals(1, twSearch.search("java").size());
         assertEquals(1, twSearch.search("#java").size());
 
@@ -125,14 +128,14 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         assertEquals(0, twSearch.search("java").size());
         assertEquals(0, twSearch.search("#java").size());
-        twSearch.update(createTweet(1L, "is cool and stable! java", "peter2"));
+        twSearch.testUpdate(createTweet(1L, "is cool and stable! java", "peter2"));
         assertEquals(1, twSearch.search("java").size());
         assertEquals(0, twSearch.search("#java").size());
     }
 
     @Test
     public void testHashtags2() {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "egypt germany", "peter"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "egypt germany", "peter"),
                 createTweet(2L, "egypt #germany", "peter2"),
                 createTweet(3L, "egypt #Germany", "peter3"),
                 createTweet(4L, "egypt #GERMANY", "peter4")));
@@ -204,13 +207,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.store(createSolrTweet(day2, "java is cool and stable!", "peter2"), true);
         JetwickQuery q = new TweetQuery("java").setSort("dt", "desc");
         List<JUser> res = new ArrayList<JUser>();
-        twSearch.search(res, q);
+        twSearch.query(res, q);
         assertEquals(2, res.size());
         assertEquals(day2.getTime(), (long) res.get(0).getOwnTweets().iterator().next().getTwitterId());
 
         q = new TweetQuery("java").setSort("dt", "asc");
         res.clear();
-        twSearch.search(res, q);
+        twSearch.query(res, q);
         assertEquals(day.getTime(), (long) res.get(0).getOwnTweets().iterator().next().getTwitterId());
     }
 
@@ -224,7 +227,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         tw = new JTweet(2L, "test tweet text2", user);
         twSearch.store(tw, true);
         List<JUser> res = new ArrayList<JUser>();
-        twSearch.search(res, new TweetQuery().addFilterQuery("loc", "TEST"));
+        twSearch.query(res, new TweetQuery().addFilterQuery("loc", "TEST"));
         assertEquals(1, res.size());
         assertEquals(2, res.get(0).getOwnTweets().size());
 
@@ -237,7 +240,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         tw.setLocation("TEST4");
         twSearch.store(tw, true);
         res = new ArrayList<JUser>();
-        twSearch.search(res, new TweetQuery().addFilterQuery("loc", "TEST3"));
+        twSearch.query(res, new TweetQuery().addFilterQuery("loc", "TEST3"));
         assertEquals(1, res.size());
         assertEquals(1, res.get(0).getOwnTweets().size());
     }
@@ -256,6 +259,18 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.delete(Arrays.asList(tw2));
         twSearch.refresh();
         assertEquals(0, twSearch.search("java").size());
+    }
+
+    @Test
+    public void testGeo() throws Exception {
+        JUser otherUser = new JUser("otherUser");
+        JTweet tw2 = new JTweet(2L, "java is cool and stable!", otherUser);
+        twSearch.store(tw2.setGeoLocation(123, 321), false);
+        twSearch.refresh();
+
+        assertEquals(1, twSearch.search("java").size());
+        assertEquals(1, twSearch.searchGeo(123, 321, 1).size());
+        assertEquals(0, twSearch.searchGeo(123, 100, 1).size());
     }
 
     @Test
@@ -302,8 +317,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         MyDate dt = new MyDate();
         JTweet tw3 = new JTweet(3L, "wtf means wikileaks task force", new JUser("userC")).setCreatedAt(dt.toDate());
         JTweet tw4 = new JTweet(4L, "wtf wikileaks task force", new JUser("userD")).setCreatedAt(dt.plusMinutes(1).toDate());
-        JTweet tw5 = new JTweet(5L, "RT @userC: wtf means wikileaks task force", new JUser("userE")).setCreatedAt(dt.plusMinutes(1).toDate());
-        twSearch.update(Arrays.asList(tw3, tw4, tw5), new Date(0));
+        JTweet tw5 = new JTweet(5L, "RT @userC: wtf means wikileaks task force", new JUser("userE")).setCreatedAt(dt.plusMinutes(1).toDate());        
+        twSearch.queueObjects(Arrays.asList(tw3, tw4, tw5));
+        twSearch.forceEmptyQueueAndRefresh();
         assertEquals("should be empty. should NOT find tweet 4 because it is younger", 0, tw3.getDuplicates().size());
         assertEquals("should find tweet 3", 1, tw4.getDuplicates().size());
 
@@ -313,14 +329,15 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.findDuplicates(map);
         assertEquals("should find tweets 3 and 4", 2, tw.getDuplicates().size());
     }
-
+    
     @Test
     public void testSpamDuplicates() {
         MyDate dt = new MyDate();
         JTweet tw1 = new JTweet(1L, "2488334. Increase your twitter followers now! Buy Twitter Followers", new JUser("userA")).setCreatedAt(dt.plusMinutes(1).toDate());
         JTweet tw2 = new JTweet(2L, "349366. Increase your twitter followers now! Buy Twitter Followers", new JUser("userB")).setCreatedAt(dt.plusMinutes(1).toDate());
-        JTweet tw3 = new JTweet(31L, "2040312. Increase your twitter followers now! Buy Twitter Followers", new JUser("userC")).setCreatedAt(dt.plusMinutes(1).toDate());
-        twSearch.update(Arrays.asList(tw1, tw2, tw3), new Date(0));
+        JTweet tw3 = new JTweet(31L, "2040312. Increase your twitter followers now! Buy Twitter Followers", new JUser("userC")).setCreatedAt(dt.plusMinutes(1).toDate());        
+        twSearch.queueObjects(Arrays.asList(tw1, tw2, tw3));
+        twSearch.forceEmptyQueueAndRefresh();
 
         assertEquals(0, tw1.getDuplicates().size());
         assertEquals(1, tw2.getDuplicates().size());
@@ -336,9 +353,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         list.add(createTweet(3L, "text2", "usera"));
         list.add(createTweet(4L, "hey I read your text", "userb").setInReplyTwitterId(3L));
-
-        Collection<JTweet> res = twSearch.update(list, new Date(0));
-        assertEquals(4, res.size());
+        
+        twSearch.queueObjects(list);
+        twSearch.forceEmptyQueueAndRefresh();
+        assertEquals(4, twSearch.query(new TweetQuery()).hits().getTotalHits());
 
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
@@ -359,10 +377,12 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         // C has replies D
 
         // store A and D
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "A", "u1"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "A", "u1"),
                 createTweet(4L, "D", "u4").setInReplyTwitterId(3L)));
-
-        twSearch.update(createTweet(3L, "C", "u3").setInReplyTwitterId(1L));
+        assertEquals(2, twSearch.getFeededTweets());
+        
+        twSearch.testUpdate(createTweet(3L, "C", "u3").setInReplyTwitterId(1L));
+        assertEquals(3, twSearch.getFeededTweets());
 
         // now check if C was properly connected with A and D
         JTweet twC = twSearch.findByTwitterId(3L);
@@ -373,7 +393,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(1, twA.getReplyCount());
 
         // now check if B was properly connected with A
-        twSearch.update(createTweet(2L, "B", "u2").setInReplyTwitterId(1L));
+        twSearch.testUpdate(createTweet(2L, "B", "u2").setInReplyTwitterId(1L));
 
         twA = twSearch.findByTwitterId(1L);
         assertEquals(2, twA.getReplyCount());
@@ -383,9 +403,47 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     }
 
     @Test
+    public void testLetUpdateFailButMergeToGetCorrectRetweetCount() throws IOException {
+        twSearch.testUpdate(createTweet(1L, "text", "peter"));
+        SearchHits h = twSearch.query(new TweetQuery()).hits();
+        assertEquals(1, h.totalHits());
+
+        Collection<Integer> res = twSearch.bulkUpdate(
+                Arrays.asList(createTweet(1L, "text", "peter").setRetweetCount(1).setVersion(10)),
+                twSearch.getIndexName());
+        assertEquals(1, res.size());
+        
+        twSearch.queueObject(createTweet(1L, "text", "peter").setRetweetCount(1).
+                setUpdatedAt(new Date()).setVersion(10));
+        twSearch.forceEmptyQueueAndRefresh();
+        twSearch.forceEmptyQueueAndRefresh();
+
+        assertEquals(1, twSearch.getFeededTweets());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery()).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery()).get(0).getRetweetCount());
+    }
+
+    @Test
+    public void testVersionCollision() throws IOException {
+        twSearch.testUpdate(createTweet(1L, "text", "peter"));
+        SearchHits h = twSearch.query(new TweetQuery()).hits();
+        assertEquals(1, h.totalHits());
+
+        Collection<Integer> res = twSearch.bulkUpdate(
+                Arrays.asList(createTweet(1L, "text", "peter").setRetweetCount(1).setVersion(h.hits()[0].getVersion())),
+                twSearch.getIndexName());
+        assertEquals(0, res.size());
+        twSearch.refresh();
+
+        assertEquals(1, twSearch.searchTweets(new TweetQuery()).size());
+        assertEquals(1, twSearch.searchTweets(new TweetQuery()).get(0).getRetweetCount());
+        assertEquals(1, twSearch.getFeededTweets());
+    }
+
+    @Test
     public void testAttach() throws Exception {
-        twSearch.update(createTweet(1, "test", "peter"));
-        twSearch.update(createTweet(2, "test2", "peter"));
+        twSearch.testUpdate(createTweet(1, "test", "peter"));
+        twSearch.testUpdate(createTweet(2, "test2", "peter"));
 
         assertEquals(2, twSearch.findByUserName("peter").getOwnTweets().size());
     }
@@ -393,16 +451,32 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testDoNotSaveSecondUser() {
         JTweet fTweet = createTweet(5, "@peter @karsten bla bli", "peter");
-        twSearch.update(fTweet);
+        twSearch.testUpdate(fTweet);
 
         assertNull(twSearch.findByUserName("karsten"));
         assertNotNull(twSearch.findByUserName("peter"));
     }
 
     @Test
+    public void testFindById() {
+        JTweet tw = createTweet(5L, "test", "peter");
+        twSearch.testUpdate(tw);
+
+        assertEquals("test", twSearch.findByTwitterId(5L).getText());
+
+        tw = createTweet(6L, "test2", "peter");
+        twSearch.testUpdate(tw);
+
+        assertEquals(1, twSearch.collectObjects(twSearch.query(new TweetQuery().addFilterQuery("_id_tweet", "5"))).size());
+        assertEquals(2, twSearch.collectObjects(twSearch.query(new TweetQuery().addFilterQuery("_id_tweet", "5 OR 6"))).size());
+        assertEquals(1, twSearch.collectObjects(twSearch.query(new TweetQuery().addFilterQuery("-_id_tweet", "5"))).size());
+        assertEquals(1, twSearch.collectObjects(twSearch.query(new TweetQuery().addFilterQuery("-_id_tweet", "5").addFilterQuery("_id_tweet", "6"))).size());
+    }
+
+    @Test
     public void testDoSaveDuplicate() {
-        twSearch.update(createTweet(4, "@peter bla bli", "peter"));
-        twSearch.update(createTweet(5, "@peter bla bli", "karsten"));
+        twSearch.testUpdate(createTweet(4, "@peter bla bli", "peter"));
+        twSearch.testUpdate(createTweet(5, "@peter bla bli", "karsten"));
 
         assertNotNull(twSearch.findByUserName("karsten"));
         assertNotNull(twSearch.findByUserName("peter"));
@@ -411,27 +485,27 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testIdVsName() {
         JTweet fTweet = createTweet(5, "@karsten bla bli", "peter");
-        twSearch.update(fTweet);
+        twSearch.testUpdate(fTweet);
 
         fTweet = createTweet(6, "@peter bla bli", "karsten");
-        twSearch.update(fTweet);
+        twSearch.testUpdate(fTweet);
         assertNotNull(twSearch.findByUserName("karsten"));
     }
 
     @Test
     public void testNoDuplicateUser2() {
         JTweet fTweet = createTweet(1, "@karsten bla bli", "peter");
-        twSearch.update(fTweet);
+        twSearch.testUpdate(fTweet);
 
         fTweet = createTweet(2, "@Karsten bla bli", "Peter");
-        twSearch.update(fTweet);
+        twSearch.testUpdate(fTweet);
     }
 
     @Test
     public void testNoDuplicateTweet() {
         JTweet fTweet = createTweet(123, "@karsten bla bli", "peter");
-        twSearch.update(fTweet);
-        twSearch.update(fTweet);
+        twSearch.testUpdate(fTweet);
+        twSearch.testUpdate(fTweet);
 
         assertEquals(1, twSearch.countAll());
         assertEquals(1, twSearch.findByUserName("peter").getOwnTweets().size());
@@ -442,13 +516,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw1 = createTweet(1L, "tweet1", "peter");
         JTweet tw2 = createTweet(2L, "tweet2", "peter");
 
-        twSearch.update(tw1);
-        twSearch.update(tw2);
+        twSearch.testUpdate(tw1);
+        twSearch.testUpdate(tw2);
 
         assertEquals(2, twSearch.findByUserName("peter").getOwnTweets().size());
 
         tw1 = createTweet(1L, "tweet1", "peter");
-        twSearch.update(tw1);
+        twSearch.testUpdate(tw1);
 
         assertEquals(2, twSearch.findByUserName("peter").getOwnTweets().size());
     }
@@ -458,18 +532,16 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw1 = createTweet(1L, "@karsten hajo", "peter");
         tw1.setCreatedAt(new MyDate().minusDays(2).toDate());
 
-        twSearch.update(tw1);
+        twSearch.testUpdate(tw1);
         assertEquals(1, twSearch.countAll());
         assertEquals("@karsten hajo", twSearch.search("hajo").iterator().next().getOwnTweets().iterator().next().getText());
         assertEquals(1, twSearch.findByUserName("peter").getOwnTweets().size());
 
         JTweet tw = createTweet(2L, "test", "peter");
         tw.setCreatedAt(new Date());
-        Collection<JTweet> res = twSearch.update(Arrays.asList(tw),
-                new MyDate().minusDays(1).toDate());
-        // now refresh also deletes!
-        twSearch.refresh();
-        assertEquals(1, res.size());
+        twSearch.setRemoveOlderThanDays(1);
+        twSearch.queueObject(tw);
+        twSearch.forceEmptyQueueAndRefresh();
         assertEquals(1, twSearch.countAll());
         assertEquals(1, twSearch.search("test").size());
         assertEquals(0, twSearch.search("hajo").size());
@@ -478,13 +550,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testDoubleUpdateShouldIncreaseReplies() throws Exception {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "bla bli blu", "userA"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "bla bli blu", "userA"),
                 createTweet(2L, "RT @userA: bla bli blu", "userC")));
 
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
 
-        twSearch.privateUpdate(Arrays.asList(
+        twSearch.testUpdate(Arrays.asList(
                 createTweet(3L, "RT @userA: bla bli blu", "userC"),
                 createTweet(4L, "RT @userA: bla bli blu", "userD")));
 
@@ -495,7 +567,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(0, twSearch.findByTwitterId(3L).getReplyCount());
         assertEquals(0, twSearch.findByTwitterId(4L).getReplyCount());
 
-        twSearch.privateUpdate(Arrays.asList(
+        twSearch.testUpdate(Arrays.asList(
                 createTweet(5L, "RT @userA: bla bli blu", "userE")));
 
         assertEquals(3, twSearch.findByTwitterId(1L).getReplyCount());
@@ -505,19 +577,19 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     @Test
     public void testConnectTweets() throws Exception {
         // A has reply B        
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "bla bli blu", "userA"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "bla bli blu", "userA"),
                 createTweet(2L, "RT @userA: bla bli blu", "userC")));
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
 
-        twSearch.update(createTweet(3L, "@userXY see this nice fact: RT @userA: bla bli blu", "userB"));
+        twSearch.testUpdate(createTweet(3L, "@userXY see this nice fact: RT @userA: bla bli blu", "userB"));
 
         assertEquals(2, twSearch.findByTwitterId(1L).getReplyCount());
     }
 
     @Test
     public void testProcessToUser() throws Exception {
-        twSearch.update(createTweet(1L, "@userA bla bli blu", "userB"));
-        twSearch.update(createTweet(2L, "RT @userB: @userA bla bli blu", "userA"));
+        twSearch.testUpdate(createTweet(1L, "@userA bla bli blu", "userB"));
+        twSearch.testUpdate(createTweet(2L, "RT @userB: @userA bla bli blu", "userA"));
         assertEquals(2, twSearch.countAll());
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
@@ -527,31 +599,59 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testDoNotAllowSelfRetweets() throws Exception {
-        twSearch.update(createTweet(1L, "bla bli blu", "userA"));
-        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userA"));
-        twSearch.update(createTweet(3L, "RT @userA: bla bli blu", "userb"));
+        twSearch.testUpdate(createTweet(1L, "bla bli blu", "userA"));
+        twSearch.testUpdate(createTweet(2L, "RT @userA: bla bli blu", "userA"));
+        twSearch.testUpdate(createTweet(3L, "RT @userA: bla bli blu", "userb"));
 
         assertEquals(1, twSearch.findByTwitterId(1L).getReplyCount());
     }
 
     @Test
     public void testDoNotAddDuplicateRetweets() throws Exception {
-        twSearch.update(createTweet(1L, "bla bli blu", "userA"));
+        twSearch.testUpdate(createTweet(1L, "bla bli blu", "userA"));
         assertEquals(0, twSearch.findByTwitterId(1L).getReplyCount());
 
-        twSearch.update(createTweet(2L, "RT @userA: bla bli blu", "userB"));
+        twSearch.testUpdate(createTweet(2L, "RT @userA: bla bli blu", "userB"));
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
 
-        twSearch.update(createTweet(3L, "RT @userA: bla bli blu", "userB"));
+        twSearch.testUpdate(createTweet(3L, "RT @userA: bla bli blu", "userB"));
         assertEquals(1, twSearch.findByTwitterId(1L).getRetweetCount());
+    }
+    
+    @Test
+    public void testNoFailureOnSimilarDocumentIndexing() {
+        Collection<JTweet> list = Arrays.asList(
+                createTweet(1L, "Very clever story telling using HTML and Javascript... http://j.mp/eQmdl2", "newsycombinator"),
+                createTweet(2L, "RT @newsycombinator: Very clever story telling using HTML and Javascript... http://j.mp/eQmdl2", "user1"),
+                createTweet(3L, "RT @newsycombinator: Very clever story telling using HTML and Javascript... http://j.mp/eQmdl2  - Although @DamagedGoods doesn't like it", "user2"),
+                createTweet(4L, "Very clever story telling using HTML and Javascript... http://hobolobo.net/", "hackernewsbot"),
+                createTweet(5L, "RT @newsyc20: Very clever story telling using HTML and Javascript... http://hobolobo.net/ (http://bit.ly/k3z6aJ) #trending", "user4"),
+                createTweet(6L, "RT @hackernewsbot: Very clever story telling using HTML and Javascript...... http://hobolobo.net/", "user5"),
+                createTweet(7L, "Brilliant!! RT @hackernewsbot: Very clever story telling using HTML and Javascript...... http://hobolobo.net/", "user6"));
+                
+        twSearch.queueObjects(list);
+        
+        twSearch.forceEmptyQueueAndRefresh(300);
+        twSearch.forceEmptyQueueAndRefresh(300);        
+        
+        assertEquals(7, twSearch.getFeededTweets());
+        assertEquals(7, twSearch.countAll());        
+        assertEquals(2, twSearch.findByTwitterId(1L).getRetweetCount());
     }
 
     @Test
     public void testDoNotAddOldTweets() {
         JTweet tw = createTweet(2L, "RT @userA: bla bli blu", "userB");
         tw.setCreatedAt(new MyDate().minusDays(2).toDate());
-        assertEquals(0, twSearch.update(Arrays.asList(tw),
-                new MyDate().minusDays(1).toDate()).size());
+        twSearch.setRemoveOlderThanDays(1);
+        twSearch.queueObject(tw);
+        twSearch.forceEmptyQueueAndRefresh();
+        assertEquals(0, twSearch.getFeededTweets());
+
+        tw.setCreatedAt(new Date());
+        twSearch.queueObject(tw);
+        twSearch.forceEmptyQueueAndRefresh();
+        assertEquals(1, twSearch.getFeededTweets());
     }
 
     @Test
@@ -560,38 +660,46 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         Date dt = new MyDate().minusDays(2).toDate();
         tw.setUpdatedAt(dt);
         tw.setCreatedAt(dt);
-        assertEquals(1, twSearch.update(tw).size());
+        twSearch.testUpdate(tw);
+        assertEquals(1, twSearch.getFeededTweets());
+
 
         // testOverwriteTweetsIfPersistent
         tw = createTweet(2L, "totally new", "userB");
         dt = new MyDate().minusDays(2).toDate();
         tw.setUpdatedAt(dt);
         tw.setCreatedAt(dt);
-        assertEquals(1, twSearch.update(tw).size());
+        twSearch.testUpdate(tw);
+        assertEquals(1, twSearch.getFeededTweets());
         assertEquals(0, twSearch.search("bla").size());
         assertEquals(1, twSearch.search("new").size());
     }
 
     @Test
-    public void testDontRemoveOldIfPersistent() throws Exception {                
-        JTweet tw1 = createTweet(4L, "newbla next", "userc").setRt(100);
-        tw1.setCreatedAt(new MyDate().minusDays(2).toDate());        
-        
+    public void testDontRemoveOldIfPersistent() throws Exception {
+        JTweet tw1 = createTweet(4L, "newbla next", "userc").setRetweetCount(100);
+        tw1.setCreatedAt(new MyDate().minusDays(2).toDate());
+
         JTweet tw2 = createTweet(2L, "RT @userA: bla bli blu", "userB");
         Date dt = new MyDate().minusDays(2).toDate();
         tw2.setUpdatedAt(dt);
-        tw2.setCreatedAt(dt);        
-                
+        tw2.setCreatedAt(dt);
+
         // until date is very old to let tweets going through
-        assertEquals(2, twSearch.update(Arrays.asList(tw2, tw1), new Date(0)).size());
-        assertEquals(2, twSearch.countAll());        
+        twSearch.queueObjects(Arrays.asList(tw2, tw1));
+        twSearch.forceEmptyQueueAndRefresh();
+        assertEquals(2, twSearch.getFeededTweets());
+        assertEquals(2, twSearch.countAll());
         assertEquals(100, twSearch.findByTwitterId(4L).getRetweetCount());
-        assertNotNull(twSearch.findByTwitterId(2L).getUpdatedAt());        
+        assertNotNull(twSearch.findByTwitterId(2L).getUpdatedAt());
 
         JTweet tw3 = createTweet(3L, "another tweet grabbed from search", "userB");
-        tw3.setCreatedAt(new MyDate().minusDays(2).toDate());        
-        Collection<JTweet> updatedTweets = twSearch.update(Arrays.asList(tw3), new MyDate().minusDays(1).toDate());        
-        assertEquals(0, updatedTweets.size());
+        tw3.setCreatedAt(new MyDate().minusDays(2).toDate());
+        
+        twSearch.setRemoveOlderThanDays(1);
+        twSearch.queueObject(tw3);
+        twSearch.forceEmptyQueueAndRefresh();
+        assertEquals(0, twSearch.getFeededTweets());
         assertEquals(2, twSearch.countAll());
         assertTrue(twSearch.searchTweets(new TweetQuery()).contains(tw2));
         assertTrue(twSearch.searchTweets(new TweetQuery()).contains(tw1));
@@ -610,14 +718,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
         JTweet tw4 = createTweet(4L, "rt @usera: bla bli blu", "userD");
         tw4.setCreatedAt(new MyDate().minusDays(2).plusMinutes(1).toDate());
-
-        Collection<JTweet> updatedTweets = twSearch.privateUpdate(Arrays.asList(tw1, tw2, tw3, tw4));
+        
+        twSearch.testUpdate(Arrays.asList(tw1, tw2, tw3, tw4));
         assertEquals(1, twSearch.findByUserName("usera").getOwnTweets().size());
         assertEquals(3, twSearch.findByTwitterId(1L).getReplyCount());
-        assertEquals(4, updatedTweets.size());
+        assertEquals(4, twSearch.getFeededTweets());
+        
 
-        // we do not sort the tweets anylonger so that 104 could be also a retweet of:
-//        SolrTweet tw100 = createTweet(100L, "newtext", "usera");
         JTweet tw101 = createTweet(101L, "newtext two", "usera");
         tw101.setCreatedAt(new Date());
         JTweet tw102 = createTweet(102L, "newbla one", "userd");
@@ -627,12 +734,10 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         JTweet tw104 = createTweet(104L, "rt @usera: newtext two", "userc");
         tw104.setCreatedAt(new MyDate(tw101.getCreatedAt()).plusMinutes(1).toDate());
 
-        updatedTweets = twSearch.update(Arrays.asList(tw101, tw102, tw103, tw104),
-                new MyDate().minusDays(1).toDate());
-        // now refresh also deletes!
-        twSearch.refresh();
+        twSearch.setRemoveOlderThanDays(1);
+        twSearch.testUpdate(Arrays.asList(tw101, tw102, tw103, tw104));
+        assertEquals(4, twSearch.getFeededTweets());
         assertEquals(4, twSearch.countAll());
-        assertEquals(4, updatedTweets.size());
         assertEquals(1, twSearch.findByTwitterId(101L).getRetweetCount());
         assertEquals(1, twSearch.findByTwitterId(101L).getReplyCount());
 
@@ -644,19 +749,20 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
     public void testDoNotThrowQueryParserException() {
         JTweet tw = createTweet(1L, "rt @jenny2s: -- Earth, Wind & Fire - September  (From \"Live In Japan\")"
                 + " http://www.youtube.com/watch?v=hy-huQAMPQA via @youtube --- HAPPY SEPTEMBER !!", "usera");
-        twSearch.update(tw);
+        twSearch.testUpdate(tw);
     }
 
     @Test
     public void testUpdateList() {
-        assertEquals(1, twSearch.privateUpdate(Arrays.asList(createTweet(1L, "test", "peter"),
-                createTweet(1L, "test", "peter"))).size());
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "test", "peter"),
+                createTweet(1L, "test", "peter")));
+        assertEquals(1, twSearch.getFeededTweets());
         assertNotNull(twSearch.findByTwitterId(1L));
     }
 
     @Test
     public void testUserChoices() {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "test", "usera"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "test", "usera"),
                 createTweet(2L, "pest", "usera"),
                 createTweet(3L, "schnest", "usera")));
 
@@ -668,7 +774,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testQueryChoices() {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "abcd", "usera"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "abcd", "usera"),
                 createTweet(2L, "bluest abcdxy abcdxy", "usera"),
                 createTweet(3L, "bluest bluest abcdxy", "usera"),
                 createTweet(4L, "abort", "usera"),
@@ -682,8 +788,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
                 // why is as last tweet this necessary? otherwise we don't get 'home' as tag!?
                 createTweet(12L, "testing", "usera")));
 
-        assertEquals(2L, twSearch.search(new TweetQuery().addFilterQuery("tag", "bluest")).getHits().getTotalHits());
-        assertEquals(1L, twSearch.search(new TweetQuery("home")).getHits().getTotalHits());
+        assertEquals(2L, twSearch.query(new TweetQuery().addFilterQuery("tag", "bluest")).getHits().getTotalHits());
+        assertEquals(1L, twSearch.query(new TweetQuery("home")).getHits().getTotalHits());
 
         Collection<String> coll = twSearch.getQueryChoices(null, "abcdxy");
         assertEquals(0, coll.size());
@@ -704,12 +810,12 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testQueryChoicesWithoutDateRestrictions() {
-        twSearch.privateUpdate(Arrays.asList(createTweet(new MyDate().minusDays(1).minusMinutes(3), "obama obama", "usera"),
+        twSearch.testUpdate(Arrays.asList(createTweet(new MyDate().minusDays(1).minusMinutes(3), "obama obama", "usera"),
                 createTweet(new MyDate().minusDays(1).minusMinutes(2), "bluest obama obama", "usera"),
                 createTweet(new MyDate().minusDays(1).minusMinutes(1), "bluest bluest obama", "usera"),
                 createTweet(new MyDate().minusDays(1), "obama bluest again and again", "usera")));
 
-        assertEquals(3L, twSearch.search(new TweetQuery().addFilterQuery("tag", "bluest")).getHits().getTotalHits());
+        assertEquals(3L, twSearch.query(new TweetQuery().addFilterQuery("tag", "bluest")).getHits().getTotalHits());
 
         Collection<String> coll = twSearch.getQueryChoices(new TweetQuery().addLatestDateFilter(8), "obama ");
         assertEquals(1, coll.size());
@@ -718,7 +824,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testFindOrigin() {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "text", "usera"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "text", "usera"),
                 createTweet(2L, "RT @usera: text", "userb"),
                 createTweet(3L, "RT @usera: text", "userc"),
                 createTweet(4L, "new text", "userd")));
@@ -741,16 +847,16 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testFacets() {
-        twSearch.privateUpdate(Arrays.asList(createTweet(1L, "Beitrag atom. atom again", "userA"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "Beitrag atom. atom again", "userA"),
                 createTweet(2L, "atom gruene", "userA"),
                 createTweet(3L, "third tweet", "userA")));
 
-        SearchResponse rsp = twSearch.search(new TweetQuery(true));
+        SearchResponse rsp = twSearch.query(new TweetQuery(true));
         assertEquals(3, rsp.hits().getTotalHits());
         // only the second tweet will contain a tag with atom!
-        assertEquals(1, ((TermsStatsFacet) rsp.facets().facet("tag")).getEntries().size());
+        assertEquals(1, ((TermsFacet) rsp.facets().facet("tag")).getEntries().size());
 
-        rsp = twSearch.search(new TweetQuery().addFilterQuery("tag", "atom"));
+        rsp = twSearch.query(new TweetQuery().addFilterQuery("tag", "atom"));
         assertEquals(2, twSearch.collectObjects(rsp).size());
     }
 
@@ -784,7 +890,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         map.put("dest_domain_1_s", "resolved-domain.de");
         map.put("dest_title_1_s", "ResolvedTitel");
 
-        JTweet tw2 = twSearch.readDoc(map, "1");
+        JTweet tw2 = twSearch.readDoc("1", 0L, map);
         assertEquals(1, tw2.getUrlEntries().size());
         Iterator<UrlEntry> iter = tw2.getUrlEntries().iterator();
         urlEntry = iter.next();
@@ -813,50 +919,15 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         entries.add(urlEntry);
         tw2.setUrlEntries(entries);
 
-        twSearch.update(Arrays.asList(tw1, tw2));
-    }
-
-    @Test
-    public void testAdSearch() throws Exception {
-        JTweet tw = createNowTweet(1L, "text jetwick @jetwick", "peter");
-        tw.setRt(1);
-        tw.setQuality(100);
-        twSearch.update(Arrays.asList(tw));
-        assertEquals(1, twSearch.search("text").size());
-        assertEquals(0, twSearch.searchAds("text").size());
-
-        // at the moment no retweets are required
-//        tw = createNowTweet(1L, "text #jetwick", "peter");
-//        tw.setQuality(100);
-//        twSearch.store(Arrays.asList(tw));
-//        twSearch.commit();
-//        assertEquals(0, twSearch.searchAds("text").size());
-
-        tw = createNowTweet(1L, "RT @karsten: text #jetwick", "peter");
-        tw.setRt(1);
-        tw.setQuality(100);
-        twSearch.update(Arrays.asList(tw));
-        assertEquals(0, twSearch.searchAds("text").size());
-
-        tw = createNowTweet(1L, "text #jetwick", "peter");
-        tw.setRt(1);
-        tw.setQuality(90);
-        twSearch.update(Arrays.asList(tw));
-        assertEquals(1, twSearch.searchAds("text").size());
-        assertEquals(0, twSearch.searchAds(" ").size());
-
-        tw = createNowTweet(1L, "text #jetwick", "peter");
-        tw.setQuality(89);
-        tw.setRt(1);
-        twSearch.update(Arrays.asList(tw));
-        assertEquals(0, twSearch.searchAds("text").size());
+        twSearch.testUpdate(Arrays.asList(tw1, tw2));
+        assertEquals(1, twSearch.query(new TweetQuery()).hits().totalHits());
     }
 
     @Test
     public void testGetMoreTweets() throws IOException {
         // fill index with 2 tweets and 1 user
         JTweet tw2;
-        twSearch.update(Arrays.asList(
+        twSearch.testUpdate(Arrays.asList(
                 createTweet(1L, "test", "peter"),
                 tw2 = createTweet(2L, "text", "peter")));
 
@@ -874,7 +945,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testSnowballStemming() throws IOException {
-        twSearch.update(Arrays.asList(createTweet(1L, "duplication", "peter"),
+        twSearch.testUpdate(Arrays.asList(createTweet(1L, "duplication", "peter"),
                 createTweet(2L, "testing", "peter")));
 
         assertEquals(1, twSearch.searchTweets(new TweetQuery("duplicate")).size());
@@ -883,7 +954,7 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         Set<String> stopWords = new LinkedHashSet<String>();
         stopWords.add("duplicate");
 
-        Set<String> set = new SimilarQuery().doSnowballStemming(
+        Set<String> set = new SimilarTweetQuery().doSnowballStemming(
                 new WhitespaceTokenizer(new StringReader("duplication tester")));
         assertEquals(2, set.size());
         assertTrue(set.contains("tester"));
@@ -892,13 +963,13 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
     @Test
     public void testFollowerSearch() throws Exception {
-        twSearch.update(Arrays.asList(
+        twSearch.testUpdate(Arrays.asList(
                 createTweet(1L, "test this", "peter"),
                 createTweet(2L, "test others", "tester"),
                 createTweet(3L, "testnot this", "peter"),
                 createTweet(4L, "test this", "peternot")));
         Collection<String> users = Arrays.asList("peter", "tester");
-        Collection<JTweet> coll = twSearch.collectObjects(twSearch.search(new TweetQuery("test").createFriendsQuery(users)));
+        Collection<JTweet> coll = twSearch.collectObjects(twSearch.query(new TweetQuery("test").createFriendsQuery(users)));
 
         assertEquals(2, coll.size());
         int counter = 0;
@@ -920,9 +991,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.createIndex(index2);
         twSearch.createIndex(resindex);
         twSearch.waitForYellow(resindex);
-        twSearch.deleteAll(index1);
-        twSearch.deleteAll(index2);
-        twSearch.deleteAll(resindex);
+        twSearch.deleteAll(index1, twSearch.getIndexType());
+        twSearch.deleteAll(index2, twSearch.getIndexType());
+        twSearch.deleteAll(resindex, twSearch.getIndexType());
 
         twSearch.bulkUpdate(Arrays.asList(
                 new JTweet(1L, "hey cool one", new JUser("peter")),
@@ -945,8 +1016,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.saveCreateIndex(index1, false);
         twSearch.saveCreateIndex(index2, false);
         twSearch.waitForYellow(index1);
-        twSearch.deleteAll(index1);
-        twSearch.deleteAll(index2);
+        twSearch.deleteAll(index1, twSearch.getIndexType());
+        twSearch.deleteAll(index2, twSearch.getIndexType());
 
         List<JTweet> list = new ArrayList<JTweet>();
         JUser user2 = new JUser("peter2");
@@ -977,9 +1048,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.waitForYellow(resindex);
 
         // clearing index
-        twSearch.deleteAll(index1);
-        twSearch.deleteAll(index2);
-        twSearch.deleteAll(resindex);
+        twSearch.deleteAll(index1, twSearch.getIndexType());
+        twSearch.deleteAll(index2, twSearch.getIndexType());
+        twSearch.deleteAll(resindex, twSearch.getIndexType());
 
         // this store makes a problem later on, when searching on index1
         twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser"))), index1, true);
@@ -1011,8 +1082,9 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         // 100 + 100 in the first list. in list2 only 100 new => 300
         assertEquals(300, twSearch.countAll(resindex));
 
-        SearchResponse rsp = twSearch.query(new TweetQuery().setSize(1000), resindex);
-        assertEquals(300, twSearch.collectObjects(twSearch.search(new ArrayList(), rsp)).size());
+        twSearch.setIndexName(resindex);
+        SearchResponse rsp = twSearch.query(new TweetQuery().setSize(1000));
+        assertEquals(300, twSearch.collectObjects(twSearch.query(new ArrayList(), rsp)).size());
     }
 
     @Test
@@ -1025,8 +1097,8 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.saveCreateIndex(resindex, false);
         twSearch.waitForYellow(resindex);
 
-        twSearch.deleteAll(index1);
-        twSearch.deleteAll(resindex);
+        twSearch.deleteAll(index1, twSearch.getIndexType());
+        twSearch.deleteAll(resindex, twSearch.getIndexType());
         // index2 was created in the previously test
         // don't remove index2 to make sure we grab really only from index1
 //        twSearch.deleteAll("index2");        
@@ -1062,37 +1134,36 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         twSearch.saveCreateIndex(index2, false);
         twSearch.waitForYellow(index1);
 
-        twSearch.deleteAll(index1);
-        twSearch.deleteAll(index2);
+        twSearch.deleteAll(index1, twSearch.getIndexType());
+        twSearch.deleteAll(index2, twSearch.getIndexType());
 
-        twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser")).setRt(0)), index1, true);
-        twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser")).setRt(2)), index2, true);
+        twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser")).setRetweetCount(0)), index1, true);
+        twSearch.bulkUpdate(Arrays.asList(new JTweet(1L, "test", new JUser("testuser")).setRetweetCount(2)), index2, true);
 
-        SearchResponse rsp = twSearch.getClient().prepareSearch(index1, index2).
+        SearchResponse rsp = twSearch.getClient().prepareSearch(index1, index2).setVersion(true).
                 setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
         assertEquals(2, twSearch.collectObjects(rsp).size());
     }
 
     @Test
     public void testFindUser() {
-        twSearch.update(Arrays.asList(
+        twSearch.testUpdate(Arrays.asList(
                 createTweet(1L, "test this", "peter"),
                 createTweet(4L, "test this", "peter_not")));
 
-        assertEquals(1, twSearch.collectObjects(twSearch.search(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "peter"))).size());
+        assertEquals(1, twSearch.collectObjects(twSearch.query(new TweetQuery().addFilterQuery(ElasticTweetSearch.USER, "peter"))).size());
     }
 
     @Test
     public void testSuggestFilterRemoval() {
         MyDate md = new MyDate();
-        twSearch.update(Arrays.asList(
+        twSearch.testUpdate(Arrays.asList(
                 createTweet(1L, "RT @user3: test this first tweet", "peter").setCreatedAt(md.toDate()),
                 createTweet(2L, "test others", "peter2").setCreatedAt(md.toDate()),
                 createTweet(3L, "testnot this", "peter3").setCreatedAt(md.minusHours(2).toDate()),
                 createTweet(4L, "test this", "peter4").setCreatedAt(md.toDate())));
 
-        JetwickQuery q = new TweetQuery(false).
-                addIsOriginalTweetFilter().
+        JetwickQuery q = new TweetQuery(false).addIsOriginalTweetFilter().
                 addLatestDateFilter(1).
                 addUserFilter("peter");
         Collection<String> keys = twSearch.suggestRemoval(q);
@@ -1102,7 +1173,74 @@ public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
         assertEquals(ElasticTweetSearch.DATE, iter.next());
         assertEquals(ElasticTweetSearch.IS_RT, iter.next());
     }
+
+    @Test
+    public void testSuggestFilterRemoval2() {
+        MyDate md = new MyDate();
+        twSearch.testUpdate(Arrays.asList(
+                createTweet(1L, "RT @user3: test this first tweet", "peter1").setCreatedAt(md.toDate()),
+                createTweet(2L, "test others", "peter2").setCreatedAt(md.toDate()),
+                createTweet(3L, "testnot this", "peter3").setCreatedAt(md.minusHours(2).toDate()),
+                createTweet(4L, "test this", "peter4").setCreatedAt(md.toDate())));
+
+        JetwickQuery q = new TweetQuery(false).addIsOriginalTweetFilter().
+                addLatestDateFilter(1).
+                addUserFilter("peter");
+        Collection<String> keys = twSearch.suggestRemoval(q);
+        assertEquals(2, keys.size());
+        Iterator<String> iter = keys.iterator();
+//        assertEquals(ElasticTweetSearch.USER, iter.next());
+        assertEquals(ElasticTweetSearch.DATE, iter.next());
+        assertEquals(ElasticTweetSearch.IS_RT, iter.next());
+    }
+
+    @Test
+    public void testSuggestFilterForceDate() {
+        MyDate md = new MyDate();
+        twSearch.testUpdate(Arrays.asList(
+                createTweet(2L, "test others", "peter2").setCreatedAt(md.minusHours(2).toDate()),
+                createTweet(3L, "testnot this", "peter3").setCreatedAt(md.minusHours(2).toDate())));
+
+        JetwickQuery q = new TweetQuery(false).addLatestDateFilter(1);
+        Collection<String> keys = twSearch.suggestRemoval(q);
+        assertEquals(1, keys.size());
+        Iterator<String> iter = keys.iterator();
+        assertEquals(ElasticTweetSearch.DATE, iter.next());
+    }
     
+    @Test
+    public void testFindByUrl() {
+        List<UrlEntry> entries = new ArrayList<UrlEntry>();
+        UrlEntry urlEntry = new UrlEntry(2, 18, "http://fulltest.de/bla");
+        urlEntry.setResolvedDomain("resolved-domain.de");
+        urlEntry.setResolvedTitle("ResolvedTitel");        
+        urlEntry.setIndex(12);
+        urlEntry.setLastIndex(26);
+        entries.add(urlEntry);
+
+        JTweet tw = createTweet(2L, "test others http://orig.de", "peter2");        
+        tw.setUrlEntries(entries);        
+        twSearch.update(Collections.singleton(tw), new Date(0), false);
+        twSearch.refresh();
+        
+        assertEquals(1, twSearch.findByUrl("http://fulltest.de/bla").size());        
+        assertEquals(1, twSearch.findByUrl("http://orig.de").size());
+        assertEquals(0, twSearch.findByUrl("http://irgendwas.de").size());
+    }
+
+    @Test
+    public void testProtectedTweet() {
+        twSearch.testUpdate(Arrays.asList(
+                createTweet(1L, "test others", "peter2").setCreatedAt(new Date()).setProtected(true),
+                createTweet(2L, "testnot this", "peter3").setCreatedAt(new Date())));
+
+        JetwickQuery q = new TweetQuery(false);
+        // feed only none protected
+        assertEquals(1, twSearch.query(q).hits().totalHits());
+        assertEquals("2", twSearch.query(q).hits().getHits()[0].id());
+        assertEquals(1, twSearch.getFeededTweets());
+    }
+
     JTweet createSolrTweet(MyDate dt, String twText, String user) {
         return new JTweet(dt.getTime(), twText, new JUser(user)).setCreatedAt(dt.toDate());
     }

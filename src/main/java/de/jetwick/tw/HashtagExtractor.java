@@ -26,7 +26,7 @@ import java.util.Set;
  */
 public class HashtagExtractor extends Extractor {
 
-    Set<String> tags = new LinkedHashSet<String>();
+    Set<String> tags = new LinkedHashSet<String>(4);
 
     @Override
     public boolean onNewHashTag(int index, String tag) {

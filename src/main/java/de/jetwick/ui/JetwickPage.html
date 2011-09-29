@@ -4,28 +4,70 @@
       xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
     <head>        
         <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-        <meta name="keywords" content="news,twitter,search,jetwick"/>
-        <meta name="description" content="Search twitter without noise - Jetwick!"/>
-        <link type="image/png" rel="icon" href="favicon.ico"/>
-        <link rel="stylesheet" type="text/css" href="css/style.css"/>      
-        <!--[if IE 6]>
-        <link rel="stylesheet" type="text/css" href="css/ie.css" />
-        <![endif]-->
+        <meta name="keywords" content="news,twitter,search,jetwick"/>        
+        <link type="image/png" rel="icon" href="favicon.ico"/>        
     </head>
     <body>
     <wicket:child/>
     <script type="text/javascript">
+        // twitter web intents
+        (function() {
+            if (window.__twitterIntentHandler) return;
+            var intentRegex = /twitter\.com(\:\d{2,4})?\/intent\/(\w+)/,
+            windowOptions = 'scrollbars=yes,resizable=yes,toolbar=no,location=yes',
+            width = 550,
+            height = 420,
+            winHeight = screen.height,
+            winWidth = screen.width;
+
+            function handleIntent(e) {
+                e = e || window.event;
+                var target = e.target || e.srcElement,
+                m, left, top;
+
+                while (target && target.nodeName.toLowerCase() !== 'a') {
+                    target = target.parentNode;
+                }
+
+                if (target && target.nodeName.toLowerCase() === 'a' && target.href) {
+                    m = target.href.match(intentRegex);
+                    if (m) {
+                        left = Math.round((winWidth / 2) - (width / 2));
+                        top = 0;
+
+                        if (winHeight > height) {
+                            top = Math.round((winHeight / 2) - (height / 2));
+                        }
+
+                        window.open(target.href, 'intent', windowOptions + ',width=' + width +
+                            ',height=' + height + ',left=' + left + ',top=' + top);
+                        e.returnValue = false;
+                        e.preventDefault && e.preventDefault();
+                    }
+                }
+            }
+
+            if (document.addEventListener) {
+                document.addEventListener('click', handleIntent, false);
+            } else if (document.attachEvent) {
+                document.attachEvent('onclick', handleIntent);
+            }
+            window.__twitterIntentHandler = true;
+        }());
+    </script>
+    <script type="text/javascript">
+        // piwik
         var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.pannous.info/piwik/" : "http://www.pannous.info/piwik/");
         document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
     </script>
     <script type="text/javascript">
         try {
-            var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 3);
+            var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 6);
             piwikTracker.trackPageView();
             piwikTracker.enableLinkTracking();
         } catch( err ) {  }
     </script>
-    <noscript><p><img src="http://www.pannous.info/piwik/piwik.php?idsite=3" style="border:0" alt="" /></p></noscript>
+    <noscript><p><img src="http://www.pannous.info/piwik/piwik.php?idsite=6" style="border:0" alt="" /></p></noscript>
 </body>
 </html>
 

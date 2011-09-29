@@ -33,10 +33,10 @@ public class Credits implements Serializable {
     }
 
     public Credits(String token, String tokenSecret, String consumerKey, String consumerSecret) {
-        this.token = token;
-        this.tokenSecret = tokenSecret;
-        this.consumerKey = consumerKey;
-        this.consumerSecret = consumerSecret;
+        this.token = token.trim();
+        this.tokenSecret = tokenSecret.trim();
+        this.consumerKey = consumerKey.trim();
+        this.consumerSecret = consumerSecret.trim();
     }
 
     public String getConsumerKey() {

@@ -27,10 +27,12 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
+import org.apache.wicket.ajax.markup.html.form.AjaxFallbackButton;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
+import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -106,7 +108,7 @@ public class OneTweet extends Panel implements IWiQueryPlugin {
 //                        String url = Helper.TSURL + cleanTag;
                         return "<a class=\"i-tw-link tw-tag\" "
                                 + "clean=\"" + cleanTag + "\" "
-                                + "tag=\"" + tag + " \" "                                
+                                + "tag=\"" + tag + " \" "
                                 + ">" + tag + "</a>";
                     }
                 }.setTweet(tweet).setText(translate(tweet)).run().toString();
@@ -126,12 +128,19 @@ public class OneTweet extends Panel implements IWiQueryPlugin {
         dateLink.add(dateLabel);
         add(dateLink);
 
-        add(new ExternalLink("tweetReply",
-                Helper.toReplyHref(user.getScreenName(), tweet.getTwitterId())));
+        add(new ExternalLink("tweetFav",
+                Helper.twitterIntentFav(tweet.getTwitterId())));
 
-        add(new ExternalLink("tweetRetweet",
-                Helper.toReplyStatusHref("RT @" + user.getScreenName() + ": " + tweet.getText(),
-                user.getScreenName(), tweet.getTwitterId(), true)));
+        add(new ExternalLink("tweetReply",
+                Helper.twitterIntentReply(tweet.getTwitterId())));
+
+        add(new AjaxFallbackLink("tweetRetweet") {
+
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                onRetweet(tweet, target);
+            }
+        });
         IndicatingAjaxFallbackLink inReplyOfButton = new IndicatingAjaxFallbackLink("inreplyof") {
 
             @Override
@@ -296,6 +305,9 @@ public class OneTweet extends Panel implements IWiQueryPlugin {
     }
 
     public void onFindSimilarClick(JTweet tweet, AjaxRequestTarget target) {
+    }
+
+    public void onRetweet(JTweet tweet, AjaxRequestTarget target) {        
     }
 
     @Override

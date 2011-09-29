@@ -15,6 +15,8 @@
  */
 package de.jetwick.tw;
 
+import de.jetwick.snacktory.JResult;
+
 /**
  *
  * @author Peter Karich, jetwick_@_pannous_._info
@@ -22,12 +24,7 @@ package de.jetwick.tw;
 public class FakeUrlExtractor extends UrlExtractor {
 
     @Override
-    public String resolveOneUrl(String url, int timeout) {
-        return url + "_x";
-    }
-
-    @Override
-    public String[] getInfo(String url, int timeout) {
-        return new String[]{url + "_t", url + "_s"};
+    public JResult getInfo(String url, int timeout) {
+        return new JResult().setUrl(url + "_x").setTitle(url + "_t").setText(url + "_s");
     }
 }

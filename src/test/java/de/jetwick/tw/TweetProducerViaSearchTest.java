@@ -15,12 +15,15 @@
  */
 package de.jetwick.tw;
 
+import com.google.inject.Module;
+import de.jetwick.config.DefaultModule;
 import de.jetwick.es.ElasticTagSearch;
 import org.junit.AfterClass;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.JetwickTestClass;
 import de.jetwick.data.JTag;
 import de.jetwick.es.ElasticTagSearchTest;
+import de.jetwick.util.GenericUrlResolver;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Queue;
@@ -42,10 +45,10 @@ public class TweetProducerViaSearchTest extends JetwickTestClass {
 
     private ElasticTagSearchTest tagSearchTester = new ElasticTagSearchTest();
     private TweetProducerViaSearch twProd;
-    
+
     public TweetProducerViaSearchTest() {
     }
-    
+
     @BeforeClass
     public static void beforeClass() {
         ElasticTagSearchTest.beforeClass();
@@ -55,7 +58,23 @@ public class TweetProducerViaSearchTest extends JetwickTestClass {
     public static void afterClass() {
         ElasticTagSearchTest.afterClass();
     }
-    
+
+    @Override
+    public Module createModule() {
+        return new DefaultModule() {
+
+            @Override
+            public void installSearchModule() {
+                // avoid that we need to set up (user/tweet) search
+            }
+
+            @Override
+            public GenericUrlResolver createGenericUrlResolver() {
+                return null;
+            }
+        };
+    }
+
     @Override
     @Before
     public void setUp() throws Exception {
@@ -76,12 +95,12 @@ public class TweetProducerViaSearchTest extends JetwickTestClass {
     public void testUpdateAndInitTag() {
         // make sure that updateTag is in a transaction                
         twProd.updateTag(new JTag("test"), 6);
-        tagSearchTester.getSearch().refresh();
-        assertTrue(tagSearchTester.getSearch().findByName("test").getQueryInterval() < 10 * JTag.DEFAULT_Q_I);
+        tagSearchTester.getSearch().forceCleanTagQueueAndRefresh();
+        assertTrue(tagSearchTester.getSearch().findByTerm("test").getQueryInterval() < 10 * JTag.DEFAULT_Q_I);
     }
 
     @Test
-    public void testInitTagsNoException() {        
+    public void testInitTagsNoException() {
         twProd.updateTag(new JTag("test"), 6);
         ElasticUserSearch uSearch = mock(ElasticUserSearch.class);
         ElasticTagSearch tagSearch = mock(ElasticTagSearch.class);
@@ -91,14 +110,16 @@ public class TweetProducerViaSearchTest extends JetwickTestClass {
         twProd.setTagSearch(tagSearch);
         Collection<JTag> tags = twProd.initTags();
 
-        assertEquals(2, tags.size());
-        String str ="";
+        assertEquals(3, tags.size());
+        String str = "";
         for (JTag tag : tags) {
             str += tag.getTerm();
             twProd.updateTag(tag, 5);
         }
-        assertTrue(str.contains("test OR pest"));
-        assertTrue(str.contains("solr OR lucene"));
+        assertTrue(str.contains("test"));
+        assertTrue(str.contains("pest"));
+        assertTrue(str.contains("solr"));
+        assertTrue(str.contains("lucene"));
 
         twProd.updateTag(new JTag("anotherone"), 6);
     }

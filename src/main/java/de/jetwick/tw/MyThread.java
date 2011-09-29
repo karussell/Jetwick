@@ -15,8 +15,6 @@
  */
 package de.jetwick.tw;
 
-import de.jetwick.tw.queue.AbstractTweetPackage;
-import de.jetwick.tw.queue.TweetPackage;
 import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +26,7 @@ import org.slf4j.LoggerFactory;
 public class MyThread extends Thread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MyThread(String name) {
         super(name);
     }
@@ -42,22 +41,21 @@ public class MyThread extends Thread {
             return false;
         }
     }
-    
-    public Integer tooManyTweetsWait(Collection<TweetPackage> pkgs,
-            int fill, String info, float wait, boolean log) {
-        int count = 0;
-        while (true) {
-            count = AbstractTweetPackage.calcNumberOfTweets(pkgs);
-            if (count < fill)
-                break;
 
-            // log not too often
-            if (log)
-                logger.info("WAITING! " + count + " are too many tweets from " + info + "!");
-            if (!myWait(wait))
-                return null;
-        }
-
-        return count;
-    }
+//    public Integer tooManyObjectsWait(Collection<?> tweets,
+//            int fill, String info, float wait, boolean log) {
+//
+//        while (true) {
+//            if (tweets.size() < fill)
+//                break;
+//
+//            // log not too often
+//            if (log)
+//                logger.info("WAITING! " + tweets.size() + " are too many objects from " + info + "!");
+//            if (!myWait(wait))
+//                return null;
+//        }
+//
+//        return tweets.size();
+//    }
 }

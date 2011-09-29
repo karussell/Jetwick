@@ -39,23 +39,23 @@ public class ElasticNode {
     public static final String CLUSTER = "jetwickcluster";
     public static final int PORT = 9300;
 
-    public static void main(String[] args) throws IOException, InterruptedException {            
+    public static void main(String[] args) throws IOException, InterruptedException {
         ElasticNode node = new ElasticNode().start("es");
         node.waitForYellow();
         node.printInfo();
 
+        // normally we create indices via scripts but a dev can get faster started
         ElasticTweetSearch twSearch = new ElasticTweetSearch(node.client());
-        twSearch.saveCreateIndex();        
+        twSearch.saveCreateIndex();
 
         ElasticUserSearch uSearch = new ElasticUserSearch(node.client());
         uSearch.saveCreateIndex();
-        
+
         ElasticTagSearch tagSearch = new ElasticTagSearch(node.client());
         tagSearch.saveCreateIndex();
-
-        Thread.currentThread().join();
+        
+        Thread.currentThread().join();        
     }
-
     private Node node;
     private boolean started = false;
 

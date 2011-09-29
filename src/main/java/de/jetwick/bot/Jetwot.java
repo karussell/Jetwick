@@ -89,7 +89,7 @@ public class Jetwot {
         Injector injector = Guice.createInjector(module);
         tweetSearch = injector.getInstance(ElasticTweetSearch.class);
         tw4j = new TwitterSearch().setConsumer(credits.getConsumerKey(), credits.getConsumerSecret());
-        tw4j.initTwitter4JInstance(credits.getToken(), credits.getTokenSecret());
+        tw4j.initTwitter4JInstance(credits.getToken(), credits.getTokenSecret(), true);
 
         try {
             for (JTweet tw : tw4j.getTweets(tw4j.getUser(), new ArrayList<JUser>(), 20)) {
@@ -191,7 +191,7 @@ public class Jetwot {
         int TRIALS = 2;
         for (int trial = 0; trial < TRIALS; trial++) {
             try {
-                return tweetSearch.collectObjects(tweetSearch.search(query));
+                return tweetSearch.collectObjects(tweetSearch.query(query));
             } catch (Exception ex) {
                 logger.error(trial + "| Couldn't query twindex: " + ex.getMessage());
             }

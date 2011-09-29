@@ -38,7 +38,7 @@ public class PrinterPage extends JetwickPage {
             public void populateItem(final ListItem item) {
                 final JTweet tw = (JTweet) item.getModelObject();
 
-                item.add(new ExternalLink("userName", "http://jetwick.com/?user="
+                item.add(new ExternalLink("userName", Helper.JETWICK_URL + "?user="
                         + Helper.urlEncode(tw.getFromUser().getScreenName()),
                         tw.getFromUser().getScreenName()));
 

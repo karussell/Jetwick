@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import twitter4j.Status;
@@ -41,7 +42,10 @@ public class JUser implements DbObject, Serializable {
     public static final String UPDATE_AT = "updateAt";
     public static final String OWN_TWEETS = "ownTweets";
     public static final String SCREEN_NAME = "screenName";
-    private Collection<JTweet> ownTweets = new LinkedHashSet<JTweet>();
+    public static String ROLE_ADMIN = "admin";
+    public static String ROLE_USER = "user";
+    //public static String MODE_SMART = "smartread";
+    private Collection<JTweet> ownTweets = new LinkedHashSet<JTweet>(8);
     private Map<Long, SavedSearch> savedSearches = new LinkedHashMap<Long, SavedSearch>();
     private Date lastFriendsUpdate;
     private Collection<String> friends;
@@ -52,18 +56,23 @@ public class JUser implements DbObject, Serializable {
     private String profileImageUrl;
     private String webUrl;
     private String location;
-    private Set<String> langs = new LinkedHashSet<String>();
+    private Set<String> langs = new LinkedHashSet<String>(4);
     private String description;
     private Date createdAt;
     private Date twitterCreatedAt;
-    private Date updateAt;
-    private Set<String> tags = new LinkedHashSet<String>();
+    private Date lastVisit;
+    private int followersCount = 0;
+    private int friendsCount = 0;
+    private Set<String> tags = new LinkedHashSet<String>(4);
+    private Map<String, Date> topics = new LinkedHashMap<String, Date>(4);
     private String twitterTokenSecret;
     private String twitterToken;
-    public static String ROLE_ADMIN = "admin";
-    public static String ROLE_USER = "user";
     private String role = ROLE_USER;
     private String email;
+    private String mode;
+    private boolean weekFallback = true;
+    private boolean isProtected = false;
+    private boolean active = true;
 
     public JUser() {
         setCreatedAt(new Date());
@@ -76,9 +85,49 @@ public class JUser implements DbObject, Serializable {
             throw new IllegalArgumentException("Screenname must not be empty!");
     }
 
+    public JUser(User u) {
+        this(u.getScreenName());
+        updateFieldsBy(u);
+    }
+
     @Override
     public String getId() {
         return getScreenName();
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public JUser setActive(boolean active) {
+        this.active = active;
+        return this;
+    }
+
+    public void setWeekFallback(boolean weekFallback) {
+        this.weekFallback = weekFallback;
+    }
+
+    public boolean isWeekFallback() {
+        return weekFallback;
+    }
+
+    public JUser setMode(String mode) {
+        this.mode = mode;
+        return this;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public Date getLastVisit() {
+        return lastVisit;
+    }
+
+    public JUser setLastVisit(Date lastVisit) {
+        this.lastVisit = lastVisit;
+        return this;
     }
 
     public Collection<String> getTags() {
@@ -87,16 +136,6 @@ public class JUser implements DbObject, Serializable {
 
     public void addTag(String tag) {
         tags.add(tag);
-    }
-
-    public boolean isOutOfDate() {
-        if (updateAt == null)
-            return true;
-        else {
-            long diff = new Date().getTime() - updateAt.getTime();
-            diff = Math.round(diff / (24f * 3600f * 1000f));
-            return diff > OUT_OF_DATE_DAYS;
-        }
     }
 
     public String getTwitterToken() {
@@ -124,6 +163,7 @@ public class JUser implements DbObject, Serializable {
      */
     public Status updateFieldsBy(User user) {
         twitterId = user.getId();
+        setProtected(user.isProtected());
         setTwitterCreatedAt(user.getCreatedAt());
         setDescription(user.getDescription());
         addLanguage(user.getLang());
@@ -140,7 +180,25 @@ public class JUser implements DbObject, Serializable {
         if (user.getURL() != null)
             setWebUrl(user.getURL().toString());
 
+        setFollowersCount(user.getFollowersCount());
+        setFriendsCount(user.getFriendsCount());
         return user.getStatus();
+    }
+
+    public void setFollowersCount(int followersCount) {
+        this.followersCount = followersCount;
+    }
+
+    public void setFriendsCount(int friendsCount) {
+        this.friendsCount = friendsCount;
+    }
+
+    public int getFollowersCount() {
+        return followersCount;
+    }
+
+    public int getFriendsCount() {
+        return friendsCount;
     }
 
     public void setTwitterCreatedAt(Date twitterCreatedAt) {
@@ -155,8 +213,9 @@ public class JUser implements DbObject, Serializable {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public JUser setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+        return this;
     }
 
     public String getEmail() {
@@ -194,14 +253,6 @@ public class JUser implements DbObject, Serializable {
 
     public void setTwitterId(long id) {
         this.twitterId = id;
-    }
-
-    public Date getUpdateAt() {
-        return updateAt;
-    }
-
-    public void setUpdateAt(Date updateAt) {
-        this.updateAt = updateAt;
     }
 
     public String getScreenName() {
@@ -288,6 +339,17 @@ public class JUser implements DbObject, Serializable {
             tw.setFromUser(this, false);
     }
 
+    @Override
+    public JUser setVersion(long v) {
+//        this.version = v;
+        return this;
+    }
+
+    @Override
+    public long getVersion() {
+        return 0;
+    }
+
     public Collection<JTweet> getOwnTweets() {
 //        if (dirtyOwnTweets) {
 //            SolrTweet.deduplicate(ownTweets);
@@ -296,10 +358,34 @@ public class JUser implements DbObject, Serializable {
         return Collections.unmodifiableCollection(ownTweets);
     }
 
+    public JUser updateTopic(String topic, Date date) {
+        topics.put(topic, date);
+        return this;
+    }
+
+    public JUser setTopics(List<String> topicList) {
+        Map<String, Date> oldTopics = topics;
+        topics = new LinkedHashMap<String, Date>(topics.size());
+        for (String topic : topicList) {
+            Date date = oldTopics.get(topic);
+            topics.put(topic, date);
+        }
+
+        return this;
+    }
+
+    public Collection<String> getTopics() {
+        return topics.keySet();
+    }
+
+    public Map<String, Date> getTopicsMap() {
+        return topics;
+    }
+
     public Collection<String> getFriends() {
         if (friends == null)
             return Collections.EMPTY_LIST;
-        return Collections.unmodifiableCollection(friends);
+        return friends;
     }
 
     public JUser setFriends(Collection<String> friends) {
@@ -313,6 +399,14 @@ public class JUser implements DbObject, Serializable {
 
     public void setLastFriendsUpdate(Date lastFriendsUpdate) {
         this.lastFriendsUpdate = lastFriendsUpdate;
+    }
+
+    public void setProtected(boolean aProtected) {
+        isProtected = aProtected;
+    }
+
+    public boolean isProtected() {
+        return isProtected;
     }
 
     @Override

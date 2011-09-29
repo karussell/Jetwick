@@ -22,7 +22,9 @@
       xmlns:wicket="http://wicket.apache.org/dtds.data/wicket-xhtml1.4-strict.dtd">
     <head>
     <wicket:head>
-        <title>Jetwick Error</title>
+        <title>Jetslide Error</title>
+        <meta name="viewport" content="width=320; initial-scale=1.0;" />
+        <link rel="stylesheet" type="text/css" href="css/slide-style.css"/> 
     </wicket:head>
 </head>
 <body>
@@ -31,14 +33,13 @@
         <ul>
             <li class="about-desc">
                 Internal Error! <wicket:link>
-                <a href="HomePage.html">Try again!</a>
+                <a wicket:id="back">Try again on Jetslide!</a>
             </wicket:link>
             </li>
             <li class="about-desc">
                 Please report via
-                <a href="#" wicket:id="twlink" target="_blank">tweet</a>,
-                <a href="#" wicket:id="emailLink">mail</a> or
-                <a href="https://github.com/karussell/Jetwick/issues">bug tracking</a>.
+                <a href="#" wicket:id="twlink" target="_blank">tweet</a> or
+                <a href="#" wicket:id="emailLink">mail</a>
             </li>
         </ul>
     </div>

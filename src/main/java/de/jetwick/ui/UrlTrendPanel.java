@@ -36,7 +36,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.facet.termsstats.TermsStatsFacet;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 
 /**
  *
@@ -149,9 +149,9 @@ public class UrlTrendPanel extends Panel {
             }
 
             if (rsp.facets() != null) {
-                TermsStatsFacet tf = (TermsStatsFacet) rsp.facets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
+                TermsFacet tf = (TermsFacet) rsp.facets().facet(ElasticTweetSearch.FIRST_URL_TITLE);
                 if (tf != null)
-                    for (TermsStatsFacet.Entry e : tf.entries()) {
+                    for (TermsFacet.Entry e : tf.entries()) {
                         String str = e.getTerm();
                         // although we avoid indexing empty title -> its save to do it again ;-)
                         if (!str.isEmpty())

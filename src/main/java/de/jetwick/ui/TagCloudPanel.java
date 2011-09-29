@@ -34,7 +34,7 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.facet.termsstats.TermsStatsFacet;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 
 /**
  *
@@ -102,11 +102,11 @@ public class TagCloudPanel extends Panel {
             terms.addAll(Arrays.asList(query.getQuery().split(" ")));
 
         if (rsp != null && rsp.facets() != null) {
-            TermsStatsFacet tf = (TermsStatsFacet) rsp.facets().facet(ElasticTweetSearch.TAG);
+            TermsFacet tf = (TermsFacet) rsp.facets().facet(ElasticTweetSearch.TAG);
             if (tf != null) {
                 max = 0;
                 Map<String, Long> tmp = new TreeMap<String, Long>();
-                for (TermsStatsFacet.Entry e : tf.entries()) {
+                for (TermsFacet.Entry e : tf.entries()) {
                     if (terms.contains(e.getTerm()))
                         continue;
 

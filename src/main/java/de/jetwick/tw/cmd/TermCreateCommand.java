@@ -19,16 +19,24 @@ import de.jetwick.data.UrlEntry;
 import de.jetwick.data.JTweet;
 import de.jetwick.util.AnyExecutor;
 import de.jetwick.tw.TweetDetector;
+import de.jetwick.util.StopWatch;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class TermCreateCommand implements AnyExecutor<JTweet> {
 
+    private Logger logger = LoggerFactory.getLogger(getClass());
     private boolean termRemoving = true;
+    private StopWatch sw1 = new StopWatch();
+    private StopWatch sw2 = new StopWatch();
+    private StopWatch sw3 = new StopWatch();
+    private StopWatch sw4 = new StopWatch();
 
     public TermCreateCommand() {
         //http://en.wikipedia.org/wiki/Phonetic_algorithm
@@ -39,6 +47,26 @@ public class TermCreateCommand implements AnyExecutor<JTweet> {
         // This list is then submitted to an MD5 hash calculation.
         // Only suited for short strings: JaroWinklerDistance, LevensteinDistance,new NGramDistance.
         // Use relative termMinFrequency!!
+    }
+
+    public TermCreateCommand setSw1(StopWatch sw1) {
+        this.sw1 = sw1;
+        return this;
+    }
+
+    public TermCreateCommand setSw2(StopWatch sw2) {
+        this.sw2 = sw2;
+        return this;
+    }
+
+    public TermCreateCommand setSw3(StopWatch sw3) {
+        this.sw3 = sw3;
+        return this;
+    }
+
+    public TermCreateCommand setSw4(StopWatch sw4) {
+        this.sw4 = sw4;
+        return this;
     }
 
     public TermCreateCommand(boolean termRemoving) {
@@ -60,7 +88,7 @@ public class TermCreateCommand implements AnyExecutor<JTweet> {
         // term occurs more than one time on the current tweet?
         if (maxTerms > 4) {
             qual = Math.max(0, 100 - maxTerms * 8);
-            tw.addQualAction("MT,");
+//            tw.addQualAction("MT,");
         }
 
         // now calculate quality via comparing to existing tweets
@@ -113,23 +141,25 @@ public class TermCreateCommand implements AnyExecutor<JTweet> {
             StringFreqMap mergedTerms, StringFreqMap mergedLangs) {
         double qual = currentTweet.getQuality();
 
-        // TODO use jaccard index for url titles too!?
-        StringFreqMap urlTitleMap = new StringFreqMap();
+        sw1.start();
         StringFreqMap urlMap = new StringFreqMap();
         for (JTweet older : currentTweet.getFromUser().getOwnTweets()) {
             for (UrlEntry entry : older.getUrlEntries()) {
-                urlTitleMap.inc(entry.getResolvedTitle(), 1);
                 urlMap.inc(entry.getResolvedUrl(), 1);
             }
         }
+        sw1.stop();
 
+        sw2.start();
         boolean sameUrl = false;
         for (JTweet older : currentTweet.getFromUser().getOwnTweets()) {
             if (older == currentTweet)
                 continue;
 
+            sw3.start();
             // create tags to decide if tags of currentTweet are important
             calcTermsWithoutNoise(older);
+            sw3.stop();
             // count only one term per tweet
             mergedTerms.addOne2All(older.getTextTerms());
             // count languages as they appear
@@ -143,55 +173,40 @@ public class TermCreateCommand implements AnyExecutor<JTweet> {
             // performance improvement of comparison: use int[] instead of byte[]
 //            if (Arrays.equals(tw.getTextSignature(), older.getTextSignature()))
 //                qual = qual * 0.7;
-                        
+
             double ji = calcJaccardIndex(currentTweet.getTextTerms(), older.getTextTerms());
 
             if (ji >= 0.8) {
                 // nearly equal terms
                 qual *= JTweet.QUAL_BAD / 100.0;
-                currentTweet.addQualAction("JB," + older.getTwitterId() + ",");
+//                currentTweet.addQualAction("JB," + older.getTwitterId() + ",");
             } else if (ji >= 0.6 && currentTweet.getQualReductions() < 3) {
                 // e.g. if 3 of 4 terms occur in both tweets
                 qual *= JTweet.QUAL_LOW / 100.0;
-                currentTweet.addQualAction("JL," + older.getTwitterId() + ",");
+//                currentTweet.addQualAction("JL," + older.getTwitterId() + ",");
             }
 
             if (!sameUrl) {
+                sw4.start();
                 for (UrlEntry entry : older.getUrlEntries()) {
-                    Integer titleCounts = urlTitleMap.get(entry.getResolvedTitle());
-                    if (titleCounts != null) {
-                        if ((titleCounts == 2 || titleCounts == 3) && currentTweet.getQualReductions() < 3) {
+                    Integer urlCounts = urlMap.get(entry.getResolvedUrl());
+                    if (urlCounts != null) {
+                        if ((urlCounts == 2 || urlCounts == 3) && currentTweet.getQualReductions() < 3) {
                             sameUrl = true;
                             qual *= JTweet.QUAL_LOW / 100.0;
-                            currentTweet.addQualAction("TL," + older.getTwitterId() + ",");
-                        } else if (titleCounts > 3) {
+//                            currentTweet.addQualAction("UL," + older.getTwitterId() + ",");
+                        } else if (urlCounts > 3) {
                             sameUrl = true;
                             // tweeted about the identical url title!
                             qual *= JTweet.QUAL_BAD / 100.0;
-                            currentTweet.addQualAction("TB," + older.getTwitterId() + ",");
-                        }
-                    } else
-                        titleCounts = 0;
-
-                    // if title is identical then url isn't necessary to compare
-                    if (titleCounts < 2) {
-                        Integer urlCounts = urlMap.get(entry.getResolvedUrl());
-                        if (urlCounts != null) {
-                            if ((urlCounts == 2 || urlCounts == 3) && currentTweet.getQualReductions() < 3) {
-                                sameUrl = true;
-                                qual *= JTweet.QUAL_LOW / 100.0;
-                                currentTweet.addQualAction("UL," + older.getTwitterId() + ",");
-                            } else if (urlCounts > 3) {
-                                sameUrl = true;
-                                // tweeted about the identical url title!
-                                qual *= JTweet.QUAL_BAD / 100.0;
-                                currentTweet.addQualAction("UB," + older.getTwitterId() + ",");
-                            }
+//                            currentTweet.addQualAction("UB," + older.getTwitterId() + ",");
                         }
                     }
                 }
+                sw4.stop();
             }
         }
+        sw2.stop();
         return qual;
     }
 

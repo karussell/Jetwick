@@ -35,7 +35,7 @@ public class ResultsPanelTest extends WicketPagesTestClass {
     }
 
     @Test
-    public void textFillTranslateMap() {
+    public void testFillTranslateMapTodoIntegrationTest() {
         ResultsPanel panel = (ResultsPanel) tester.startPanel(ResultsPanel.class);
 
         panel.fillTranslateMap(Arrays.asList(

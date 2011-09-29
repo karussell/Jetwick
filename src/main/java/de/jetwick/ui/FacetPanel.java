@@ -90,7 +90,9 @@ public class FacetPanel extends Panel {
         tr.put(LANG + ":" + EN, "English");
         tr.put(LANG + ":" + NL, "Nederlandse");
         tr.put(LANG + ":" + RU, "Pусский");
-        tr.put(LANG + ":" + SP, "Español");
+        tr.put(LANG + ":" + ES, "Español");
+        // backward compatibility
+        tr.put(LANG + ":sp", "Español");
         tr.put(LANG + ":" + FR, "Français");
         tr.put(LANG + ":" + PT, "Português");
 

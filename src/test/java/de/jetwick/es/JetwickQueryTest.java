@@ -15,16 +15,16 @@
  */
 package de.jetwick.es;
 
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.ExistsFilterBuilder;
+import org.elasticsearch.index.query.RangeFilterBuilder;
+import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.index.query.TermsFilterBuilder;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import java.io.IOException;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.query.xcontent.ExistsFilterBuilder;
-import org.elasticsearch.index.query.xcontent.RangeFilterBuilder;
-import org.elasticsearch.index.query.xcontent.TermFilterBuilder;
-import org.elasticsearch.index.query.xcontent.TermsFilterBuilder;
-import org.elasticsearch.index.query.xcontent.XContentFilterBuilder;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -37,6 +37,13 @@ import static org.elasticsearch.common.xcontent.XContentFactory.*;
 public class JetwickQueryTest {
 
     public JetwickQueryTest() {
+    }
+
+    @Test
+    public void testForbiddenChars() {
+        assertFalse(JetwickQuery.containsForbiddenChars("test schnest"));
+        assertTrue(JetwickQuery.containsForbiddenChars("test:xy"));
+        assertTrue(JetwickQuery.containsForbiddenChars("test:xy*"));
     }
 
     @Test
@@ -61,13 +68,13 @@ public class JetwickQueryTest {
 
     @Test
     public void testSimilarQuery() {
-        SimilarQuery q = new SimilarQuery(
+        SimilarTweetQuery q = new SimilarTweetQuery(
                 new JTweet(1L, "Test test jAva http://blabli", new JUser("tmp")), false);
 
         assertTrue(q.calcTerms().contains("test"));
         assertTrue(q.calcTerms().contains("java"));
         assertFalse("query mustn't contain links or parts of links", q.calcTerms().contains("http"));
-        q = new SimilarQuery(new JTweet(1L, "RT @user: test", new JUser("tmp")), false);
+        q = new SimilarTweetQuery(new JTweet(1L, "RT @user: test", new JUser("tmp")), false);
         assertFalse("query mustn't contain user", q.calcTerms().contains("user"));
     }
 
@@ -84,7 +91,7 @@ public class JetwickQueryTest {
     public void testFilterQuery2Builder() throws IOException {
         // how to test???
 
-        XContentFilterBuilder builder = new TweetQuery().filterQuery2Builder("field", "[1 TO 2]");
+        FilterBuilder builder = new TweetQuery().filterQuery2Builder("field", "[1 TO 2]");
         assertEquals(1, 1);
         builder = new TweetQuery().filterQuery2Builder("field", "[1 TO Infinity]");
         assertTrue(builder instanceof RangeFilterBuilder);

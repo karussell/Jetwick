@@ -16,12 +16,12 @@
 
 /*
 
-#main
+#all
 
   | external-refs-right      |
   |--------------------------|
 
-   left-column    content
+   left-column    middle
 
   | userpanel  | searchbox   |
   | left       | date-filter |
@@ -67,6 +67,12 @@ body, p {
     padding: 0px 15px 0px 26px;    
 }
 
+.jetroidad {
+    font-size: 1em;
+    color: black;
+    padding: 0px 15px 10px 26px;    
+}
+
 body .ui-dialog, body .ui-dialog-content {
     background: none;
     background-color: white;
@@ -79,14 +85,6 @@ body .ui-widget-content {
 }
 .hide {
     display: none;
-}
-.login-dialog div {
-    padding-bottom: 10px;
-}
-.login-dialog .screenshot {
-    clear: both;
-    float: left;
-    padding: 40px 0px;
 }
 
 div.dialog-button a {
@@ -256,6 +254,10 @@ div.dialog-button a {
     padding-bottom: 40px;
 }
 
+.searchbox input[type="radio"]:checked+label {
+    font-weight: bold;
+}
+
 .searchform button {
     position: absolute;
     top: 0;
@@ -388,10 +390,10 @@ div.wicket-aa ul li.selected {
     background-image: url("../img/bar-min-dark.png");
 }
 
-#main {
+#all {
     padding-top: 20px;
 }
-#main, .external-refs-right {
+#all, .external-refs-right {
     width: 800px;
     margin-left: auto;
     margin-right: auto;
@@ -399,7 +401,7 @@ div.wicket-aa ul li.selected {
 
 .left-column {
     padding-left: 20px;
-    min-width: 210px;
+    min-width: 110px;
     max-width: 250px;
     float: left;
 }
@@ -411,7 +413,8 @@ div.wicket-aa ul li.selected {
 .searchform {
     width: 530px;
 }
-.content {
+
+.middle {
     float: left;
     width: 530px;
 }
@@ -600,7 +603,9 @@ div.wicket-aa ul li.selected {
 .tweet-links li a:hover {
     color: #0063AC;
 }
-
+.tweet-links li img {    
+    margin-bottom: -4px;
+}
 .tweet-links li  {    
     padding-right: 5px;
     padding-left: 5px;
@@ -650,7 +655,8 @@ div.wicket-aa ul li.selected {
 
 .subtweets {    
     padding-left: 15px;
-    padding-top: 11px;
+    padding-top: 10px;
+    padding-bottom: 8px;
 }
 
 .profile-url {
@@ -897,14 +903,76 @@ ul.show-dots li {
     margin-left: auto;
     margin-right: auto;
 }
-#offline ul li {
-    list-style: none;
-    padding-top: 30px;
-}
 
 body .ui-widget-header {
     background: none;
     background-image: url("../img/bar-min-vert.png");
     background-repeat: repeat-x;
     border: none;
+}
+
+#login-page {    
+    max-width: 300px;        
+    padding: 20px 10px 20px 10px;    
+    margin-left: auto;
+    margin-right: auto;
+}
+#login-page .headerText {
+    font-weight: bold;
+}
+#login-page .login {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#login-page td {
+    padding-bottom: 5px;
+}
+
+#login-page .login form {
+    margin-top: 5px;
+    padding: 5px;
+    border: 2px solid #DDDDDD;
+    -moz-border-radius:10px;
+    -webkit-border-radius:10px;
+    border-radius:10px;
+}
+
+#login-page .feedback ul {
+    margin: 0;    
+}
+
+#login-page .feedback ul li {
+    padding: 5px;
+}
+
+#login-page .feedbackPanel{
+    padding-bottom: 5px;
+    font-size: 0.8em;
+}
+
+.login-reg-text {
+    padding-top: 20px;
+}
+
+.login-back {
+    padding-bottom: 10px;
+}
+
+.gojetslide {
+    float: left;    
+    margin: 30px 0px 0px 20px;
+    padding: 10px 10px 10px 10px;
+    border: gray 1px groove;    
+    -moz-border-radius:10px;
+    -webkit-border-radius:10px;
+    border-radius:10px;
+        
+    -moz-box-shadow: 3px 3px 3px #888;
+    -webkit-box-shadow: 3px 3px 3px #888;
+    box-shadow: 3px 3px 3px #888;
+}
+
+.jetslidelink {
+    font-weight: bold;
 }

@@ -39,12 +39,13 @@ public class Extractor {
     private Logger logger = LoggerFactory.getLogger(Extractor.class);
     protected JTweet tweet;
     protected String text;
-    protected Map<Integer, UrlEntry> urlMap = new LinkedHashMap<Integer, UrlEntry>();
+    protected Map<Integer, UrlEntry> urlMap = new LinkedHashMap<Integer, UrlEntry>(3);
     protected StringBuilder sb;
 
     public Extractor setTweet(JTweet tweet) {
         this.tweet = tweet;
         Collection<UrlEntry> coll = tweet.getUrlEntries();
+        urlMap.clear();
         for (UrlEntry e : coll) {
             urlMap.put(e.getIndex(), e);
         }
@@ -66,7 +67,7 @@ public class Extractor {
 
     public Extractor run() {
         if (text == null)
-            throw new NullPointerException("before usage set text via setText or indirect via setTweet!");
+            throw new NullPointerException("before usage set text via setText or indirectly via setTweet!");
 
         sb = new StringBuilder();
         int newLineCounter = 0;
@@ -184,38 +185,43 @@ public class Extractor {
         if (minLength > 0) {
             // if http starts NOT with a space
             if (index == 0 || index > 0 && (text.charAt(index - 1) == ' ' || text.charAt(index - 1) == '\n')) {
-                int lastIndex = text.indexOf(" ", index);
-                int lastIndex2 = text.indexOf("\n", index);
+                int maxIter = text.length() - index;
+                if (maxIter > 0) {
+                    StringBuilder sb = new StringBuilder(maxIter);
+                    int lastIndex = index;
+                    for (; lastIndex < text.length(); lastIndex++) {
+                        char c = text.charAt(lastIndex);
+                        if (c == ' ' || c == '\n' || c == '"')
+                            break;
 
-                if (lastIndex < 0 && lastIndex2 >= 0)
-                    lastIndex = lastIndex2;
-                else if (lastIndex2 < 0 && lastIndex >= 0) {
-                    // already lastIndex
-                } else if (lastIndex >= 0 && lastIndex2 >= 0)
-                    lastIndex = Math.min(lastIndex, lastIndex2);
-                else
-                    lastIndex = text.length();
-
-                String url = text.substring(index, lastIndex);
-
-                if (lastIndex > 0 && url.length() > minLength) {
-                    String title = url;
-                    UrlEntry entry = urlMap.get(index);
-                    if (entry != null) {
-                        if (lastIndex == entry.getLastIndex()) {
-                            if (!entry.getResolvedTitle().isEmpty())
-                                title = Strings.escapeMarkup(entry.getResolvedTitle()).toString();
-
-                            url = entry.getResolvedUrl();
-                        }
+                        sb.append(c);
                     }
 
-                    tmpSb.append(toLink(url, title));
-                    return lastIndex;
+                    String url = sb.toString();
+                    if (url.length() > minLength) {
+                        String title = url;
+                        UrlEntry entry = urlMap.get(index);
+                        if (entry != null) {
+                            if (lastIndex == entry.getLastIndex()) {
+                                if (!Helper.isEmpty(entry.getResolvedTitle()))
+                                    title = Strings.escapeMarkup(entry.getResolvedTitle()).toString();
+
+                                if(entry.getResolvedUrl() != null)
+                                    url = entry.getResolvedUrl();
+                            }
+                        }
+
+                        tmpSb.append(toLink(url, title));
+                        return lastIndex;
+                    }
                 }
             }
         }
         return -1;
+    }
+    
+    int getUrlEntrySize() {
+        return urlMap.size();
     }
 
     public String toLink(String url, String title) {

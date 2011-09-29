@@ -16,7 +16,6 @@
 package de.jetwick.util;
 
 import java.io.IOException;
-import java.util.BitSet;
 import java.util.Date;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -85,7 +84,7 @@ public class HelperTest {
 
     @Test
     public void testUrlInfos() throws IOException {
-        String res[] = Helper.getUrlInfosFromText(fileToString("h1.html"));
+        String res[] = Helper.getUrlInfosFromText(fileToString("h1.html"), Helper.UTF8);
         assertEquals("Red Sox owner confirms he bought Liverpool club &#8211; This Just In - CNN.com Blogs",
                 res[0]);
         assertEquals("Boston Red Sox Owner and Head of New England Sport Ventures, "
@@ -94,11 +93,29 @@ public class HelperTest {
                 + "the American owners of Liverpool Football Club in their bid to stop the team's sale to ...",
                 res[1]);
 
-        res = Helper.getUrlInfosFromText(fileToString("h2.html"));
+        res = Helper.getUrlInfosFromText(fileToString("h2.html"), Helper.UTF8);
         assertEquals("WikiLeaks and 9/11: What if? - latimes.com",
                 res[0]);
         assertEquals("Frustrated investigators might have chosen to leak information that their superiors bottled up, perhaps averting the terrorism attacks.",
                 res[1]);
+
+        res = Helper.getUrlInfos("http://www.yomiuri.co.jp/e-japan/gifu/news/20110410-OYT8T00124.htm", 10000);
+//        System.out.println("c1:" + res[0]);
+//        System.out.println("c1:" + res[1]);
+    }
+
+    @Test
+    public void testGetTwitterUser() throws IOException {
+        assertEquals("jetwick", Helper.getTwitterUserFromUrl("http://twitter.com/jetwick"));
+        assertEquals("jetwick", Helper.getTwitterUserFromUrl("http://twitter.com/#!/jetwick"));
+        assertEquals("jet_wick", Helper.getTwitterUserFromUrl("http://twitter.com/#!/jet_wick/testing/woiw"));
+        assertEquals("jetwick", Helper.getTwitterUserFromUrl("http://twitter.com/jetwick/testing"));
+    }
+
+    @Test
+    public void testCharCount() throws IOException {
+        assertEquals(1, Helper.countChars("xy test", ' '));
+        assertEquals(2, Helper.countChars("xy tester", 'e'));
     }
 
     @Test
@@ -122,6 +139,6 @@ public class HelperTest {
     }
 
     public static byte[] fileToString(String name) throws IOException {
-        return Helper.readInputStream(HelperTest.class.getResourceAsStream(name)).getBytes();
+        return Helper.getInputStream(HelperTest.class.getResourceAsStream(name)).getBytes();
     }
 }

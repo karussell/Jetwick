@@ -39,7 +39,7 @@ public class TwitterSearchOffline extends TwitterSearch {
     }
 
     @Override
-    public TwitterSearch initTwitter4JInstance(String token, String tokenSecret) {
+    public TwitterSearch initTwitter4JInstance(String token, String tokenSecret, boolean verify) {
         return this;
     }
 
@@ -50,7 +50,7 @@ public class TwitterSearchOffline extends TwitterSearch {
 
     @Override
     public AccessToken oAuthOnCallBack(String oauth_verifierParameter) throws TwitterException {
-        return new AccessToken("token", "tokenSecret");
+        return new AccessToken("123-token", "tokenSecret");
     }
 
     @Override

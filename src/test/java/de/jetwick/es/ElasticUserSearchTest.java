@@ -15,12 +15,16 @@
  */
 package de.jetwick.es;
 
+import java.util.List;
+import de.jetwick.util.AnyExecutor;
+import java.util.Date;
 import java.util.Collections;
 import java.util.Arrays;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -96,7 +100,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         list.add(user);
         JUser user2 = new JUser("peter");
         list.add(user2);
-        userSearch.update(list, 2);
+        userSearch.bulkUpdate(list, userSearch.getIndexName());
         userSearch.refresh();
         assertEquals(1, userSearch.search("karsten").size());
         assertEquals(1, userSearch.search("peter").size());
@@ -106,7 +110,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         assertEquals(0, userSearch.search("karsten").size());
         assertEquals(0, userSearch.search("peter").size());
 
-        userSearch.update(list, 1);
+        userSearch.bulkUpdate(list, userSearch.getIndexName());
         userSearch.refresh();
         assertEquals(1, userSearch.search("karsten").size());
         assertEquals(1, userSearch.search("peter").size());
@@ -269,7 +273,7 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         query.addFilterQuery("tag", "test");
 
         Collection<JUser> list = new LinkedHashSet<JUser>();
-        SearchResponse rsp = userSearch.search(list, query);
+        SearchResponse rsp = userSearch.query(list, query);
 
         // found 2 users which have java as tags
         assertEquals(2, list.size());
@@ -280,12 +284,12 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         // more filter queries
         list.clear();
         query.addFilterQuery("tag", "help");
-        userSearch.search(list, query);
+        userSearch.query(list, query);
         assertEquals(1, list.size());
 
         list.clear();
         query.addFilterQuery("tag", "z");
-        userSearch.search(list, query);
+        userSearch.query(list, query);
         assertEquals(0, list.size());
     }
 
@@ -301,7 +305,23 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         assertEquals(0, userSearch.findByScreenName("karsten").getFriends().size());
         assertEquals(0, userSearch.findByScreenName("johannes").getFriends().size());
     }
-    
+
+    @Test
+    public void testSearchLastLoggedIn() throws Exception {
+        JUser user = new JUser("peter").setCreatedAt(new Date(100)).setTwitterToken("1");
+        JUser user2 = new JUser("karsten").setCreatedAt(new Date(110)).setTwitterToken("2");
+        JUser user3 = new JUser("johannes").setCreatedAt(new Date(100)).setTwitterToken("3").setActive(false);
+        userSearch.save(user, false);
+        userSearch.save(user2, false);
+        userSearch.save(user3, true);
+        Set<JUser> res = new LinkedHashSet<JUser>();
+        userSearch.searchLastLoggedIn(res, 0, 10);
+        List<JUser> list = new ArrayList<JUser>(res);
+        assertEquals(2, list.size());
+        assertEquals("karsten", list.get(0).getScreenName());
+        assertEquals("peter", list.get(1).getScreenName());       
+    }
+
     @Test
     public void testGetQueryTerms() throws Exception {
         JUser user = new JUser("karsten").setTwitterToken("test");
@@ -328,5 +348,40 @@ public class ElasticUserSearchTest extends AbstractElasticSearchTester {
         assertTrue(coll.contains("peter tester"));
         assertTrue(coll.contains("karsten tester"));
         assertTrue(coll.contains("karsten OR tester"));
+    }
+
+    @Test
+    public void testTopics() throws Exception {
+        JUser user = new JUser("karsten").setTwitterToken("test");
+        user.setTopics(Arrays.asList("test", "schnest", "test"));
+
+        userSearch.save(user, true);
+        assertEquals(2, userSearch.findByScreenName("karsten").getTopics().size());
+    }
+
+    @Test
+    public void testSearchViaTopics() throws Exception {
+        JUser user = new JUser("karsten").setTwitterToken("test").setLastVisit(new Date());
+        user.setTopics(Arrays.asList("test", "schnest OR irgendwas", "test"));
+        userSearch.save(user, true);
+
+        assertEquals(2, userSearch.findByScreenName("karsten").getTopics().size());
+        assertEquals(1, userSearch.findByTopic("test", 10).size());
+        assertEquals(1, userSearch.findByTopic("Irgendwas", 10).size());
+
+        user = new JUser("party").setTwitterToken("test").setLastVisit(new Date());
+        user.setTopics(Arrays.asList("what", "irgendwas OR Anderes", "xy"));
+        userSearch.save(user, true);
+
+        final List<String> list = new ArrayList<String>();
+        userSearch.executeForAll(new AnyExecutor<JUser>() {
+
+            @Override
+            public JUser execute(JUser u) {
+                list.addAll(u.getTopics());
+                return u;
+            }
+        }, 1000);
+        assertEquals(5, list.size());
     }
 }

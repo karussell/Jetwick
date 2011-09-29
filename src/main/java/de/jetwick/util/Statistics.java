@@ -19,6 +19,7 @@ import com.google.api.translate.Language;
 import com.google.api.translate.Translate;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Module;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.data.JTag;
@@ -26,6 +27,7 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import de.jetwick.es.ElasticTagSearch;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.es.TweetQuery;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -59,16 +61,18 @@ public class Statistics {
         if (args.length == 0)
             map.put("print", "timetabling");
 
-        new Statistics().start(map);
+        Module module = new DefaultModule();
+        Injector injector = Guice.createInjector(module);
+        injector.getInstance(Statistics.class).start(map);
     }
     @Inject
     private ElasticTweetSearch tweetSearch;
     @Inject
-    private ElasticTagSearch tagSearch;
+    private ElasticUserSearch userSearch;
+    @Inject
+    private ElasticTagSearch tagSearch;  
 
-    public Statistics() {
-        Module module = new DefaultModule();
-        Guice.createInjector(module).injectMembers(this);
+    public Statistics() {        
     }
 
     public void start(Map<String, String> map) throws Exception {
@@ -88,7 +92,7 @@ public class Statistics {
                 argStr = "**:*";
 
             List<JUser> list = new ArrayList<JUser>();
-            long ret = tweetSearch.search(list, new TweetQuery(argStr, false)).
+            long ret = tweetSearch.query(list, new TweetQuery(argStr, false)).
                     getHits().getTotalHits();
             logger.info("Found: " + ret + " users. Returned: " + list.size());
             print(list);
@@ -132,7 +136,7 @@ public class Statistics {
                 newTags.add(JTag.toLowerCaseOnlyOnTerms(str.trim()));
         } // do only delete those where we don't have a new one
         // do only store tags which are new
-        
+
         boolean ignoreSearchError = false;
         try {
             for (JTag tag : tagSearch.findAll(0, 1000)) {
@@ -145,7 +149,7 @@ public class Statistics {
             ignoreSearchError = true;
             logger.info("Tag index seems to be not available or empty! Message:" + ex.getMessage());
         }
-        
+
         tagSearch.addAll(newTags, true, ignoreSearchError);
         tagSearch.optimize();
         logger.info("Imported tag:" + newTags.size() + " all tags:" + tagSearch.findAll(0, 1000).size());
@@ -156,7 +160,7 @@ public class Statistics {
         int counter = 0;
         for (JTag tag : tagSearch.findAll(0, 1000)) {
             counter++;
-            newTags.add(tag.setMaxCreateTime(0L).setLastMillis(0).setQueryInterval(1000));
+            newTags.add(tag.clearProperties());
         }
         tagSearch.bulkUpdate(newTags, tagSearch.getIndexName(), true);
         tagSearch.optimize();
@@ -199,7 +203,7 @@ public class Statistics {
         Set<String> res = new TreeSet<String>();
         Set<String> cache = new LinkedHashSet<String>();
         int charCounter = 0;
-        Translate.setHttpReferrer("http://jetwick.com");
+        Translate.setHttpReferrer(Helper.JETWICK_URL);
         for (String str : list) {
             if (str.isEmpty() || str.startsWith("//"))
                 continue;

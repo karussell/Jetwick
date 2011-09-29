@@ -33,7 +33,7 @@ public class StringFreqMap extends LinkedHashMap<String, Integer> {
 
     private static final long serialVersionUID = 1L;
 
-    public StringFreqMap() {
+    public StringFreqMap() {    
     }
 
     public StringFreqMap(Map<? extends String, ? extends Integer> m) {

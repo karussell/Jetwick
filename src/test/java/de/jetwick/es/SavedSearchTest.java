@@ -47,13 +47,15 @@ public class SavedSearchTest {
     public void testSave() {
         TweetQuery q1 = new TweetQuery("java");
         q1.addFilterQuery("user", "peter");
-        assertTrue(new SavedSearch(1, q1).toString().contains("q=java&fq=user%3Apeter"));
+        assertTrue(new SavedSearch(1, q1).toString().contains("q=java"));
+        assertTrue(new SavedSearch(1, q1).toString().contains("fq=user%3Apeter"));        
 
         assertEquals(q1.getFilterQueries(), JetwickQuery.parseQuery("fq=user%3Apeter").getFilterQueries());
 
         q1 = new TweetQuery("java");
         q1.addFilterQuery("-user", "peter");
-        assertTrue(new SavedSearch(1, q1).toString().contains("q=java&fq=-user%3Apeter"));
+        assertTrue(new SavedSearch(1, q1).toString().contains("q=java"));
+        assertTrue(new SavedSearch(1, q1).toString().contains("fq=-user%3Apeter"));
         assertEquals(q1.getFilterQueries(), JetwickQuery.parseQuery("fq=-user%3Apeter").getFilterQueries());
     }
 

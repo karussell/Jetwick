@@ -28,6 +28,7 @@ public class SessionTimeout extends JetwickPage {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public SessionTimeout(final PageParameters oldParams) {
+        super(false);
         PageParameters newParams = new PageParameters();
         if (oldParams != null) {
             if (oldParams.getString("q") != null)
@@ -37,13 +38,14 @@ public class SessionTimeout extends JetwickPage {
                 userAsStr = oldParams.getString("u");
             if (userAsStr != null)
                 newParams.add("user", userAsStr);
-        }
+        }  
 
         ((MySession) getSession()).setSessionTimedOut(true);
         logger.info("session timed out. old params: " + oldParams + " new params:" + newParams
+                + " path=" + getWebRequestCycle().getRequest().getPath()
                 + " IP=" + getWebRequestCycle().getWebRequest().getHttpServletRequest().getRemoteHost()
                 + " session=" + getWebRequestCycle().getSession().getId()
                 + " cookie=" + getWebRequestCycle().getWebRequest().getCookie("jetwick JSESSIONID"));
-        setResponsePage(HomePage.class, newParams);
+        setResponsePage(TweetSearchPage.class, newParams);
     }
 }

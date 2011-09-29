@@ -26,9 +26,14 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
+import de.jetwick.data.JUser;
+import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.util.Helper;
 import org.apache.wicket.Application;
+import org.apache.wicket.protocol.http.RequestUtils;
 import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.request.target.coding.MixedParamUrlCodingStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,9 +63,12 @@ public class JetwickApp extends WebApplication {
 
     @Override
     protected void init() {
-        super.init();               
+        super.init();
 
-        getApplicationSettings().setPageExpiredErrorPage(SessionTimeout.class);
+        // cache js etc one month
+        getResourceSettings().setDefaultCacheDuration(30 * 24 * 3600);
+
+        getApplicationSettings().setPageExpiredErrorPage(TweetSearchPage.class);
         getApplicationSettings().setInternalErrorPage(ErrorPage.class);
 
         // default is <em> </em> for disabled links
@@ -77,32 +85,40 @@ public class JetwickApp extends WebApplication {
 //    link in tweet is: http://localhost/twittersearch|||0.1?u=%40TelegraphNews
 //        and not       http://localhost/twittersearch?u=%40TelegraphNews|||0.1
 //    error whens searching for \ => tomcat has problem (empty page)
-//    not produceable: wget http://localhost/jetwick-dev/twittersearch/q/java
+//    not reproduceable: wget http://localhost/jetwick-dev/twittersearch/q/java
 //         and you will get an endless loop! (for users without cookies!)
 //    not reproducable problem if we click on 'retweets' of the following tweet nothing happens:
 //         http://localhost/twittersearch/id/25372450085
 //         but if we filter first then it works!!?? (e.g. search #wicket + filter original)
 
-//        HybridUrlCodingStrategy strategy = new HybridUrlCodingStrategy("twittersearch", HomePage.class, true) {
+
+        // Die aufgerufene Website leitet die Anfrage so um, dass sie nie beendet werden kann.
+        // Dieses Problem kann manchmal auftreten, wenn Cookies deaktiviert oder abgelehnt werden.
+//        HybridUrlCodingStrategy strategy = new HybridUrlCodingStrategy("twittersearch", TweetSearchPage.class, true) {
 //
 //            @Override
 //            protected String getBeginSeparator() {
 //                return "|||";
 //            }
 //        };
-//        mount(strategy);
-
-//        mount(new QueryStringUrlCodingStrategy("twittersearch", HomePage.class));
-//        mount(new MixedParamUrlCodingStrategy("twittersearch", HomePage.class, new String[]{"q"}));
+//        mount(strategy);       
 
         // 1.5-M2.1
-//        getRootRequestMapperAsCompound().add(new MountedMapper("twittersearch", HomePage.class));
+//        getRootRequestMapperAsCompound().add(new MountedMapper("twittersearch", TweetSearchPage.class));
+
+//        getRequestCycleSettings().setRenderStrategy(IRequestCycleSettings.ONE_PASS_RENDER);
 
         mountBookmarkablePage("about", About.class);
         mountBookmarkablePage("imprint", Imprint.class);
-        mountBookmarkablePage("mobile", MobilePage.class);
-        mountBookmarkablePage("m", MobilePage.class);        
-//        mountBookmarkablePage("xy", HomePage.class);        
+        mountBookmarkablePage("offline", OfflinePage.class);
+
+        if (!"offline".equals(cfg.getStage()))
+            mount(new MixedParamUrlCodingStrategy("tweets", TweetSearchPage.class, new String[]{}));
+        else
+            mount(new MixedParamUrlCodingStrategy("tweets", OfflinePage.class, new String[]{}));
+
+
+        mount(new MixedParamUrlCodingStrategy("login", Login.class, new String[]{}));
         addComponentInstantiationListener(getGuiceInjector());
     }
 
@@ -111,58 +127,46 @@ public class JetwickApp extends WebApplication {
         if ("offline".equals(cfg.getStage()))
             return OfflinePage.class;
         else
-            return HomePage.class;
+            return TweetSearchPage.class;
     }
 
     // enable production mode
     @Override
     public String getConfigurationType() {
-        if ("production".equals(cfg.getStage()))
-            return Application.DEPLOYMENT;
-        else
+        if ("development".equals(cfg.getStage()))
             return Application.DEVELOPMENT;
+        else
+            return Application.DEPLOYMENT;
+    }
+
+    public static String createAbsoluteUrl(String urlFor) {
+        String absUrl = RequestUtils.toAbsolutePath(urlFor);
+        // current url encoding strategy creates for localhost: 
+        // http://localhost:8080/jetwick/login/callback/true/slide/true
+        if (Application.DEPLOYMENT.equals(Application.get().getConfigurationType())) {
+            int index = absUrl.indexOf("jetwick/");
+            if (index > 0)
+                absUrl = Helper.JETSLIDE_URL + absUrl.substring(index + "jetwick/".length());
+        }
+
+        return absUrl;
     }
 
     @Override
     public Session newSession(Request request, Response response) {
+        // inject only once per session!
         MySession session = new MySession(request);
-//        logger.info(" session id:" + session.getId());
-        session.setTwitterSearch(injector.getInstance(TwitterSearch.class));
-//        getGuiceInjector().inject(session);
-        
-//        WebRequest webRequest = ((WebRequest) request);
-//        logger.info("created new session! IP=" + webRequest.getHttpServletRequest().getRemoteHost() + " session:" + session.getId());
-        
+        TwitterSearch ts = injector.getInstance(TwitterSearch.class);
+        session.setTwitterSearch(ts);
+        WebRequest wreq = (WebRequest) request;
+        ElasticUserSearch uSearch = injector.getInstance(ElasticUserSearch.class);
+        session.onNewSession(wreq, uSearch);
+//        logger.info("new session user:" + session.getUser());
+        if (session.hasLoggedIn()) {
+            // set user specific twitter4j
+            JUser u = session.getUser();
+            ts.initTwitter4JInstance(u.getTwitterToken(), u.getTwitterTokenSecret(), false);
+        }
         return session;
-
     }
-    // remove the jsessionid! but if user agent disabled cookies (like googlebot) it cannot search!?
-//    @Override
-//    protected WebResponse newWebResponse(HttpServletResponse servletResponse) {
-//        return (getRequestCycleSettings().getBufferResponse()
-//                ? new BufferedWebResponse(servletResponse) {
-//
-//            @Override
-//            public CharSequence encodeURL(CharSequence url) {
-//                return url;
-//            }
-//        }
-//                : new WebResponse(servletResponse));
-//    }
-    // encrypt url works but I want that the explicit parameters are visible!!
-    // altough the request via parameters still works!
-//    @Override
-//    protected IRequestCycleProcessor newRequestCycleProcessor() {
-//        return new WebRequestCycleProcessor() {
-//
-//            @Override
-//            protected IRequestCodingStrategy newRequestCodingStrategy() {
-//                return new CryptedUrlWebRequestCodingStrategy(new WebRequestCodingStrategy());
-//            }
-//        };
-//    }
-
-    
-    // https://issues.apache.org/jira/browse/WICKET-3081
-    // http://www.mail-archive.com/users@wicket.apache.org/msg38015.html
 }

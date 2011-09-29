@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.jetwick.es;
 
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
-import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
+import de.jetwick.util.MyDate;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 
 /**
  *
@@ -43,8 +39,8 @@ public class UserQuery extends JetwickQuery {
     }
         
     @Override
-    protected XContentQueryBuilder createQuery(String queryStr) {
-        XContentQueryBuilder qb;
+    protected QueryBuilder createQuery(String queryStr) {
+        QueryBuilder qb;
         if (queryStr == null || queryStr.isEmpty())
             qb = QueryBuilders.matchAllQuery();
         else {
@@ -55,5 +51,15 @@ public class UserQuery extends JetwickQuery {
 //            return QueryBuilders.termQuery("name", queryStr);
         }
         return qb;
+    }
+
+    @Override
+    public JetwickQuery addLatestDateFilter(int hours) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public JetwickQuery addLatestDateFilter(MyDate date) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

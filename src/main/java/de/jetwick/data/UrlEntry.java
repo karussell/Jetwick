@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.data;
 
+import de.jetwick.snacktory.JResult;
 import java.io.Serializable;
 
 /**
@@ -96,8 +96,23 @@ public class UrlEntry implements Serializable {
         return resolvedUrl;
     }
 
+    public String getOriginalUrl(JTweet tw) {
+        int l = tw.getText().length();
+        if (getIndex() < l && getLastIndex() <= l)
+            return tw.getText().substring(getIndex(), getLastIndex());
+
+        return "";
+    }
+
     @Override
     public String toString() {
         return "title:" + getResolvedTitle() + " url:" + getResolvedUrl();
+    }
+
+    public static JResult createSimpleResult(String url) {
+        JResult res = new JResult();
+        res.setOriginalUrl(url);
+        res.setUrl(url);
+        return res;
     }
 }

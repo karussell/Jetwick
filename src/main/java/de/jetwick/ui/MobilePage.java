@@ -88,7 +88,7 @@ public class MobilePage extends WebPage {
         long totalHits = 0;
         SearchResponse rsp = null;
         try {
-            rsp = getTweetSearch().search(users, query);
+            rsp = getTweetSearch().query(users, query);
             totalHits = rsp.getHits().getTotalHits();
             logger.info(addIP("[mstats] " + totalHits + " hits for: " + query.toString()));
         } catch (Exception ex) {

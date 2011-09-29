@@ -22,12 +22,10 @@ import de.jetwick.config.Configuration;
 import de.jetwick.config.DefaultModule;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
-import de.jetwick.tw.queue.TweetPackage;
-import de.jetwick.tw.queue.TweetPackageList;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.Arrays;
+import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +49,8 @@ public class RMIClient implements CommunicationService {
             return this;
 
         try {
-            logger.info("sending to " + config.getRMIHost() + ":" + config.getRMIPort()
-                    + " using " + config.getRMIService());
+//            logger.info("sending to " + config.getRMIHost() + ":" + config.getRMIPort()
+//                    + " using " + config.getRMIService());
             Registry registry = LocateRegistry.getRegistry(config.getRMIHost(), config.getRMIPort());
             // look up the remote object
             service = (CommunicationService) registry.lookup(config.getRMIService());
@@ -66,12 +64,21 @@ public class RMIClient implements CommunicationService {
         DefaultModule module = new DefaultModule();
         Injector injector = Guice.createInjector(module);
         RMIClient rmiProvider = injector.getInstance(RMIClient.class);
-        rmiProvider.send(injector.getInstance(TweetPackageList.class).init(
-                Arrays.asList(new JTweet(1L, "test", new JUser("peter")))));
+        rmiProvider.send(new JTweet(1L, "test", new JUser("peter")));
     }
 
     @Override
-    public void send(TweetPackage tweets) throws RemoteException {
+    public void send(JTweet tweet) throws RemoteException {
+        if (service == null) {
+            logger.error("Queue service not connected");
+            return;
+        }
+
+        service.send(tweet);
+    }
+
+    @Override
+    public void send(Collection<JTweet> tweets) throws RemoteException {
         if (service == null) {
             logger.error("Queue service not connected");
             return;

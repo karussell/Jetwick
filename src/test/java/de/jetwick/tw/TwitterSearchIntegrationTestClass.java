@@ -16,8 +16,10 @@
 package de.jetwick.tw;
 
 import com.google.inject.Inject;
+import com.google.inject.Module;
 import de.jetwick.JetwickTestClass;
 import de.jetwick.config.Configuration;
+import de.jetwick.config.DefaultModule;
 import de.jetwick.data.UrlEntry;
 import de.jetwick.data.JTag;
 import de.jetwick.es.ElasticTweetSearchTest;
@@ -26,8 +28,8 @@ import de.jetwick.data.JUser;
 import de.jetwick.es.TweetQuery;
 import de.jetwick.tw.cmd.TermCreateCommand;
 import de.jetwick.util.AnyExecutor;
+import de.jetwick.util.GenericUrlResolver;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -68,7 +70,7 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         super.setUp();
         twSearchTester.setUp();
         Credits c = new Configuration().getTwitterSearchCredits();
-        twitterSearch.initTwitter4JInstance(c.getToken(), c.getTokenSecret());
+        twitterSearch.initTwitter4JInstance(c.getToken(), c.getTokenSecret(), true);
     }
 
     @Override
@@ -225,9 +227,25 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
         TweetQuery q = new TweetQuery("").createFriendsQuery(f);
 
         // create tweet to map some indirectly mapped (not defined) fields like dt
-        twSearchTester.getSearch().update(Arrays.asList(new JTweet(1L, "test", new JUser("user"))));
+        twSearchTester.getSearch().store(new JTweet(1L, "test", new JUser("user")), true);
 
         // should not throw an exception
-        twSearchTester.getSearch().search(q);
+        twSearchTester.getSearch().query(q);
+    }
+    
+    @Override
+    public Module createModule() {
+        return new DefaultModule() {
+
+            @Override
+            public void installSearchModule() {
+                // avoid that we need to set up (user/tweet) search
+            }
+
+            @Override
+            public GenericUrlResolver createGenericUrlResolver() {
+                return null;
+            }
+        };
     }
 }

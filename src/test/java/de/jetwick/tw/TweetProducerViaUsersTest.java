@@ -24,7 +24,6 @@ import de.jetwick.data.JUser;
 import de.jetwick.util.AnyExecutor;
 import org.junit.Before;
 import de.jetwick.es.ElasticUserSearchTest;
-import java.util.Iterator;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import twitter4j.TwitterException;
@@ -62,7 +61,7 @@ public class TweetProducerViaUsersTest {
 
     @Test
     public void testRun() {
-        getUserSearch().update(new JUser("test"), true, true);
+        getUserSearch().update(new JUser("test").setTwitterToken("xy"), true, true);
 
         final TwitterSearch mockedTwitter = new TwitterSearch() {
 
@@ -85,7 +84,7 @@ public class TweetProducerViaUsersTest {
             }
         };
 
-        TweetProducerViaUsers producer = new TweetProducerViaUsers() {
+        TweetProducerViaUsers tweetProducer = new TweetProducerViaUsers() {
 
             @Override
             protected TwitterSearch createTwitter4J(String twitterToken, String twitterTokenSecret) {
@@ -102,16 +101,16 @@ public class TweetProducerViaUsersTest {
                 return true;
             }            
         };
-        producer.setUserSearch(getUserSearch());
-        producer.run(1);
-
-        assertEquals(1, producer.getQueue().size());
-        Iterator<JTweet> iter = producer.getQueue().poll().getTweets().iterator();
-        JTweet tw = iter.next();
+        tweetProducer.setUserSearch(getUserSearch());
+        tweetProducer.run(1);
+        
+        assertEquals(2, tweetProducer.getQueue().size());
+        JTweet tw = tweetProducer.getQueue().poll();
         assertEquals("test tweet", tw.getText());
         assertFalse(tw.isPersistent());
-        assertTrue(iter.next().isPersistent());
+        tw = tweetProducer.getQueue().poll();
         
+        getUserSearch().refresh();
         assertEquals(2, getUserSearch().findByScreenName("test").getFriends().size());
         assertTrue(getUserSearch().findByScreenName("test").getFriends().contains("friend1oftest"));
     }

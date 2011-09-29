@@ -15,6 +15,7 @@
  */
 package de.jetwick.ui;
 
+import de.jetwick.data.JTweet;
 import de.jetwick.es.TweetQuery;
 import java.util.Collection;
 import com.google.inject.Guice;
@@ -25,11 +26,14 @@ import de.jetwick.es.ElasticTweetSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.rmi.RMIClient;
 import de.jetwick.data.JUser;
+import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.tw.TwitterSearch;
-import de.jetwick.tw.queue.TweetPackage;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import org.apache.wicket.Application;
+import org.apache.wicket.Request;
+import org.apache.wicket.Response;
+import org.apache.wicket.Session;
 import org.apache.wicket.guice.GuiceComponentInjector;
 import org.apache.wicket.util.tester.WicketTester;
 import org.elasticsearch.action.search.SearchResponse;
@@ -57,7 +61,7 @@ public class WicketPagesTestClass {
     }
 
     protected JetwickApp createJetwickApp() {
-        DefaultModule mod = new DefaultModule() {
+        DefaultModule module = new DefaultModule() {
 
             @Override
             public void installTwitterModule() {
@@ -76,16 +80,19 @@ public class WicketPagesTestClass {
             @Override
             public void installSearchModule() {
                 ElasticUserSearch userSearch = mock(ElasticUserSearch.class);
-                bind(ElasticUserSearch.class).toInstance(userSearch);
+                bind(ElasticUserSearch.class).toInstance(mockUserSearch(userSearch));
+
+                ElasticTagSearch tagSearch = mock(ElasticTagSearch.class);
+                bind(ElasticTagSearch.class).toInstance(tagSearch);
 
                 ElasticTweetSearch twSearch = mock(ElasticTweetSearch.class);
-                
+
                 // mock this hit/result too!
                 //new InternalSearchHit(1, "1", "tweet", source, fields);
-                InternalSearchResponse iRsp = new InternalSearchResponse(
+                InternalSearchResponse iRsp2 = new InternalSearchResponse(
                         new InternalSearchHits(new InternalSearchHit[0], 0, 0), new InternalFacets(new ArrayList()), true);
-                when(twSearch.search((Collection<JUser>) any(), (TweetQuery) any())).
-                        thenReturn(new SearchResponse(iRsp, "", 4, 4, 1L, new ShardSearchFailure[0]));
+                when(twSearch.query((Collection<JUser>) any(), (TweetQuery) any())).
+                        thenReturn(new SearchResponse(iRsp2, "", 4, 4, 1L, new ShardSearchFailure[0]));
 
                 bind(ElasticTweetSearch.class).toInstance(twSearch);
             }
@@ -95,7 +102,7 @@ public class WicketPagesTestClass {
                 bind(RMIClient.class).toInstance(createRMIClient());
             }
         };
-        injector = Guice.createInjector(mod);
+        injector = Guice.createInjector(module);
         return new JetwickApp(injector) {
 
             @Override
@@ -107,19 +114,25 @@ public class WicketPagesTestClass {
             protected GuiceComponentInjector getGuiceInjector() {
                 return new GuiceComponentInjector(this, injector);
             }
+
+            @Override
+            public Session newSession(Request request, Response response) {
+                Session sess = super.newSession(request, response);
+                return changeSession((MySession) sess, request);
+            }
         };
     }
 
     protected TwitterSearch createTestTwitterSearch() {
         return new TwitterSearch() {
-            
+
             @Override
             public int getRateLimit() {
                 return 100;
             }
 
             @Override
-            public TwitterSearch initTwitter4JInstance(String t, String ts) {
+            public TwitterSearch initTwitter4JInstance(String t, String ts, boolean verify) {
                 return this;
             }
 
@@ -139,9 +152,21 @@ public class WicketPagesTestClass {
             }
 
             @Override
-            public void send(TweetPackage tweets) throws RemoteException {
+            public void send(JTweet tweets) throws RemoteException {
                 // disable rmi stuff
             }
+
+            @Override
+            public void send(Collection<JTweet> tweets) throws RemoteException {
+            }
         };
+    }
+
+    protected MySession changeSession(MySession sess, Request req) {
+        return sess;
+    }
+
+    protected ElasticUserSearch mockUserSearch(ElasticUserSearch userSearch) {
+        return userSearch;
     }
 }

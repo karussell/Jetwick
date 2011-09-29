@@ -15,16 +15,14 @@
  */
 package de.jetwick.tw;
 
-import de.jetwick.es.ElasticUserSearch;
-import de.jetwick.es.JetwickQuery;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
-import de.jetwick.es.UserQuery;
-import de.jetwick.tw.queue.TweetPackageList;
 import de.jetwick.util.StopWatch;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -62,25 +60,20 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
     public boolean innerRun() {
         int counter = 0;
         Set<JUser> users = new LinkedHashSet<JUser>();
+        // TODO count users with token!
         long counts = userSearch.countAll();
         int ROWS = 100;
         // paging
         for (int i = 0; i < counts / ROWS + 1; i++) {
             try {
-                // prefer last logged in users
-                JetwickQuery q = new UserQuery().setFrom(i * ROWS).setSize(ROWS).
-                        setSort(ElasticUserSearch.CREATED_AT, "desc");
-                userSearch.search(users, q);
+                userSearch.searchLastLoggedIn(users, i * ROWS, ROWS);
             } catch (Exception ex) {
                 logger.error("Couldn't search user index: " + ex.getMessage());
             }
         }
 
-        // do not add more tweets to the pipe if consumer cannot process it
-        if (tooManyTweetsWait(tweetPackages, maxFill, "friend-tweet search", 20, true) == null)
-            return false;
-
         logger.info("Found:" + users.size() + " users in user index");
+        List<JUser> scheduleForDelete = new ArrayList();
         for (JUser authUser : users) {
             if (!isValidUser(authUser))
                 continue;
@@ -94,14 +87,28 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
             if (ue.getTwitterSearch() == null) {
                 Exception ex = null;
                 try {
+//                    logger.info("name:\t" + authUser.getScreenName());
+//                    logger.info("token:\t" + authUser.getTwitterToken());
+//                    logger.info("token_secret:\t" + authUser.getTwitterTokenSecret());                    
+//                    logger.info("consumer_key:\t" + twSearch.getConsumerKey());
+//                    logger.info("consumer_secret:\t" + twSearch.getConsumerSecret());                    
+
                     ue.setTwitterSearch(createTwitter4J(authUser.getTwitterToken(),
                             authUser.getTwitterTokenSecret()));
                 } catch (Exception ex2) {
                     ex = ex2;
-                }                
+                }
                 if (ue.getTwitterSearch() == null) {
-                    logger.error("Skipping user:" + authUser.getScreenName() + " token:"
-                            + authUser.getTwitterToken() + " Error:" + getErrorMsg(ex));
+                    String str = getErrorMsg(ex);
+                    if (str.contains("401:Authentication credentials")) {
+                        authUser.setActive(false);
+                        scheduleForDelete.add(authUser);
+                    }
+
+                    logger.error("Skipping user:" + authUser.getScreenName()
+                            + " token: " + authUser.getTwitterToken()
+                            + " active: " + authUser.isActive()
+                            + " error: " + str);
                     continue;
                 }
             }
@@ -118,26 +125,39 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                 continue;
             }
 
+            int friends = -1;
             // regularly check if friends of authenticated user were changed
             try {
-                logger.info("Grabbing friends of " + ue.getTwitterSearch().getScreenName() + " (" + ue.getUser().getScreenName() + ")");
-                new FriendSearchHelper(userSearch, ue.getTwitterSearch()).updateFriendsOf(authUser).size();
+//                logger.info("Grabbing friends of " + ue.getTwitterSearch().getScreenName() + " (" + ue.getUser().getScreenName() + ")");
+                friends = new FriendSearchHelper(userSearch, ue.getTwitterSearch()).updateFriendsOf(authUser).size();
             } catch (Exception ex) {
-                logger.error("Exception when getting friends from " + authUser.getScreenName()
+                logger.error("Problem when getting friends from " + authUser.getScreenName()
                         + " Error:" + getErrorMsg(ex));
+                continue;
             }
 
             // regularly feed tweets of friends from authenticated user           
             try {
                 StopWatch watch = new StopWatch("friends").start();
                 Set<JTweet> tweets = new LinkedHashSet<JTweet>();
-                ue.setLastId(ue.getTwitterSearch().getHomeTimeline(tweets, 99, ue.getLastId()));
+
+                // reduce maximal tweets per search when user has too many friends
+                int maxTweets = 99;
+                if (friends > 500)
+                    maxTweets = 25;
+
+                ue.setLastId(ue.getTwitterSearch().getHomeTimeline(tweets, maxTweets, ue.getLastId()));
                 if (tweets.size() > 0) {
                     for (JTweet tw : tweets) {
                         if (tw.getFromUser().getScreenName().equalsIgnoreCase(authUser.getScreenName()))
                             tw.makePersistent();
+
+                        // set to protected as we want to store only the article url (not the tweet!)
+                        if (tw.getFromUser().isProtected())
+                            tw.setProtected(true);
+
+                        resultTweets.put(tw.setFeedSource("friendsOf:" + authUser.getScreenName()));
                     }
-                    tweetPackages.add(new TweetPackageList("friendsOf:" + authUser.getScreenName()).init(tweets));
                     logger.info("Pushed " + tweets.size() + " friend tweets of " + authUser.getScreenName()
                             + " into queue. Last date " + new Date(ue.getLastId()) + ". " + watch.stop());
                 }
@@ -146,10 +166,11 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
                         + authUser.getScreenName() + " Error:" + getErrorMsg(ex));
             }
 
-            // do not hit twitter too much
+            // do not hit twitter too much            
             myWait(2);
         } //  next user
 
+        userSearch.update(scheduleForDelete);
         myWait(10);
         return true;
     } // next cycle
@@ -163,12 +184,12 @@ public class TweetProducerViaUsers extends TweetProducerViaSearch {
 
     protected TwitterSearch createTwitter4J(String twitterToken, String twitterTokenSecret) {
         return new TwitterSearch().setConsumer(twSearch.getConsumerKey(), twSearch.getConsumerSecret()).
-                initTwitter4JInstance(twitterToken, twitterTokenSecret);
+                initTwitter4JInstance(twitterToken, twitterTokenSecret, true);
     }
 
     protected boolean isValidUser(JUser u) {
         if (u.getTwitterToken() == null || u.getTwitterTokenSecret() == null) {
-//            logger.warn("Skipped user:" + u.getScreenName() + " - no token or secret!");
+            logger.warn("Skipped user:" + u.getScreenName() + " - no token or secret!");
             return false;
         }
         return true;

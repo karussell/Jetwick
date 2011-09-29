@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.jetwick.ui;
 
 import org.apache.wicket.PageParameters;
@@ -25,16 +24,7 @@ import org.apache.wicket.markup.html.link.Link;
  */
 public class About extends JetwickPage {
 
-    public About() {
-//        add(new Link("accountLink") {
-//
-//            @Override
-//            public void onClick() {
-//                PageParameters pp = new PageParameters();
-//                pp.add("u", "time*g");
-//                setResponsePage(HomePage.class, pp);
-//            }
-//        });
+    public About() {                   
         add(new Link("ownLink") {
 
             @Override
@@ -42,7 +32,7 @@ public class About extends JetwickPage {
                 PageParameters pp = new PageParameters();
                 pp.add("q", "java");
                 pp.add("user", "timetabling");
-                setResponsePage(About.this.getApplication().getHomePage(), pp);
+                setResponsePage(TweetSearchPage.class, pp);
             }
         });
     }

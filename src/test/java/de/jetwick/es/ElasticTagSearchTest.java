@@ -15,10 +15,12 @@
  */
 package de.jetwick.es;
 
+import java.util.Date;
 import java.io.IOException;
 import java.util.Arrays;
 import org.junit.Test;
 import de.jetwick.data.JTag;
+import de.jetwick.util.MyDate;
 import org.junit.Before;
 import static org.junit.Assert.*;
 
@@ -41,52 +43,107 @@ public class ElasticTagSearchTest extends AbstractElasticSearchTester {
         super.setUp(tagSearch);
     }
 
-
     @Test
     public void testUpdateWithInc() {
-        // index shouldn't be empty for the first query in queueTag!
+        // index shouldn't be empty for the first query in queueObject!
         tagSearch.store(new JTag("tmp"), true);
-        
+
         JTag tag = new JTag("java");
+        assertEquals("java", tag.getTerm());
         assertEquals(0, tag.getRequestCount());
-        tagSearch.queueTag(tag);
+        tagSearch.queueObject(tag, true);
         assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
-        assertEquals(1, tagSearch.findByName("java").getRequestCount());
+        assertEquals(1, tagSearch.findByTerm("java").getRequestCount());
         assertEquals(2, tagSearch.countAll());
 
         tag = new JTag("java");
-        assertEquals(0, tag.getRequestCount());        
-        tagSearch.queueTag(tag);
+        assertEquals(0, tag.getRequestCount());
+        tagSearch.queueObject(tag, true);
         assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
         assertEquals(2, tagSearch.countAll());
-        assertEquals(2, tagSearch.findByName("java").getRequestCount());
+        assertEquals(2, tagSearch.findByTerm("java").getRequestCount());
 
         tag = new JTag("java", "peter");
-        assertEquals(0, tag.getRequestCount());        
-        tagSearch.queueTag(tag);
+        assertEquals("java", tag.getTerm());
+        assertEquals("peter", tag.getUser());
+        assertEquals(0, tag.getRequestCount());
+        tagSearch.queueObject(tag, true);
         assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
-        assertEquals(1, tagSearch.findByNameAndUser("java", "peter").getRequestCount());
-        assertEquals(2, tagSearch.findByName("java").getRequestCount());
+        assertEquals(1, tagSearch.findByTermAndUser("java", "peter").getRequestCount());
+        assertEquals(2, tagSearch.findByTerm("java").getRequestCount());
         assertEquals(3, tagSearch.countAll());
+
+        tag = tagSearch.findByTermAndUser("java", "peter");
+        assertEquals("java", tag.getTerm());
+        assertEquals("peter", tag.getUser());
+
+        tag = tagSearch.findByTermAndUser("java", "peter");
+        tagSearch.queueObject(tag);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        tag = tagSearch.findByTermAndUser("java", "peter");
+        assertEquals("java", tag.getTerm());
+        assertEquals("peter", tag.getUser());
+
+        tagSearch.store(tag, true);
+        tag = tagSearch.findByTermAndUser("java", "peter");
+        assertEquals("java", tag.getTerm());
+        assertEquals("peter", tag.getUser());
     }
 
     @Test
     public void testSave() {
-        tagSearch.store(new JTag("Test"));
-        tagSearch.store(new JTag("#Test"));
+        tagSearch.store(new JTag("Test"), false);
+        tagSearch.store(new JTag("#Test"), false);
         tagSearch.store(new JTag("algorithm -google"), true);
-        assertEquals("test", tagSearch.findByName("tesT").getTerm());
-        assertEquals("#test", tagSearch.findByName("#test").getTerm());
-        assertEquals("algorithm -google", tagSearch.findByName("algorithm -google").getTerm());
-        
+        assertEquals("test", tagSearch.findByTerm("tesT").getTerm());
+        assertEquals("#test", tagSearch.findByTerm("#test").getTerm());
+        assertEquals("algorithm -google", tagSearch.findByTerm("algorithm -google").getTerm());
+
         assertEquals(3, tagSearch.findSorted(0, 1000).size());
-    }    
-    
+    }
+
     @Test
     public void testAddAll() throws IOException {
         tagSearch.addAll(Arrays.asList("test", "pest"), true, false);
         assertEquals(2, tagSearch.findSorted(0, 100).size());
-        assertEquals("test", tagSearch.findByName("tesT").getTerm());
-        assertEquals("pest", tagSearch.findByName("Pest").getTerm());
+        assertEquals("test", tagSearch.findByTerm("tesT").getTerm());
+        assertEquals("pest", tagSearch.findByTerm("Pest").getTerm());
+    }
+
+    @Test
+    public void testFindLowFrequent() {
+        JTag tag = new JTag("java").setTweetsPerSec(0.6);
+        JTag tag2 = new JTag("test").setTweetsPerSec(0.5);
+        tagSearch.queueObject(tag);
+        tagSearch.queueObject(tag2);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        assertEquals(1, tagSearch.findLowFrequent(0, 10, 0.5).size());
+        assertEquals(2, tagSearch.findLowFrequent(0, 10, 1).size());
+    }
+
+    @Test
+    public void testSplitOROperator() {
+        JTag tag = new JTag("java OR java OR people");
+        tagSearch.queueObject(tag);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        assertEquals(2, tagSearch.findAll(0, 10).size());
+    }
+
+    @Test
+    public void testDeleteUntil() {
+        JTag tag = new JTag("java OR java OR people").setLastRequest(new MyDate().minusHours(30).toDate());
+        tagSearch.queueObject(tag, false);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        tag = new JTag("people").setLastRequest(new Date());
+        tagSearch.queueObject(tag, false);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        assertEquals(2, tagSearch.findAll(0, 10).size());
+
+//        for (JTag tmp : tagSearch.findAll(0, 100)) {
+//            System.out.println(tmp + " " + tmp.getLastRequest());
+//        }
+        tagSearch.deleteOlderThan(24);
+        assertTrue(tagSearch.forceCleanTagQueueAndRefresh());
+        assertEquals(1, tagSearch.findAll(0, 10).size());
     }
 }

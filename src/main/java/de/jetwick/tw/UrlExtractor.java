@@ -16,8 +16,8 @@
 package de.jetwick.tw;
 
 import de.jetwick.util.Helper;
-import de.jetwick.util.StopWatch;
 import de.jetwick.data.UrlEntry;
+import de.jetwick.snacktory.JResult;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,16 +26,9 @@ import java.util.List;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class UrlExtractor extends Extractor {
+public abstract class UrlExtractor extends Extractor {
 
-    private StopWatch sw = new StopWatch("");
-    private int resolveTimeout = 500;
-    private List<UrlEntry> urlEntries = new ArrayList<UrlEntry>();
-
-    public UrlExtractor setResolveTimeout(int resolveTimeout) {
-        this.resolveTimeout = resolveTimeout;
-        return this;
-    }
+    private List<UrlEntry> urlEntries = new ArrayList<UrlEntry>(1);
 
     @Override
     public String toLink(String url, String title) {
@@ -55,13 +48,9 @@ public class UrlExtractor extends Extractor {
     @Override
     public UrlExtractor run() {
         int index = 0;
-
+        urlEntries.clear();
         for (; (index = text.indexOf("http://", index)) >= 0; index++) {
-            boolean resolveUrl = true;
             String subStr = text.substring(index);
-            // this shouldn't be an url shortener:
-            if (subStr.startsWith("http://www."))
-                resolveUrl = false;
 
             // url shorteners seems to have a "domain.de" shorter or equal to 11
             // the longest was tinyurl.com the shortest is t.co
@@ -69,41 +58,30 @@ public class UrlExtractor extends Extractor {
             if (index2 < 0)
                 index2 = Math.max(0, subStr.indexOf(" ", 7));
 
-            if (index2 >= 11 + 7 || index2 < 4)
-                resolveUrl = false;
-
             String domain = subStr.substring(0, index2);
             index2 = domain.lastIndexOf(".");
-            if (index2 < 0 || domain.substring(index2).length() < 3)
-                resolveUrl = false;
-
             StringBuilder tmpSb = new StringBuilder();
             int lastIndex = onNewRawUrl(index, tmpSb);
 
             if (lastIndex > 0) {
                 String url = tmpSb.toString();
-                if (resolveUrl) {
-                    String newUrl = resolveOneUrl(url, resolveTimeout);
-                    if (newUrl.length() > 0)
-                        url = newUrl;
+                JResult res = null;
+                try {
+                    res = getInfo(url, index2);
+                } catch (Exception ex) {
+//                    logger.info("Error while resolving:" + url, ex);
+                    res = new JResult();
                 }
-                UrlEntry entry = new UrlEntry(index, lastIndex, url);
-                sw.start();
+                if (res.getUrl().isEmpty())
+                    res.setUrl(url);
 
-                // with site snippet
-//                String str[] = getInfo(url, resolveTimeout);
-//                entry.setResolvedTitle(str[0]);
-//                entry.setResolvedSnippet(str[1]);
-
-                String title_snippet[] = getInfo(url, resolveTimeout);
-                if (title_snippet[0].isEmpty())
+                UrlEntry entry = new UrlEntry(index, lastIndex, res.getUrl());
+                if (res.getTitle().isEmpty())
                     entry.setResolvedTitle(url);
                 else
-                    entry.setResolvedTitle(title_snippet[0]);
+                    entry.setResolvedTitle(res.getTitle());
 
-                sw.stop();
                 entry.setResolvedDomain(Helper.extractDomain(url));
-
                 urlEntries.add(entry);
             }
         }
@@ -111,15 +89,5 @@ public class UrlExtractor extends Extractor {
         return this;
     }
 
-    public long getTime() {
-        return sw.getTime();
-    }
-
-    public String resolveOneUrl(String url, int timeout) {
-        return Helper.getResolvedUrl(url, timeout);
-    }
-
-    public String[] getInfo(String url, int timeout) {
-        return Helper.getUrlInfos(url, timeout);
-    }
+    public abstract JResult getInfo(String url, int timeout) throws Exception;
 }

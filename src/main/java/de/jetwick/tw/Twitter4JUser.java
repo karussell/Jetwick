@@ -62,6 +62,9 @@ public class Twitter4JUser implements User {
     private boolean translator = false;
     private boolean showAllInlineMedia = true;
     private boolean profileUseBackgroundImage = true;
+    private String profileBackgroundImageUrlHttps;
+    private URL profileImageUrlHttps;
+    private int accessLevel;
 
     public Twitter4JUser(String screenName) {
         this.screenName = screenName;
@@ -224,5 +227,20 @@ public class Twitter4JUser implements User {
     @Override
     public boolean isTranslator() {        
         return translator;
+    }
+
+    @Override
+    public String getProfileBackgroundImageUrlHttps() {
+        return profileBackgroundImageUrlHttps;
+    }
+
+    @Override
+    public URL getProfileImageUrlHttps() {
+        return profileImageUrlHttps;
+    }
+
+    @Override
+    public int getAccessLevel() {
+        return accessLevel;
     }
 }

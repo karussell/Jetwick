@@ -19,12 +19,9 @@ import de.jetwick.es.ElasticTagSearch;
 import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
-import de.jetwick.tw.queue.AbstractTweetPackage;
-import de.jetwick.tw.queue.TweetPackage;
-import de.jetwick.tw.queue.TweetPackageList;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +33,7 @@ import org.slf4j.LoggerFactory;
 public class TweetProducerOffline extends MyThread implements TweetProducer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private BlockingQueue<TweetPackage> tweetPackages = new LinkedBlockingDeque<TweetPackage>();
-    private int maxFill;
+    private BlockingQueue<JTweet> tweetPackages = new LinkedBlockingQueue<JTweet>();    
     private Random rand = new Random();
 
     public TweetProducerOffline() {
@@ -45,24 +41,21 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
     }
 
     @Override
-    public BlockingQueue<TweetPackage> getQueue() {
-        return tweetPackages;
+    public void setQueue(BlockingQueue<JTweet> q) {
+        tweetPackages = q;
     }
 
     @Override
     public void run() {
-        logger.info("tweet number batch:" + maxFill);
         int counter = 0;
         MAIN:
         while (!isInterrupted()) {
             counter++;
-            tooManyTweetsWait(tweetPackages, maxFill, "twitter4j search", 20, true);           
-
-            LinkedBlockingDeque<JTweet> tmp = new LinkedBlockingDeque<JTweet>();
+            BlockingQueue<JTweet> tmp = new LinkedBlockingQueue<JTweet>();
             int TWEETS_PER_USER = 5;
             int USER_PER_PKG = 40;
             for (int userCounter = 0; userCounter < USER_PER_PKG; userCounter++) {
-                JUser user = new JUser("user " + userCounter * USER_PER_PKG + counter);
+                JUser user = new JUser("_user_fake_ " + userCounter * USER_PER_PKG + counter);
 
                 for (int i = 0; i < TWEETS_PER_USER; i++) {
                     // make id random because otherwise all tweets will be overwritten 
@@ -71,14 +64,16 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
                             createRandomWord(3) + " " + createRandomWord(4),
                             user);
                     int retweet = (int) Math.round(Math.abs(rand.nextGaussian() * 10));
-                    tw.setRt(retweet);
+                    tw.setRetweetCount(retweet);
                     int repliesNoRetweet = (int) Math.round(Math.abs(rand.nextGaussian() * 2));
-                    tw.setReply(retweet + repliesNoRetweet);
+                    tw.setReplyCount(retweet + repliesNoRetweet);
                     tmp.add(tw);
                 }
             }
 
-            tweetPackages.add(new TweetPackageList("fake:" + counter).init(tmp));
+            for (JTweet tw : tmp) {
+                tweetPackages.add(tw.setFeedSource("fake:" + counter));
+            }
         }
 
         logger.info(getClass().getSimpleName() + " successfully finished");
@@ -90,11 +85,6 @@ public class TweetProducerOffline extends MyThread implements TweetProducer {
             word = word + (char) (rand.nextInt(58) + 65);
         }
         return word;
-    }
-
-    @Override
-    public void setMaxFill(int maxFill) {
-        this.maxFill = maxFill;
     }
 
     @Override

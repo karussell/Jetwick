@@ -43,10 +43,27 @@ public class MyDateTest {
         assertEquals(3600 * 1000, new MyDate(61 * MyDate.ONE_MINUTE).castToHour().getTime());
         assertEquals(3600 * 1000, new MyDate((60 + 59) * MyDate.ONE_MINUTE).castToHour().getTime());
     }
-    
+
     @Test
     public void testGetHours() {
         assertEquals(2, new MyDate(2 * MyDate.ONE_HOUR).getHours());
-        assertEquals(2, new MyDate((long)(2.9 * MyDate.ONE_HOUR)).getHours());        
+        assertEquals(2, new MyDate((long) (2.9 * MyDate.ONE_HOUR)).getHours());
+    }
+
+    @Test
+    public void getTimeAgo() {
+        assertEquals("0 second ago", new MyDate().minus(123).getTimesAgo());
+        assertEquals("5 seconds ago", new MyDate().minus((5 * MyDate.ONE_SECOND) + 123).getTimesAgo());
+        assertEquals("3 hours ago", new MyDate().minus((3 * MyDate.ONE_HOUR)
+                + (2 * MyDate.ONE_MINUTE) + MyDate.ONE_SECOND).getTimesAgo());
+        assertEquals("1 hour ago", new MyDate().minus(MyDate.ONE_HOUR
+                + (2 * MyDate.ONE_MINUTE) + MyDate.ONE_SECOND).getTimesAgo());
+        assertEquals("42 seconds ago", new MyDate().minus(42 * MyDate.ONE_SECOND).getTimesAgo());
+        
+        // print full date if older than one day
+        assertEquals(Helper.toSimpleDateTime(new MyDate().minusDays(1).minusHours(1).castToHour().toDate()),
+                new MyDate().minus(MyDate.ONE_DAY + MyDate.ONE_HOUR).castToHour().getTimesAgo());
+        assertEquals(Helper.toSimpleDateTime(new MyDate().minusDays(1).minus(2 * MyDate.ONE_SECOND).castToHour().toDate()),
+                new MyDate().minus(MyDate.ONE_DAY + 2 * MyDate.ONE_SECOND).castToHour().getTimesAgo());
     }
 }

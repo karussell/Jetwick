@@ -18,6 +18,7 @@ package de.jetwick.es;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.JTag;
 import de.jetwick.util.Helper;
+import de.jetwick.util.MyDate;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,18 +28,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
-import org.elasticsearch.action.get.GetResponse;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
-import org.elasticsearch.index.query.xcontent.FilterBuilders;
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
-import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.NumericRangeFilterBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,14 +55,17 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     private String indexName = "tagindex";
     private String indexType = "tag";
     public static final String Q_INTERVAL = "queryInterval";
-    public static final String TERM = "_id";
+    public static final String LAST_REQ = "lastRequest";
+    public static final String TERM = "term";
+    public static final String USER = "user";
+    public static final String TWEETS_SEC = "tweetsPerSec";
 
     public ElasticTagSearch(Configuration config) {
-        this(config.getTweetSearchUrl(), config.getTweetSearchLogin(), config.getTweetSearchPassword());
+        this(config.getTweetSearchUrl());
     }
 
-    public ElasticTagSearch(String url, String login, String pw) {
-        super(url, login, pw);
+    public ElasticTagSearch(String url) {
+        super(url);
     }
 
     public ElasticTagSearch(Client client) {
@@ -89,7 +94,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     public void addAll(Collection<String> tagStringList, boolean refresh, boolean ignoreSearchError) throws IOException {
         Map<String, JTag> tags = Collections.emptyMap();
         try {
-            tags = findByNames(tagStringList);
+            tags = findByTerms(tagStringList);
         } catch (Exception ex) {
             if (!ignoreSearchError)
                 throw new RuntimeException(ex);
@@ -109,38 +114,44 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
     @Override
     public XContentBuilder createDoc(JTag tag) throws IOException {
         XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
+        b.field(TERM, tag.getTerm());
         b.field("lastMillis", tag.getLastMillis());
         b.field("maxCreateTime", tag.getMaxCreateTime());
         b.field(Q_INTERVAL, tag.getQueryInterval());
         b.field("pages", tag.getPages());
-        b.field("lastRequest", new Date());
+        b.field(LAST_REQ, tag.getLastRequest());
         b.field("requestCount", tag.getRequestCount());
+        b.field(TWEETS_SEC, tag.getTweetsPerSec());
         if (!Helper.isEmpty(tag.getUser()))
-            b.field("user", tag.getUser().toLowerCase());
+            b.field(USER, tag.getUser().toLowerCase());
 
         return b;
     }
 
     @Override
-    public JTag readDoc(Map<String, Object> doc, String idAsStr) {
-        String term = idAsStr;
-        JTag tag = new JTag(term);
+    public JTag readDoc(String idAsStr, long version, Map<String, Object> doc) {
+        JTag tag = new JTag();
+        tag.setTerm((String) doc.get(TERM));
         tag.setLastMillis(((Number) doc.get("lastMillis")).longValue());
         tag.setMaxCreateTime(((Number) doc.get("maxCreateTime")).longValue());
         tag.setQueryInterval(((Number) doc.get(Q_INTERVAL)).longValue());
         tag.setPages(((Number) doc.get("pages")).intValue());
-        tag.setLastRequest(Helper.toDateNoNPE(((String) doc.get("lastRequest"))));
+        tag.setLastRequest(Helper.toDateNoNPE(((String) doc.get(LAST_REQ))));
         tag.setRequestCount(((Number) doc.get("requestCount")).intValue());
-        String user = (String) doc.get("user");
+        Number num = (Number) doc.get(TWEETS_SEC);
+        if (num != null)
+            tag.setTweetsPerSec(num.doubleValue());
+
+        String user = (String) doc.get(USER);
         if (!Helper.isEmpty(user))
             tag.setUser(user);
         return tag;
     }
 
-    private Map<String, JTag> findByNames(Collection<String> tagStringList) {
+    private Map<String, JTag> findByTerms(Collection<String> tagStringList) {
         List<JTag> res = collectObjects(query(
                 QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
-                FilterBuilders.termsFilter("_id", Helper.toStringArray(tagStringList)))));
+                FilterBuilders.termsFilter(TERM, Helper.toStringArray(tagStringList)))));
         Map<String, JTag> set = new LinkedHashMap<String, JTag>();
         for (JTag t : res) {
             set.put(t.getTerm(), t);
@@ -149,19 +160,19 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         return set;
     }
 
-    public SearchResponse query(XContentQueryBuilder queryBuilder) {
+    public Collection<JTag> findLowFrequent(int from, int size, double limitOfTweetsPerSec) {
         SearchRequestBuilder srb = createSearchBuilder();
-        srb.setQuery(queryBuilder);
-        return srb.execute().actionGet();
-    }
-
-    SearchRequestBuilder createSearchBuilder() {
-        return client.prepareSearch(getIndexName()).setTypes(getIndexType());
+        srb.addSort(Q_INTERVAL, SortOrder.ASC);
+        NumericRangeFilterBuilder rb = FilterBuilders.numericRangeFilter(TWEETS_SEC).lt(limitOfTweetsPerSec).includeUpper(true);
+        srb.setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), rb));
+        srb.setFrom(from);
+        srb.setSize(size);
+        return collectObjects(srb.execute().actionGet());
     }
 
     public Collection<JTag> findSorted(int from, int size) {
         SearchRequestBuilder srb = createSearchBuilder();
-        srb.addSort(Q_INTERVAL, SortOrder.ASC);
+        srb.addSort(LAST_REQ, SortOrder.DESC);
         srb.setQuery(QueryBuilders.matchAllQuery());
         srb.setFrom(from);
         srb.setSize(size);
@@ -176,76 +187,125 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
         return collectObjects(srb.execute().actionGet());
     }
 
-    public void store(JTag tag) {
-        store(tag, false);
-    }
-
-    public JTag findByName(String term) {
+    public JTag findByTerm(String term) {
         term = JTag.toLowerCaseOnlyOnTerms(term);
-        GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), term).
-                execute().actionGet();
-        if (rsp.getSource() == null)
-            return null;
-        return readDoc(rsp.getSource(), rsp.getId());
+        SearchRequestBuilder b = createSearchBuilder().setQuery(
+                QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
+                FilterBuilders.andFilter(FilterBuilders.termFilter(TERM, term),
+                FilterBuilders.missingFilter(USER))));
+        return getOne(b);
     }
 
-    public JTag findByNameAndUser(String term, String user) {
+    public JTag findByTermAndUser(String term, String user) {
+        if (Helper.isEmpty(user))
+            return findByTerm(term);
+
         term = JTag.toLowerCaseOnlyOnTerms(term);
         user = JTag.toLowerCaseOnlyOnTerms(user);
-        String id = JTag.createId(term, user);
-        GetResponse rsp = client.prepareGet(getIndexName(), getIndexType(), id).
-                execute().actionGet();
-        if (rsp.getSource() == null)
+        SearchRequestBuilder b = createSearchBuilder().setQuery(
+                QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
+                FilterBuilders.andFilter(
+                FilterBuilders.termFilter(USER, user),
+                FilterBuilders.termFilter(TERM, term))));
+        return getOne(b);
+    }
+
+    private JTag getOne(SearchRequestBuilder b) {
+        List<JTag> tags = collectObjects(b.execute().actionGet());
+        if (tags.isEmpty())
             return null;
-        return readDoc(rsp.getSource(), rsp.getId());
+        else if (tags.size() > 1)
+            throw new IllegalStateException("It should be only one tag but was:" + tags);
+        else
+            return tags.get(0);
     }
 
     public void deleteByName(String term) {
         DeleteByQueryRequestBuilder qb = client.prepareDeleteByQuery(getIndexName()).setTypes(getIndexType());
-        qb.setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.termFilter("_id", term)));
+        qb.setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.termFilter(TERM, term)));
         client.deleteByQuery(qb.request());
+    }
+
+    public void deleteOlderThan(int hours) {
+        RangeQueryBuilder sqb = QueryBuilders.rangeQuery(LAST_REQ).lt(new MyDate().minusHours(hours).toDate());
+        DeleteByQueryRequestBuilder dbq = client.prepareDeleteByQuery(getIndexName()).setQuery(sqb);
+        client.deleteByQuery(dbq.request());
     }
 
     /**
      * Stores the specified tag and increase the request counter
      * @param tag
      */
-    public void queueTag(JTag tag) {
+    public void queueObject(JTag tag) {
+        queueObject(tag, false);
+    }
+
+    public void queueObject(JTag tag, boolean withUpdateCounter) {
+        if (withUpdateCounter)
+            updateRequestCounter(tag);
+
         todoTags.add(tag);
         if (!todoTagsThread.isAlive() && !todoTagsThread.isInterrupted())
             todoTagsThread.start();
     }
 
     /**
-     * Do not use directly. Use queueTag instead
+     * Do not use directly. Use queueObject instead
      * @param tag 
      */
-    void updateWithInc(JTag tag) {
-        JTag existing = findByNameAndUser(tag.getTerm(), tag.getUser());
+    void update(JTag tag) {
+        String term = tag.getTerm();
+        if (Helper.isEmpty(term) || JetwickQuery.containsForbiddenChars(term)) {
+            logger.warn("Did not add term: " + tag);
+            return;
+        }
+
+        if (term.contains(" OR ")) {
+            for (String tmpTerm : term.split(" OR ")) {
+                if (!tmpTerm.isEmpty()) {
+                    // do not use default lastRequest (which is new Date())
+                    JTag tmp = new JTag(tmpTerm).setLastRequest(tag.getLastRequest());
+                    tmp.updateFrom(tag);
+                    queueObject(tmp);
+                }
+            }
+            return;
+        }
+
+        JTag existing = findByTermAndUser(tag.getTerm(), tag.getUser());
         if (existing != null) {
+            existing.updateFrom(tag);
             tag = existing;
-            tag.setRequestCount(tag.getRequestCount() + 1);
-        } else
+        }
+
+        store(tag, false);
+    }
+
+    public void updateRequestCounter(JTag tag) {
+        JTag existing = findByTermAndUser(tag.getTerm(), tag.getUser());
+        if (existing != null)
+            tag.setRequestCount(existing.getRequestCount() + 1);
+        else
             tag.setRequestCount(1);
 
-        store(tag);
+        tag.setLastRequest(new Date());
     }
-    private final BlockingDeque<JTag> todoTags = new LinkedBlockingDeque<JTag>();
-    private Thread todoTagsThread = new Thread() {
+    private final BlockingQueue<JTag> todoTags = new LinkedBlockingQueue<JTag>();
+    private Thread todoTagsThread = new Thread("TagQueue") {
 
         @Override
         public void run() {
             while (!isInterrupted()) {
                 try {
                     JTag tag = todoTags.take();
-                    updateWithInc(tag);
+                    update(tag);
                     if (todoTags.isEmpty()) {
                         synchronized (todoTags) {
                             todoTags.notifyAll();
                         }
                     }
                 } catch (Exception ex) {
-                    logger.error("Todo-Tags queueing thread was interrupted!!", ex);
+                    logger.error(getName() + " was interrupted!!", ex);
                     break;
                 }
             }

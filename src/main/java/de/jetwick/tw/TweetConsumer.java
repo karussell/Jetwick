@@ -17,17 +17,18 @@ package de.jetwick.tw;
 
 import com.google.inject.Inject;
 import de.jetwick.data.JTweet;
-import de.jetwick.es.ElasticTweetSearch;
-import de.jetwick.tw.queue.AbstractTweetPackage;
-import de.jetwick.tw.queue.TweetPackage;
-import de.jetwick.util.MyDate;
+import de.jetwick.data.UrlEntry;
+import de.jetwick.snacktory.JResult;
+import de.jetwick.util.GenericUrlResolver;
 import de.jetwick.util.StopWatch;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
-import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import org.elasticsearch.common.collect.MapMaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,27 +37,15 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TweetConsumer extends MyThread {
+public class TweetConsumer extends Thread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private BlockingQueue<TweetPackage> tweetPackages;
-    // collect at least those tweets before feeding
-    private int tweetBatchSize = 1;
-    private long tweetBatchTime = 60 * 1000;
-    private long lastFeed = System.currentTimeMillis();
-    // do not optimize per default
-    private int optimizeToSegmentsAfterUpdate = -1;
-    private long optimizeInterval = -1;
-    // optimize should not happen directly after start of tweet consumer / collector!
-    private long lastOptimizeTime = System.currentTimeMillis();
-    private StopWatch longTime;
-    private StopWatch currentTime;
+    private List<QueueInfo<JTweet>> inputQueues = new ArrayList<QueueInfo<JTweet>>();
     @Inject
-    protected ElasticTweetSearch tweetSearch;
-    private int removeDays = 8;
-    private long receivedTweets = 0;
-    private long indexedTweets = 0;
-    private int counter = 0;
+    protected GenericUrlResolver resolver;
+    private Map<Long, Object> tweetCache;
+    private static final Object OBJECT = new Object();
+    private UrlExtractor urlExtractor;
 
     public TweetConsumer() {
         super("tweet-consumer");
@@ -64,147 +53,174 @@ public class TweetConsumer extends MyThread {
 
     @Override
     public void run() {
-        logger.info("tweets per solr session:" + tweetBatchSize);
-        while (!isInterrupted()) {
-            //
-            if (tweetPackages.isEmpty()) {
-                // TODO instead of a 'fixed' waiting               
-                // use beforeThread.getCondition().await + signalAll                
-                logger.info("Consumer: no tweetpackage in queue");
+        initTweetCache();
+        urlExtractor = new UrlExtractor() {
 
-                if (!myWait(5))
-                    break;
-                continue;
-            }
-
-            if (longTime == null)
-                longTime = new StopWatch("alltime");
-
-            // make sure we really use the commit batch size
-            // because solr doesn't want too frequent commits
-            int count = AbstractTweetPackage.calcNumberOfTweets(tweetPackages);
-            if (count < tweetBatchSize && System.currentTimeMillis() - lastFeed < tweetBatchTime) {
-                // slow down calcNumberOfTweets calculation
-                if (!myWait(5))
-                    break;
-                continue;
-            }
-
-            if (count == 0)
-                continue;
-
-            lastFeed = System.currentTimeMillis();
-            currentTime = new StopWatch("");
-            longTime.start();
-            currentTime.start();
-            int res = updateTweets(tweetPackages, tweetBatchSize).size();
-            currentTime.stop();
-            longTime.stop();
-            indexedTweets += res;
-            float tweetsPerSec = indexedTweets / (longTime.getTime() / 1000.0f);
-            String str = "[es] " + currentTime.toString() + "\t tweets/s:" + tweetsPerSec
-                    + "\t curr indexedTw:" + res + " all indexedTw:" + indexedTweets + "\t all receivedTw:" + receivedTweets;
-
-            long time = System.currentTimeMillis();
-            if (optimizeInterval > 0)
-                str += "; next optimize in: " + (optimizeInterval - (time - lastOptimizeTime)) / 3600f / 1000f + "h ";
-
-            logger.info(str);
-            if (optimizeToSegmentsAfterUpdate > 0) {
-                if (optimizeInterval > 0 && time - lastOptimizeTime >= optimizeInterval) {
-                    lastOptimizeTime = time;
-                    OptimizeResponse orsp = tweetSearch.optimize(tweetSearch.getIndexName(), optimizeToSegmentsAfterUpdate);
-                    logger.info("[es] optimized twindex to segments:" + optimizeToSegmentsAfterUpdate);
-                }
-            }
-        }        
-        logger.info(getName() + " finished");
-    }
-
-    public Collection<JTweet> updateTweets(BlockingQueue<TweetPackage> tws, int batch) {
-        Collection<TweetPackage> donePackages = new ArrayList<TweetPackage>();
-        Collection<JTweet> tweetSet = new LinkedHashSet<JTweet>();
-        // why we cannot use take to grab the packages ???
-        // see revision 771df15 from 2011-03-24
-        // which seems to block the entire consumer side
-        // but this is strange because we have currently have a sleep here too!?       
-        
-        while (true) {
-            TweetPackage twp = tws.poll();
-            if (twp == null)
-                break;
-
-            donePackages.add(twp);
-            tweetSet.addAll(twp.getTweets());
-            if (tweetSet.size() > batch)
-                break;
-        }
-
-        int maxTrials = 1;
-        for (int trial = 1; trial <= maxTrials; trial++) {
-            try {
-                                
-                MyDate removeUntil = new MyDate().minusDays(removeDays);                
-                Collection<JTweet> res = tweetSearch.update(tweetSet, removeUntil.toDate(), counter++ % 1000 == 0);                
-                receivedTweets += tweetSet.size();
-                String str = "[es] indexed:";
-                for (TweetPackage pkg : donePackages) {
-                    str += pkg.getName() + ", age:" + pkg.getAgeInSeconds() + "s, ";
-                }
-                logger.info(str);
+            @Override
+            public JResult getInfo(String originalUrl, int timeout) throws Exception {
+                JResult res = UrlEntry.createSimpleResult(originalUrl);
                 return res;
-            } catch (Exception ex) {
-                logger.error("trial " + trial + ". couldn't update "
-                        + tweetSet.size() + " tweets. now wait and try again", ex);
-                if (trial == maxTrials)
-                    break;
+            }
+        };
 
-                myWait(5);
+        int counter = 0;
+        StopWatch sw = new StopWatch();
+        while (true) {
+            counter++;
+            sw.start();
+            int feeded = executeOneBatch();
+            sw.stop();
+            if (feeded < 10) {
+                try {
+                    Thread.sleep(400);
+                } catch (InterruptedException ex) {
+                    logger.error(getName() + " interrupted while sleeping: " + ex.getLocalizedMessage());
+                    break;
+                }
+            }
+
+            // print stats
+            if (counter % 1000 == 0) {
+                logger.info("time of polling:\t" + sw.getSeconds());
+                sw = new StopWatch();
+
+                logger.info("tweetCache size:\t" + tweetCache.size());
+                logger.info("tweetTodo size:\t" + resolver.getInputQueue().size());
+                for (QueueInfo<JTweet> qi : inputQueues) {
+                    logger.info(qi.toString());
+                }
             }
         }
-
-        return Collections.EMPTY_LIST;
+        logger.warn(getName() + " finished");
     }
 
-    public void setTweetSearch(ElasticTweetSearch tweetSearch) {
-        this.tweetSearch = tweetSearch;
-    }
-
-    public void setRemoveDays(int solrRemoveDays) {
-        removeDays = solrRemoveDays;
-    }
-
-    public void setReadingQueue(BlockingQueue<TweetPackage> queue) {
-        tweetPackages = queue;
-    }
-
-    public void setTweetBatchSize(int tweetBatchSize) {
-        this.tweetBatchSize = tweetBatchSize;
+    public void setResolver(GenericUrlResolver resolver) {
+        this.resolver = resolver;
     }
 
     /**
-     * @param optimizeInterval     
-     *        in the form of 2     (i.e. every 2 hours)
+     * @param queueName the identifier of the input queue     
+     * @param capacity  the number of elements which should fit into the input queue.
+     * This should be at least twice times bigger than batchSize.
+     * @param batchSize the number of elements to feed at once into main output queue.      
+     * @return the newly registered queue
      */
-    public void setOptimizeInterval(String optimizeStr) {
-        optimizeInterval = -1;
-
-        if (optimizeStr == null)
-            return;
-
-        optimizeStr = optimizeStr.trim();
-        try {
-            int index = optimizeStr.indexOf(":");
-            if (index >= 0)
-                logger.warn("Not supported ony longer because it can be that optimized is triggered several times!");
-            else
-                optimizeInterval = Long.parseLong(optimizeStr) * 3600 * 1000;
-        } catch (Exception ex) {
-            logger.warn("Optimization disabled! " + ex.getLocalizedMessage());
+    public BlockingQueue<JTweet> register(String queueName, int capacity, int batchSize) {
+        BlockingQueue q = new LinkedBlockingQueue<JTweet>(capacity);
+        QueueInfo qInfo = new QueueInfo(queueName, q);
+        for (QueueInfo<JTweet> qi : inputQueues) {
+            if (qi.getName().equals(queueName))
+                throw new IllegalStateException("cannot register queue. Queue " + queueName + " already exists");
         }
+
+        qInfo.setBatchSize(batchSize);
+        inputQueues.add(qInfo);
+
+        int sum = 0;
+        for (QueueInfo<JTweet> qi : inputQueues) {
+            sum += qi.getBatchSize();
+        }
+
+        int mainCapacity = resolver.getInputQueue().remainingCapacity() + resolver.getInputQueue().size();
+        if (sum * 2 > mainCapacity)
+            throw new IllegalStateException("cannot register queue " + queueName + " because it"
+                    + " would increas capacity of all input queues too much (" + sum + ") and "
+                    + " can block main queue too often, where the capacity is only:" + mainCapacity);
+        return qInfo.getQueue();
     }
 
-    public void setOptimizeToSegmentsAfterUpdate(int optimizeToSegmentsAfterUpdate) {
-        this.optimizeToSegmentsAfterUpdate = optimizeToSegmentsAfterUpdate;
+    public int executeOneBatch() {
+        int feeded = 0;
+        for (QueueInfo<JTweet> qi : inputQueues) {
+            int batchSize = qi.getBatchSize();
+            Queue<JTweet> queue = qi.getQueue();
+            int newTweets = 0;
+            for (; newTweets < batchSize; newTweets++) {
+                JTweet tw = queue.poll();
+                if (tw == null)
+                    break;
+
+                if (!tw.isPersistent() && tweetCache != null && tweetCache.put(tw.getTwitterId(), OBJECT) != null) {
+                    newTweets--;
+                    continue;
+                }
+
+                if (urlExtractor != null) {
+                    for (UrlEntry ue : ((UrlExtractor) urlExtractor.setTweet(tw).run()).getUrlEntries()) {
+                        tw.addUrlEntry(ue);
+                    }
+                }
+                feeded++;
+                resolver.queueObject(tw);
+            }
+
+        }
+        return feeded;
+    }
+
+    public void initTweetCache() {
+        if (tweetCache == null)
+            tweetCache = new MapMaker().concurrencyLevel(20).
+                    maximumSize(50000).expireAfterWrite(6 * 60, TimeUnit.MINUTES).makeMap();
+    }
+
+    public static class QueueInfo<JTweet> {
+
+        private final String name;
+        private long lastMeasureTime = System.currentTimeMillis();
+        private final BlockingQueue<JTweet> queue;
+        private int batchSize = 200;
+        private int outputCount;
+        private float outputFrequency;
+
+        public QueueInfo(String name, BlockingQueue<JTweet> queue) {
+            this.name = name;
+            this.queue = queue;
+        }
+
+        public BlockingQueue<JTweet> getQueue() {
+            return queue;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(int batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        public void setOutputFrequency(float outputFrequency) {
+            this.outputFrequency = outputFrequency;
+        }
+
+        public float getOutputFrequency() {
+            return outputFrequency;
+        }
+
+        public void setLastMeasureTime(long lastMeasureTime) {
+            this.lastMeasureTime = lastMeasureTime;
+        }
+
+        public long getLastMeasureTime() {
+            return lastMeasureTime;
+        }
+
+        public int getOutputCount() {
+            return outputCount;
+        }
+
+        public void setOutputCount(int outputCount) {
+            this.outputCount = outputCount;
+        }
+
+        @Override
+        public String toString() {
+            return getName() + "\t size:" + getQueue().size() + "\t count:" + outputCount + "\t oFreq.:" + getOutputFrequency();
+        }
     }
 }

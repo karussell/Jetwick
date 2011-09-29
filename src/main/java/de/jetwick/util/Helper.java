@@ -80,16 +80,23 @@ import org.xml.sax.SAXException;
 public class Helper {
 
     private static Logger logger = LoggerFactory.getLogger(Helper.class);
+    public static final String JETSLIDE_URL = "http://jetsli.de/";
+    public static final String JETSLIDE_CRAWLER_URL = JETSLIDE_URL + "crawler";
+    public static final String JETWICK_URL = JETSLIDE_URL + "tweets/";
     public static final String HTTP = "http://";
     public static final String HTTPS = "https://";
-    public static final String TURL = "http://twitter.com";
-    public static final String TSURL = "http://search.twitter.com/search?q=";
+    public static final String TURL = "https://twitter.com";
+    public static final String TSURL = "https://search.twitter.com/search?q=";
     public static final String JURL = "";
     public static final String UTF8 = "UTF8";
+    public static final String ISO = "ISO-8859-1";
+    // Last-Modified: Mon, 29 Jun 1998 02:28:12 GMT
+    public static final String cacheDateFormatString = "EEE, dd MMM yyyy HH:mm:ss z";
     private static final String localDateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.S'Z'";
     private static final String simpleDateString = "HH:mm yyyy-MM-dd";
     private static final String weekDayString = "EEE";
     private static final String monthDayString = "d. MMMM";
+    private static final String urlDateString = "yyyy-MM-dd";
     public static int K4 = 4096;
     public static int K8 = K4 * 2;
 
@@ -113,6 +120,12 @@ public class Helper {
 
     public static DateFormat createLocalDateFormat() {
         DateFormat df = new SimpleDateFormat(localDateTimeFormatString);
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df;
+    }
+
+    public static DateFormat createUrlDateFormat() {
+        DateFormat df = new SimpleDateFormat(urlDateString);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df;
     }
@@ -200,6 +213,35 @@ public class Helper {
         return baos.toString("UTF-8");
     }
 
+    public static Document getUrlAsDocument(String urlAsString, int timeout) throws Exception {
+        URL url = new URL(urlAsString);
+        //using proxy may increase latency
+        HttpURLConnection hConn = (HttpURLConnection) url.openConnection();
+        hConn.setReadTimeout(timeout);
+        hConn.setConnectTimeout(timeout);
+//        hConn.setRequestProperty("Accept-Encoding", "gzip, deflate");
+
+        InputStream is = hConn.getInputStream();
+//        if ("gzip".equals(hConn.getContentEncoding()))
+//            is = new GZIPInputStream(is);
+        return newDocumentBuilder().parse(is);
+    }
+
+    public static String getInputStream(InputStream is) throws IOException {
+        if (is == null)
+            throw new IllegalArgumentException("stream mustn't be null!");
+
+        BufferedReader bufReader = createBuffReader(is);
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = bufReader.readLine()) != null) {
+            sb.append(line);
+            sb.append('\n');
+        }
+        bufReader.close();
+        return sb.toString();
+    }
+
     public static void removeDuplicates(List list) {
         Set set = new LinkedHashSet(list);
         list.clear();
@@ -235,12 +277,35 @@ public class Helper {
         return str;
     }
 
+    public static String twitterIntentReply(long id) {
+        return TURL + "/intent/tweet?in_reply_to=" + id;
+    }
+
+    public static String twitterIntentRetweet(long id) {
+        return TURL + "/intent/retweet?tweet_id=" + id;
+    }
+
+    public static String twitterIntentFav(long id) {
+        return TURL + "/intent/favorite?tweet_id=" + id;
+    }
+
     public static String toTwitterHref(String user, long id) {
         return TURL + "/" + user + "/status/" + id;
     }
 
     public static String toTwitterStatus(String txt) {
         return TURL + "?status=" + txt;
+    }
+
+    public static String getTwitterHref(String title, String url, String afterUrl) {
+        if (!Helper.isEmpty(afterUrl))
+            afterUrl = " " + afterUrl;
+
+        if (title.length() > 95)
+            title = title.substring(0, 95) + "..";
+
+        String text = title + " " + url + afterUrl;
+        return Helper.toTwitterStatus(Helper.twitterUrlEncode(text));
     }
 
     public static String toReplyHref(String user, Long tweetId) {
@@ -258,6 +323,23 @@ public class Helper {
             str += "&in_reply_to=" + user;
 
         return str;
+    }
+
+    public static String toFacebookHref(String url, String title) {
+        return "http://www.facebook.com/sharer.php?u=" + urlEncode(url) + "&t=" + urlEncode(title);
+    }
+
+    public static String toReadItLaterHref(String url, String title) {
+        return "https://readitlaterlist.com/save?url=" + urlEncode(url) + "&title=" + urlEncode(title);
+    }
+
+    public static String toEmailHref(String email, String subject, String body) {
+        body = body.replaceAll("\n", "%0D%0A");
+        return "mailto:" + email + "?subject=" + subject + "&body=" + body;
+    }
+
+    public static String toGoogleTranslateHref(String url, String from, String to) {
+        return "http://translate.google.com/translate?sl=" + from + "&tl=" + to + "&u=" + urlEncode(url);
     }
 
     public static String toJetwickUser(String title, String user) {
@@ -452,6 +534,7 @@ public class Helper {
             //using proxy may increase latency
             HttpURLConnection hConn = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
             // force no follow
+
             hConn.setInstanceFollowRedirects(false);
             // the program doesn't care what the content actually is !!
             // http://java.sun.com/developer/JDCTechTips/2003/tt0422.html
@@ -476,72 +559,34 @@ public class Helper {
     final static String DESCRIPTION = "<meta name=\"description\" content=\"";
     final static String DESCRIPTION2 = "<meta name=\"Description\" content=\"";
 
+    public static String extractEncoding(String contentType) {
+        String[] values = contentType.split(";");
+        String charset = "";
+
+        for (String value : values) {
+            value = value.trim().toLowerCase();
+
+            if (value.startsWith("charset="))
+                charset = value.substring("charset=".length());
+        }
+
+        // http1.1 says ISO-8859-1 is the default charset
+        if (charset.length() == 0)
+            charset = ISO;
+
+        return charset;
+    }
+
     /**
      * Returns title and description of a specified string (as byte array)
      */
-    public static String[] getUrlInfosFromText(byte[] arr) {
+    public static String[] getUrlInfosFromText(byte[] arr, String contentType) {
         String res;
         try {
-            // http1.1 says ISO-8859-1 is the default charset
-            res = new String(arr, "ISO-8859-1");
-            // sometime kyrillic is necessary !?
-            //res = new String(arr, "Windows-1251");
+            res = new String(arr, extractEncoding(contentType));
         } catch (Exception ex) {
             res = new String(arr);
         }
-
-        int index = getStartTitleEndPos(res);
-        if (index < 0)
-            return new String[]{"", ""};
-
-        int encIndex = res.indexOf("charset=");
-        if (encIndex > 0) {
-            int lastEncIndex = res.indexOf("\"", encIndex + 8);
-
-            // if we have charset="something"
-            if (lastEncIndex == encIndex + 8)
-                lastEncIndex = res.indexOf("\"", ++encIndex + 8);
-
-            // re-read byte array with different encoding
-            if (lastEncIndex > encIndex + 8) {
-                try {
-                    String encoding = res.substring(encIndex + 8, lastEncIndex);
-                    res = new String(arr, encoding);
-                } catch (Exception ex) {
-                }
-                index = getStartTitleEndPos(res);
-                if (index < 0)
-                    return new String[]{"", ""};
-            }
-        }
-
-        int lastIndex = res.indexOf("</title>");
-        if (lastIndex <= index)
-            return new String[]{"", ""};
-
-        String title = res.substring(index, lastIndex);
-        index = res.indexOf(DESCRIPTION);
-        if (index < 0)
-            index = res.indexOf(DESCRIPTION2);
-
-        lastIndex = res.indexOf("\"", index + DESCRIPTION.length());
-        if (index < 0 || lastIndex < 0)
-            return new String[]{title, ""};
-
-        index += DESCRIPTION.length();
-        return new String[]{title, res.substring(index, lastIndex)};
-    }
-
-    public static String[] getIsoUrlInfosFromText(byte[] arr) {
-        // http1.1 says ISO-8859-1 is the default charset
-        String res;
-        try {
-            res = new String(arr, "ISO-8859-1");
-        } catch (Exception ex) {
-            res = new String(arr);
-        }
-        // kyrillisch
-        //res = new String(arr, "Windows-1251");
 
         int index = getStartTitleEndPos(res);
         if (index < 0)
@@ -591,18 +636,23 @@ public class Helper {
             //using proxy may increase latency
             HttpURLConnection hConn = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
             hConn.setRequestProperty("User-Agent", "Mozilla/5.0 Gecko/20100915 Firefox/3.6.10");
-            hConn.setRequestProperty("Accept-Encoding", "gzip, deflate");
+
+            // on android we got problems because of this
+            // so disable that for now
+//            hConn.setRequestProperty("Accept-Encoding", "gzip, deflate");
             hConn.setConnectTimeout(timeout);
             hConn.setReadTimeout(timeout);
             // default length of bufferedinputstream is 8k
             byte[] arr = new byte[K4];
             InputStream is = hConn.getInputStream();
+
             if ("gzip".equals(hConn.getContentEncoding()))
                 is = new GZIPInputStream(is);
 
             BufferedInputStream in = new BufferedInputStream(is, arr.length);
             in.read(arr);
-            return getUrlInfosFromText(arr);
+
+            return getUrlInfosFromText(arr, hConn.getContentType());
         } catch (Exception ex) {
         }
         return new String[]{"", ""};
@@ -630,35 +680,6 @@ public class Helper {
             index += "<title>".length();
 
         return index;
-    }
-
-    public static Document readUrlAsDocument(String urlAsString, int timeout) throws Exception {
-        URL url = new URL(urlAsString);
-        //using proxy may increase latency
-        HttpURLConnection hConn = (HttpURLConnection) url.openConnection();
-        hConn.setReadTimeout(timeout);
-        hConn.setConnectTimeout(timeout);
-        hConn.setRequestProperty("Accept-Encoding", "gzip, deflate");
-
-        InputStream is = hConn.getInputStream();
-        if ("gzip".equals(hConn.getContentEncoding()))
-            is = new GZIPInputStream(is);
-        return newDocumentBuilder().parse(is);
-    }
-
-    static String readInputStream(InputStream is) throws IOException {
-        if (is == null)
-            throw new IllegalArgumentException("stream mustn't be null!");
-
-        BufferedReader bufReader = new BufferedReader(new InputStreamReader(is, "UTF8"));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = bufReader.readLine()) != null) {
-            sb.append(line);
-            sb.append('\n');
-        }
-        bufReader.close();
-        return sb.toString();
     }
 
     /**
@@ -739,7 +760,7 @@ public class Helper {
     }
 
     public static String translate(String txt, Language fromLanguage, Language toLanguage) throws Exception {
-        Translate.setHttpReferrer("http://www.jetwick.com/");
+        Translate.setHttpReferrer(JETWICK_URL);
 
         txt = workAroundBefore(txt);
         try {
@@ -755,7 +776,7 @@ public class Helper {
         // the following is faster but often fails in Translate.execute:
         // retrieveJSON(url, parametersBuilder.toString()).getJSONArray("responseData");
 
-//        Translate.setHttpReferrer("http://www.jetwick.com/");
+//        Translate.setHttpReferrer(JETWICK_URL);
 //        for (int i = 0; i < texts.length; i++) {
 //            texts[i] = workAroundBefore(texts[i]);
 //        }
@@ -858,5 +879,70 @@ public class Helper {
 
     public static boolean isEmpty(String str) {
         return str == null || str.isEmpty();
+    }
+
+    public static String getTwitterUserFromUrl(String sourceUrl) {
+        String user = sourceUrl.replaceFirst("#!/", "");
+        int index = user.indexOf(".com/");
+        if (index > 0) {
+            index += ".com/".length();
+            int index2 = user.indexOf("/", index);
+            if (index2 < 0)
+                index2 = user.length();
+
+            user = user.substring(index, index2);
+        }
+        return user.toLowerCase();
+    }
+
+    public static Long getTwitterIdFromUrl(String sourceUrl) {
+        String id = sourceUrl.replaceFirst("#!/", "");
+        int index = id.lastIndexOf("/");
+        if (index > 0) {
+            index++;
+            try {
+                return Long.parseLong(id.substring(index));
+            } catch (NumberFormatException ex) {
+            }
+        }
+        return null;
+    }
+
+    public static String getMsg(Exception ex) {
+        if (ex == null)
+            return "null";
+        else if (ex.getMessage() == null)
+            return "null, " + ex.getClass().getSimpleName();
+
+        if (ex.getMessage().length() > 100)
+            return ex.getMessage().substring(0, 100) + "...";
+        return ex.getMessage();
+    }
+
+    // http://is.gd/apishorteningreference.php
+    public static String createShortUrl(String urlStr) throws Exception {
+        URL url = new URL("http://is.gd/create.php?format=simple&url=" + urlStr);
+        return createBuffReader(url.openStream()).readLine();
+    }
+
+    public static String stripControlChars(String iString) {
+        StringBuilder result = new StringBuilder(iString);
+        int idx = result.length();
+        while (idx-- > 0) {
+            if (result.charAt(idx) < 0x20 && result.charAt(idx) != 0x9
+                    && result.charAt(idx) != 0xA && result.charAt(idx) != 0xD)
+                result.deleteCharAt(idx);
+        }
+        return result.toString();
+    }
+
+    public static int countChars(String term, char mychar) {
+        int l = term.length();
+        int counter = 0;
+        for (int i = 0; i < l; i++) {
+            if (term.charAt(i) == mychar)
+                counter++;
+        }
+        return counter;
     }
 }

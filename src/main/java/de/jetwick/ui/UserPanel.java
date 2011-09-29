@@ -17,24 +17,22 @@ package de.jetwick.ui;
 
 import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
+import de.jetwick.util.Helper;
 import java.util.Collection;
-import org.apache.wicket.Application;
 import org.apache.wicket.AttributeModifier;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
-import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxFallbackLink;
+import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.image.ContextImage;
+import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.protocol.http.RequestUtils;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
-import org.odlabs.wiquery.ui.dialog.Dialog;
-import org.odlabs.wiquery.ui.dialog.util.DialogUtilsBehavior;
+import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,71 +42,49 @@ import org.slf4j.LoggerFactory;
  */
 public class UserPanel extends Panel {
 
-    public final static String CALLBACK = "callback";
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private String imageUrl = "img/jetwick-twitter.png";
+    private String profileLink = "http://jetsli.de/";
+    private String title = "Jetslide News Reader";
 
-    public UserPanel(String id, final HomePage homePageRef) {
+    public UserPanel(String id, final TweetSearchPage tweetSearchRef) {
         super(id);
 
-        Link loginLinkProceed = new IndicatingAjaxFallbackLink("loginLinkProceed") {
+        ExternalLink profileImageLink = new ExternalLink("profileImageLink", new PropertyModel(this, "profileLink"));
+        profileImageLink.add(new ContextImage("profileImage", new PropertyModel(this, "imageUrl")));
+        profileImageLink.add(new AttributeAppender("title", new PropertyModel(this, "title"), " "));
+        add(profileImageLink);
+
+        add(new WebMarkupContainer("gojetslideLink") {
 
             @Override
-            public void onClick(AjaxRequestTarget target) {
-                String url;
-                try {
-                    logger.info("Clicked Login!");
-                    String callbackUrl;
-                    if (Application.DEVELOPMENT.equals(getApplication().getConfigurationType())) {
-                        PageParameters params = new PageParameters();
-                        params.add(CALLBACK, "true");
-                        callbackUrl = RequestUtils.toAbsolutePath(urlFor(HomePage.class, params).toString());
-                    } else
-                        callbackUrl = "http://jetwick.com?callback=true";
-
-                    url = homePageRef.getTwitterSearch().oAuthLogin(callbackUrl);
-                    if (url != null)
-                        getRequestCycle().setRequestTarget(new RedirectRequestTarget(url));
-                } catch (Exception ex) {
-                    logger.error("Cannot login!", ex);
-                }
+            public boolean isVisible() {
+                return !tweetSearchRef.getMySession().hasLoggedIn();
             }
-        };
-
-        add(new DialogUtilsBehavior());
-        final Dialog dialog = new Dialog("dialog");
-        add(dialog.setTitle("Information").setWidth(540).add(loginLinkProceed));
-
-        Link loginLink = new AjaxFallbackLink("loginLink") {
+        });
+        Link loginLink = new Link("loginLink") {
 
             @Override
-            public void onClick(AjaxRequestTarget target) {
-                if (target != null)
-                    dialog.open(target);
+            public void onClick() {
+                setResponsePage(Login.class);
             }
         };
         add(loginLink);
-        Link editFilters = new AjaxFallbackLink("editFilters") {
 
-            @Override
-            public void onClick(AjaxRequestTarget target) {
-                if (target != null)
-                    dialog.open(target);
-            }
-        };
-        add(editFilters);
-
-        if (!homePageRef.getMySession().hasLoggedIn()) {
+        if (!tweetSearchRef.getMySession().hasLoggedIn()) {
             add(new WebMarkupContainer("loginContainer").setVisible(false));
             add(new AttributeModifier("class", "logged-in", new Model("logged-out")));
             return;
         }
 
+        title = tweetSearchRef.getMySession().getUser().getScreenName();
+        imageUrl = tweetSearchRef.getMySession().getUser().getProfileImageUrl();
+        profileLink = Helper.TURL + "/" + title;
         loginLink.setVisible(false);
-        editFilters.setVisible(false);
         WebMarkupContainer container = new WebMarkupContainer("loginContainer") {
 
             {
-                final JUser user = homePageRef.getMySession().getUser();
+                final JUser user = tweetSearchRef.getMySession().getUser();
                 String name = user.getRealName();
                 if (name == null)
                     name = user.getScreenName();
@@ -152,7 +128,7 @@ public class UserPanel extends Panel {
 
                     @Override
                     public TwitterSearch getTwitterSearch() {
-                        return homePageRef.getTwitterSearch();
+                        return tweetSearchRef.getTwitterSearch();
                     }
 
                     @Override

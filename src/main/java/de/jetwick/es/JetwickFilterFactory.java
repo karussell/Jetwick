@@ -33,7 +33,7 @@ public class JetwickFilterFactory extends AbstractTokenFilterFactory {
 
     @Inject
     public JetwickFilterFactory(Index index, @IndexSettings Settings indexSettings, @Assisted String name, @Assisted Settings settings) {
-        super(index, indexSettings, name);
+        super(index, indexSettings, name, settings);
     }
     private CharArraySet protectedWords = null;
     private int generateWordParts = 1;
@@ -50,6 +50,29 @@ public class JetwickFilterFactory extends AbstractTokenFilterFactory {
 
     @Override
     public TokenStream create(TokenStream tokenStream) {
+        return myCreate(tokenStream, handleAsChar, handleAsDigit,
+                generateWordParts, generateNumberParts,
+                catenateWords, catenateNumbers, catenateAll,
+                splitOnCaseChange, preserveOriginal,
+                splitOnNumerics, stemEnglishPossessive, protectedWords);
+    }
+
+    @Override
+    public String name() {
+        return "jetwickfilter";
+    }
+
+    public static TokenStream myCreate(TokenStream tokenStream, String handleAsChar, String handleAsDigit,
+            int generateWordParts,
+            int generateNumberParts,
+            int catenateWords,
+            int catenateNumbers,
+            int catenateAll,
+            int splitOnCaseChange,
+            int preserveOriginal,
+            int splitOnNumerics,
+            int stemEnglishPossessive,
+            CharArraySet protectedWords) {
         byte[] tab = new byte[256];
         for (int i = 0; i < 256; i++) {
             byte code = 0;
@@ -72,10 +95,5 @@ public class JetwickFilterFactory extends AbstractTokenFilterFactory {
                 catenateWords, catenateNumbers, catenateAll,
                 splitOnCaseChange, preserveOriginal,
                 splitOnNumerics, stemEnglishPossessive, protectedWords);
-    }
-
-    @Override
-    public String name() {
-        return "jetwickfilter";
     }
 }

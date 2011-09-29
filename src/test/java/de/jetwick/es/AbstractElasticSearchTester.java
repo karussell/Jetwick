@@ -56,6 +56,9 @@ public abstract class AbstractElasticSearchTester {
 
         // start with a fresh index:
         search.deleteAll();  
+        
+        // optimize to delete remaining deleted articles which can disturb scoring!
+        search.optimize();
     }
 
     public void tearDown() throws Exception {

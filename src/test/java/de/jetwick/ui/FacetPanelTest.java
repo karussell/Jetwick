@@ -55,11 +55,11 @@ public class FacetPanelTest extends WicketPagesTestClass {
                 Set<InternalStringTermsFacet.StringEntry> entries = new LinkedHashSet();
                 entries.add(new InternalStringTermsFacet.StringEntry("de", 3));
                 entries.add(new InternalStringTermsFacet.StringEntry("en", 2));
-                TermsFacet tf = new InternalStringTermsFacet("lang", null, 1, entries, 0);                
+                TermsFacet tf = new InternalStringTermsFacet("lang", null, 1, entries, 0, 0);                
                 Set<InternalStringTermsFacet.StringEntry> entries2 = new LinkedHashSet();
                 entries2.add(new InternalStringTermsFacet.StringEntry("peter", 3));
                 entries2.add(new InternalStringTermsFacet.StringEntry("karsten", 2));
-                TermsFacet tf2 = new InternalStringTermsFacet("user", null, 1, entries2, 0);                
+                TermsFacet tf2 = new InternalStringTermsFacet("user", null, 1, entries2, 0, 0);                
                 List<Facet> res = new ArrayList<Facet>();
                 res.add(tf);
                 res.add(tf2);

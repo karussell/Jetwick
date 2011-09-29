@@ -61,7 +61,7 @@ public class JSDateFilter extends Panel {
             public void populateItem(final ListItem item) {
                 String filter = getFilterName(dtKey);
                 if (filter != null) {
-                    item.add(new LabeledLink("dateFilter", "View results for all days") {
+                    item.add(new LabeledLink("dateFilter", "Click to remove custom date filter") {
 
                         @Override
                         public void onClick(AjaxRequestTarget target) {

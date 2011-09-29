@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class NavigationPanel extends Panel {
-
+    
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private Link prev;
     private Link next;

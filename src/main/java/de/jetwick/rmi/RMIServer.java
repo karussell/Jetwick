@@ -16,11 +16,13 @@
 package de.jetwick.rmi;
 
 import de.jetwick.config.Configuration;
-import de.jetwick.tw.queue.TweetPackage;
+import de.jetwick.data.JTweet;
 import java.net.InetAddress;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +37,7 @@ public class RMIServer implements CommunicationService {
         new RMIServer(new Configuration()).createThread().run();
     }
     private static Logger logger = LoggerFactory.getLogger(RMIServer.class);
-    private BlockingQueue<TweetPackage> tweetQueue;
+    private BlockingQueue<JTweet> tweetQueue;
     private Configuration config;
 
     public RMIServer(Configuration config) {
@@ -61,25 +63,49 @@ public class RMIServer implements CommunicationService {
             }
         };
     }
+    int counter = 1;
 
     @Override
-    public void send(TweetPackage tws) {
+    public void send(JTweet tws) {
         if (tweetQueue == null) {
             logger.error("Queue not online");
             return;
         }
 
         // prevent us from OOMs
-        if (tweetQueue.size() > 500) {
-            logger.error("didn't prozessed " + tws.getTweets().size() + " tweets. queue is full: " + tweetQueue.size());
+        if (tweetQueue.size() > 10000) {
+            if (counter++ % 100 == 0) {
+                logger.warn("Skipped " + counter + " tweets - queue is full: " + tweetQueue.size());
+                counter = 1;
+            }
             return;
         }
 
         tweetQueue.add(tws);
-        logger.info("queued " + tws.getName());
+//        logger.info("queued " + tws.getFeedSource());
     }
 
-    public void setFeedingQueue(BlockingQueue<TweetPackage> tweets) {
+    @Override
+    public void send(Collection<JTweet> tweets) throws RemoteException {
+        if (tweets.isEmpty())
+            return;
+
+        if (tweetQueue == null) {
+            logger.error("Queue not online");
+            return;
+        }
+
+        // prevent us from OOMs
+        if (tweetQueue.size() > 10000) {
+            logger.warn("Skipped " + tweets.size() + " tweets - queue is full: " + tweetQueue.size());
+            return;
+        }
+
+        tweetQueue.addAll(tweets);
+        logger.info("queued " + tweets.size() + " tweets. First name " + tweets.iterator().next().getFeedSource());
+    }
+
+    public void setQueue(BlockingQueue<JTweet> tweets) {
         this.tweetQueue = tweets;
     }
 }

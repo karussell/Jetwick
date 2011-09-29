@@ -31,7 +31,7 @@ import java.util.Properties;
 public class Configuration {
 
     private Properties prop;
-    private static final String CONFIG_FILE = "jetwick.config.file";
+    private static final String CONFIG_FILE = "jetslide.config.file";
     private String file;
 
     public Configuration() {
@@ -43,7 +43,7 @@ public class Configuration {
             prop = new Properties();
             prop.load(new InputStreamReader(new FileInputStream(file), Helper.UTF8));
         } catch (IOException ex) {
-            throw new IllegalArgumentException("Jetwick needs a config file under:" + file);
+            throw new IllegalArgumentException("Jetslide needs a config file under:" + file);
         }
     }
 
@@ -60,102 +60,36 @@ public class Configuration {
     }
 
     public String getUserSearchUrl() {
-        String key = "solr.usearch.url";
-        return get(key);
-    }
-
-    public String getUserSearchLogin() {
-        String key = "solr.usearch.login";
-        return get(key);
-    }
-
-    public String getUserSearchPassword() {
-        String key = "solr.usearch.password";
+        String key = "jetslide.usearch.url";
         return get(key);
     }
 
     public String getUserBlacklist() {
-        String key = "solr.usearch.blacklist";
+        String key = "jetslide.usearch.blacklist";
         return get(key);
     }
-
-    public int getTweetsPerBatch() {
-        String key = "solr.twcollector.batchsize";
+    
+    public int getTweetSearchBatch() {
+        String key = "jetslide.twsearch.batchsize";
         return Integer.parseInt(get(key, true));
     }
 
     public String getTweetSearchUrl() {
-        String key = "solr.twsearch.url";
+        String key = "jetslide.twsearch.url";
         return get(key, true);
     }
 
-    public String getTweetSearchRemoteUrl() {
-        String key = "solr.twsearch.remoteurl";
-        return get(key);
-    }
-
-    public void setTweetSearchUrl(String str) {
-        set("solr.twsearch.url", str);
-    }
-
-//    public String getTweetSearchMCDir() {
-//        String key = "solr.twsearch.mc.instance.dir";
-//        return get(key, true);
-//    }
-    public String getTweetSearchLogin() {
-        String key = "solr.twsearch.login";
-        return get(key);
-    }
-
-    public String getTweetSearchPassword() {
-        String key = "solr.twsearch.password";
-        return get(key);
-    }
-
     public boolean getTweetStreamingServer() {
-        return Boolean.parseBoolean(get("solr.twsearch.streamingserver"));
+        return Boolean.parseBoolean(get("jetslide.twsearch.streamingserver"));
     }
 
-    public int getSolrSearchForRTDays() {
-        return Integer.parseInt(get("solr.twsearch.searchrt.days", true));
-    }
-
-    public int getSolrRemoveDays() {
-        return Integer.parseInt(get("solr.twsearch.remove.days", true));
-    }
-
-    /**
-     * @return optimize interval in hours
-     */
-    public String getTweetSearchOptimizeInterval() {
-        String key = "solr.twsearch.optimize.interval";
-        return get(key);
-    }
-
-    public int getTweetSearchCommitOptimizeSegments() {
-        String key = "solr.twsearch.optimize.segments";
-        return Integer.parseInt(get(key));
-    }
-
-    public boolean isTweetResolveUrl() {
-        return get("tweet.resolveurl.timeout") != null;
-    }
-
-    public int getTweetResolveUrlTimeout() {
-        return Integer.parseInt(get("tweet.resolveurl.timeout"));
-    }
-
-    public int getTweetResolveUrlThreads() {
-        return Integer.parseInt(get("tweet.resolveurl.threads"));
+    public int getTweetSearchRemoveDays() {
+        return Integer.parseInt(get("jetslide.twsearch.remove.days", true));
     }
 
     public String getUrlTitleAvoidList() {
         String key = "tweet.resolveurl.avoidlist";
         return get(key);
-    }
-
-    public int getUserInfoUpdateDays() {
-        return Integer.parseInt(get("twitter.update.userinfo.days"));
     }
 
     public String getRMIHost() {
@@ -174,16 +108,58 @@ public class Configuration {
     }
 
     public Credits getTwitterSearchCredits() {
-        String key = "jetwick.twitter4j.main.";
+        String key = "jetslide.twitter4j.main.";
         return new Credits(get(key + "token"), get(key + "tokenSecret"),
                 get(key + "consumerKey"), get(key + "consumerSecret"));
     }
 
     public Credits getJetwotCredits() {
-        String key = "jetwick.twitter4j.jetwot.";
+        String key = "jetslide.twitter4j.jetwot.";
         return new Credits(get(key + "token"), get(key + "tokenSecret"),
                 get(key + "consumerKey"), get(key + "consumerSecret"));
-    }    
+    }
+
+    public double getTweetsPerSecLimit() {
+        String key = get("twitter.stream.tweetsPerSecLimit");
+        if (key == null)
+            return 0.5;
+        return Double.parseDouble(key);
+    }
+
+    public boolean isStreamEnabled() {
+        String key = get("twitter.stream.enable");
+        if (key == null)
+            return true;
+        return Boolean.parseBoolean(key);
+    }
+
+    public int getUrlResolverInputQueueSize() {
+        String key = get("jetslide.urlresolver.inputqueuesize");
+        if (key == null)
+            return 300;
+        return Integer.parseInt(key);
+    }
+
+    public int getUrlResolverQueueSize() {
+        String key = get("jetslide.urlresolver.queuesize");
+        if (key == null)
+            return 700;
+        return Integer.parseInt(key);
+    }
+
+    public int getUrlResolverThreads() {
+        String key = get("jetslide.urlresolver.threads");
+        if (key == null)
+            return 10;
+        return Integer.parseInt(key);
+    }
+
+    public int getUrlResolverTimeout() {
+        String key = get("jetslide.urlresolver.timeout");
+        if (key == null)
+            return 10 * 1000;
+        return Integer.parseInt(key);
+    }
 
     protected String get(String key) {
         return get(key, false);

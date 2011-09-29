@@ -39,9 +39,10 @@ import twitter4j.Tweet;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class JTweet implements DbObject, Serializable {
+public class JTweet implements ElasticObject<JTweet>, Serializable {
 
     private static final long serialVersionUID = 1L;
+    public static final int MAX_LENGTH = 800;
     public static final Comparator tweetIdComparator = new TwitterIdComparator();
     public static final int QUAL_MAX = 100;
     //
@@ -53,30 +54,35 @@ public class JTweet implements DbObject, Serializable {
     // (BAD/100)^2 = 0.25 < SPAM/100
     public static final int QUAL_BAD = 50;
     public static final int QUAL_SPAM = 26;
-    private Integer version;
     private final long twitterId;
     private String text;
     private Set<JTweet> replies = new LinkedHashSet<JTweet>();
     private int retweetCount;
     private boolean retweet = false;
     private boolean daemon = false;
+    private long version;
     private Date createdAt;
     private Date updatedAt;
     private JUser fromUser;
     private JTweet inReplyOf;
     private long inReplyTwitterId = -1L;
     private String location;
-    private StringFreqMap textTerms = new StringFreqMap();
-    private StringFreqMap languages = new StringFreqMap();
+    private StringFreqMap textTerms = new StringFreqMap(8);
+    private StringFreqMap languages = new StringFreqMap(4);
     private String language = TweetDetector.UNKNOWN_LANG;
     private int quality;
     private String lowerCaseText;
     private List<UrlEntry> urlEntries;
-    private int reply;
+    private int replyCount;
     private String qualDebug;
     private int qualReductions = 0;
-//    private Collection<Long> textSignature;
-    private Collection<Long> duplicates = new LinkedHashSet<Long>();
+    private Collection<Long> duplicates = new LinkedHashSet<Long>(4);
+    private Date instantiatedAt = new Date();
+    private String feedSource;
+    private double latitude;
+    private double longitude;
+    private int updateCount;
+    private boolean isProtected = false;
 
     /**
      * You'll need to call init after that constructor
@@ -92,7 +98,7 @@ public class JTweet implements DbObject, Serializable {
     }
 
     /**
-     * for tests only
+     * For tests only! Use contructor instead which initialized user too!
      */
     public JTweet(Tweet tw) {
         this(tw.getId(), tw.getText(), tw.getCreatedAt());
@@ -105,9 +111,13 @@ public class JTweet implements DbObject, Serializable {
         }
 
         // most tweets have location == null. See user.location
+        if (tw.getGeoLocation() != null)
+            setGeoLocation(tw.getGeoLocation().getLatitude(),
+                    tw.getGeoLocation().getLongitude());
+
         location = tw.getLocation();
     }
-    
+
     /**
      * for tests only
      */
@@ -118,11 +128,12 @@ public class JTweet implements DbObject, Serializable {
         this.createdAt = createdAt;
 
         if (urlEntries == null)
-            urlEntries = new ArrayList<UrlEntry>();
+            urlEntries = new ArrayList<UrlEntry>(1);
     }
 
-    public void addUrlEntry(UrlEntry ue) {
+    public JTweet addUrlEntry(UrlEntry ue) {
         urlEntries.add(ue);
+        return this;
     }
 
     public Collection<UrlEntry> getUrlEntries() {
@@ -134,8 +145,27 @@ public class JTweet implements DbObject, Serializable {
         getUrlEntries().addAll(entries);
     }
 
-    public Integer getVersion() {
+    @Override
+    public long getVersion() {
         return version;
+    }
+
+    @Override
+    public JTweet setVersion(long version) {
+        if (version < 0)
+            throw new IllegalStateException("version cannot be negative:" + version);
+
+        this.version = version;
+        return this;
+    }
+
+    public int getUpdateCount() {
+        return updateCount;
+    }
+
+    public JTweet setUpdateCount(int updateCount) {
+        this.updateCount = updateCount;
+        return this;
     }
 
     public String getLowerCaseText() {
@@ -203,12 +233,14 @@ public class JTweet implements DbObject, Serializable {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Date updatedAt) {
+    public JTweet setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+        return this;
     }
 
-    public void makePersistent() {
+    public JTweet makePersistent() {
         setUpdatedAt(new Date());
+        return this;
     }
 
     /**
@@ -233,8 +265,8 @@ public class JTweet implements DbObject, Serializable {
         return fromUser;
     }
 
-    public void setReply(int rp) {
-        this.reply = rp;
+    public void setReplyCount(int rp) {
+        this.replyCount = rp;
     }
 
     public JTweet addReply(JTweet tw) {
@@ -245,7 +277,7 @@ public class JTweet implements DbObject, Serializable {
 
     public int getReplyCount() {
         // TODO better design! (do not mix count and replies)
-        return reply + replies.size();
+        return replyCount + replies.size();
     }
 
     public JTweet getInReplyOf() {
@@ -260,7 +292,7 @@ public class JTweet implements DbObject, Serializable {
             inReplyTwitterId = inReplyOf.getTwitterId();
     }
 
-    public JTweet setRt(int rt) {
+    public JTweet setRetweetCount(int rt) {
         this.retweetCount = rt;
         return this;
     }
@@ -335,7 +367,7 @@ public class JTweet implements DbObject, Serializable {
     public int getQuality() {
         return quality;
     }
-    
+
     public JTweet multiplyQuality(double factor) {
         quality *= factor;
         return this;
@@ -414,7 +446,7 @@ public class JTweet implements DbObject, Serializable {
 
     @Override
     public String toString() {
-        return twitterId + " " + createdAt + " " + text;
+        return twitterId + " " + createdAt + " " + text + " v" + getVersion();
     }
     public static final Map<String, Set<String>> NOISE_WORDS = new LinkedHashMap<String, Set<String>>();
     public static final Map<String, Set<String>> LANG_DET_WORDS = new LinkedHashMap<String, Set<String>>();
@@ -496,24 +528,16 @@ public class JTweet implements DbObject, Serializable {
 
     static {
         // fill collection for language detection
-        importFrom(LANG_DET_WORDS, TweetDetector.DE);
-        importFrom(LANG_DET_WORDS, TweetDetector.EN);
-        importFrom(LANG_DET_WORDS, TweetDetector.NL);
-        importFrom(LANG_DET_WORDS, TweetDetector.RU);
-        importFrom(LANG_DET_WORDS, TweetDetector.SP);
-        importFrom(LANG_DET_WORDS, TweetDetector.FR);
-        importFrom(LANG_DET_WORDS, TweetDetector.PT);
+        for (String lang : TweetDetector.LANGS) {
+            importFrom(LANG_DET_WORDS, lang);
+        }
 
         // fill collection for noise word determination
-        importNoiseFrom(NOISE_WORDS, TweetDetector.DE);
-        importNoiseFrom(NOISE_WORDS, TweetDetector.EN);
-        importNoiseFrom(NOISE_WORDS, TweetDetector.NL);
-        importNoiseFrom(NOISE_WORDS, TweetDetector.RU);
-        importNoiseFrom(NOISE_WORDS, TweetDetector.SP);
-        importNoiseFrom(NOISE_WORDS, TweetDetector.FR);
-        importNoiseFrom(NOISE_WORDS, TweetDetector.PT);
+        for (String lang : TweetDetector.LANGS) {
+            importNoiseFrom(NOISE_WORDS, lang);
+        }
 
-        int delta = LANG_DET_WORDS.size();
+//        int delta = LANG_DET_WORDS.size();
         for (Entry<String, Set<String>> noiseTerms : NOISE_WORDS.entrySet()) {
             addFrom(LANG_DET_WORDS, noiseTerms);
         }
@@ -522,9 +546,9 @@ public class JTweet implements DbObject, Serializable {
         addFrom(NOISE_WORDS, TweetDetector.UNKNOWN_LANG, NOISE_WORDS_UNSORTED);
 
         // indifferent
-        addFrom(NOISE_WORDS, TweetDetector.MISC_LANG, NOISE_WORDS_MISC);
-        addFrom(NOISE_WORDS, TweetDetector.SINGLE, NOISE_WORDS_SINGLE);
-        addFrom(NOISE_WORDS, TweetDetector.NUM, NOISE_WORDS_NUM);
+        addFrom(NOISE_WORDS, TweetDetector.MISC_TERMS, NOISE_WORDS_MISC);
+        addFrom(NOISE_WORDS, TweetDetector.SINGLE_CHAR_TERMS, NOISE_WORDS_SINGLE);
+        addFrom(NOISE_WORDS, TweetDetector.NUM_TERMS, NOISE_WORDS_NUM);
     }
 
     public static void importNoiseFrom(Map<String, Set<String>> words, String lang) {
@@ -553,7 +577,7 @@ public class JTweet implements DbObject, Serializable {
             str = str.trim().toLowerCase();
             Set<String> langs = words.get(str);
             if (langs == null)
-                langs = new LinkedHashSet<String>();
+                langs = new LinkedHashSet<String>(10);
 
             langs.add(lang);
             words.put(str, langs);
@@ -568,7 +592,7 @@ public class JTweet implements DbObject, Serializable {
         str = str.trim().toLowerCase();
         Set<String> langs = words.get(str);
         if (langs == null)
-            langs = new LinkedHashSet<String>();
+            langs = new LinkedHashSet<String>(10);
 
         langs.addAll(entry.getValue());
         words.put(str, langs);
@@ -585,8 +609,82 @@ public class JTweet implements DbObject, Serializable {
         duplicates.add(twId);
     }
 
+    public int getQueueAgeInSeconds() {
+        return Math.round((System.currentTimeMillis() - instantiatedAt.getTime()) / 1000f);
+    }
+
+    public JTweet setFeedSource(String feedSource) {
+        this.feedSource = feedSource;
+        return this;
+    }
+
+    public String getFeedSource() {
+        return feedSource;
+    }
+
     @Override
     public String getId() {
         return Long.toString(getTwitterId());
+    }
+
+    public JTweet setGeoLocation(double lat, double lon) {
+        latitude = lat;
+        longitude = lon;
+        return this;
+    }
+
+    /**
+     * @return latitude
+     */
+    public double getLat() {
+        return latitude;
+    }
+
+    /**
+     * @return longitude
+     */
+    public double getLon() {
+        return longitude;
+    }
+
+    /**
+     * This method specifies how this tweet should get updated from a
+     * tweet - either an out-of-date tweet fetched from index or otherway around
+     */
+    @Override
+    public JTweet updateFrom(JTweet a) {
+        if (!getId().equals(a.getId()))
+            throw new IllegalStateException("ids have to be the same to call update. This:" + this + " update:" + a);
+
+        if (getRetweetCount() > a.getRetweetCount())
+            return this;
+
+        setReplyCount(a.replyCount);
+        setRetweetCount(a.retweetCount);
+        replies.clear();
+        for (JTweet repl : a.replies) {
+            addReply(repl);
+        }
+        duplicates.clear();
+        for (Long val : a.getDuplicates()) {
+            addDuplicate(val);
+        }
+        return this;
+    }
+
+    public JTweet setProtected(boolean aProtected) {
+        isProtected = aProtected;
+        return this;
+    }
+
+    public boolean isProtected() {
+        return isProtected;
+    }
+
+    public String getUrl() {
+        if (getUrlEntries() == null || getUrlEntries().isEmpty())
+            return null;
+
+        return getUrlEntries().iterator().next().getResolvedUrl();
     }
 }

@@ -18,6 +18,7 @@ package de.jetwick.tw;
 import de.jetwick.util.AnyExecutor;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
+import de.jetwick.util.Helper;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,9 +28,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import twitter4j.FilterQuery;
 import twitter4j.IDs;
 import twitter4j.Paging;
 import twitter4j.Query;
@@ -56,11 +59,12 @@ import twitter4j.TwitterStreamFactory;
 public class TwitterSearch implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    public final static String COOKIE = "jetwick";
+    public final static String COOKIE = "jetslide";
     /**
      * Do not use less than this limit of 20 api points for queueing searches of unloggedin users
      */
     public final static int LIMIT = 50;
+    public final static String LINK_FILTER = "filter:links";
     private Twitter twitter;
     protected Logger logger = LoggerFactory.getLogger(TwitterSearch.class);
     private String consumerKey;
@@ -88,12 +92,34 @@ public class TwitterSearch implements Serializable {
      * Connect with twitter to get a new personalized twitter4j instance.
      * @throws RuntimeException if verification or connecting failed
      */
-    public TwitterSearch initTwitter4JInstance(String token, String tokenSecret) {
+    public TwitterSearch initTwitter4JInstance(String token, String tokenSecret, boolean verify) {
         if (consumerKey == null)
             throw new NullPointerException("Please use init consumer settings!");
 
-        twitter = createTwitter(token, tokenSecret);
-        logger.info("create new TwitterSearch");
+        setupProperties();
+        AccessToken aToken = new AccessToken(token, tokenSecret);
+        twitter = new TwitterFactory().getInstance();
+        twitter.setOAuthConsumer(consumerKey, consumerSecret);
+        twitter.setOAuthAccessToken(aToken);
+        try {
+//            RequestToken requestToken = t.getOAuthRequestToken();
+//            System.out.println("TW-URL:" + requestToken.getAuthorizationURL());
+            if (verify)
+                twitter.verifyCredentials();
+
+            String str = "<user>";
+            try {
+                str = twitter.getScreenName();
+            } catch (Exception ex) {
+            }
+            logger.info("create new TwitterSearch for " + str + " with verifification:" + verify);
+        } catch (TwitterException ex) {
+            // rate limit only exceeded
+            if (ex.getStatusCode() == 400)
+                return this;
+
+            throw new RuntimeException(ex);
+        }
         return this;
     }
 
@@ -128,27 +154,24 @@ public class TwitterSearch implements Serializable {
         System.setProperty("twitter4j.http.connectionTimeout", "10000");
     }
 
-    public Twitter createTwitter(String token, String tokenSecret) {
-        setupProperties();
-        AccessToken aToken = new AccessToken(token, tokenSecret);
-        // get this from your application details side !
-        Twitter t = new TwitterFactory().getInstance();
-        t.setOAuthConsumer(consumerKey, consumerSecret);
-        t.setOAuthAccessToken(aToken);
-        try {
-//            RequestToken requestToken = t.getOAuthRequestToken();
-//            System.out.println("TW-URL:" + requestToken.getAuthorizationURL());
+    /**
+     * Opening the url will show you a PIN
+     * @throws TwitterException 
+     */
+    public RequestToken doDesktopLogin() throws TwitterException {
+        twitter = new TwitterFactory().getInstance();
+        twitter.setOAuthConsumer(consumerKey, consumerSecret);
+        RequestToken requestToken = twitter.getOAuthRequestToken("");
+        System.out.println("Open the following URL and grant access to your account:");
+        System.out.println(requestToken.getAuthorizationURL());
+        return requestToken;
 
-            t.verifyCredentials();
-        } catch (TwitterException ex) {
-            // rate limit only exceeded
-            if (ex.getStatusCode() == 400)
-                return t;
+    }
 
-            throw new RuntimeException(ex);
-        }
-
-        return t;
+    public AccessToken getToken4Desktop(RequestToken requestToken, String pin) throws TwitterException {
+        AccessToken at = twitter.getOAuthAccessToken(requestToken, pin);
+        System.out.println("token:" + at.getToken() + " secret:" + at.getTokenSecret());
+        return at;
     }
     private RequestToken tmpRequestToken;
 
@@ -168,7 +191,7 @@ public class TwitterSearch implements Serializable {
      */
     public AccessToken oAuthOnCallBack(String oauth_verifierParameter) throws TwitterException {
         if (tmpRequestToken == null)
-            throw new IllegalStateException("RequestToken is empty. Call testOAuth before!");
+            throw new IllegalStateException("RequestToken is empty. Call oAuthLogin before!");
 
         AccessToken aToken = twitter.getOAuthAccessToken(tmpRequestToken, oauth_verifierParameter);
         twitter.verifyCredentials();
@@ -211,7 +234,7 @@ public class TwitterSearch implements Serializable {
             rateLimit = rls.getRemainingHits();
             return rls.getSecondsUntilReset();
         } catch (TwitterException ex) {
-            logger.error("Cannot determine rate limit", ex);
+            logger.error("Cannot determine rate limit:" + ex.getMessage());
             return -1;
         }
     }
@@ -556,7 +579,7 @@ public class TwitterSearch implements Serializable {
                 }
                 break;
             } catch (TwitterException ex) {
-                logger.warn("Exception while getTweets. trial:" + trial + " page:" + currentPage + " - " + ex.getMessage());
+                logger.warn("Exception while getTweets. trial:" + trial + " page:" + currentPage + " - " + Helper.getMsg(ex));
                 if (ex.exceededRateLimitation())
                     return res;
 
@@ -611,7 +634,7 @@ public class TwitterSearch implements Serializable {
                 String userName = tw.getFromUser().toLowerCase();
                 JUser user = userMap.get(userName);
                 if (user == null) {
-                    user = new JUser(userName).init(tw);
+                    user = new JUser(st.getUser()).init(tw);
                     userMap.put(userName, user);
                 }
 
@@ -626,38 +649,44 @@ public class TwitterSearch implements Serializable {
         return maxId;
     }
 
-    public void streamingTwitter() throws TwitterException {
-
+    public TwitterStream streamingTwitter(Collection<String> track, final Queue<JTweet> queue) throws TwitterException {
+        String[] trackArray = track.toArray(new String[track.size()]);
         TwitterStream stream = new TwitterStreamFactory().getInstance(twitter.getAuthorization());
         stream.addListener(new StatusListener() {
 
+            
             @Override
             public void onStatus(Status status) {
-                System.out.println(status.getUser().getScreenName());
+                // ugly twitter ...
+                if (Helper.isEmpty(status.getUser().getScreenName()))
+                    return;
+
+                if(!queue.offer(new JTweet(toTweet(status), new JUser(status.getUser()))))
+                    logger.error("Cannot add tweet as input queue for streaming is full:" + queue.size());
             }
 
             @Override
             public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {
+                logger.error("We do not support onDeletionNotice at the moment! Tweet id: "
+                        + statusDeletionNotice.getStatusId());
             }
 
             @Override
             public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
+                logger.warn("onTrackLimitationNotice:" + numberOfLimitedStatuses);
             }
 
             @Override
             public void onException(Exception ex) {
+                logger.error("onException", ex);
             }
 
             @Override
             public void onScrubGeo(long userId, long upToStatusId) {
-                throw new UnsupportedOperationException("Not supported yet.");
             }
         });
-
-//        stream.sample();
-
-        //see http://github.com/yusuke/twitter4j/blob/master/twitter4j-examples/src/main/java/twitter4j/examples/PrintFilterStream.java
-        // -> stream.filter(new FilterQuery(new int[]{1, 2, 3,}));
+        stream.filter(new FilterQuery(0, new long[0], trackArray));
+        return stream;
     }
 
     public void getFollowers(String user, AnyExecutor<JUser> anyExecutor) {
@@ -668,9 +697,10 @@ public class TwitterSearch implements Serializable {
         getFriendsOrFollowers(userName, executor, true);
     }
 
-    private void getFriendsOrFollowers(String userName, AnyExecutor<JUser> executor, boolean friends) {
+    public void getFriendsOrFollowers(String userName, AnyExecutor<JUser> executor, boolean friends) {
         long cursor = -1;
         resetRateLimitCache();
+        MAIN:
         while (true) {
             while (getRateLimitFromCache() < LIMIT) {
                 int reset = getSecondsUntilReset();
@@ -700,7 +730,7 @@ public class TwitterSearch implements Serializable {
 
             long[] intids = ids.getIDs();
 
-            // split into max 100 batch
+            // split into max 100 batch            
             for (int offset = 0; offset < intids.length; offset += 100) {
                 long[] limitedIds = new long[100];
                 for (int ii = 0; ii + offset < intids.length && ii < limitedIds.length; ii++) {
@@ -717,9 +747,9 @@ public class TwitterSearch implements Serializable {
                             if (user.getScreenName().trim().isEmpty())
                                 continue;
 
-                            JUser jUser = new JUser(user.getScreenName());
-                            jUser.updateFieldsBy(user);
-                            executor.execute(jUser);
+                            JUser jUser = new JUser(user);
+                            if (executor.execute(jUser) == null)
+                                break MAIN;
                         }
                         break;
                     } catch (Exception ex) {
@@ -739,6 +769,50 @@ public class TwitterSearch implements Serializable {
                 break;
 
             cursor = ids.getNextCursor();
+        }
+    }
+
+    public Collection<JUser> getFriendsNotFollowing(String user) {
+        final Set<JUser> tmpUsers = new LinkedHashSet<JUser>();
+        AnyExecutor exec = new AnyExecutor<JUser>() {
+
+            @Override
+            public JUser execute(JUser o) {
+                tmpUsers.add(o);
+                return o;
+            }
+        };
+        getFriendsOrFollowers(user, exec, true);
+
+        // store friends (people who are followed from specified user)
+        Set<JUser> friends = new LinkedHashSet<JUser>(tmpUsers);
+        System.out.println("friends:" + friends.size());
+
+        // store followers of specified user into tmpUsers
+        tmpUsers.clear();
+        getFriendsOrFollowers(user, exec, false);
+        System.out.println("followers:" + tmpUsers.size());
+
+        // now remove users from friends which already follow
+        for (JUser u : tmpUsers) {
+            friends.remove(u);
+        }
+        return friends;
+    }
+
+    public void unfollow(String user) {
+        try {
+            twitter.destroyFriendship(user);
+        } catch (TwitterException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public void follow(JUser user) {
+        try {
+            twitter.createFriendship(user.getScreenName());
+        } catch (TwitterException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -777,5 +851,9 @@ public class TwitterSearch implements Serializable {
 
     public boolean isInitialized() {
         return twitter != null;
+    }
+
+    public void sendDMTo(String screenName, String txt) throws TwitterException {
+        twitter.sendDirectMessage(screenName, txt);
     }
 }

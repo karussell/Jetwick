@@ -16,6 +16,7 @@
 
 package de.jetwick.tw;
 
+import java.io.IOException;
 import de.jetwick.data.JTweet;
 import de.jetwick.data.JUser;
 import java.util.ArrayList;
@@ -149,26 +150,19 @@ public class TweetDetectorTest {
         assertEquals(2, (int) createExtractor(user.getOwnTweets()).run().getSortedTerms().get(0).getValue());
     }
 
+    @Test
+    public void testChinAnalyzing() throws IOException {
+         JUser user = new JUser("Peter");
+        user.addOwnTweet(new JTweet(1, "飼い主さん!!ペットを迎えに行ってください!!", user));
+        user.addOwnTweet(new JTweet(2, "希望を捨てないでくださいペット", user));
+        
+//        assertEquals(1, (int) createExtractor(user.getOwnTweets()).run().getSortedTerms().size());
+//        assertEquals(2, (int) createExtractor(user.getOwnTweets()).run().getSortedTerms().get(0).getValue());
+    }
+    
     TweetDetector createExtractor(Collection<JTweet> tweets) {
         return new TweetDetector(tweets);
     }
-//    @Test
-//    public void testFilterLang() throws Exception {
-//        Map<String, Integer> langs = new HashMap<String, Integer>();
-//        langs.put(TweetDetector.EN, 100);
-//        langs.put(TweetDetector.DE, 100);
-//        assertEquals(2, new TweetDetector().setLanguages(langs).filterLanguages(-1).size());
-//
-//        langs = new HashMap<String, Integer>();
-//        langs.put(TweetDetector.EN, 100);
-//        langs.put(TweetDetector.DE, 3);
-//        assertEquals(1, new TweetDetector().setLanguages(langs).filterLanguages(-1).size());
-//
-//        langs = new HashMap<String, Integer>();
-//        langs.put(TweetDetector.EN, 100);
-//        langs.put(TweetDetector.DE, 4);
-//        assertEquals(2, new TweetDetector().setLanguages(langs).filterLanguages(-1).size());
-//    }
 
     JTweet createTweet(long id, String twText) {
         return new JTweet(id, twText, new JUser("tmp")).setCreatedAt(new Date(id));

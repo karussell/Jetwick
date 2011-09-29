@@ -17,7 +17,6 @@ package de.jetwick.es;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Set;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
@@ -26,7 +25,7 @@ import org.apache.lucene.analysis.tokenattributes.TermAttribute;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class TokenizerFromSet extends Tokenizer {
+public final class TokenizerFromSet extends Tokenizer {
 
     private TermAttribute termAtt;
     private OffsetAttribute offsetAtt;
@@ -40,7 +39,7 @@ public class TokenizerFromSet extends Tokenizer {
     }
 
     @Override
-    public boolean incrementToken() throws IOException {
+    public final boolean incrementToken() throws IOException {
         clearAttributes();
         if (iter.hasNext()) {
             termAtt.setTermBuffer(iter.next());

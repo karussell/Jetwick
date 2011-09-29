@@ -64,6 +64,10 @@ public class StopWatch {
         if(!name.isEmpty())
             str += name + " ";
         
-        return str + "time:" + time / 1000f;
+        return str + "time:" + getSeconds();
+    }
+
+    public float getSeconds() {
+        return time / 1000f;
     }
 }

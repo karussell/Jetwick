@@ -20,6 +20,7 @@ import de.jetwick.es.ElasticUserSearch;
 import de.jetwick.data.JUser;
 import de.jetwick.tw.TwitterSearch;
 import javax.servlet.http.Cookie;
+import org.apache.wicket.Request;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.junit.Before;
@@ -43,6 +44,11 @@ public class MySessionTest extends WicketPagesTestClass {
     public void setUp() throws Exception {
         super.setUp();
     }
+    
+    @Override
+    protected MySession changeSession(MySession sess, Request req) {
+        return new MySession(req);
+    }
 
     ElasticUserSearch newMockUserSearch(JUser user) {
         ElasticUserSearch s = mock(ElasticUserSearch.class);
@@ -53,11 +59,12 @@ public class MySessionTest extends WicketPagesTestClass {
     @Test
     public void testInit() {
         MySession session = (MySession) tester.getWicketSession();
+        session.invalidate();
         assertNull(session.getUser());
 
-        session.init(tester.getWicketRequest(), newMockUserSearch(null));
+        session.onNewSession(tester.getWicketRequest(), newMockUserSearch(null));
         assertNull(session.getUser());
-        session.logout(newMockUserSearch(null), tester.getWicketResponse());
+        session.logout(newMockUserSearch(null), tester.getWicketResponse(), true);
         assertNull(session.getUser());
     }
 
@@ -66,7 +73,7 @@ public class MySessionTest extends WicketPagesTestClass {
         MySession session = (MySession) tester.getWicketSession();
         WebRequest req = mock(WebRequest.class);
         when(req.getCookie(TwitterSearch.COOKIE)).thenReturn(new Cookie(TwitterSearch.COOKIE, "normalToken"));
-        session.init(req, newMockUserSearch(new JUser("testuser")));
+        session.onNewSession(req, newMockUserSearch(new JUser("testuser")));
         assertEquals("testuser", session.getUser().getScreenName());
     }
 
@@ -75,31 +82,52 @@ public class MySessionTest extends WicketPagesTestClass {
         MySession session = (MySession) tester.getWicketSession();
         WebRequest req = mock(WebRequest.class);
         when(req.getCookie(TwitterSearch.COOKIE)).thenReturn(new Cookie("tokenWrong", null));
-        session.init(req, newMockUserSearch(new JUser("testuser")));
+        session.onNewSession(req, newMockUserSearch(new JUser("testuser")));
         assertNull(session.getUser());
     }
 
     @Test
     public void testSetCookie() throws TwitterException {
-        MySession session = (MySession) tester.getWicketSession();
         TwitterSearch ts = mock(TwitterSearch.class);
-        when(ts.initTwitter4JInstance("normalToken", "tSec")).thenReturn(ts);
+        when(ts.initTwitter4JInstance("normalToken", "tSec", true)).thenReturn(ts);
         //when(ts.getCredits()).thenReturn(new Credits("normalToken", "tSec", "x", "y"));
         when(ts.getTwitterUser()).thenReturn(new Twitter4JUser("testuser"));
 
         WebResponse resp = mock(WebResponse.class);
         JUser user = new JUser("testuser");
         ElasticUserSearch uSearch = newMockUserSearch(user);
+        MySession session = (MySession) tester.getWicketSession();
         session.setTwitterSearch(ts);
+        session.setFormData("tmp@tmp.de", "test");
         // token starts with user id!
-        Cookie cookie = session.setTwitterSearch(new AccessToken("123-normalToken", "tSec"), uSearch, resp);
-        verify(uSearch).save(user, true);
+        Cookie cookie = session.afterLogin(new AccessToken("123-normalToken", "tSec"), uSearch, resp);
+        verify(uSearch).save(user, false);
         assertEquals(TwitterSearch.COOKIE, cookie.getName());
         assertEquals("123-normalToken", cookie.getValue());
 
         uSearch = newMockUserSearch(user);
-        session.logout(uSearch, resp);
-        verify(uSearch).save(user, true);
+        session.logout(uSearch, resp, true);
+        verify(uSearch).save(user, false);
         //verify(resp).clearCookie(new Cookie(TwitterSearch.COOKIE, ""));
+    }
+
+    @Test
+    public void testFailingWithoutEmail() throws TwitterException {
+        TwitterSearch ts = mock(TwitterSearch.class);
+        when(ts.initTwitter4JInstance("normalToken", "tSec", true)).thenReturn(ts);
+        //when(ts.getCredits()).thenReturn(new Credits("normalToken", "tSec", "x", "y"));
+        when(ts.getTwitterUser()).thenReturn(new Twitter4JUser("testuser"));
+
+        WebResponse resp = mock(WebResponse.class);
+        JUser user = new JUser("testuser");
+        ElasticUserSearch uSearch = newMockUserSearch(user);
+        MySession session = (MySession) tester.getWicketSession();
+        session.setTwitterSearch(ts);
+        try {
+            session.afterLogin(new AccessToken("123-normalToken", "tSec"), uSearch, resp);
+            assertTrue(false);
+        } catch (IllegalArgumentException ex) {
+            assertTrue(true);
+        }
     }
 }

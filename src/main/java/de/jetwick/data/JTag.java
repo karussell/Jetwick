@@ -23,7 +23,7 @@ import java.util.Date;
  *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
-public class JTag implements DbObject, Serializable, Comparable<JTag> {
+public class JTag implements ElasticObject<JTag>, Serializable, Comparable<JTag> {
 
     private static final long serialVersionUID = 1L;
     public static final String TERM = "term";
@@ -39,28 +39,45 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     /** How long to wait until the TweetCollector should perform the new twitter search
      */
     private long queryInterval = DEFAULT_Q_I;
-    /**
-     * The first search should page 5 times
-     */
-    private int pages = 5;
+    private int pages = 1;
     private Date lastRequest = new Date();
     private int requestCount = 0;
+    private double tweetsPerSec = 1;
     private String user;
 
     public JTag() {
     }
 
     public JTag(String term) {
-        this.term = toLowerCaseOnlyOnTerms(term);
+        setTerm(term);
     }
 
     public JTag(String term, String user) {
+        setTerm(term);
+        setUser(user);
+    }
+
+    public JTag clearProperties() {
+        setPages(5).setMaxCreateTime(0L).setLastMillis(0).
+                setQueryInterval(1000).setTweetsPerSec(1);
+        return this;
+    }
+
+    public double getTweetsPerSec() {
+        return tweetsPerSec;
+    }
+
+    public JTag setTweetsPerSec(double tweetsPerSec) {
+        this.tweetsPerSec = tweetsPerSec;
+        return this;
+    }
+
+    public void setTerm(String term) {
         this.term = toLowerCaseOnlyOnTerms(term);
-        this.user = toLowerCaseOnlyOnTerms(user);
     }
 
     public void setUser(String user) {
-        this.user = user;
+        this.user = toLowerCaseOnlyOnTerms(user);
     }
 
     public String getUser() {
@@ -76,11 +93,14 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
     }
 
     public Date getLastRequest() {
+        if (lastRequest == null)
+            return new Date();
         return lastRequest;
     }
 
-    public void setLastRequest(Date lastRequest) {
+    public JTag setLastRequest(Date lastRequest) {
         this.lastRequest = lastRequest;
+        return this;
     }
 
     public long getLastMillis() {
@@ -133,17 +153,15 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         else
             queryInterval = (long) (20.0 / newTweets) * queryInterval;
 
-        // force at least 5 second
-        queryInterval = Math.max(queryInterval, 5 * 1001);
+        // force at least 10 second
+        queryInterval = Math.max(queryInterval, 10 * 1001);
 
-        // force max 10 min
-        queryInterval = Math.min(queryInterval, 10 * 60 * 1001);
+        // force max 60 min
+        queryInterval = Math.min(queryInterval, 60 * 60 * 1001);
     }
 
     public int getPages() {
-        int tmp = pages;
-        pages = 1;
-        return tmp;
+        return pages;
     }
 
     public JTag setPages(int p) {
@@ -153,28 +171,38 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
 
     @Override
     public String toString() {
-        return term + " " + getWaitingSeconds();
+        String str = term + " ";
+        if (!Helper.isEmpty(user))
+            str += user + " ";
+        return str + (float) getTweetsPerSec();
     }
 
     @Override
     public String getId() {
-        return createId(getTerm(), getUser());
+        if (Helper.isEmpty(user))
+            return term;
+
+        return term + "_" + user;
     }
 
-    public static String createId(String tmpTerm, String tmpUser) {
-        if (Helper.isEmpty(tmpUser))
-            return tmpTerm;
+    @Override
+    public JTag setVersion(long v) {
+//        this.version = v;
+        return this;
+    }
 
-        return tmpTerm + "_" + tmpUser;
+    @Override
+    public long getVersion() {
+        return 0;
     }
 
     /**
      * toLowerCase only on none keywords
      */
     public static String toLowerCaseOnlyOnTerms(String str) {
-        if(Helper.isEmpty(str))
+        if (Helper.isEmpty(str))
             return str;
-        
+
         StringBuilder sb = new StringBuilder();
         int counter = 0;
         for (String t : str.split(" ")) {
@@ -212,13 +240,33 @@ public class JTag implements DbObject, Serializable, Comparable<JTag> {
         final JTag other = (JTag) obj;
         if ((this.term == null) ? (other.term != null) : !this.term.equals(other.term))
             return false;
+        if ((this.user == null) ? (other.user != null) : !this.user.equals(other.user))
+            return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        int hash = 3;
+        int hash = 7;
         hash = 97 * hash + (this.term != null ? this.term.hashCode() : 0);
+        hash = 97 * hash + (this.user != null ? this.user.hashCode() : 0);
         return hash;
+    }
+
+    @Override
+    public JTag updateFrom(JTag other) {
+        if (other.getLastRequest().getTime() > getLastRequest().getTime())
+            setLastRequest(other.getLastRequest());
+
+        if (other.getRequestCount() > getRequestCount()) {
+            setRequestCount(other.getRequestCount());
+            setLastRequest(other.getLastRequest());
+        }
+        
+        tweetsPerSec = other.tweetsPerSec;
+        lastMillis = other.lastMillis;
+        queryInterval = other.queryInterval;
+        maxCreateTime = other.maxCreateTime;
+        return this;
     }
 }

@@ -1,16 +1,24 @@
 {    
     "user" : {
+        "dynamic_templates" : [            
+            {
+                "template_1" : {
+                    "match" : "*",
+                    "match_mapping_type" : "string",
+                    "mapping" : { "type" : "string", "index" : "not_analyzed", "omit_norms" : "yes" }
+                }
+            }
+        ],
+        "_all" : {"enabled" : false},
         "properties" : {
-            "screenName" : { "type" : "string", "index" : "not_analyzed" },
-            "ss_qterms_mv_s": { "type" : "string", "index" : "not_analyzed" },
-            "name": { "type" : "string", "index" : "not_analyzed" },
-            "tag": { "type" : "string", "index" : "not_analyzed" },        
-            "iconUrl": { "type" : "string", "index" : "not_analyzed" },        
-            "webUrl": { "type" : "string", "index" : "not_analyzed" },        
-            "token_s": { "type" : "string", "index" : "not_analyzed" },        
-            "tokenSecret_s": { "type" : "string", "index" : "not_analyzed" },        
-            "ss_*_query_s": { "type" : "string", "index" : "not_analyzed" },
-            "email" : { "type" : "string", "index" : "not_analyzed" }
+            "bio" : { "type" : "string", "analyzer" : "index_analyzer" },
+            "realName": { "type" : "string", "analyzer" : "index_analyzer" },
+            "topics" : {
+                "type" : "object",
+                "properties" : {
+                    "name" : {"type" : "string", "analyzer" : "index_analyzer"}                    
+                }
+            }
         }
     }
 }

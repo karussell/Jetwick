@@ -22,6 +22,7 @@ import de.jetwick.util.AnyExecutor;
 import de.jetwick.util.MyDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ import org.slf4j.LoggerFactory;
  */
 public class FriendSearchHelper {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());    
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private ElasticUserSearch userSearch;
     private TwitterSearch twitter4j;
 
@@ -41,39 +42,42 @@ public class FriendSearchHelper {
         this.twitter4j = twitter4j;
     }
 
-    public Collection<String> updateFriendsOf(JUser user) {        
-        MyDate cacheTime = null;
-        if (user.getLastFriendsUpdate() != null)
-            cacheTime = new MyDate(user.getLastFriendsUpdate());
-
-        if (cacheTime == null || new MyDate().minus(cacheTime).getDays() > 3) {
-            final Collection<String> friends = new ArrayList<String>();
-            cacheTime = new MyDate();
+    public Collection<String> updateFriendsOf(JUser user) {
+        Date cacheTime = user.getLastFriendsUpdate();
+        if (cacheTime == null || new MyDate().minus(cacheTime.getTime()).getDays() > 3) {
+            final Collection<String> friends = new ArrayList<String>();            
             try {
-                updateFromTwitter(friends, user.getScreenName());
-                user.setLastFriendsUpdate(cacheTime.toDate());
+                updateFromTwitter(friends, user.getScreenName(), 1000);
+                if (friends.size() > 0) {
+                    user.setLastFriendsUpdate(new Date());
+                    user.setFriends(friends);
+                    updateUser(user);
+                    logger.info("Grabbed " + friends.size() + " friends for " + user.getScreenName() + " cacheTime:" + cacheTime);
+                }
             } catch (Exception ex) {
-                logger.error("Error while getting friends for " + user.getScreenName(), ex);
+                logger.error("Error while getting friends for " + user.getScreenName() + " Message:" + TwitterSearch.getMessage(ex));
             }
-            logger.info("Grab " + friends.size() + " friends for " + user.getScreenName());
-            user.setFriends(friends);
-            updateUser(user);
-            return friends;
-        } else
-            return user.getFriends();
+        }
+
+        return user.getFriends();
     }
 
     public void updateUser(JUser user) {
-        // avoid refresh if more users are registered
-        userSearch.update(user, false, true);
+        // avoid refresh
+        userSearch.update(user, false, false);
     }
 
-    public void updateFromTwitter(final Collection<String> friends, String screenName) {
+    public void updateFromTwitter(final Collection<String> friends, final String screenName, final int max) {
         twitter4j.getFriends(screenName, new AnyExecutor<JUser>() {
 
             @Override
             public JUser execute(JUser u) {
                 friends.add(u.getScreenName());
+                if (friends.size() > max) {
+                    logger.error("Reached maximum number of friends for " + screenName + ". last friend:" + u.getScreenName());
+                    return null;
+                }
+
                 return u;
             }
         });

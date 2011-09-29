@@ -6,7 +6,7 @@
         <goals>
             <goal>jetty:run</goal>
         </goals>
-        <properties>
+        <properties>            
             <maven.test.skip>true</maven.test.skip>
             <Env.MAVEN_OPTS>-Xms512m -Xmx512m -XX:PermSize=512m -XX:MaxPermSize=512m</Env.MAVEN_OPTS>
             <!--  -agentpath:/home/peterk/Programme/netbeans-6.8/profiler3/lib/deployed/jdk16/linux/libprofilerinterface.so=/home/peterk/Programme/netbeans-6.8/profiler3/lib,5140,10 -->
@@ -57,8 +57,7 @@
             <goal>test-compile</goal>
             <goal>surefire:test</goal>
         </goals>
-        <properties>
-            <maven.test.skip>true</maven.test.skip>
+        <properties>            
             <jpda.listen>true</jpda.listen>
             <maven.surefire.debug>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address}</maven.surefire.debug>
             <jpda.stopclass>${packageClassName}</jpda.stopclass>

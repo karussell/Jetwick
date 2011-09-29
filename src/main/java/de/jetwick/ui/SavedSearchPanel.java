@@ -155,7 +155,7 @@ public class SavedSearchPanel extends Panel {
         add(savedSearchesView);
 
         // execute one time
-        add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(0.5)) {
+        add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(0.1)) {
 
             @Override
             protected void onPostProcessTarget(AjaxRequestTarget target) {
