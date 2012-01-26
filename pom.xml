@@ -304,24 +304,20 @@
             <url>http://people.apache.org/~ivaynberg/wicket-1.5-M2.1/m2-repo/</url>
         </repository>
         <repository>
-            <id>datanucleus</id>
-            <url>http://www.datanucleus.org/downloads/maven2/</url>
-        </repository>
-        <!--
-        <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/maven2/</url>
-        </repository>
-        -->
-        <repository>
-            <id>caucho</id>
-            <url>http://caucho.com/m2/</url>
-        </repository>
-        <repository>
             <id>peter-repository</id>
             <name>Peter's Repository with warp persist, mydoggy, PgsLookAndFeel, ... </name>
             <url>http://peat_hal.users.sourceforge.net/m2repository/</url>
         </repository>
+        
+        <repository>
+          <id>karussell_snapshots</id>
+          <url>https://github.com/karussell/mvnrepo/raw/master/snapshots/</url>
+        </repository>             
+            
+        <repository>
+          <id>karussell_releases</id>           
+         <url>https://github.com/karussell/mvnrepo/raw/master/releases/</url>                   
+        </repository> 
         
         <repository>
             <id>java.net</id>
@@ -329,19 +325,6 @@
             <url>http://download.java.net/maven/2/</url>
         </repository>
         
-        <!--
-        <repository>
-            <id>visural-wicket</id>
-            <name>visural-wicket</name>
-            <url>http://visural-wicket.googlecode.com/svn/trunk/visural-wicket/maven/</url>
-        </repository>
-        <repository>
-            <id>visural-common</id>
-            <name>visural-common</name>
-            <url>http://visural-common.googlecode.com/svn/trunk/visural-common/maven/</url>
-        </repository>
-        -->
-
         <repository>
             <id>sonatype-releases</id>
             <name>Sonatype Releases Repository</name>
