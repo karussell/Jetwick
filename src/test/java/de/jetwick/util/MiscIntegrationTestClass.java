@@ -16,7 +16,6 @@
 package de.jetwick.util;
 
 import com.google.api.translate.Language;
-import com.google.api.translate.Translate;
 import de.jetwick.wikipedia.WikiEntry;
 import de.jetwick.wikipedia.Wikipedia;
 import java.util.Collection;
@@ -83,7 +82,6 @@ public class MiscIntegrationTestClass {
 
     @Test
     public void testTranslate() throws Exception {
-        Translate.setHttpReferrer("http://jetwick.com");
         System.out.println(Translate.execute("Estoy listo para seguir discutiendo http://www.cubadebate.cu/reflexiones-fidel/2010... "
                 + "#USA #Iran #Cuba #EEUU #Obama #FidelCastro",
                 Language.AUTO_DETECT, Language.fromString("de")));

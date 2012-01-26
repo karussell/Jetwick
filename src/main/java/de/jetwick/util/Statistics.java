@@ -16,7 +16,7 @@
 package de.jetwick.util;
 
 import com.google.api.translate.Language;
-import com.google.api.translate.Translate;
+
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -203,7 +203,6 @@ public class Statistics {
         Set<String> res = new TreeSet<String>();
         Set<String> cache = new LinkedHashSet<String>();
         int charCounter = 0;
-        Translate.setHttpReferrer(Helper.JETWICK_URL);
         for (String str : list) {
             if (str.isEmpty() || str.startsWith("//"))
                 continue;

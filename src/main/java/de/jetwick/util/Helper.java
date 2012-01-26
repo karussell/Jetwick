@@ -16,7 +16,6 @@
 package de.jetwick.util;
 
 import com.google.api.translate.Language;
-import com.google.api.translate.Translate;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -760,8 +759,6 @@ public class Helper {
     }
 
     public static String translate(String txt, Language fromLanguage, Language toLanguage) throws Exception {
-        Translate.setHttpReferrer(JETWICK_URL);
-
         txt = workAroundBefore(txt);
         try {
             txt = Translate.execute(txt, fromLanguage, toLanguage);
