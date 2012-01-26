@@ -1254,4 +1254,11 @@ public class ElasticTweetSearch extends AbstractElasticSearchQueueEnabled<JTweet
         return dt.getTime() < System.currentTimeMillis()
                 - ElasticTweetSearch.OLDEST_DT_IN_MILLIS;
     }
+
+    @Override
+    public void deleteAll(String indexName, String indexType) {
+        protectedTweets.clear();
+        tweets.clear();
+        super.deleteAll(indexName, indexType);
+    }        
 }

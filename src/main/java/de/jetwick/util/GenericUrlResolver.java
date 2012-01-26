@@ -325,4 +325,12 @@ public class GenericUrlResolver extends MyThread implements AnyExecutor<JTweet> 
         queueObject(tweet);
         return tweet;
     }
+
+    public void setTweetSearch(ElasticTweetSearch tweetSearch) {
+        this.tweetSearch = tweetSearch;
+    }
+
+    public ElasticTweetSearch getTweetSearch() {
+        return tweetSearch;
+    }        
 }

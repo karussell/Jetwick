@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package de.jetwick.tw;
 
@@ -61,10 +61,14 @@ public class TweetConsumerTest extends JetwickTestClass {
     @Override
     @Before
     public void setUp() throws Exception {
+        // TODO multiple ElasticTweetSearch instances will be created
         tester.setUp();
         super.setUp();
         resolver = getInstance(GenericUrlResolver.class);
         tweetConsumer = getInstance(TweetConsumer.class);
+
+        assertTrue(tester.getSearch() == resolver.getTweetSearch());
+        assertTrue(tweetConsumer.getResolver() == resolver);
     }
 
     @After
@@ -88,7 +92,7 @@ public class TweetConsumerTest extends JetwickTestClass {
     }
 
     @Test
-    public void testAddSomeMore() {
+    public void testAddSomeMore() throws InterruptedException {
         tester.getSearch().setRemoveOlderThanDays(1);
 
         BlockingQueue<JTweet> queue = tweetConsumer.register("tweet-producer", Integer.MAX_VALUE, 3);
@@ -105,10 +109,15 @@ public class TweetConsumerTest extends JetwickTestClass {
         assertTrue(resolver.getInputQueue().contains(tw));
         assertFalse(resolver.getInputQueue().contains(tw2));
         assertTrue(resolver.getInputQueue().contains(tw3));
+
+        // clear queues to avoid disturbing the next test
+        do {
+            resolver.executeResolve(0);
+        } while (tweetConsumer.executeOneBatch() > 0);
     }
 
     @Test
-    public void testESData() {
+    public void testESData() throws InterruptedException {
         BlockingQueue<JTweet> queue = tweetConsumer.register("tweet-producer", Integer.MAX_VALUE, 1);
         String url = "http://irgendwas.de";
         JTweet tw = createTweetWithUrl(5L, url + " text", "timetabling", url);
@@ -122,7 +131,7 @@ public class TweetConsumerTest extends JetwickTestClass {
         tw.setCreatedAt(new Date());
         queue.add(tw);
         tweetConsumer.executeOneBatch();
-        assertEquals(0, resolver.getInputQueue().size());        
+        assertEquals(0, resolver.getInputQueue().size());
     }
 
     @Test

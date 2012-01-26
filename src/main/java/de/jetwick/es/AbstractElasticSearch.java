@@ -208,7 +208,7 @@ public abstract class AbstractElasticSearch<T extends DbObject> implements Creat
                 actionGet();
     }
 
-    public void deleteAll() {
+    public void deleteAll() {        
         deleteAll(getIndexName(), getIndexType());
     }
 

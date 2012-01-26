@@ -51,6 +51,10 @@ public class TweetConsumer extends Thread {
         super("tweet-consumer");
     }
 
+    public GenericUrlResolver getResolver() {
+        return resolver;
+    }    
+
     @Override
     public void run() {
         initTweetCache();

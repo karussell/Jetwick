@@ -50,7 +50,7 @@ import static org.junit.Assert.*;
 public class ElasticTweetSearchTest extends AbstractElasticSearchTester {
 
 //    private Logger logger = LoggerFactory.getLogger(getClass());
-    private static ElasticTweetSearch twSearch;    
+    private ElasticTweetSearch twSearch;    
 
     public ElasticTweetSearch getSearch() {
         return twSearch;
