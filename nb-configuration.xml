@@ -30,5 +30,6 @@ Any value defined here will override the pom.xml file value but is only applicab
         <org-netbeans-modules-editor-indent.application.x-httpd-eruby.CodeStyle.project.spaces-per-tab>2</org-netbeans-modules-editor-indent.application.x-httpd-eruby.CodeStyle.project.spaces-per-tab>
         <org-netbeans-modules-editor-indent.application.x-httpd-eruby.CodeStyle.project.indent-shift-width>2</org-netbeans-modules-editor-indent.application.x-httpd-eruby.CodeStyle.project.indent-shift-width>
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.redundantIfBraces>LEAVE_ALONE</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.redundantIfBraces>
+        <netbeans.hint.jdkPlatform>JDK_1.7</netbeans.hint.jdkPlatform>
     </properties>
 </project-shared-configuration>

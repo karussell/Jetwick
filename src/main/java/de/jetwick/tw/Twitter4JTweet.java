@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package de.jetwick.tw;
 
@@ -19,10 +19,7 @@ import de.jetwick.data.UrlEntry;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import twitter4j.Annotations;
-import twitter4j.GeoLocation;
-import twitter4j.Place;
-import twitter4j.Tweet;
+import twitter4j.*;
 
 /**
  *
@@ -224,9 +221,6 @@ public class Twitter4JTweet implements Tweet {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-//    public int compareTo(Object o) {
-//        throw new UnsupportedOperationException("Not supported yet.");
-//    }
     @Override
     public boolean equals(Object obj) {
         if (obj == null || getClass() != obj.getClass())
@@ -256,5 +250,25 @@ public class Twitter4JTweet implements Tweet {
 
     public void setPlace(Place place) {
         this.place = place;
+    }
+
+    @Override
+    public UserMentionEntity[] getUserMentionEntities() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public URLEntity[] getURLEntities() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public HashtagEntity[] getHashtagEntities() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public MediaEntity[] getMediaEntities() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

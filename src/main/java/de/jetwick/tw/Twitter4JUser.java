@@ -202,9 +202,9 @@ public class Twitter4JUser implements User {
 
     @Override
     public int compareTo(User o) {
-        if(id < o.getId())
+        if (id < o.getId())
             return -1;
-        else if(id > o.getId())
+        else if (id > o.getId())
             return 1;
         return 0;
     }
@@ -225,7 +225,7 @@ public class Twitter4JUser implements User {
     }
 
     @Override
-    public boolean isTranslator() {        
+    public boolean isTranslator() {
         return translator;
     }
 

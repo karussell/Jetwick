@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package de.jetwick.tw;
 
@@ -61,7 +61,8 @@ public class TwitterSearch implements Serializable {
     private static final long serialVersionUID = 1L;
     public final static String COOKIE = "jetslide";
     /**
-     * Do not use less than this limit of 20 api points for queueing searches of unloggedin users
+     * Do not use less than this limit of 20 api points for queueing searches of
+     * unloggedin users
      */
     public final static int LIMIT = 50;
     public final static String LINK_FILTER = "filter:links";
@@ -90,6 +91,7 @@ public class TwitterSearch implements Serializable {
 
     /**
      * Connect with twitter to get a new personalized twitter4j instance.
+     *
      * @throws RuntimeException if verification or connecting failed
      */
     public TwitterSearch initTwitter4JInstance(String token, String tokenSecret, boolean verify) {
@@ -124,7 +126,8 @@ public class TwitterSearch implements Serializable {
     }
 
     /**
-     * Set an already 'connected' twitter4j instance. No exception can be thrown.
+     * Set an already 'connected' twitter4j instance. No exception can be
+     * thrown.
      */
     public TwitterSearch setTwitter4JInstance(Twitter tw) {
         twitter = tw;
@@ -156,7 +159,8 @@ public class TwitterSearch implements Serializable {
 
     /**
      * Opening the url will show you a PIN
-     * @throws TwitterException 
+     *
+     * @throws TwitterException
      */
     public RequestToken doDesktopLogin() throws TwitterException {
         twitter = new TwitterFactory().getInstance();
@@ -187,6 +191,7 @@ public class TwitterSearch implements Serializable {
 
     /**
      * grab oauth_verifier from request of callback site
+     *
      * @return screenname or null
      */
     public AccessToken oAuthOnCallBack(String oauth_verifierParameter) throws TwitterException {
@@ -218,12 +223,12 @@ public class TwitterSearch implements Serializable {
     }
 
     public User getTwitterUser() throws TwitterException {
-        ResponseList<User> list = twitter.lookupUsers(new String[]{twitter.getScreenName()});
+        ResponseList list = twitter.lookupUsers(new String[]{twitter.getScreenName()});
         rateLimit--;
         if (list.size() == 0)
             return null;
         else if (list.size() == 1)
-            return list.get(0);
+            return (User) list.get(0);
         else
             throw new IllegalStateException("returned more than one user for screen name:" + twitter.getScreenName());
     }
@@ -308,10 +313,10 @@ public class TwitterSearch implements Serializable {
         lastAccess = System.currentTimeMillis();
         List<Tweet> res = new ArrayList<Tweet>();
         try {
-            ResponseList<Status> statusList = twitter.getPublicTimeline();
+            ResponseList statusList = twitter.getPublicTimeline();
             rateLimit--;
-            for (Status st : statusList) {
-                res.add(toTweet(st));
+            for (Object st : statusList) {
+                res.add(toTweet((Status) st));
             }
             return res;
         } catch (TwitterException ex) {
@@ -371,22 +376,6 @@ public class TwitterSearch implements Serializable {
             return locs[0].replaceAll("[,/]", " ").replaceAll("  ", " ").trim() + ", -";
     }
 
-    public Set<String> getTrends() {
-        try {
-            // twitter.getPublicTimeline() -> only 20 tweets per minute
-            Set<String> set = new LinkedHashSet<String>();
-            Trend[] trends = twitter.getTrends().getTrends();
-            rateLimit--;
-            for (Trend t : trends) {
-                set.add(t.getName());
-            }
-            return set;
-        } catch (TwitterException ex) {
-            logger.error("Couldn't grab trends", ex);
-            return Collections.EMPTY_SET;
-        }
-    }
-
     Query createQuery(String str) {
         Query q = new Query(str);
         q.setResultType(Query.RECENT);
@@ -435,7 +424,8 @@ public class TwitterSearch implements Serializable {
             QueryResult res = twitter.search(query);
 
             // is res.getTweets() sorted?
-            for (Tweet twe : res.getTweets()) {
+            for (Object o : res.getTweets()) {
+                Tweet twe = (Tweet) o;
                 // determine maxId in the first page
                 if (page == 0 && maxId < twe.getId())
                     maxId = twe.getId();
@@ -479,6 +469,7 @@ public class TwitterSearch implements Serializable {
 
     /**
      * API COSTS: 1
+     *
      * @param users should be maximal 100 users
      * @return the latest tweets of the users
      */
@@ -497,11 +488,11 @@ public class TwitterSearch implements Serializable {
         int maxRetries = 5;
         for (int retry = 0; retry < maxRetries; retry++) {
             try {
-                ResponseList<User> res = twitter.lookupUsers(arr);
+                ResponseList res = twitter.lookupUsers(arr);
                 rateLimit--;
                 List<Tweet> tweets = new ArrayList<Tweet>();
                 for (int ii = 0; ii < res.size(); ii++) {
-                    User user = res.get(ii);
+                    User user = (User) res.get(ii);
                     JUser yUser = userMap.get(user.getScreenName().toLowerCase());
                     if (yUser == null)
                         continue;
@@ -510,7 +501,7 @@ public class TwitterSearch implements Serializable {
                     if (stat == null)
                         continue;
 
-                    Twitter4JTweet tw = toTweet(stat, res.get(ii));
+                    Twitter4JTweet tw = toTweet(stat, user);
                     tweets.add(tw);
                 }
                 return tweets;
@@ -544,7 +535,8 @@ public class TwitterSearch implements Serializable {
 //        return getTweets(userScreenName, 100);
 //    }
     /**
-     * You will only be able to access the latest 3200 statuses from a user's timeline
+     * You will only be able to access the latest 3200 statuses from a user's
+     * timeline
      */
     List<JTweet> getTweets(JUser user, int tweets) throws TwitterException {
         List<JTweet> res = new ArrayList<JTweet>();
@@ -570,11 +562,11 @@ public class TwitterSearch implements Serializable {
 
         for (int trial = 0; trial < 2; trial++) {
             try {
-                ResponseList<Status> rList = twitter.getUserTimeline(
+                ResponseList rList = twitter.getUserTimeline(
                         user.getScreenName(), new Paging(currentPage + 1, tweets, 1));
                 rateLimit--;
-                for (Status st : rList) {
-                    Tweet tw = toTweet(st);
+                for (Object st : rList) {
+                    Tweet tw = toTweet((Status) st);
                     res.add(new JTweet(tw, user.init(tw)));
                 }
                 break;
@@ -654,14 +646,13 @@ public class TwitterSearch implements Serializable {
         TwitterStream stream = new TwitterStreamFactory().getInstance(twitter.getAuthorization());
         stream.addListener(new StatusListener() {
 
-            
             @Override
             public void onStatus(Status status) {
                 // ugly twitter ...
                 if (Helper.isEmpty(status.getUser().getScreenName()))
                     return;
 
-                if(!queue.offer(new JTweet(toTweet(status), new JUser(status.getUser()))))
+                if (!queue.offer(new JTweet(toTweet(status), new JUser(status.getUser()))))
                     logger.error("Cannot add tweet as input queue for streaming is full:" + queue.size());
             }
 
@@ -712,7 +703,7 @@ public class TwitterSearch implements Serializable {
                 myWait(0.5f);
             }
 
-            ResponseList<User> res = null;
+            ResponseList res = null;
             IDs ids = null;
             try {
                 if (friends)
@@ -742,7 +733,8 @@ public class TwitterSearch implements Serializable {
                     try {
                         res = twitter.lookupUsers(limitedIds);
                         rateLimit--;
-                        for (User user : res) {
+                        for (Object o : res) {
+                            User user = (User) o;
                             // strange that this was necessary for ibood
                             if (user.getScreenName().trim().isEmpty())
                                 continue;

@@ -196,12 +196,6 @@ public class TwitterSearchIntegrationTestClass extends JetwickTestClass {
     }
 
     @Test
-    public void testTrend() {
-        TwitterSearch st = twitterSearch;
-        assertTrue(st.getTrends().size() > 0);
-    }
-
-    @Test
     public void testFriendSearch() {
 //        FriendSearchHelper helper = new FriendSearchHelper() {
 //
