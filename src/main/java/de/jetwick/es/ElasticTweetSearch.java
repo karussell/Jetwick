@@ -18,7 +18,6 @@ package de.jetwick.es;
 import java.util.regex.Pattern;
 import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.filter.FilterFacet;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.search.SearchHits;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.UrlEntry;
@@ -48,6 +47,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -183,7 +183,7 @@ public class ElasticTweetSearch extends AbstractElasticSearchQueueEnabled<JTweet
         if (tw.isDaemon())
             return null;
 
-        XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
+        XContentBuilder b = JsonXContent.contentBuilder().startObject();
         b.field(TWEET_TEXT, tw.getText());
         b.field("tw_i", tw.getText().length());
         b.field(UPDATE_DT, tw.getUpdatedAt());

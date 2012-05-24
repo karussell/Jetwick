@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2010 Peter Karich <jetwick_@_pannous_._info>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package de.jetwick.tw;
 
@@ -26,15 +26,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.elasticsearch.common.collect.MapMaker;
+import org.elasticsearch.common.cache.CacheBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * stores the tweets from the queue into the dbHelper and solr
- * 
+ *
  * @author Peter Karich, peat_hal 'at' users 'dot' sourceforge 'dot' net
  */
 public class TweetConsumer extends Thread {
@@ -53,7 +54,7 @@ public class TweetConsumer extends Thread {
 
     public GenericUrlResolver getResolver() {
         return resolver;
-    }    
+    }
 
     @Override
     public void run() {
@@ -103,10 +104,11 @@ public class TweetConsumer extends Thread {
     }
 
     /**
-     * @param queueName the identifier of the input queue     
-     * @param capacity  the number of elements which should fit into the input queue.
-     * This should be at least twice times bigger than batchSize.
-     * @param batchSize the number of elements to feed at once into main output queue.      
+     * @param queueName the identifier of the input queue
+     * @param capacity the number of elements which should fit into the input
+     * queue. This should be at least twice times bigger than batchSize.
+     * @param batchSize the number of elements to feed at once into main output
+     * queue.
      * @return the newly registered queue
      */
     public BlockingQueue<JTweet> register(String queueName, int capacity, int batchSize) {
@@ -164,8 +166,7 @@ public class TweetConsumer extends Thread {
 
     public void initTweetCache() {
         if (tweetCache == null)
-            tweetCache = new MapMaker().concurrencyLevel(20).
-                    maximumSize(50000).expireAfterWrite(6 * 60, TimeUnit.MINUTES).makeMap();
+            tweetCache = GenericUrlResolver.createGenericCache(50000, 6 * 60);
     }
 
     public static class QueueInfo<JTweet> {

@@ -25,22 +25,18 @@ import de.jetwick.snacktory.JResult;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.elasticsearch.common.cache.CacheBuilder;
 import org.elasticsearch.common.collect.MapMaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class takes the urls from article index and resolves them. 
- * Additionally and more importantly it stores the text and title into article index.
- * 
+ * This class takes the urls from article index and resolves them. Additionally
+ * and more importantly it stores the text and title into article index.
+ *
  * @author Peter Karich, jetwick_@_pannous_._info
  */
 public class GenericUrlResolver extends MyThread implements AnyExecutor<JTweet> {
@@ -76,8 +72,8 @@ public class GenericUrlResolver extends MyThread implements AnyExecutor<JTweet> 
     public static <K, V> Map<K, V> createGenericCache(int count, int minutes) {
         // do NOT use .softKeys() otherwise we will get == comparison which
         // is bad for 'new Long'        
-        return new MapMaker().concurrencyLevel(20).
-                maximumSize(count).expireAfterWrite(minutes, TimeUnit.MINUTES).makeMap();
+        return (ConcurrentMap<K, V>) CacheBuilder.newBuilder().concurrencyLevel(20).maximumSize(count).
+                expireAfterAccess(minutes, TimeUnit.MINUTES).build().asMap();
     }
 
     public GenericUrlResolver setHtmlFetcher(HtmlFetcher fetcher) {
@@ -160,7 +156,7 @@ public class GenericUrlResolver extends MyThread implements AnyExecutor<JTweet> 
         // if tweet is persistent we need to queue it
         boolean directlyQueueIt = false;
         String url = tw.getUrl();
-        if (tweetSearch.tooOld(tw.getCreatedAt())) {            
+        if (tweetSearch.tooOld(tw.getCreatedAt())) {
             tooOldMap.put(url, OBJECT);
             unresolvedCache.remove(url);
             directlyQueueIt = true;
@@ -211,8 +207,8 @@ public class GenericUrlResolver extends MyThread implements AnyExecutor<JTweet> 
             }
 
             if (!alreadyExistent)
-                try {                    
-                    resolverQueue.put(tw);                    
+                try {
+                    resolverQueue.put(tw);
                 } catch (InterruptedException ex) {
                     logger.error("Couldn't put article:" + tw.getUrl(), ex);
                 }
@@ -332,5 +328,5 @@ public class GenericUrlResolver extends MyThread implements AnyExecutor<JTweet> 
 
     public ElasticTweetSearch getTweetSearch() {
         return tweetSearch;
-    }        
+    }
 }

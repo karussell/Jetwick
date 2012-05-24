@@ -12,14 +12,15 @@
     <properties>
         <slf4j.version>1.6.1</slf4j.version>
         <jetty.version>6.1.26</jetty.version>        
-        <wicket.version>1.4.18</wicket.version>
+        <wicket.version>1.4.20</wicket.version>
         <!--<wicket.version>1.5-M2.1</wicket.version>-->        
                 
         <!-- Grab snapshots from source: git clone git://github.com/elasticsearch/elasticsearch.git             
              Then do: ./gradlew clean install
           -->
-        <netbeans.hint.deploy.server>Tomcat</netbeans.hint.deploy.server>
-        <es.version>0.17.7</es.version>
+          <!--
+        <netbeans.hint.deploy.server>Tomcat</netbeans.hint.deploy.server>        
+        -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <licenses>
@@ -55,12 +56,11 @@
             <artifactId>twitter4j-stream</artifactId>
             <version>2.2.5</version>
         </dependency>
-
         
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>${es.version}</version>
+            <version>0.19.4</version>
         </dependency>        
         
 <!--

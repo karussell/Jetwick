@@ -30,9 +30,9 @@ import de.jetwick.util.MyDate;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.range.RangeFacetBuilder;
 import java.util.Map.Entry;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import java.util.Collection;
 import static de.jetwick.es.ElasticTweetSearch.*;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 
 /**
  *

@@ -49,8 +49,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import static de.jetwick.es.ElasticTweetSearch.*;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 
 /**
  *
@@ -794,7 +794,7 @@ public abstract class JetwickQuery implements Serializable {
 
     public static String toString(ToXContent tmp) {
         try {
-            return tmp.toXContent(JsonXContent.unCachedContentBuilder(), ToXContent.EMPTY_PARAMS).
+            return tmp.toXContent(JsonXContent.contentBuilder(), ToXContent.EMPTY_PARAMS).
                     prettyPrint().
                     string();
         } catch (Exception ex) {

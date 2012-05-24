@@ -30,15 +30,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.NumericRangeFilterBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -113,7 +111,7 @@ public class ElasticTagSearch extends AbstractElasticSearch<JTag> {
 
     @Override
     public XContentBuilder createDoc(JTag tag) throws IOException {
-        XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
+        XContentBuilder b = JsonXContent.contentBuilder().startObject();
         b.field(TERM, tag.getTerm());
         b.field("lastMillis", tag.getLastMillis());
         b.field("maxCreateTime", tag.getMaxCreateTime());

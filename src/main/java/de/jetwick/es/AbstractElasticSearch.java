@@ -37,16 +37,16 @@ import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -268,7 +268,7 @@ public abstract class AbstractElasticSearch<T extends DbObject> implements Creat
         query.initRequestBuilder(srb);
         if (log)
             try {
-                logger.info(srb.internalBuilder().toXContent(JsonXContent.unCachedContentBuilder(), null).string());
+                logger.info(srb.internalBuilder().toXContent(JsonXContent.contentBuilder(), null).string());
             } catch (Exception ex) {
             }
         return srb.execute().actionGet();

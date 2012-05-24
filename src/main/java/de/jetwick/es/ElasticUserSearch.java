@@ -16,7 +16,6 @@
 package de.jetwick.es;
 
 import de.jetwick.util.Helper;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import de.jetwick.config.Configuration;
 import de.jetwick.data.JTweet;
@@ -34,10 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.action.get.GetRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.FilterBuilders;
@@ -123,7 +123,7 @@ public class ElasticUserSearch extends AbstractElasticSearch<JUser> {
 
     @Override
     public XContentBuilder createDoc(JUser user) throws IOException {
-        XContentBuilder b = JsonXContent.unCachedContentBuilder().startObject();
+        XContentBuilder b = JsonXContent.contentBuilder().startObject();
         // make sure that if we look for a specific user this user will show up first:
         b.field(SCREEN_NAME, user.getScreenName());
 
