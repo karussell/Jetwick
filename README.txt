@@ -1,12 +1,10 @@
 Jetwick - Open and Personalized Twitter Search
 
-License
-========
+# License
 
 The software stands under Apache 2 License and comes with NO WARRANTY
 
-Why Jetwick?
-============
+# Why Jetwick?
 
 >>> Real time vs. Relevance <<<
 
@@ -36,18 +34,13 @@ retweets etc. In a later version of jetwick it is possible to search any
 I am using twitter as a bookmarking service and need to search my account often.
 With twitter this is a pain - with jetwick it's just a click.
 
-For more details take a look at this site:
-http://www.pannous.info/products/jetwick-twitter-search/
+For more details and a video take a look at [this site](http://pannous.com/products/jetwick-twitter-search-2/)
 
-Try it live: http://jetsli.de/tweets
-
-Problems?
-=========
+# Problems
 
 Report issues here: https://github.com/karussell/Jetwick/issues
 
-Developers
-==========
+# Developers
 
 My blog posts about jetwick or twitter:
 http://karussell.wordpress.com/category/twitter/
