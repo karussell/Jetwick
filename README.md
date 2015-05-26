@@ -34,7 +34,9 @@ retweets etc. In a later version of jetwick it is possible to search any
 I am using twitter as a bookmarking service and need to search my account often.
 With twitter this is a pain - with jetwick it's just a click.
 
-For more details and a video take a look at [this site](http://pannous.com/products/jetwick-twitter-search-2/)
+# Demo
+
+Sorry, no live demo anymore. But for more details and a video take a look at [this site](http://pannous.com/products/jetwick-twitter-search-2/)
 
 # Problems
 
